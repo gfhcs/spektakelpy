@@ -16,7 +16,7 @@ class Guard(abc.ABC):
     """
 
     @abc.abstractmethod
-    def decide(self, state):
+    def decide(self, event, state):
         """
         Decides if the condition represented by this Guard is satisfied.
         :param state: The current state of the spectacle.
@@ -24,8 +24,8 @@ class Guard(abc.ABC):
         """
         pass
 
-    def __call__(self, s):
-        return self.decide(s)
+    def __call__(self, e, s):
+        return self.decide(e, s)
 
 
 class Update:
@@ -34,7 +34,7 @@ class Update:
     """
 
     @abc.abstractmethod
-    def transform(self, state):
+    def transform(self, event, state):
         """
         Computes the new state of the spectacle.
         :param state: The current state of the spectacle.
@@ -42,8 +42,8 @@ class Update:
         """
         pass
 
-    def __call__(self, s):
-        return self.transform(s)
+    def __call__(self, e, s):
+        return self.transform(e, s)
 
 
 class Edge:
@@ -51,16 +51,26 @@ class Edge:
     A control flow edge inside a spectacle, i.e. an object that defines a reaction of the spectacle to an interaction
     or event.
     """
-    def __init__(self, guard, update, destination):
+    def __init__(self, t, guard, update, destination):
         """
         Creates a new control flow edge.
+        :param t: A type object specifying which Event objects this edge is supposed to be followed for.
         :param destination: A Location object specifying which control location this edge is leading to.
         :param guard: A Guard object defining when this Edge can be followed.
         :param update: An Update object defining how the spectacle state is to be updated when this edge is followed.
         """
         self._destination = destination
+        self._etype = t
         self._guard = guard
         self._update = update
+
+    @property
+    def event_type(self):
+        """
+        The type of event this edge is supposed to be followed for.
+        :return: A type object that represents an Event subtype.
+        """
+        return self._etype
 
     @property
     def guard(self):
