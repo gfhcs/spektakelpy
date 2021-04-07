@@ -2,12 +2,15 @@
 
 from tkinter import *
 
+from alpha import presentation
+from alpha import behavior
+
 if __name__ == '__main__':
 
-    canvas = Canvas(1920, 1080)
+    canvas = presentation.Canvas(1920, 1080)
 
-    hello = canvas.add(Text("Hello", cx=0.5, cy=0.25, visible=False))
-    world = canvas.add(Text("World", cx=0.5, cy=0.75, visible=False))
+    hello = canvas.add(presentation.Text("Hello", cx=0.5, cy=0.25, visible=False))
+    world = canvas.add(presentation.Text("World", cx=0.5, cy=0.75, visible=False))
 
     # TODO: We specify the behavior of processes by giving some procedures.
     #       These procedures are "executed statically", i.e. in some mode
@@ -25,9 +28,9 @@ if __name__ == '__main__':
         context.spawn(a)
 
     def unfold(context):
-        context.waitfor(step)
+        context.waitfor(presentation.Action.STEP)
         appear_smoothly(context, hello)
-        context.waitfor(step)
+        context.waitfor(presentation.Action.STEP)
         appear_smoothly(context, world)
 
     def bounce(context):
@@ -39,8 +42,8 @@ if __name__ == '__main__':
                 world.cy += delta
             delta = - delta
 
-    canvas.behavior = concurrent(unfold, bounce)
+    canvas.behavior = behavior.LambdaBehavior.concurrent(unfold, bounce)
 
-    present(canvas)
+    # canvas = presentation.flatten(canvas)
 
-    # TODO: Alternatively it should be possible to first "unroll" the canvas process and *then* present it.
+    presentation.present(canvas)
