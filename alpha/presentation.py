@@ -43,23 +43,57 @@ class Action(Interaction):
 Action.STEP = Action(Action.Label.FORWARD)
 
 
-    STEP = None # Implement STEP!
+class Widget(LambdaProcess):
+
+    def __init__(self):
+        super().__init__()
+
+        self._x = None
+        self._y = None
 
 
-class Canvas:
+
+
+class Canvas(LambdaProcess):
     """
     A rectangle on which elements can be drawn.
     """
     # TODO: Implement Canvas
-    pass
+
+    def __init__(self, width, height):
+        super().__init__()
+
+        self._width = width
+        self._height = height
+        self._items = []
+
+    @dynamic
+    def add(self, item):
+        pass
 
 
-class Text:
+class Text(Widget):
     """
     A TextBox that can be drawn on a canvas.
     """
-    # TODO: Implement Text
-    pass
+    def __init__(self, **kwargs):
+        """
+        Creates a new TextBox process.
+        :param kwargs:
+        """
+
+        super().__init__()
+
+        self._text = "Text"
+
+        self.initialize(**kwargs)
+
+    @dproperty
+    def text(self, context):
+        return self._text.read()
+
+    @dproperty.setter
+    def text(self, context, value):
 
 
 def flatten():
