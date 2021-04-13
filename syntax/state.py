@@ -2,13 +2,27 @@
 
 class Variable:
     """
-    A variable in the state of a process.
+    A named container for a value.
     """
     pass
 
 
 class Value:
     """
-    A value that a process variable can be bound to.
+    A value that a variable can be bound to.
+    """
+    pass
+
+
+class Type:
+    """
+    Comprises static guarantees about a set of values.
+    """
+    pass
+
+
+class Valuation(Value):
+    """
+    A mapping of variables to values.
     """
     pass

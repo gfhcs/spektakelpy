@@ -4,6 +4,7 @@ from enum import Enum
 
 from core.process import Process
 from syntax.ast import BooleanExpression, Assignment
+from syntax.state import Variable, Valuation
 from util import check_type
 
 
@@ -33,7 +34,7 @@ class Location:
         :param e: An Edge object.
         """
 
-        if self._graph is not None
+        if self._graph is not None:
             raise OwnershipError("This location is already part of a graph and thus cannot be modified anymore!")
 
         check_type(e, Edge)
@@ -386,7 +387,7 @@ class SymbolicProcess(Process):
         for g in self._behavior:
             locations[g] = g.initial_location
 
-        return locations, Dict(valuation)
+        return locations, Valuation(valuation)
 
     def get_enabled(self, locations, valuation, action, sync_mode):
         """
@@ -463,7 +464,7 @@ class SymbolicProcess(Process):
                 val = exp.evaluate(valuation)
                 valuation_out[var] = val
 
-        return locations_out, Dict(valuation_out)
+        return locations_out, Valuation(valuation_out)
 
     def step(self, locations, valuation, action):
         """
