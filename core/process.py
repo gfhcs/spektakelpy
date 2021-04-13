@@ -38,6 +38,6 @@ class Process(abc.ABC):
         This procedure is functional, i.e. equal inputs are going to lead to equal outputs.
         :param state: The State object from which the transition should originate.
         :param interaction: The Interaction object prompting the transition.
-        :return: A State object.
+        :return: An iterable of State objects.
         """
         pass
