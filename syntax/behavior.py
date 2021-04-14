@@ -6,14 +6,7 @@ from core.process import Process
 from syntax.ast import BooleanExpression, Assignment
 from syntax.state import Variable, Valuation
 from util import check_type
-
-
-class OwnershipError(Exception):
-    """
-    An exception that indicates that an operation cannot be executed because of the ownership relationships between
-    some graph components.
-    """
-    pass
+from . import OwnershipError
 
 
 class Location:
