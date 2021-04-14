@@ -207,6 +207,8 @@ class StructValue(Value):
         for k, t in self.mtypes():
             self._m[k] = check_type(membervalues[k], t)
 
+        self._hash = None
+
     @classmethod
     def name(cls):
         return "{" + ", ".join((k + ": " + t.name for k, t in cls.mtypes().items())) + "}"
@@ -227,10 +229,11 @@ class StructValue(Value):
         return type(self) is type(other) and all(self._m[k] == other._m[k] for k in self.mtypes().keys())
 
     def hash(self):
-        h = 0
-        for val in self._m.values():
-            h ^= hash(val)
-        return h
+        if self._hash is None:
+            self._hash = 0
+            for val in self._m.values():
+                self._hash ^= hash(val)
+        return self._hash
 
 
 __structtypes = {}
