@@ -1,138 +1,92 @@
 from enum import Enum
+import re
 
 
 class TokenType(Enum):
     """
     Describes types of syntactic tokens.
     """
-    IDENTIFIER = 0
-    KEYWORD = 1
-    LITERAL = 2
-    EOF = 4
-
-# TODO: "+" should actually be a default separator.
-# CAUTION: Making it one will break Gereon's caches, because we used to allow + in CVF identifiers.
-# CONSEQUENTLY: We should have a proper definition for what a CVF identifier is allowed to be.
-#               SIMILARLY for other things that have names! Essentially we should say that they need to be lexable
-#               identifiers!
-default_separators = ["(", ")", "-", "True", "False", "[", "]", "{", "}", ",", "=", "%"]
+    COMMENT = 0
+    IDENTIFIER = 1
+    KEYWORD = 2
+    LITERAL = 3
+    WHITESPACE = 4
+    EOS = 5
+    ERROR = 6
 
 
-# TODO: lex should use StringIO to build up tokens. This would probably be more efficient.
-
-def lex(characters, separators=default_separators):
+class LexerSpecification:
     """
-    Turns an iterable of characters into an iterable of tokens.
-    :param separators: A collection of strings that are considered token terminators.
-    :param characters: An iterable of characters.
-    :return: An iterable of triples (t, s, p),  t is a TokenType
-    and s is either the token string, or, in the case of literals, the value represented by the token. r is the position
-    of the token in the input stream.
+    An instance of this type completely determines a lexical grammar.
     """
 
-    t = None
-    s = ""
-    p = None
-    source = enumerate(characters)
-    pos = None
-    c = None
-    advance = True
+    def __init__(self, keywords, separators, skip_whitespace=True, skip_comments=True):
+        """
+        Creates a new lexer specification.
+        :param keywords: The strings that are to be lexed as keyword tokens.
+                         They must contain only alphanumeric characters and the underscore and they
+                         must not start with a digit.
+        :param separators: The strings that are to be lexed as separators. Separators have the same token type
+                           as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
+        :param skip_whitespace: Specifies if the lexer should omit white space in its output (True, default),
+                                or enumerate it (False).
+        :param skip_comments: Specifies if the lexer should omit comments in its output (True, default),
+                              or enumerate them (False).
+        """
+        super().__init__()
 
-    kwc = None
+        # This code is loosely based on https://docs.python.org/3/library/re.html ("Writing a Tokenizer")
 
-    try:
-        while True:
+        pattern_identifier = r'(?!\D)\w+'
 
-            if advance and t != TokenType.KEYWORD:
-                pos, c = next(source)
+        # All keywords should be accepted by the identifier rule:
+        automaton_identifier = re.compile(pattern_identifier)
+        for kw in keywords:
+            if re.fullmatch(automaton_identifier, kw) is None:
+                raise ValueError("The keyword '{}' is illegal!".format(kw))
+        pattern_keyword = '|'.join(re.escape(kw) for kw in reversed(sorted(keywords, key=len)))
 
-            advance = True
+        # In order to keep things simple we do not allow the alphabet for separators to intersect with the alphabet
+        # for keywords or identifiers. Also there must not be any white space.
+        sep_forbidden = re.compile(r'\w|\s')
+        for sep in separators:
+            if re.search(sep_forbidden, sep) is not None:
+                raise ValueError("The separator '{}' either contains whitespace, or some character that is reserved"
+                                 " for keywords and identifiers!".format(sep))
 
-            if t is None:
-                if c.isspace():
-                    continue
-                try:
-                    int(c)
-                    t = TokenType.LITERAL
-                    s += c
-                    p = pos
-                except ValueError:
-                    t = TokenType.IDENTIFIER
-                    advance = False
-                    p = pos
-            elif t == TokenType.KEYWORD:
-                kwc = list(filter(lambda sep: sep.startswith(s), kwc if kwc is not None else separators))
+        pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
 
-                if len(kwc) == 0:
-                    yield (t, s[:-1], p)
-                    c = s[-1]
-                    advance = False
-                elif len(kwc) == 1:
-                    yield (t, s, p)
-                else:
-                    pos, cc = next(source)
-                    s += cc
-                    continue
+        spec_split = [(TokenType.EOS, r'$'),  # Match the end of the input.
+                      (TokenType.COMMENT, re.escape('#') + r'[^\n]*\n'),
+                      (TokenType.WHITESPACE, r'\s+'),  # Any white space sequence.
+                      (TokenType.LITERAL, r'(\d+(\.\d*)?)|".+"'),  # integer, decimal, or string.
+                      (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
+                                                                            kw=pattern_keyword,
+                                                                            nocont=r'(?!\w)')),
+                      (TokenType.IDENTIFIER, pattern_identifier),
+                      (TokenType.ERROR, r'.')
+                     ]
 
-                p = None
-                kwc = None
-                t = None
-                s = ""
+        pattern = "|".join('(?P<type%d>%s)' % pair for pair in spec_split)
 
-            elif t == TokenType.LITERAL:
-                try:
-                    try: # Is c a special float character?
-                        fchars = ".e-"
-                        x = fchars.index(c)
-                    except ValueError:  # No, it is not a special float character.
-                        x = -1
+        self._automaton = re.compile(pattern)
+        self._skip_comments = skip_comments
+        self._skip_whitespace = skip_whitespace
 
-                    if x >= 0:
-                        if (x == 0 or fchars[x - 1] in s) and c not in s:
-                            pass
-                        else:
-                            raise ValueError("Encountered invalid numeric literal with prefix {p}".format(p=s + c))
-                    else:
-                        int(c)
-                    s += c
-                    continue
-                except ValueError:
-                    advance = False
-                    yield (t, s, p)
-                    t = None
-                    s = ""
-                    p = None
-                    continue
-            elif t == TokenType.IDENTIFIER:
-                if c.isspace():
-                    yield (t, s, p)
-                    t = None
-                    s = ""
-                    p = None
-                    continue
-                s += c
-                for sep in separators:
-                    if s.endswith(sep):
-                        identifier = s[:-len(sep)]
-                        if len(identifier) > 0:
-                            yield (t, identifier, p)
-                        s = sep
-                        t = TokenType.KEYWORD
-                        p += len(identifier)
-                        break
+    def match_prefix(self, buffer):
+        # TODO: Here we should call re.match with the automaton. We need to skip comments and whitespace and we
+        #       need to make sure that we are NOT stopped by the end of the given buffer string!
+        pass
 
-    except StopIteration:
-        if t is not None:
-            yield (t, s, p)
-        yield (TokenType.EOF, "", pos + 1)
 
+# TODO: Lexer should use StringIO to buffer the input.
 
 class Lexer:
     """
     Supports the parsing of tokens.
     """
 
-    def __init__(self, source, separators=default_separators):
+    def __init__(self, spec, source):
         self._separators = separators
         self._lex = iter(lex(source, separators=separators))
         self._peek = None
