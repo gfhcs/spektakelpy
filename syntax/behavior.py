@@ -98,10 +98,10 @@ class SyncMode(Enum):
     """
     Defines the way that an edge is to be synchronized with edges of parallel processes.
     """
-    SILENT = 0 # This action is always enabled, for the process to make a transition alone.
-    TOINNER = 1 # Action must be synchronized with direct child processes that contain the FROMPARENT version of the action in their alphabet.
-    FROMOUTER = 2 # Action must be synchronized with any direct parent process that contains the TOCHILDREN version of the action in their alphabet.
-    PARALLEL = 3 # Action must be synchronized with all parallel processes that contain the PARALLEL version of the action in their alphabet.
+    SILENT = 0  # This action is always enabled, for the process to make a transition alone.
+    TOINNER = 1  # Action must be synchronized with direct child processes that contain the FROMPARENT version of the action in their alphabet.
+    FROMOUTER = 2  # Action must be synchronized with any direct parent process that contains the TOCHILDREN version of the action in their alphabet.
+    PARALLEL = 3  # Action must be synchronized with all parallel processes that contain the PARALLEL version of the action in their alphabet.
 
 
 class Edge:
@@ -113,9 +113,11 @@ class Edge:
         Creates a new control flow edge.
         :param action: The Action that this edge defines.
         :param destination: A Location object specifying the control location this edge is leading to.
-        :param syncmode: Specifies the way in which the action defined by this edge is to be synchronized with actions from other processes.
+        :param syncmode: Specifies the way in which the action defined by this edge is to be synchronized with actions
+                         from other processes.
         :param guard: A BooleanExpression that determines in which states of the process this edge can be taken.
-        :param update: An Update object defining how the state of the process is to be updated when this edge is followed.
+        :param update: An Update object defining how the state of the process is to be updated when this edge is
+                       followed.
         """
 
         self._destination = check_type(destination, Location)
