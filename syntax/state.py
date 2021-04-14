@@ -7,18 +7,6 @@ class Variable:
     pass
 
 
-class Value:
-    """
-    A value that a variable can be bound to.
-    """
-    pass
-
-
-class Type:
-    """
-    Comprises static guarantees about a set of values.
-    """
-    pass
 
 
 class Valuation(Value):
