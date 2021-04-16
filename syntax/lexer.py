@@ -1,5 +1,37 @@
-from enum import Enum
+import io
 import re
+from enum import Enum
+
+from util import check_type
+
+
+class LexErrorReason(Enum):
+    """
+    The reason for a lexer error.
+    """
+    UNKNOWN = 0  # No exact reason for the error has been determined.
+    OUTOFTOKENS = 1  # No tokens are left in the input.
+
+
+class LexError(Exception):
+    """
+    An error that occured while lexing a string.
+    """
+    def __init__(self, reason):
+        """
+        Instantiates a new LexError.
+        :param reason: The reason for this error.
+        """
+
+        msg = "Unknown"
+
+        super().__init__(msg)
+
+        self._reason = reason
+
+    @property
+    def reason(self):
+        return self._reason
 
 
 class TokenType(Enum):
@@ -12,7 +44,6 @@ class TokenType(Enum):
     LITERAL = 3
     WHITESPACE = 4
     EOS = 5
-    ERROR = 6
 
 
 class LexerSpecification:
@@ -63,8 +94,7 @@ class LexerSpecification:
                       (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
                                                                             kw=pattern_keyword,
                                                                             nocont=r'(?!\w)')),
-                      (TokenType.IDENTIFIER, pattern_identifier),
-                      (TokenType.ERROR, r'.')
+                      (TokenType.IDENTIFIER, pattern_identifier)
                      ]
 
         pattern = "|".join('(?P<type%d>%s)' % pair for pair in spec_split)
@@ -73,40 +103,93 @@ class LexerSpecification:
         self._skip_comments = skip_comments
         self._skip_whitespace = skip_whitespace
 
-    def match_prefix(self, buffer):
-        # TODO: Here we should call re.match with the automaton. We need to skip comments and whitespace and we
-        #       need to make sure that we are NOT stopped by the end of the given buffer string!
-        pass
+    def match_prefix(self, buffer, first=0):
+        """
+        Returns the longest valid token that is a prefix of the given buffer string.
+        :param buffer: A string object that represents a slice of a larger input stream.
+        :param first: The offset within the given buffer string at which matches should start.
+        :exception LexError: If no prefix of the given buffer string is a valid token, or if buffer_final is False
+                             and the longest valid prefix token ends at the end of the buffer.
+        :return: A tuple (first, t, s, first + len(s)),
+                 where first is the offset of the token inside the given buffer string,
+                 t is the TokenType of the token that was matched
+                 and s is the original input text that represents this token.
+        """
 
+        while True:
+            m = self._automaton.match(buffer, pos=first)
 
-# TODO: Lexer should use StringIO to buffer the input.
+            if m is None:
+                raise LexError(LexErrorReason.UNKNOWN)
+
+            ttype = TokenType(int(m.lastgroup[-1:]))
+            string = m.group()
+
+            if (self._skip_comments and ttype == TokenType.COMMENT) \
+            or (self._skip_whitespace and ttype == TokenType.WHITESPACE):
+                first += len(string)
+                continue
+
+            return first, ttype, string, first + len(string)
+
 
 class Lexer:
     """
-    Supports the parsing of tokens.
+    A lexer makes a sequence of characters available as a sequence of tokens, to be processed by a parser.
     """
 
     def __init__(self, spec, source):
-        self._separators = separators
-        self._lex = iter(lex(source, separators=separators))
+        """
+        Creates a new lexer.
+        :param spec: A LexerSpecification.
+        :param source:
+        """
+        self._spec = check_type(spec)
+        self._source = check_type(source, io.TextIOBase)
+        self._eos = False
+        self._buffer = io.StringIO()
+        self._buffer_offset = 0
+        self._buffer_length = 0
+        self._pos = 0
         self._peek = None
-
-    @property
-    def position(self):
-        """
-        The number of characters that have been consumed by this lexer so far, in order to read tokens.
-        """
-        return self.peek()[2]
 
     def peek(self):
         """
         Retrieves the token the lexer is currently seeing, without advancing to the next token.
-        :return: A pair (t, s) consisting of TokenType t and token text s, or None, if there are not more tokens in the
-        input.
+        :return: A pair (t, s) consisting of TokenType t and token text s. When the end of the input has been reached,
+                 this method returnes the token type EOS.
         """
         if self._peek is None:
-            self._peek = next(self._lex)
+
+            while True:
+                first, t, s, end = self._spec.match(self._buffer.getvalue(),
+                                                    self._buffer_offset,
+                                                    self._eos)
+
+                if end == self._buffer_length and not self._eos:
+                    if self._buffer_offset > 0:
+                        self._buffer = io.StringIO(self._buffer.getvalue()[self._buffer_offset:])
+                        self._buffer_offset = 0
+                    line = self._source.readline()
+                    if len(line) == 0:
+                        self._eos = True
+                    else:
+                        self._buffer.write(line)
+                        self._buffer_length += len(line)
+                else:
+                    break
+
+            self._peek = (t, s)
+
         return self._peek
+
+    @property
+    def eos(self):
+        """
+        Indicates if there are tokens left in the input to this lexer.
+        """
+        # Note that self._eos indicates whether the *source stream* ran out of *characters* !
+        return self.peek()[0] == TokenType.EOF
 
     def read(self):
         """
@@ -115,11 +198,13 @@ class Lexer:
         :return: A pair (t, s) consisting of TokenType t and token text s.
         """
         if self.eos:
-            raise StopIteration("No tokens left in the input!")
+            raise LexError(LexErrorReason.OUTOFTOKENS)
 
         t = self.peek()
         self._peek = None
         return t
+
+    # TODO: Continue the rewrite from here downwards:
 
     def match(self, p):
         """
@@ -154,17 +239,6 @@ class Lexer:
             return p(t)
         except ValueError:
             return False
-
-    def __iter__(self):
-        while not self.eos:
-            yield self.read()
-
-    @property
-    def eos(self):
-        """
-        Indicates if there are tokens left in the input to this lexer.
-        """
-        return self.peek()[0] == TokenType.EOF
 
 
 def expected(s=None, t=None):
