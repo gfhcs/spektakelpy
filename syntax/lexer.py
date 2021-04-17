@@ -1,7 +1,7 @@
 import io
 import re
 from enum import Enum
-
+from typing import NamedTuple
 from util import check_type
 
 
@@ -9,28 +9,52 @@ class LexErrorReason(Enum):
     """
     The reason for a lexer error.
     """
-    UNKNOWN = 0  # No exact reason for the error has been determined.
+    INVALIDINPUT = 0 # The next characters in the input stream are not matched by any lexical rule.
     OUTOFTOKENS = 1  # No tokens are left in the input.
+    UNEXPECTEDEOS = 2  # Unexpected end of input.
 
 
 class LexError(Exception):
     """
     An error that occured while lexing a string.
     """
-    def __init__(self, reason):
+    def __init__(self, reason, pos=None):
         """
         Instantiates a new LexError.
         :param reason: The reason for this error.
         """
 
-        msg = "Unknown"
+        if reason == LexErrorReason.INVALIDINPUT:
+            msg = "Cannot interpret the input as a token!"
+        elif reason == LexErrorReason.OUTOFTOKENS:
+            msg = "No tokens are left in the input stream!"
+        elif reason == LexErrorReason.UNEXPECTEDEOS:
+            msg = "Unexpected end of input!"
+        else:
+            raise NotImplementedError("No exception message has been defined for {}!".format(reason))
+
+        if pos is not None:
+            msg = "Line {}, column {}: ".format(pos.line, pos.column) + msg
 
         super().__init__(msg)
 
         self._reason = reason
+        self._pos = pos
 
     @property
     def reason(self):
+        """
+        The reason for this error.
+        :return: A LexErrorReason.
+        """
+        return self._reason
+
+    @property
+    def position(self):
+        """
+        The position in the lexer input stream at which this error occurred.
+        :return: A TokenPosition object.
+        """
         return self._reason
 
 
@@ -44,6 +68,7 @@ class TokenType(Enum):
     LITERAL = 3
     WHITESPACE = 4
     EOS = 5
+    BROKEN_STRING = 6
 
 
 class LexerSpecification:
@@ -90,7 +115,8 @@ class LexerSpecification:
         spec_split = [(TokenType.EOS, r'$'),  # Match the end of the input.
                       (TokenType.COMMENT, re.escape('#') + r'[^\n]*\n'),
                       (TokenType.WHITESPACE, r'\s+'),  # Any white space sequence.
-                      (TokenType.LITERAL, r'(\d+(\.\d*)?)|".+"'),  # integer, decimal, or string.
+                      (TokenType.LITERAL, r'(\d+(\.\d*)?)|"([^"\\](\\("|t|n|\\))?)*"'),  # integer, decimal, or string.
+                      (TokenType.BROKEN_STRING, r'"([^"\\](\\("|t|n|\\))?)*$'),
                       (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
                                                                             kw=pattern_keyword,
                                                                             nocont=r'(?!\w)')),
@@ -108,19 +134,19 @@ class LexerSpecification:
         Returns the longest valid token that is a prefix of the given buffer string.
         :param buffer: A string object that represents a slice of a larger input stream.
         :param first: The offset within the given buffer string at which matches should start.
-        :exception LexError: If no prefix of the given buffer string is a valid token, or if buffer_final is False
-                             and the longest valid prefix token ends at the end of the buffer.
         :return: A tuple (first, t, s, first + len(s)),
                  where first is the offset of the token inside the given buffer string,
                  t is the TokenType of the token that was matched
                  and s is the original input text that represents this token.
+                 If no token could be processed (possibly ignoring white space and comments), the tuple
+                 first, None, None, first is returned.
         """
 
         while True:
             m = self._automaton.match(buffer, pos=first)
 
             if m is None:
-                raise LexError(LexErrorReason.UNKNOWN)
+                return first, None, None, first
 
             ttype = TokenType(int(m.lastgroup[-1:]))
             string = m.group()
@@ -131,6 +157,12 @@ class LexerSpecification:
                 continue
 
             return first, ttype, string, first + len(string)
+
+
+class TokenPosition(NamedTuple):
+    offset: int
+    line: int
+    column: int
 
 
 class Lexer:
@@ -146,40 +178,75 @@ class Lexer:
         """
         self._spec = check_type(spec)
         self._source = check_type(source, io.TextIOBase)
-        self._eos = False
+        self._i = self._source.tell()
         self._buffer = io.StringIO()
-        self._buffer_offset = 0
+        self._j = 0
+        self._remaining_line_lengths = []
         self._buffer_length = 0
-        self._pos = 0
+        self._line = 0
+        self._column = 0
         self._peek = None
+
+    def _advance_pos(self, delta):
+        self._j += delta
+
+        while delta > 0:
+            lr = self._remaining_line_lengths[0]
+
+            if lr <= delta:
+                self._remaining_line_lengths.pop(0)
+                delta -= lr
+                self._line += 0
+                self._column = 0
+            else:
+                self._remaining_line_lengths[0] -= delta
+                self._column += delta
+                delta = 0
 
     def peek(self):
         """
         Retrieves the token the lexer is currently seeing, without advancing to the next token.
-        :return: A pair (t, s) consisting of TokenType t and token text s. When the end of the input has been reached,
-                 this method returnes the token type EOS.
+        :exception LexError: If the input does not allow to retrieve another token.
+        :return: A triple (t, s, p) consisting of TokenType t, token text s and token position p.
+                 The final token in any error-free input is EOS. After this token has been consumed, this method
+                 raises a LexError.
         """
         if self._peek is None:
 
             while True:
-                first, t, s, end = self._spec.match(self._buffer.getvalue(),
-                                                    self._buffer_offset,
-                                                    self._eos)
 
-                if end == self._buffer_length and not self._eos:
-                    if self._buffer_offset > 0:
-                        self._buffer = io.StringIO(self._buffer.getvalue()[self._buffer_offset:])
-                        self._buffer_offset = 0
+                if self._buffer is None:
+                    raise LexError(LexErrorReason.OUTOFTOKENS, self._i + self._j, self._line, self._column)
+
+                first, t, s, end = self._spec.match(self._buffer.getvalue(), self._j)
+                self._advance_pos(first - self._j)
+
+                if t is None:
+                    raise LexError(LexErrorReason.INVALIDINPUT,
+                                   TokenPosition(self._i + self._j, self._line, self._column))
+                elif end == self._buffer_length and self._source is not None:
+                    if self._j > 0:
+                        self._buffer = io.StringIO(self._buffer.getvalue()[self._j:])
+                        self._i += self._j
+                        self._buffer_length -= self._j
+                        self._j = 0
                     line = self._source.readline()
                     if len(line) == 0:
-                        self._eos = True
+                        self._source = None
                     else:
                         self._buffer.write(line)
                         self._buffer_length += len(line)
+                        self._remaining_line_lengths.append(len(line))
                 else:
-                    break
-
-            self._peek = (t, s)
+                    pos = TokenPosition(self._i + self._j, self._line, self._column)
+                    if t in (TokenType.BROKEN_STRING, ):
+                        raise LexError(LexErrorReason.UNEXPECTEDEOS, pos)
+                    else:
+                        self._peek = (t, s, pos)
+                        self._advance_pos(end - self._j)
+                        if t == TokenType.EOS:
+                            self._buffer = None
+                        break
 
         return self._peek
 
