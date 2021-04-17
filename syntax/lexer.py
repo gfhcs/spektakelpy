@@ -9,9 +9,10 @@ class LexErrorReason(Enum):
     """
     The reason for a lexer error.
     """
-    INVALIDINPUT = 0 # The next characters in the input stream are not matched by any lexical rule.
+    INVALIDINPUT = 0  # The next characters in the input stream are not matched by any lexical rule.
     OUTOFTOKENS = 1  # No tokens are left in the input.
     UNEXPECTEDEOS = 2  # Unexpected end of input.
+    UNEXPECTEDTOKEN = 3  # Unexpected token type.
 
 
 class LexError(Exception):
@@ -30,6 +31,8 @@ class LexError(Exception):
             msg = "No tokens are left in the input stream!"
         elif reason == LexErrorReason.UNEXPECTEDEOS:
             msg = "Unexpected end of input!"
+        elif reason == LexErrorReason.UNEXPECTEDTOKEN:
+            msg = "Unexpected token!"
         else:
             raise NotImplementedError("No exception message has been defined for {}!".format(reason))
 
@@ -253,59 +256,30 @@ class Lexer:
     @property
     def eos(self):
         """
-        Indicates if there are tokens left in the input to this lexer.
+        Indicates if the lexer has reached the end of the token stream.
         """
-        # Note that self._eos indicates whether the *source stream* ran out of *characters* !
-        return self.peek()[0] == TokenType.EOF
+        return self._buffer is None
 
     def read(self):
         """
         Retrieves the token the lexer is currently seeing, and advances to the next token.
-        :exception StopIteration: If there are no more tokens left in the input.
-        :return: A pair (t, s) consisting of TokenType t and token text s.
+        :return: A tuple as returned by Lexer.peek.
         """
-        if self.eos:
-            raise LexError(LexErrorReason.OUTOFTOKENS)
-
         t = self.peek()
         self._peek = None
         return t
-
-    # TODO: Continue the rewrite from here downwards:
 
     def match(self, p):
         """
         Asserts that the token the lexer is currently seeing satisfies the given predicate, retrieves it and
         advances to the next token.
-        :param p: The predicate to be satisfied by the token to be retrieved. It may raise a ValueError instead of
-                  returning False.
-        :exception StopIteration: If there are no more tokens left in the input.
-        :exception ValueError: If the token to be retrieved does not satisfy the given predicate.
-        :return: A pair (t, s) consisting of TokenType t and token text s.
+        :param p: The predicate to be satisfied by the token to be retrieved.
+        :exception LexError: If the lexer is not seeing a satisfying token.
+        :return: A tuple as returned by Lexer.peek.
         """
-        if self.eos:
-            raise StopIteration("No tokens left in the input!")
-
-        t = self.peek()
-        if not p(t):
-            raise ValueError("Encountered an unexpected token!")
+        if not p(self.peek()):
+            raise LexError(LexErrorReason.UNEXPECTEDTOKEN, TokenPosition(self._i + self._j, self._line, self._column))
         return self.read()
-
-    def seeing(self, p):
-        """
-        Decides whether the token the lexer is currently seeing satisfies the given predicate.
-        :param p: The predicate to be satisfied.
-        :exception StopIteration: If there are no more tokens left in the input.
-        :return: A boolean value.
-        """
-        if self.eos:
-            raise StopIteration("No tokens left in the input!")
-
-        t = self.peek()
-        try:
-            return p(t)
-        except ValueError:
-            return False
 
 
 def expected(s=None, t=None):
@@ -313,16 +287,11 @@ def expected(s=None, t=None):
     Constructs a predicate asserting that a given token has the specified type and text.
     :param t: The expected TokenType.
     :param s: The expected text of the token.
-    :return: A pair (p, msg) consisting of a procedure p that maps tokens to boolean values and a message msg that
-             can be used to indicate that the predicate was not met.
+    :return: A predicate procedure.
     """
     def p(f):
         ft, fs, _ = f
-        if not ((t is None or ft == t) and (s is None or fs == s)):
-            raise ValueError("Expected ({et}, {es}), but encountered ({ft}, '{fs}')"
-                               .format(es="'" + s + "'" if s is not None else "*",
-                                       et=t if t is not None else "*", fs=fs, ft=ft))
-        return True
+        return (t is None or ft == t) and (s is None or fs == s)
 
     return p
 
@@ -331,8 +300,7 @@ def keyword(s=None):
     """
     Constructs a predicate asserting that a given token is the expected keyword.
     :param s: The expected text of the token.
-    :return: A pair (p, msg) consisting of a procedure p that maps tokens to boolean values and a message msg that
-             can be used to indicate that the predicate was not met.
+    :return: A predicate procedure.
     """
     return expected(t=TokenType.KEYWORD, s=s)
 
@@ -341,8 +309,7 @@ def identifier(s=None):
     """
     Constructs a predicate asserting that a given token is an identifier.
     :param s: The expected text of the token.
-    :return: A pair (p, msg) consisting of a procedure p that maps tokens to boolean values and a message msg that
-             can be used to indicate that the predicate was not met.
+    :return: A predicate procedure.
     """
     return expected(t=TokenType.IDENTIFIER, s=s)
 
@@ -350,7 +317,6 @@ def identifier(s=None):
 def literal():
     """
     Constructs a predicate asserting that a given token is a literal.
-    :return: A pair (p, msg) consisting of a procedure p that maps tokens to boolean values and a message msg that
-             can be used to indicate that the predicate was not met.
+    :return: A predicate procedure.
     """
     return expected(t=TokenType.LITERAL)
