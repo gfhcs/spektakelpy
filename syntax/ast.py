@@ -45,7 +45,6 @@ class Node:
         return self._children
 
 
-
 class Expression(Node, abc.ABC):
     """
     A syntactic object that can be evaluated to obtain a value.
@@ -203,7 +202,83 @@ class Call(Expression):
         return self.children[1:]
 
 
-class ComparisonType(Enum):
+class UnaryOperator(Enum):
+    """
+    A unary operator.
+    """
+    MINUS = 0
+    NOT = 0
+
+
+class UnaryOperation(Expression, abc.ABC):
+    """
+    An operation with one operand.
+    """
+
+    def __init__(self, op, arg, **kwargs):
+        """
+        Creates a new unary operation.
+        :param op: The operator for this operation.
+        :param left: The operand expression.
+        :param kwargs: See Expression constructor.
+        """
+        super().__init__(check_type(arg, Expression), **kwargs)
+        self._op = check_type(op, Enum)
+
+    @property
+    def operand(self):
+        """
+        The operand expression.
+        """
+        return self.children[0]
+
+    @property
+    def operator(self):
+        """
+        The operator of this operation.
+        """
+        return self._op
+
+
+class BinaryOperation(Expression):
+    """
+    An operation with two operands.
+    """
+
+    def __init__(self, op, left, right, **kwargs):
+        """
+        Creates a new binary operation.
+        :param op: The operator for this operation.
+        :param left: The left operand expression.
+        :param right: The right operand expression.
+        :param kwargs: See Expression constructor.
+        """
+        super().__init__(check_type(left, Expression), check_type(right, Expression), **kwargs)
+        self._op = check_type(op, Enum)
+
+    @property
+    def left(self):
+        """
+        The left operand expression.
+        """
+        return self.children[0]
+
+    @property
+    def right(self):
+        """
+        The right operand expression.
+        """
+        return self.children[1]
+
+    @property
+    def operator(self):
+        """
+        The operator of this operation.
+        """
+        return self._op
+
+
+class ComparisonOperator(Enum):
     """
     Specifies a type of comparison.
     """
@@ -217,7 +292,7 @@ class ComparisonType(Enum):
     NOTIN = 7
 
 
-class Compare(Expression):
+class Comparison(BinaryOperation):
     """
     An expression comparing two values.
     """
@@ -230,26 +305,56 @@ class Compare(Expression):
         :param right: The right hand side of the comparison.
         :param kwargs: See Expression constructor.
         """
-        super().__init__(check_type(left, Expression), check_type(right, Expression), **kwargs)
-        self._op = check_type(op, ComparisonType)
+        super().__init__(check_type(op, ComparisonOperator), left, right, **kwargs)
 
-    @property
-    def left(self):
-        """
-        The left hand side of the comparison.
-        """
-        return self.children[0]
 
-    @property
-    def right(self):
-        """
-        The right hand side of the comparison.
-        """
-        return self.children[1]
+class BooleanBinaryOperator(Enum):
+    """
+    A binary boolean operator.
+    """
+    AND = 0
+    OR = 1
 
-    @property
-    def operator(self):
+
+class BooleanBinaryOperation(BinaryOperation):
+    """
+    A binary boolean operation.
+    """
+    def __init__(self, op, left, right, **kwargs):
         """
-        The comparison operator for this comparison.
+        Creates a new binary boolean operation.
+        :param op: The binary boolean operator for this operation.
+        :param left: See BinaryOperation constructor.
+        :param right: See BinaryOperation constructor.
+        :param kwargs: See BinaryOperation constructor.
         """
-        return self._op
+        super().__init__(check_type(op, BooleanBinaryOperator), left, right, **kwargs)
+
+
+class ArithmeticBinaryOperator(Enum):
+    """
+    An binary arithmetic operator.
+    """
+    PLUS = 0
+    MINUS = 1
+    TIMES = 2
+    OVER = 3
+    MODULO = 4
+    POWER = 5
+    INTOVER = 6
+
+
+class ArithmeticBinaryOperation(BinaryOperation):
+    """
+    A binary arithmetic operation.
+    """
+    def __init__(self, op, left, right, **kwargs):
+        """
+        Creates a new binary arithmetic operation.
+        :param op: The binary arithmetic operator for this operation.
+        :param left: See BinaryOperation constructor.
+        :param right: See BinaryOperation constructor.
+        :param kwargs: See BinaryOperation constructor.
+        """
+        super().__init__(check_type(op, ArithmeticBinaryOperator), left, right, **kwargs)
+
