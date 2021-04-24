@@ -3,7 +3,6 @@
 from tkinter import *
 
 from alpha import presentation
-from alpha import behavior
 
 if __name__ == '__main__':
 
@@ -12,30 +11,37 @@ if __name__ == '__main__':
     hello = canvas.add(presentation.Text("Hello", cx=0.5, cy=0.25, visible=False))
     world = canvas.add(presentation.Text("World", cx=0.5, cy=0.75, visible=False))
 
+    appear_soft = """
+        offer appear;
+        appear;
+        for _ in range(params.framerate):
+            wait 1 / params.framerate;
+            self.alpha += 0.1;
+    """
+
+    hello.behavior += appear_soft
+    world.behavior += appear_soft
+
     canvas.behavior = """
-        def appear_soft(widget):
-            def a(widget):
-                for _ in range(params.framerate):
-                    after(1 / params.framerate)
-                    widget.alpha += 0.1
-            spawn(a(widget))
+        offer forward
             
         def unfold():
-            ?forward
-            appear_soft(hello)
-            ?forward
-            appear_soft(world)
+            forward;            
+            hello.appear;
+            forward;
+            world.appear;
             
         def bounce():
             delta = 0.01
             while True:
                 for _ in range(10):
-                    after(0.1)
+                    wait 0.1
                     hello.cy += delta
                     world.cy += delta
                 delta = - delta   
                 
-        unfold() | bounce()             
+        process unfold();
+        process bounce();         
     """
 
     # canvas = presentation.flatten(canvas)
