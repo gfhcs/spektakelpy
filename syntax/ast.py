@@ -358,3 +358,271 @@ class ArithmeticBinaryOperation(BinaryOperation):
         """
         super().__init__(check_type(op, ArithmeticBinaryOperator), left, right, **kwargs)
 
+
+class Statement(Node, abc.ABC):
+    """
+    A control flow step, i.e. an object the execution of which changes modifies the control flow state.
+    """
+    pass
+
+
+class ExpressionStatement(Statement):
+    """
+    A statement that consists in evaluating an expression.
+    """
+    def __init__(self, expression, **kwargs):
+        """
+        Creates a new expression statement.
+        :param expression: The expression to be evaluated in this statement.
+        :param kwargs: See Statement constructor.
+        """
+        super().__init__(expression, **kwargs)
+
+    @property
+    def expression(self):
+        """
+        The expression to be evaluated in this statement.
+        """
+        return self.children[0]
+
+
+class Assignment(Statement):
+    """
+    An assignment.
+    """
+
+    def __init__(self, target, value, **kwargs):
+        """
+        Creates a new assignment.
+        :param target: An assignable expression.
+        :param value: The expression the value of which is to be assigned.
+        :param kwargs: See Statement constructor.
+        """
+        super().__init__(check_type(target, AssignableExpression), check_type(value, Expression), **kwargs)
+
+    @property
+    def target(self):
+        """
+        An assignable expression.
+        """
+        return self.children[0]
+
+    @property
+    def value(self):
+        """
+        The expression the value of which is to be assigned.
+        """
+        return self.children[1]
+
+
+class Update(Statement):
+    """
+    A set of parallel assignments.
+    """
+
+    def __init__(self, assignments, **kwargs):
+        """
+        Creates a new update.
+        :param assignments: The assignments that comprise this update.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(*assignments, **kwargs)
+
+    def __iter__(self):
+        return iter(self.children)
+
+    def __len__(self):
+        return len(self.children)
+
+
+class ActionStatement(Statement):
+    """
+    A statement that is decorated with an action label.
+    """
+
+    def __init__(self, action_identifier, statement, **kwargs):
+        """
+        Creates a action-decorated statement.
+        :param action: The action label decorating this statement.
+        :param statement: The statement that is decorated.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(check_type(action_identifier, Identifier), check_type(statement, Statement), **kwargs)
+
+    @property
+    def action_identifier(self):
+        """
+        The action label decorating this statement.
+        """
+        return self.children[0]
+
+    @property
+    def statement(self):
+        """
+        The statement that is decorated.
+        """
+        return self.children[1]
+
+
+class Block(Statement):
+    """
+    A sequence of statements that are to be executed one after another.
+    """
+
+    def __init__(self, statements, **kwargs):
+        """
+        Creates a new block statement.
+        :param statements: The statements in this block.
+        :param kwargs: See Statement constructor.
+        """
+        super().__init__(*(check_type(s, Statement) for s in statements), **kwargs)
+
+
+class Return(Statement):
+    """
+    A jump back to the call site of the currently executed function.
+    """
+
+    def __init__(self, value, **kwargs):
+        """
+        Creates a new return statement.
+        :param value: The expression computing the value that is to be returned.
+        :param kwargs: See Statement constructor.
+        """
+        super().__init__(check_type(value, Expression), **kwargs)
+
+
+class AtomicStatement(Statement, abc.ABC):
+    """
+    A statement that does not have any children.
+    """
+    def __init__(self, **kwargs):
+        """
+        Creates a new atomic statement.
+        :param kwargs: See Statement constructor.
+        """
+        super().__init__(**kwargs)
+
+
+class Break(AtomicStatement):
+    """
+    A statement that jumps out of a loop.
+    """
+    pass
+
+
+class Continue(AtomicStatement):
+    """
+    A statement that jumps to the end of a loop body.
+    """
+    pass
+
+
+class Select(Statement):
+    """
+    A statement composed of several nondeterministic alternatives.
+    """
+
+    def __init__(self, alternatives, **kwargs):
+        """
+        Creates Select statement.
+        :param alternatives: The nondeterministic alternatives composed in this statement.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(*(check_type(a, Statement) for a in alternatives), **kwargs)
+
+
+class When(Statement):
+    """
+    A statement that is only enabled if a 'guard' expression evaluates to true.
+    """
+
+    def __init__(self, guard, statement, **kwargs):
+        """
+        Creates a new guarded statement.
+        :param guard: The expression that needs to evaluate to True for this statement to be enabled.
+        :param statement: The statement that is guarded.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(check_type(guard, Expression), check_type(statement, Statement), **kwargs)
+
+    @property
+    def guard(self):
+        """
+        The expression that needs to evaluate to True for this statement to be enabled.
+        """
+        return self.children[0]
+
+    @property
+    def statement(self):
+        """
+        The statement that is guarded.
+        """
+        return self.children[1]
+
+
+class While(Statement):
+    """
+    A while loop.
+    """
+
+    def __init__(self, condition, body, **kwargs):
+        """
+        Creates a new while loop.
+        :param guard: The loop condition.
+        :param body: The loop body.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(check_type(condition, Expression), check_type(body, Statement), **kwargs)
+
+    @property
+    def condition(self):
+        """
+        The loop condition.
+        """
+        return self.children[0]
+
+    @property
+    def body(self):
+        """
+        The loop body.
+        """
+        return self.children[1]
+
+
+class ProcedureDefinition(Statement):
+    """
+    A statement defining a procedure.
+    """
+
+    def __init__(self, name, argnames, body, **kwargs):
+        """
+        Creates a procedure definition.
+        :param name: The name of the procedure to be defined.
+        :param argnames: The names of the arguments of the procedure to be defined.
+        :param body: The body of the procedure.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(check_type(name, Identifier), *(check_type(n, Identifier) for n in argnames),
+                         check_type(body, Statement), **kwargs)
+
+    @property
+    def name(self):
+        """
+        The name of the procedure being defined.
+        """
+        return self.children[0]
+
+    @property
+    def argnames(self):
+        """
+        The names of the arguments of the procedure to be defined.
+        """
+        return self.children[1:-1]
+
+    @property
+    def body(self):
+        """
+        The body of the procedure being defined.
+        """
+        return self.children[-1]
