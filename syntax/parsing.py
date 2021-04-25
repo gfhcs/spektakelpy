@@ -1,5 +1,38 @@
 import abc
 from .ast import *
+from .lexer import TokenType, keyword, identifier
+from .types import String, Float, Int
+
+ID = TokenType.IDENTIFIER
+KW = TokenType.KEYWORD
+LT = TokenType.LITERAL
+
+
+class ParserError(Exception):
+    """
+    A failure to parse a token stream.
+    """
+
+    def __init__(self, msg, pos=None):
+        """
+        Instantiates a new LexError.
+        :param msg: The message for this error.
+        :param pos: The position in the input stream at which this error was encountered.
+        """
+
+        if pos is not None:
+            msg = "Line {}, column {}: ".format(pos.line, pos.column) + msg
+
+        super().__init__(msg)
+        self._pos = pos
+
+    @property
+    def position(self):
+        """
+        The position in the lexer input stream at which this error occurred.
+        :return: A TokenPosition object.
+        """
+        return self._pos
 
 
 class Parser(abc.ABC):
@@ -7,9 +40,9 @@ class Parser(abc.ABC):
     A parser turns sequences of tokens into abstract syntax trees.
     """
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def parse_expression(self, lexer):
+    def parse_expression(cls, lexer):
         """
         Parses the AST of an expression.
         :param lexer: The lexer to consume tokens from.
@@ -17,9 +50,9 @@ class Parser(abc.ABC):
         """
         pass
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def parse_process(self, lexer):
+    def parse_process(cls, lexer):
         """
         Parses the AST of a process.
         :param lexer: The lexer to consume tokens from.
@@ -33,105 +66,203 @@ class SpektakelLangParser(Parser):
     A parser for the spektakelpy default language.
     """
 
-    @staticmethod
-    def _parse_simple_expression(lexer):
-        # Either constant, or name, or parenthesized, or tuple, or call.
-        pass
+    @classmethod
+    def _parse_simple_expression(cls, lexer):
+        """
+        Parses a "simple expression", i.e. either an identifier, a literal, a parenthesized expression,
+        or a tuple expression.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        t, s, p = lexer.peek()[0]
+        if t == ID:
+            lexer.read()
+            return Identifier(s, start=p, end=lexer.position)
+        elif t == LT:
+            lexer.read()
+            if s.startswith("\""):
+                value = String(s[1:-1])
+            else:
+                try:
+                    value = Int(s)
+                except TypeError:
+                    value = Float(s)
+            return Constant(value, start=p, end=lexer.position)
+        elif t == KW and s == "(":
+            lexer.read()
+            components = []
+            is_tuple = False
+            while True:
+                components.append(cls.parse_expression(lexer))
+                if lexer.seeing(keyword(",")):
+                    is_tuple = True
+                    lexer.read()
+                if lexer.seeing(keyword(")")):
+                    if is_tuple:
+                        lexer.read()
+                        return Tuple(*components, start=p, end=lexer.position)
+                    else:
+                        assert len(components) == 1
+                        return components[0]
 
-    @staticmethod
-    def _parse_attribute(lexer):
-        # Attribute
-        pass
+        raise ParserError("Expected an expression!", lexer.position)
 
-    @staticmethod
-    def _parse_pow(lexer):
+    @classmethod
+    def _parse_application(cls, lexer):
+        """
+        Parses either an attribute retrieval, a projection, or a call, or a "simple" expression.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        e = cls._parse_simple_expression(lexer)
+        t, s, p = lexer.peek()
 
-    @staticmethod
-    def _parse_projection(lexer):
-        # Projection or simple
-        pass
+        while True:
+            if t == KW and s == ".":
+                lexer.read()
+                _, name, _ = lexer.match(identifier())
+                e = Attribute(e, name, start=e.start, end=lexer.position)
+            elif t == KW and s == "[":
+                lexer.read()
+                index = cls.parse_expression(lexer)
+                lexer.match(keyword("]"))
+                e = Projection(e, index, start=e.start, end=lexer.position)
+            elif t == KW and s == "(":
+                lexer.read()
+                args = []
+                require_comma = False
+                while True:
+                    if lexer.seeing(keyword(")")):
+                        lexer.read()
+                        break
+                    if require_comma:
+                        lexer.match(keyword(","))
+                    args.append(cls.parse_expression(lexer))
+                    require_comma = True
 
-    @staticmethod
-    def _parse_unary(lexer):
-        # only unary minus!
-        pass
+                e = Call(e, *args, start=e.start, end=lexer.position)
+            else:
+                return e
 
-    @staticmethod
-    def _parse_mult(lexer):
+            t, s, p = lexer.peek()
+
+    @classmethod
+    def _parse_pow(cls, lexer):
+        """
+        Parses either an exponentiation, or behaves like _parse_application.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        base = cls._parse_application(lexer)
+        t, s, p = lexer.peek()
+
+        while t == KW and s == "**":
+            lexer.read()
+            e = cls._parse_application(lexer)
+            base = BinaryOperation(ArithmeticBinaryOperator.POWER, base, e, start=base.start, end=lexer.position)
+
+        return base
+
+    @classmethod
+    def _parse_unary(cls, lexer):
+        """
+        Either parses a unary minus expression or behaves like _parse_pow.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+
+        positive = True
+        while lexer.seeing(keyword("-")):
+            lexer.read()
+            positive = not positive
+
+        e = cls._parse_pow(lexer)
+
+        if positive:
+            return e
+        else:
+            return UnaryOperation(UnaryOperator.MINUS, e, start=e.start, end=lexer.position)
+
+    @classmethod
+    def _parse_mult(cls, lexer):
         # multiplication, division, modulo.
         pass
 
-    @staticmethod
-    def _parse_add(lexer):
+    @classmethod
+    def _parse_add(cls, lexer):
         # addition, subtraction
         pass
 
-    @staticmethod
-    def _parse_comparison(lexer):
+    @classmethod
+    def _parse_comparison(cls, lexer):
         # Comparison
         pass
 
-    @staticmethod
-    def _parse_not(lexer):
+    @classmethod
+    def _parse_not(cls, lexer):
         # boolean not.
         pass
 
-    @staticmethod
-    def _parse_and(lexer):
+    @classmethod
+    def _parse_and(cls, lexer):
         # boolean and.
         pass
 
-    @staticmethod
-    def _parse_or(lexer):
-        # boolean and.
+    @classmethod
+    def _parse_or(cls, lexer):
+        # boolean or.
         pass
 
+    @classmethod
+    def parse_expression(cls, lexer):
+        return cls._parse_or(lexer)
 
-    @staticmethod
-    def parse_expression(lexer):
-        pass
+    @classmethod
+    def _parse_expression_statement(cls, lexer):
+        e = cls.parse_expression(lexer)
+        if lexer.seeing(keyword(",")):
+            return e
+        else:
+            lexer.match(keyword(";"))
+            return ExpressionStatement(e, start=e.start, end=lexer.position)
 
-    @staticmethod
-    def _parse_expression_statement(lexer):
-        pass
-
-    @staticmethod
-    def _parse_jump(lexer):
+    @classmethod
+    def _parse_jump(cls, lexer):
         # return, break or continue.
         pass
 
-    @staticmethod
-    def _parse_assignment(lexer):
+    @classmethod
+    def _parse_assignment(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_update(lexer):
+    @classmethod
+    def _parse_update(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_block(lexer):
+    @classmethod
+    def _parse_block(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_action_statement(lexer):
+    @classmethod
+    def _parse_action_statement(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_when(lexer):
+    @classmethod
+    def _parse_when(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_select(lexer):
+    @classmethod
+    def _parse_select(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_while(lexer):
+    @classmethod
+    def _parse_while(cls, lexer):
         pass
 
-    @staticmethod
-    def _parse_procdef(lexer):
+    @classmethod
+    def _parse_procdef(cls, lexer):
         pass
 
-    @staticmethod
-    def parse_process(self, lexer):
+    @classmethod
+    def parse_process(cls, lexer):
         pass

@@ -58,7 +58,7 @@ class LexError(Exception):
         The position in the lexer input stream at which this error occurred.
         :return: A TokenPosition object.
         """
-        return self._reason
+        return self._pos
 
 
 class TokenType(Enum):
@@ -280,6 +280,16 @@ class Lexer:
         if not p(self.peek()):
             raise LexError(LexErrorReason.UNEXPECTEDTOKEN, TokenPosition(self._i + self._j, self._line, self._column))
         return self.read()
+
+    def seeing(self, p):
+        """
+        Decides if the current token the lexer is facing satisfies the given predicate.
+        The token is not consumed.
+        :param p: The predicate to be satisfied.
+        :exception LexError: If the lexer is not seeing a valid token.
+        :return: A boolean value.
+        """
+        return p(self.peek())
 
 
 def expected(s=None, t=None):

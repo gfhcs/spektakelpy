@@ -165,7 +165,7 @@ class Attribute(AssignableExpression):
         :param kwargs: See AssigneableExpression constructor.
         """
         super().__init__(check_type(value, Expression), **kwargs)
-        self._identifier = check_type(identifier, str)
+        self._identifier = check_type(identifier, Identifier)
 
     @property
     def name(self):
@@ -179,19 +179,19 @@ class Call(Expression):
     """
     A call to a procedure.
     """
-    def __init__(self, identifier, *args, **kwargs):
+    def __init__(self, callee, *args, **kwargs):
         """
         Creates procedure call.
-        :param identifier: The expression representing the procedure to be called.
+        :param callee: The expression representing the procedure to be called.
         :param args: The expressions representing the arguments to the call.
         :param kwargs: See AssigneableExpression constructor.
         """
-        super().__init__(check_type(identifier, str), *(check_type(a, Expression) for a in args), **kwargs)
+        super().__init__(check_type(callee, Expression), *(check_type(a, Expression) for a in args), **kwargs)
 
     @property
-    def identifier(self):
+    def callee(self):
         """
-        The name of the procedure that is called.
+        The procedure that is called.
         """
         return self.children[0]
 
