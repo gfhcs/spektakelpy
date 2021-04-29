@@ -185,33 +185,140 @@ class SpektakelLangParser(Parser):
 
     @classmethod
     def _parse_mult(cls, lexer):
-        # multiplication, division, modulo.
-        pass
+        """
+        Either parses a multiplicative expression (*, /, //, %) or behaves like _parse_unary.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        base = cls._parse_unary(lexer)
+
+        t, s, p = lexer.peek()
+
+        cs = {(KW, "*"): ArithmeticBinaryOperator.TIMES,
+              (KW, "/"): ArithmeticBinaryOperator.OVER,
+              (KW, "//"): ArithmeticBinaryOperator.INTOVER,
+              (KW, "%"): ArithmeticBinaryOperator.MODULO}
+
+        while True:
+            try:
+                op = cs[(t, s)]
+            except KeyError:
+                return base
+            lexer.read()
+            right = cls._parse_unary(lexer)
+            base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=lexer.position)
 
     @classmethod
     def _parse_add(cls, lexer):
-        # addition, subtraction
-        pass
+        """
+        Either parses a sum expression (+, -) or behaves like _parse_mult.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        base = cls._parse_mult(lexer)
+
+        t, s, p = lexer.peek()
+
+        cs = {(KW, "+"): ArithmeticBinaryOperator.PLUS,
+              (KW, "-"): ArithmeticBinaryOperator.MINUS}
+
+        while True:
+            try:
+                op = cs[(t, s)]
+            except KeyError:
+                return base
+            lexer.read()
+            right = cls._parse_mult(lexer)
+            base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=lexer.position)
 
     @classmethod
     def _parse_comparison(cls, lexer):
-        # Comparison
-        pass
+        """
+        Either parses a comparison expression or behaves like _parse_add.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        base = cls._parse_add(lexer)
+
+        t, s, p = lexer.peek()
+
+        cs = {(KW, "in"): ComparisonOperator.IN,
+              (KW, ">"): ComparisonOperator.GREATER,
+              (KW, "=="): ComparisonOperator.EQ,
+              (KW, ">="): ComparisonOperator.GREATEROREQUAL,
+              (KW, "<"): ComparisonOperator.LESS,
+              (KW, "<="): ComparisonOperator.LESSOREQUAL,
+              (KW, "!="): ComparisonOperator.NEQ}
+
+        while True:
+            try:
+                op = cs[(t, s)]
+                lexer.read()
+            except KeyError:
+                if t == KW and s == "not":
+                    lexer.read()
+                    lexer.match(keyword("in"))
+                    op = ComparisonOperator.NOTIN
+                else:
+                    return base
+            right = cls._parse_add(lexer)
+            base = Comparison(op, base, right, start=base.start, end=lexer.position)
 
     @classmethod
     def _parse_not(cls, lexer):
-        # boolean not.
-        pass
+        """
+        Either parses a boolean NOT expression or behaves like _parse_comparison.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+
+        positive = True
+        while lexer.seeing(keyword("not")):
+            lexer.read()
+            positive = not positive
+
+        e = cls._parse_comparison(lexer)
+
+        if positive:
+            return e
+        else:
+            return UnaryOperation(UnaryOperator.NOT, e, start=e.start, end=lexer.position)
 
     @classmethod
     def _parse_and(cls, lexer):
-        # boolean and.
-        pass
+        """
+        Either parses a boolean AND expression or behaves like _parse_not.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        base = cls._parse_not(lexer)
+
+        t, s, p = lexer.peek()
+
+        while t == KW and s == "and":
+            lexer.read()
+            right = cls._parse_not(lexer)
+            base = BooleanBinaryOperation(BooleanBinaryOperator.AND, base, right, start=base.start, end=lexer.position)
+
+        return base
 
     @classmethod
     def _parse_or(cls, lexer):
-        # boolean or.
-        pass
+        """
+        Either parses a boolean OR expression or behaves like _parse_and.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        base = cls._parse_and(lexer)
+
+        t, s, p = lexer.peek()
+
+        while t == KW and s == "or":
+            lexer.read()
+            right = cls._parse_and(lexer)
+            base = BooleanBinaryOperation(BooleanBinaryOperator.OR, base, right, start=base.start, end=lexer.position)
+
+        return base
 
     @classmethod
     def parse_expression(cls, lexer):
