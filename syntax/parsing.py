@@ -433,7 +433,7 @@ class SpektakelLangParser(Parser):
         _, _, start = lexer.match(keyword("{"))
         statements = cls._parse_statements(lexer, keyword("}"))
         lexer.match(keyword("}"))
-        return Block(ss, start=start, end=lexer.position)
+        return Block(statements, start=start, end=lexer.position)
 
     @classmethod
     def _parse_when(cls, lexer):
