@@ -415,26 +415,6 @@ class Assignment(Statement):
         return self.children[1]
 
 
-class Update(Statement):
-    """
-    A set of parallel assignments.
-    """
-
-    def __init__(self, assignments, **kwargs):
-        """
-        Creates a new update.
-        :param assignments: The assignments that comprise this update.
-        :param kwargs: See statement constructor.
-        """
-        super().__init__(*assignments, **kwargs)
-
-    def __iter__(self):
-        return iter(self.children)
-
-    def __len__(self):
-        return len(self.children)
-
-
 class ActionStatement(Statement):
     """
     A statement that is decorated with an action label.

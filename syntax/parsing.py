@@ -74,7 +74,7 @@ class SpektakelLangParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: An Expression node.
         """
-        t, s, p = lexer.peek()[0]
+        t, s, p = lexer.peek()
         if t == ID:
             lexer.read()
             return Identifier(s, start=p, end=lexer.position)
@@ -325,42 +325,165 @@ class SpektakelLangParser(Parser):
         return cls._parse_or(lexer)
 
     @classmethod
-    def _parse_expression_statement(cls, lexer):
+    def _parse_statement(cls, lexer):
+        """
+        Parses a statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Statement node.
+        """
+        t, s, p = lexer.peek()
+
+        cs = {(KW, "{"): cls._parse_block,
+              (KW, "return"): cls._parse_return,
+              (KW, "break"): cls._parse_break,
+              (KW, "continue"): cls._parse_continue,
+              (KW, "when"): cls._parse_when,
+              (KW, "select"): cls._parse_select,
+              (KW, "if"): cls._parse_if,
+              (KW, "while"): cls._parse_while,
+              (KW, "def"): cls._parse_procdef}
+
+        try:
+            sub_parser = cs[(t, s)]
+        except KeyError:
+            es = [cls.parse_expression(lexer)]
+
+            t, s, p = lexer.peek()
+
+            while t == KW and s == ",":
+                lexer.read()
+                es.append(cls.parse_expression(lexer))
+                t, s, p = lexer.peek()
+
+            if len(es) == 1:
+                e = es
+            else:
+                e = Tuple(*es, start=es[0].start, end=lexer.position)
+
+            if t == KW and s == ":":
+                if not isinstance(e, Identifier):
+                    raise ParserError("Only an identifier is allowed on the left hand side of ':'!", pos=lexer.position)
+                lexer.read()
+                s = cls._parse_statement(lexer)
+                return ActionStatement(e, s, start=e.start, end=lexer.position)
+            elif t == KW and s == "=":
+                if not isinstance(e, AssignableExpression):
+                    raise ParserError("Only 'assignable' expressions must occuron the left hand side of an assignment!",
+                                      pos=lexer.position)
+                lexer.read()
+                right = cls.parse_expression(lexer)
+                return Assignment(e, right, start=e.start, end=lexer.position)
+            else:
+                return ExpressionStatement(e, start=e.start, end=lexer.position)
+
+        return sub_parser(lexer)
+
+    @classmethod
+    def _parse_return(cls, lexer):
+        """
+        Parses a return statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Return node.
+        """
+        _, _, p = lexer.match(keyword("return"))
         e = cls.parse_expression(lexer)
-        if lexer.seeing(keyword(",")):
-            return e
-        else:
-            lexer.match(keyword(";"))
-            return ExpressionStatement(e, start=e.start, end=lexer.position)
+        return Return(e, start=p, end=lexer.position)
 
     @classmethod
-    def _parse_jump(cls, lexer):
-        # return, break or continue.
-        pass
+    def _parse_continue(cls, lexer):
+        """
+        Parses a continue statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Continue node.
+        """
+        _, _, p = lexer.match(keyword("continue"))
+        return Continue(start=p, end=lexer.position)
 
     @classmethod
-    def _parse_assignment(cls, lexer):
-        pass
+    def _parse_break(cls, lexer):
+        """
+        Parses a break statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Break node.
+        """
+        _, _, p = lexer.match(keyword("break"))
+        return Break(start=p, end=lexer.position)
 
     @classmethod
-    def _parse_update(cls, lexer):
-        pass
+    def _parse_statements(cls, lexer, t):
+        """
+        Parses a sequence of statements.
+        :param lexer: The lexer to consume tokens from.
+        :param t: A predicate over tokens, deciding if the current token delimits the end of the statement list.
+        :return: A list of Statement nodes.
+        """
+        ss = []
+        while not t(lexer.peek()):
+            ss.append(cls._parse_statement(lexer))
+
+        return ss
 
     @classmethod
     def _parse_block(cls, lexer):
-        pass
-
-    @classmethod
-    def _parse_action_statement(cls, lexer):
-        pass
+        """
+        Parses a block statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        _, _, start = lexer.match(keyword("{"))
+        statements = cls._parse_statements(lexer, keyword("}"))
+        lexer.match(keyword("}"))
+        return Block(ss, start=start, end=lexer.position)
 
     @classmethod
     def _parse_when(cls, lexer):
-        pass
+        """
+        Parses a 'when' statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        _, _, start = lexer.match(keyword("when"))
+
+        lexer.match(keyword("("))
+        condition = cls.parse_expression(lexer)
+        lexer.match(keyword(")"))
+        statement = cls._parse_statement(lexer)
+
+        return When(condition, statement, start=start, end=lexer.position)
 
     @classmethod
     def _parse_select(cls, lexer):
-        pass
+        """
+        Parses a 'select' statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        _, _, start = lexer.match(keyword("select"))
+
+        lexer.match(keyword("{"))
+
+        t, s, p = lexer.peek()
+
+        def t(token):
+            t, s, p = token
+            return t == KW and s in ("::", "}")
+
+        alternatives = []
+        while not (t == KW and s == "}"):
+            _, _, sstart = lexer.match(keyword("::"))
+
+            ss = cls._parse_statements(lexer, t)
+            if len(ss) != 1:
+                s = Block(ss, start=sstart, end=lexer.position)
+            else:
+                s, = ss
+
+            alternatives.append(s)
+
+        lexer.match(keyword("}"))
+
+        return Select(alternatives, start=start, end=lexer.position)
+
 
     @classmethod
     def _parse_while(cls, lexer):
@@ -372,4 +495,4 @@ class SpektakelLangParser(Parser):
 
     @classmethod
     def parse_process(cls, lexer):
-        pass
+        return cls._parse_statement
