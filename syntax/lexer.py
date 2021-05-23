@@ -70,8 +70,9 @@ class TokenType(Enum):
     KEYWORD = 2
     LITERAL = 3
     WHITESPACE = 4
-    EOS = 5
-    BROKEN_STRING = 6
+    INDENDATION = 5
+    EOS = 6
+    BROKEN_STRING = 7
 
 
 class LexerSpecification:
@@ -79,7 +80,7 @@ class LexerSpecification:
     An instance of this type completely determines a lexical grammar.
     """
 
-    def __init__(self, keywords, separators, skip_whitespace=True, skip_comments=True):
+    def __init__(self, keywords, separators, skip_whitespace=True, skip_comments=True, yield_indendation=False):
         """
         Creates a new lexer specification.
         :param keywords: The strings that are to be lexed as keyword tokens.
@@ -89,6 +90,8 @@ class LexerSpecification:
                            as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
         :param skip_whitespace: Specifies if the lexer should omit white space in its output (True, default),
                                 or enumerate it (False).
+        :param yield_indendation: Specifies if the lexer should yield indendation tokens. An indendation token
+                                  is a string of space characters that starts at the beginning of a line.
         :param skip_comments: Specifies if the lexer should omit comments in its output (True, default),
                               or enumerate them (False).
         """
@@ -116,8 +119,9 @@ class LexerSpecification:
         pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
 
         spec_split = [(TokenType.EOS, r'$'),  # Match the end of the input.
-                      (TokenType.COMMENT, re.escape('#') + r'[^\n]*\n'),
-                      (TokenType.WHITESPACE, r'\s+'),  # Any white space sequence.
+                      (TokenType.COMMENT, re.escape('#') + r'[^\n]*'),
+                      (TokenType.INDENDATION, r'(\002|\n) *[^ $]'),  # A newline (or STARTOFTEXT) followed by spaces.
+                      (TokenType.WHITESPACE, r'[ \t\r\f\v]+'),  # Any white space sequence, except newlines.
                       (TokenType.LITERAL, r'(\d+(\.\d*)?)|"([^"\\](\\("|t|n|\\))?)*"'),  # integer, decimal, or string.
                       (TokenType.BROKEN_STRING, r'"([^"\\](\\("|t|n|\\))?)*$'),
                       (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
@@ -131,6 +135,7 @@ class LexerSpecification:
         self._automaton = re.compile(pattern)
         self._skip_comments = skip_comments
         self._skip_whitespace = skip_whitespace
+        self._yield_indendation = yield_indendation
 
     def match_prefix(self, buffer, first=0):
         """
@@ -155,7 +160,8 @@ class LexerSpecification:
             string = m.group()
 
             if (self._skip_comments and ttype == TokenType.COMMENT) \
-            or (self._skip_whitespace and ttype == TokenType.WHITESPACE):
+            or (self._skip_whitespace and ttype == TokenType.WHITESPACE) \
+            or (not self._yield_indendation and ttype == TokenType.INDENDATION):
                 first += len(string)
                 continue
 
@@ -177,12 +183,12 @@ class Lexer:
         """
         Creates a new lexer.
         :param spec: A LexerSpecification.
-        :param source:
+        :param source: A text stream providing input characters.
         """
         self._spec = check_type(spec)
         self._source = check_type(source, io.TextIOBase)
         self._i = self._source.tell()
-        self._buffer = io.StringIO()
+        self._buffer = io.StringIO('\002')  # We start with an STX character.
         self._j = 0
         self._remaining_line_lengths = []
         self._buffer_length = 0
