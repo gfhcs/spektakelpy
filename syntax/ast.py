@@ -366,6 +366,14 @@ class Statement(Node, abc.ABC):
     pass
 
 
+class Nop(Statement):
+    """
+    A statement that does nothing.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
 class ExpressionStatement(Statement):
     """
     A statement that consists in evaluating an expression.
