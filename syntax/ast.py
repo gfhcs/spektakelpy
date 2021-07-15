@@ -423,35 +423,6 @@ class Assignment(Statement):
         return self.children[1]
 
 
-class ActionStatement(Statement):
-    """
-    A statement that is decorated with an action label.
-    """
-
-    def __init__(self, action_identifier, statement, **kwargs):
-        """
-        Creates a action-decorated statement.
-        :param action: The action label decorating this statement.
-        :param statement: The statement that is decorated.
-        :param kwargs: See statement constructor.
-        """
-        super().__init__(check_type(action_identifier, Identifier), check_type(statement, Statement), **kwargs)
-
-    @property
-    def action_identifier(self):
-        """
-        The action label decorating this statement.
-        """
-        return self.children[0]
-
-    @property
-    def statement(self):
-        """
-        The statement that is decorated.
-        """
-        return self.children[1]
-
-
 class Block(Statement):
     """
     A sequence of statements that are to be executed one after another.
@@ -504,49 +475,6 @@ class Continue(AtomicStatement):
     A statement that jumps to the end of a loop body.
     """
     pass
-
-
-class Select(Statement):
-    """
-    A statement composed of several nondeterministic alternatives.
-    """
-
-    def __init__(self, alternatives, **kwargs):
-        """
-        Creates Select statement.
-        :param alternatives: The nondeterministic alternatives composed in this statement.
-        :param kwargs: See statement constructor.
-        """
-        super().__init__(*(check_type(a, Statement) for a in alternatives), **kwargs)
-
-
-class When(Statement):
-    """
-    A statement that is only enabled if a 'guard' expression evaluates to true.
-    """
-
-    def __init__(self, guard, statement, **kwargs):
-        """
-        Creates a new guarded statement.
-        :param guard: The expression that needs to evaluate to True for this statement to be enabled.
-        :param statement: The statement that is guarded.
-        :param kwargs: See statement constructor.
-        """
-        super().__init__(check_type(guard, Expression), check_type(statement, Statement), **kwargs)
-
-    @property
-    def guard(self):
-        """
-        The expression that needs to evaluate to True for this statement to be enabled.
-        """
-        return self.children[0]
-
-    @property
-    def statement(self):
-        """
-        The statement that is guarded.
-        """
-        return self.children[1]
 
 
 class While(Statement):
