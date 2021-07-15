@@ -529,8 +529,35 @@ class SpektakelLangParser(Parser):
 
     @classmethod
     def _parse_procdef(cls, lexer):
+        # TODO: Implement procedure definition parsing
         pass
 
+    def _parse_declaration(cls, lexer):
+
+        # Like with statements, we have to branch into the different declaration types here.
+
     @classmethod
-    def parse_process(cls, lexer):
-        return cls._parse_statement
+    def _parse_declarations(cls, lexer):
+        # TODO: This should simply parse a sequence of declarations.
+
+    def _parse_decl_label(cls, lexer):
+        # TODO: Parses a label declaration (offer or sync)
+
+    def _parse_decl_var(cls, lexer):
+        # TODO: Parses a variable declaration
+
+    def _parse_decl_procdure(cls, lexer):
+        # TODO: Parses a procedure declaration (either def or public)
+
+    def _parse_decl_property(cls, lexer):
+        # TODO: Parses a property declaration.
+
+    def _parse_decl_process(cls, lexer):
+        # TODO: Parses a process declaration
+
+    def _parse_decl_pheno(cls, lexer):
+        # TODO: This should mostly call _parse_declarations.
+
+    @classmethod
+    def parse_behavior(cls, lexer):
+        return cls._parse_pheno
