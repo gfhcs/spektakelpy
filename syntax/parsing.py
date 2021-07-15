@@ -484,10 +484,48 @@ class SpektakelLangParser(Parser):
 
         return Select(alternatives, start=start, end=lexer.position)
 
+    @classmethod
+    def _parse_if(cls, lexer):
+        """
+        Parses an 'if' statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Statement node.
+        """
+        _, _, start = lexer.match(keyword("if"))
+
+        lexer.match(keyword("("))
+        condition = cls.parse_expression(lexer)
+        lexer.match(keyword(")"))
+        consequence = cls._parse_statement(lexer)
+
+        t, s, p = lexer.peek()
+        if t == KW and s == "else":
+            lexer.read()
+            alternative = cls._parse_statement(lexer)
+        else:
+            alternative = Nop()
+
+        return Select([
+            When(condition, consequence, start=start, end=consequence.end),
+            When(UnaryOperation(UnaryOperator.NOT, condition, start=alternative.start, end=alternative.start),
+                 alternative, start=alternative.start, end=alternative.end)
+        ], start=start, end=lexer.position)
 
     @classmethod
     def _parse_while(cls, lexer):
-        pass
+        """
+        Parses a 'while' statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A While node.
+        """
+        _, _, start = lexer.match(keyword("when"))
+
+        lexer.match(keyword("("))
+        condition = cls.parse_expression(lexer)
+        lexer.match(keyword(")"))
+        body = cls._parse_statement(lexer)
+
+        return While(condition, body, start=start, end=lexer.position)
 
     @classmethod
     def _parse_procdef(cls, lexer):
