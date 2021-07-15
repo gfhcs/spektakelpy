@@ -428,7 +428,7 @@ class SpektakelLangParser(Parser):
         """
         Parses a block statement.
         :param lexer: The lexer to consume tokens from.
-        :return: An Expression node.
+        :return: A Block node.
         """
         _, _, start = lexer.match(keyword("{"))
         statements = cls._parse_statements(lexer, keyword("}"))
@@ -440,7 +440,7 @@ class SpektakelLangParser(Parser):
         """
         Parses a 'when' statement.
         :param lexer: The lexer to consume tokens from.
-        :return: An Expression node.
+        :return: A When node.
         """
         _, _, start = lexer.match(keyword("when"))
 
@@ -456,7 +456,7 @@ class SpektakelLangParser(Parser):
         """
         Parses a 'select' statement.
         :param lexer: The lexer to consume tokens from.
-        :return: An Expression node.
+        :return: A Select node.
         """
         _, _, start = lexer.match(keyword("select"))
 
