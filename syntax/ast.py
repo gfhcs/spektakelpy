@@ -202,6 +202,49 @@ class Call(Expression):
         return self.children[1:]
 
 
+class Launch(Expression):
+    """
+    An expression launching a new process.
+    """
+    def __init__(self, call, **kwargs):
+        """
+        Creates a new process launch expression.
+        :param call: A call expression representing the computation that
+                     the newly launched process is supposed to execute.
+        :param kwargs: See Expression constructor.
+        """
+        super().__init__(check_type(call, Call), **kwargs)
+
+    @property
+    def call(self):
+        """
+        The call that the new process is supposed to execute.
+        :return: A Call object.
+        """
+        return self.children[0]
+
+
+class Await(Expression):
+    """
+    An expression that evaluates to the return value of a process, after blocking until the process terminated.
+    """
+    def __init__(self, process, **kwargs):
+        """
+        Creates a new process launch expression.
+        :param process: An expression representing the awaited process.
+        :param kwargs: See Expression constructor.
+        """
+        super().__init__(check_type(process, Expression), **kwargs)
+
+    @property
+    def process(self):
+        """
+        An expression representing the awaited process.
+        :return: An Expression object.
+        """
+        return self.children[0]
+
+
 class UnaryOperator(Enum):
     """
     A unary operator.
