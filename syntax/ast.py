@@ -195,6 +195,7 @@ class Call(Expression):
         """
         return self.children[0]
 
+    @property
     def arguments(self):
         """
         The expressions representing the arguments to the call.
