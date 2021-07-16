@@ -542,3 +542,40 @@ class ProcedureDefinition(Statement):
         The body of the procedure being defined.
         """
         return self.children[-1]
+
+class ClassDefinition(Statement):
+    """
+     A statement defining a class.
+     """
+
+    def __init__(self, name, bases, body, **kwargs):
+        """
+        Creates a procedure definition.
+        :param name: The name of the procedure to be defined.
+        :param argnames: The names of the arguments of the procedure to be defined.
+        :param body: The body of the procedure.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(check_type(name, Identifier), *(check_type(b, Identifier) for b in bases),
+                         check_type(body, Statement), **kwargs)
+
+    @property
+    def name(self):
+        """
+        The name of the procedure being defined.
+        """
+        return self.children[0]
+
+    @property
+    def bases(self):
+        """
+        The names of the arguments of the procedure to be defined.
+        """
+        return self.children[1:-1]
+
+    @property
+    def body(self):
+        """
+        The body of the procedure being defined.
+        """
+        return self.children[-1]
