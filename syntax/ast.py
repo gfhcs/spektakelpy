@@ -595,6 +595,46 @@ class ProcedureDefinition(Statement):
         """
         return self.children[-1]
 
+class PropertyDefinition(Statement):
+    """
+    A statement defining a getter and (possibly) setter for an instance property.
+    """
+
+    def __init__(self, name, getter, setter, **kwargs):
+        """
+        Creates a procedure definition.
+        :param name: The name of the property to be defined.
+        :param getter: The getter statement of the property.
+        :param setter: The setter statement of the property (may be None).
+        :param kwargs: See statement constructor.
+        """
+
+        if setter is not None:
+            check_type(setter, Statement)
+
+        super().__init__(check_type(name, Identifier), check_type(getter, Statement), setter, **kwargs)
+
+    @property
+    def name(self):
+        """
+        The name of the property being defined.
+        """
+        return self.children[0]
+
+    @property
+    def getter(self):
+        """
+        The getter statement of the property.
+        """
+        return self.children[1]
+
+    @property
+    def setter(self):
+        """
+        The setter statement of the property (may be None).
+        """
+        return self.children[2]
+
 class ClassDefinition(Statement):
     """
      A statement defining a class.
