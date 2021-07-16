@@ -437,6 +437,14 @@ class Block(Statement):
         super().__init__(*(check_type(s, Statement) for s in statements), **kwargs)
 
 
+class AtomicBlock(Block):
+    """
+    A block statement the sub-statements of which should be executed without being interrupted by the execution
+    of other processes/tasks.
+    """
+    pass
+
+
 class Return(Statement):
     """
     A jump back to the call site of the currently executed function.
