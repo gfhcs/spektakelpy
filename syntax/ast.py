@@ -558,6 +558,40 @@ class While(Statement):
         return self.children[1]
 
 
+class VariableDeclaration(Statement):
+    """
+     A statement declaring a variable.
+     """
+
+    def __init__(self, name, expression, **kwargs):
+        """
+        Creates a variable declaration.
+        :param name: The name of the variable to be declared.
+        :param expression: The expression the evaluation result of which the newly declared variable should be bound to.
+                           May be None.
+        :param kwargs: See statement constructor.
+        """
+        if expression is not None:
+            check_type(expression, Expression)
+
+        super().__init__(check_type(name, Identifier), expression, **kwargs)
+
+    @property
+    def name(self):
+        """
+        The name of the variable to be declared.
+        """
+        return self.children[0]
+
+    @property
+    def expression(self):
+        """
+        The expression the evaluation result of which the newly declared variable should be bound to.
+        May be None.
+        """
+        return self.children[-1]
+
+
 class ProcedureDefinition(Statement):
     """
     A statement defining a procedure.
