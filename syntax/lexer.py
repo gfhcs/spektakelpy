@@ -65,107 +65,146 @@ class TokenType(Enum):
     """
     Describes types of syntactic tokens.
     """
-    COMMENT = 0
-    IDENTIFIER = 1
-    KEYWORD = 2
-    LITERAL = 3
-    WHITESPACE = 4
-    INDENDATION = 5
-    EOS = 6
-    BROKEN_STRING = 7
+    LINEJOIN = -3  # An explicit line join token. Never emitted by the lexer.
+    HSPACE = -2  # A white space string without newlines. Never emitted by the lexer.
+    LINEEND = -1   # The end of a line, possibly including white space and line comments,
+                   # but definitely a newline sequence. Never emitted by the lexer.
+    COMMENT = 1  # A line comment.
+    IDENTIFIER = 2  # An identifier.
+    KEYWORD = 3  # A keyword.
+    LITERAL = 4  # A complete literal
+    LITERAL_PREFIX = 5  # A string that could be a prefix of a literal, but is definitely not a complete literal.
+    NEWLINE = 6  # A newline sequence, i.e. the end of a line and the start of a new line.
+    INDENT = 7  # Represents an increase of the indendation level.
+    DEDENT = 8  # Represents a decrease of the indendation level.
+    END = 9  # The end of the source stream.
 
 
-class LexerSpecification:
+def compile_pattern(keywords, separators):
     """
-    An instance of this type completely determines a lexical grammar.
+    Compiles a regular expression for the given keywords and separators. This regular expression matches tokens
+    that a parser can use to parse various formal languages.
+    :param keywords: The strings that are to be lexed as keyword tokens.
+                     They must contain only alphanumeric characters and the underscore and they
+                     must not start with a digit.
+    :param separators: The strings that are to be lexed as separators. Separators have the same token type
+                       as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
     """
 
-    def __init__(self, keywords, separators, skip_whitespace=True, skip_comments=True, yield_indendation=False):
+    # This code is loosely based on https://docs.python.org/3/library/re.html ("Writing a Tokenizer")
+
+    pattern_identifier = r'(?!\D)\w+'
+
+    # All keywords should be accepted by the identifier rule:
+    automaton_identifier = re.compile(pattern_identifier)
+    for kw in keywords:
+        if re.fullmatch(automaton_identifier, kw) is None:
+            raise ValueError("The keyword '{}' is illegal!".format(kw))
+    pattern_keyword = '|'.join(re.escape(kw) for kw in reversed(sorted(keywords, key=len)))
+
+    # In order to keep things simple we do not allow the alphabet for separators to intersect with the alphabet
+    # for keywords or identifiers. Also there must not be any white space.
+    sep_forbidden = re.compile(r'\w|\s')
+    for sep in separators:
+        if re.search(sep_forbidden, sep) is not None:
+            raise ValueError("The separator '{}' either contains whitespace, or some character that is reserved"
+                             " for keywords and identifiers!".format(sep))
+
+    pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
+
+    spec_split = [
+                  (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'), # The end of a physical line.
+                  (TokenType.HSPACE, r' +'),  # Horizontal space, i.e. a sequence of space characters.
+                  (TokenType.LINEJOIN, r'\\\n'),
+                  (TokenType.LITERAL, r'(\d+(\.\d+)?)|"([^"\\\n]|(\\.))*"|"""([^"\\]|(\\.))*"""'),  # integer, decimal, or string.
+                  (TokenType.LITERAL_PREFIX, r'(\d+\.(?!\d)|"([^"\\\n]|(\\.))*(?!")|"""([^"\\]|(\\.))*(?!")'), # A prefix that definitely needs to be continued in order to become a valid literal.
+                  (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
+                                                                        kw=pattern_keyword,
+                                                                        nocont=r'(?!\w)')),
+                  (TokenType.IDENTIFIER, pattern_identifier)
+                 ]
+
+    pattern = "|".join('(?P<type%d>%s)' % pair for pair in spec_split)
+
+    return re.compile(pattern)
+
+
+class BufferedMatchStream:
+    """
+    Buffers a TextIOBase stream in a way that allows tokenization according to a regular expression.
+    """
+
+    def __init__(self, source):
         """
-        Creates a new lexer specification.
-        :param keywords: The strings that are to be lexed as keyword tokens.
-                         They must contain only alphanumeric characters and the underscore and they
-                         must not start with a digit.
-        :param separators: The strings that are to be lexed as separators. Separators have the same token type
-                           as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
-        :param skip_whitespace: Specifies if the lexer should omit white space in its output (True, default),
-                                or enumerate it (False).
-        :param yield_indendation: Specifies if the lexer should yield indendation tokens. An indendation token
-                                  is a string of space characters that starts at the beginning of a line.
-        :param skip_comments: Specifies if the lexer should omit comments in its output (True, default),
-                              or enumerate them (False).
+        Buffers a TextIOBase object.
+        :param source: The TextIOBase oject that is to be buffered.
         """
-        super().__init__()
+        self._source = check_type(source, io.TextIOBase)
+        self._buffer = io.StringIO('')
+        self._buffer_offset = 0
+        self._buffer_length = 0
 
-        # This code is loosely based on https://docs.python.org/3/library/re.html ("Writing a Tokenizer")
-
-        pattern_identifier = r'(?!\D)\w+'
-
-        # All keywords should be accepted by the identifier rule:
-        automaton_identifier = re.compile(pattern_identifier)
-        for kw in keywords:
-            if re.fullmatch(automaton_identifier, kw) is None:
-                raise ValueError("The keyword '{}' is illegal!".format(kw))
-        pattern_keyword = '|'.join(re.escape(kw) for kw in reversed(sorted(keywords, key=len)))
-
-        # In order to keep things simple we do not allow the alphabet for separators to intersect with the alphabet
-        # for keywords or identifiers. Also there must not be any white space.
-        sep_forbidden = re.compile(r'\w|\s')
-        for sep in separators:
-            if re.search(sep_forbidden, sep) is not None:
-                raise ValueError("The separator '{}' either contains whitespace, or some character that is reserved"
-                                 " for keywords and identifiers!".format(sep))
-
-        pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
-
-        spec_split = [(TokenType.EOS, r'$'),  # Match the end of the input.
-                      (TokenType.COMMENT, re.escape('#') + r'[^\n]*'),
-                      (TokenType.INDENDATION, r'(\002|\n) *[^ $]'),  # A newline (or STARTOFTEXT) followed by spaces.
-                      (TokenType.WHITESPACE, r'[ \t\r\f\v]+'),  # Any white space sequence, except newlines.
-                      (TokenType.LITERAL, r'(\d+(\.\d*)?)|"([^"\\](\\("|t|n|\\))?)*"'),  # integer, decimal, or string.
-                      (TokenType.BROKEN_STRING, r'"([^"\\](\\("|t|n|\\))?)*$'),
-                      (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
-                                                                            kw=pattern_keyword,
-                                                                            nocont=r'(?!\w)')),
-                      (TokenType.IDENTIFIER, pattern_identifier)
-                     ]
-
-        pattern = "|".join('(?P<type%d>%s)' % pair for pair in spec_split)
-
-        self._automaton = re.compile(pattern)
-        self._skip_comments = skip_comments
-        self._skip_whitespace = skip_whitespace
-        self._yield_indendation = yield_indendation
-
-    def match_prefix(self, buffer, first=0):
+    def match_prefix(self, pattern, chunk_size=1024):
         """
-        Returns the longest valid token that is a prefix of the given buffer string.
-        :param buffer: A string object that represents a slice of a larger input stream.
-        :param first: The offset within the given buffer string at which matches should start.
-        :return: A tuple (first, t, s, first + len(s)),
-                 where first is the offset of the token inside the given buffer string,
-                 t is the TokenType of the token that was matched
-                 and s is the original input text that represents this token.
-                 If no token could be processed (possibly ignoring white space and comments), the tuple
-                 first, None, None, first is returned.
+        Consumes the longest possible prefix of the buffered stream that is valid according to the given regular
+        expression pattern.
+        :param pattern: A compiled regular expresssion
+        :param chunk_size: The number of characters that should be consumed from the input stream at once. This number
+                           must be so large that if a chunk of this size does not have a prefix matching the pattern,
+                           there cannot be any continuation of that chunk that would lead to the existence of such a
+                           prefix.
+        :exception EOFError: If not enough input remains in the source stream.
+        :return: A pair (k, s), where k is the name of the regular expression group that matched a prefix
+                 and s is the text of the prefix. If no prefix of the remaining source input matches the given pattern,
+                 (None, "") is returned.
         """
 
         while True:
-            m = self._automaton.match(buffer, pos=first)
 
-            if m is None:
-                return first, None, None, first
+            m = pattern.match(self._buffer.getvalue(), pos=self._buffer_offset)
 
-            ttype = TokenType(int(m.lastgroup[-1:]))
-            string = m.group()
+            if m is not None and m.end() < self._buffer_length:
+                # Valid token ends before the end of the buffer. Must be a complete token.
+                # Mark the range of m as consumed:
+                t = m.group(0)
+                self._buffer_offset += len(t)
+                return m.lastgroup, t
+            else:
+                # Either there is no prefix of the buffer that matches the pattern, or the match ends at the end of
+                # the buffer. In both cases it might be possible to continue the buffer, such that a new, valid match
+                # happens. So we want to try to continue the buffer.
 
-            if (self._skip_comments and ttype == TokenType.COMMENT) \
-            or (self._skip_whitespace and ttype == TokenType.WHITESPACE) \
-            or (not self._yield_indendation and ttype == TokenType.INDENDATION):
-                first += len(string)
-                continue
+                if m is None:
+                    # No valid match found so far, so we would need to continue the buffer to find one.
+                    if self._buffer_length - self._buffer_offset >= chunk_size:
+                        # We assume that the chunk size is sufficiently large, so in this case there is no hope.
+                        return None, ""
+                    if self._source is None:
+                        # We would need to consume more input, but there is none left!
+                        if self._buffer_length - self._buffer_offset == 0:
+                            # We're exactly at the end, i.e. we properly matched *all* the input and are done.
+                            raise EOFError("No prefix of the remaining input matches the given pattern!")
+                        else:
+                            # There is some remaining input that cannot be matched anymore.
+                            return None, ""
 
-            return first, ttype, string, first + len(string)
+                    # Otherwise we want to try and continue the buffer.
+                else:
+                    # We already have a match, but maybe continuing the buffer would continue the match?
+                    pass
+
+                # Before we extend the buffer, we discard all the stuff we've already read:
+                if self._buffer_offset > 0:
+                    self._buffer = io.StringIO(self._buffer.getvalue()[self._buffer_offset:])
+                    self._buffer_length -= self._buffer_offset
+                    self._buffer_offset = 0
+
+                # Now extend the buffer:
+                chunk = self._source.read(chunk_size)
+                if len(chunk) < chunk_size:
+                    self._source = None
+                self._buffer.write(chunk)
+                self._buffer_length += len(chunk)
 
 
 class TokenPosition(NamedTuple):
@@ -174,106 +213,142 @@ class TokenPosition(NamedTuple):
     column: int
 
 
+def lex(pattern, buffer):
+    """
+    A generator for tokens lexed from a character stream.
+    :param pattern: A compile 're' pattern, that matches 'raw' tokens, as returned from compile_pattern.
+    :param buffer: A BufferedMatchStream the contents of which will be tokenized.
+    :return: A generator of triples (kind, text, position) that represent the tokens that were lexed.
+    """
+
+    # This code follows https://docs.python.org/3/reference/lexical_analysis.html
+
+    pos = TokenPosition(0, 0, 0)  # What's our position in the input stream?
+    istack = [0]  # The stack of indendation depths.
+    bdepth = 0  # How deep are we nested in parentheses?
+
+    def advance(t, s):
+        nonlocal pos
+        o, l, c = pos
+        n = len(s)
+
+        if t in (TokenType.LINEEND, TokenType.LINEJOIN):
+            pos = (o + n, l + 1, 0)
+        elif t == TokenType.LITERAL and s.startswith("\"\"\""):
+            l -= 1
+            for line in s.splitlines():
+                l += 1
+            pos = (o + n, l, 0 + len(line))
+        else:
+            pos = (o + n, l, c + n)
+
+    while True:
+
+        try:
+            # Important: The following call will never silently "skip" input. We get to see *every* bit of input
+            #            in some output of the call!
+            #            Also, the 'text' contains a newline if and only if 'kind' is TokenType.NEWILNE.
+
+            kind, text = buffer.match_prefix(pattern)
+        except EOFError:
+            # Generate DEDENT tokens until indendation stack is back to where it was at the beginning of the input.
+            while len(istack) > 1:
+                yield TokenType.DEDENT, None, pos
+                istack.pop()
+
+            yield TokenType.END, None, pos
+            return
+
+        if kind is not None:
+            kind = TokenType(int(kind))
+
+        if kind is None or kind == TokenType.LITERAL_PREFIX:
+            raise LexError(LexErrorReason.INVALIDINPUT, pos)
+        elif kind in (TokenType.LINEJOIN, TokenType.COMMENT):
+            # Comments or explicit line joins should not be passed on.
+            advance(kind, text)
+        elif kind == TokenType.HSPACE:
+            if pos == 0 and bdepth == 0:
+                # See https://docs.python.org/3/reference/lexical_analysis.html#indentation
+
+                i = len(text)
+                advance(kind, text)
+
+                if i > istack[-1]:
+                    istack.append(i)
+                    yield TokenType.INDENT, None, pos
+                else:
+                    while i < istack[-1]:
+                        yield TokenType.DEDENT, None, pos
+                        istack.pop()
+            else:
+                advance(kind, text)
+        elif kind == TokenType.LINEEND:
+            if pos == 0 or bdepth > 0:
+                # Empty lines, or line ends inside of braces are to be skipped.
+                advance(kind, text)
+            else:
+                offset = text.find("\n")
+                _o, _l, _c = pos
+                yield TokenType.NEWLINE, "\n", TokenPosition(_o + offset, _l, _c + offset)
+                advance(kind, text)
+        else:
+            if kind == TokenType.KEYWORD and text in ("(", "[", "{"):
+                bdepth += 1
+            elif kind == TokenType.KEYWORD and text in (")", "]", "}"):
+                bdepth -= 1
+
+            yield kind, text, pos
+            advance(kind, text)
+
+
 class Lexer:
     """
     A lexer makes a sequence of characters available as a sequence of tokens, to be processed by a parser.
     """
 
-    def __init__(self, spec, source):
+    def __init__(self, keywords, separators, source):
         """
         Creates a new lexer.
-        :param spec: A LexerSpecification.
+        :param keywords: The strings that are to be lexed as keyword tokens.
+                         They must contain only alphanumeric characters and the underscore and they
+                         must not start with a digit.
+        :param separators: The strings that are to be lexed as separators. Separators have the same token type
+                           as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
         :param source: A text stream providing input characters.
         """
-        self._spec = check_type(spec)
-        self._source = check_type(source, io.TextIOBase)
-        self._i = self._source.tell()
-        self._buffer = io.StringIO('\002')  # We start with an STX character.
-        self._j = 0
-        self._remaining_line_lengths = []
-        self._buffer_length = 0
-        self._line = 0
-        self._column = 0
+
+        self._g = iter(lex(compile_pattern(keywords, separators), BufferedMatchStream(source)))
         self._peek = None
-
-    def _advance_pos(self, delta):
-        self._j += delta
-
-        while delta > 0:
-            lr = self._remaining_line_lengths[0]
-
-            if lr <= delta:
-                self._remaining_line_lengths.pop(0)
-                delta -= lr
-                self._line += 0
-                self._column = 0
-            else:
-                self._remaining_line_lengths[0] -= delta
-                self._column += delta
-                delta = 0
 
     def peek(self):
         """
         Retrieves the token the lexer is currently seeing, without advancing to the next token.
-        :exception LexError: If the input does not allow to retrieve another token.
         :return: A triple (t, s, p) consisting of TokenType t, token text s and token position p.
                  The final token in any error-free input is EOS. After this token has been consumed, this method
                  raises a LexError.
         """
+
         if self._peek is None:
-
-            while True:
-
-                if self._buffer is None:
-                    raise LexError(LexErrorReason.OUTOFTOKENS, self._i + self._j, self._line, self._column)
-
-                first, t, s, end = self._spec.match(self._buffer.getvalue(), self._j)
-                self._advance_pos(first - self._j)
-
-                if t is None:
-                    raise LexError(LexErrorReason.INVALIDINPUT,
-                                   TokenPosition(self._i + self._j, self._line, self._column))
-                elif end == self._buffer_length and self._source is not None:
-                    if self._j > 0:
-                        self._buffer = io.StringIO(self._buffer.getvalue()[self._j:])
-                        self._i += self._j
-                        self._buffer_length -= self._j
-                        self._j = 0
-                    line = self._source.readline()
-                    if len(line) == 0:
-                        self._source = None
-                    else:
-                        self._buffer.write(line)
-                        self._buffer_length += len(line)
-                        self._remaining_line_lengths.append(len(line))
-                else:
-                    pos = TokenPosition(self._i + self._j, self._line, self._column)
-                    if t in (TokenType.BROKEN_STRING, ):
-                        raise LexError(LexErrorReason.UNEXPECTEDEOS, pos)
-                    else:
-                        self._peek = (t, s, pos)
-                        self._advance_pos(end - self._j)
-                        if t == TokenType.EOS:
-                            self._buffer = None
-                        break
+            try:
+                self._peek = next(self._g)
+            except StopIteration:
+                # This cannot happen, because we never *read* the END token.
+                raise
 
         return self._peek
-
-    @property
-    def eos(self):
-        """
-        Indicates if the lexer has reached the end of the token stream.
-        """
-        return self._buffer is None
 
     def read(self):
         """
         Retrieves the token the lexer is currently seeing, and advances to the next token.
+        :exception LexError: If the token to be read is of type END.
         :return: A tuple as returned by Lexer.peek.
         """
-        t = self.peek()
+        t, s, p = self.peek()
+        if t == TokenType.END:
+            raise LexError(LexErrorReason.OUTOFTOKENS, pos=p)
         self._peek = None
-        return t
+        return t, s, p
 
     def match(self, p):
         """
@@ -283,8 +358,9 @@ class Lexer:
         :exception LexError: If the lexer is not seeing a satisfying token.
         :return: A tuple as returned by Lexer.peek.
         """
-        if not p(self.peek()):
-            raise LexError(LexErrorReason.UNEXPECTEDTOKEN, TokenPosition(self._i + self._j, self._line, self._column))
+        t, s, p = self.peek()
+        if not p(t):
+            raise LexError(LexErrorReason.UNEXPECTEDTOKEN, p)
         return self.read()
 
     def seeing(self, p):
