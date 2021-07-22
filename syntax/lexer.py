@@ -3,7 +3,7 @@ import re
 from enum import Enum
 from typing import NamedTuple
 from util import check_type
-
+import abc
 
 class LexErrorReason(Enum):
     """
@@ -78,55 +78,6 @@ class TokenType(Enum):
     INDENT = 7  # Represents an increase of the indendation level.
     DEDENT = 8  # Represents a decrease of the indendation level.
     END = 9  # The end of the source stream.
-
-
-def compile_pattern(keywords, separators):
-    """
-    Compiles a regular expression for the given keywords and separators. This regular expression matches tokens
-    that a parser can use to parse various formal languages.
-    :param keywords: The strings that are to be lexed as keyword tokens.
-                     They must contain only alphanumeric characters and the underscore and they
-                     must not start with a digit.
-    :param separators: The strings that are to be lexed as separators. Separators have the same token type
-                       as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
-    """
-
-    # This code is loosely based on https://docs.python.org/3/library/re.html ("Writing a Tokenizer")
-
-    pattern_identifier = r'(?!\D)\w+'
-
-    # All keywords should be accepted by the identifier rule:
-    automaton_identifier = re.compile(pattern_identifier)
-    for kw in keywords:
-        if re.fullmatch(automaton_identifier, kw) is None:
-            raise ValueError("The keyword '{}' is illegal!".format(kw))
-    pattern_keyword = '|'.join(re.escape(kw) for kw in reversed(sorted(keywords, key=len)))
-
-    # In order to keep things simple we do not allow the alphabet for separators to intersect with the alphabet
-    # for keywords or identifiers. Also there must not be any white space.
-    sep_forbidden = re.compile(r'\w|\s')
-    for sep in separators:
-        if re.search(sep_forbidden, sep) is not None:
-            raise ValueError("The separator '{}' either contains whitespace, or some character that is reserved"
-                             " for keywords and identifiers!".format(sep))
-
-    pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
-
-    spec_split = [
-                  (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'), # The end of a physical line.
-                  (TokenType.HSPACE, r' +'),  # Horizontal space, i.e. a sequence of space characters.
-                  (TokenType.LINEJOIN, r'\\\n'),
-                  (TokenType.LITERAL, r'(\d+(\.\d+)?)|"([^"\\\n]|(\\.))*"|"""([^"\\]|(\\.))*"""'),  # integer, decimal, or string.
-                  (TokenType.LITERAL_PREFIX, r'(\d+\.(?!\d)|"([^"\\\n]|(\\.))*(?!")|"""([^"\\]|(\\.))*(?!")'), # A prefix that definitely needs to be continued in order to become a valid literal.
-                  (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
-                                                                        kw=pattern_keyword,
-                                                                        nocont=r'(?!\w)')),
-                  (TokenType.IDENTIFIER, pattern_identifier)
-                 ]
-
-    pattern = "|".join('(?P<type%d>%s)' % pair for pair in spec_split)
-
-    return re.compile(pattern)
 
 
 class BufferedMatchStream:
@@ -213,93 +164,155 @@ class TokenPosition(NamedTuple):
     column: int
 
 
-def lex(pattern, buffer):
+class LexicalGrammar(abc.ABC):
     """
-    A generator for tokens lexed from a character stream.
-    :param pattern: A compile 're' pattern, that matches 'raw' tokens, as returned from compile_pattern.
-    :param buffer: A BufferedMatchStream the contents of which will be tokenized.
-    :return: A generator of triples (kind, text, position) that represent the tokens that were lexed.
+    An instance of this class completely specifies the lexical grammar of a formal language.
     """
 
-    # This code follows https://docs.python.org/3/reference/lexical_analysis.html
+    @abc.abstractmethod
+    def generate_tokens(self, buffer):
+        """
+        A generator for tokens lexed from a character stream.
+        :param buffer: A BufferedMatchStream the contents of which will be tokenized.
+        :return: A generator of triples (kind, text, position) that represent the tokens that were lexed.
+        """
+        pass
 
-    pos = TokenPosition(0, 0, 0)  # What's our position in the input stream?
-    istack = [0]  # The stack of indendation depths.
-    bdepth = 0  # How deep are we nested in parentheses?
 
-    def advance(t, s):
-        nonlocal pos
-        o, l, c = pos
-        n = len(s)
+class PythonesqueLexicalGrammar(LexicalGrammar):
+    """
+    A lexical grammar that can be used for Python-like languages.
+    It implements most principles from https://docs.python.org/3/reference/lexical_analysis.html
+    """
 
-        if t in (TokenType.LINEEND, TokenType.LINEJOIN):
-            pos = (o + n, l + 1, 0)
-        elif t == TokenType.LITERAL and s.startswith("\"\"\""):
-            l -= 1
-            for line in s.splitlines():
-                l += 1
-            pos = (o + n, l, 0 + len(line))
-        else:
-            pos = (o + n, l, c + n)
+    def __init__(self, keywords, separators):
+        """
+        Compiles a regular expression for lexing a Python-like language that has the given keywords and separators.
+        :param keywords: The strings that are to be lexed as keyword tokens.
+                         They must contain only alphanumeric characters and the underscore and they
+                         must not start with a digit.
+        :param separators: The strings that are to be lexed as separators. Separators have the same token type
+                           as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
+        """
 
-    while True:
+        # This code is loosely based on https://docs.python.org/3/library/re.html#writing-a-tokenizer
 
-        try:
-            # Important: The following call will never silently "skip" input. We get to see *every* bit of input
-            #            in some output of the call!
-            #            Also, the 'text' contains a newline if and only if 'kind' is TokenType.NEWILNE.
+        pattern_identifier = r'(?!\D)\w+'
 
-            kind, text = buffer.match_prefix(pattern)
-        except EOFError:
-            # Generate DEDENT tokens until indendation stack is back to where it was at the beginning of the input.
-            while len(istack) > 1:
-                yield TokenType.DEDENT, None, pos
-                istack.pop()
+        # All keywords should be accepted by the identifier rule:
+        automaton_identifier = re.compile(pattern_identifier)
+        for kw in keywords:
+            if re.fullmatch(automaton_identifier, kw) is None:
+                raise ValueError("The keyword '{}' is illegal!".format(kw))
+        pattern_keyword = '|'.join(re.escape(kw) for kw in reversed(sorted(keywords, key=len)))
 
-            yield TokenType.END, None, pos
-            return
+        # In order to keep things simple we do not allow the alphabet for separators to intersect with the alphabet
+        # for keywords or identifiers. Also there must not be any white space.
+        sep_forbidden = re.compile(r'\w|\s')
+        for sep in separators:
+            if re.search(sep_forbidden, sep) is not None:
+                raise ValueError("The separator '{}' either contains whitespace, or some character that is reserved"
+                                 " for keywords and identifiers!".format(sep))
 
-        if kind is not None:
-            kind = TokenType(int(kind))
+        pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
 
-        if kind is None or kind == TokenType.LITERAL_PREFIX:
-            raise LexError(LexErrorReason.INVALIDINPUT, pos)
-        elif kind in (TokenType.LINEJOIN, TokenType.COMMENT):
-            # Comments or explicit line joins should not be passed on.
-            advance(kind, text)
-        elif kind == TokenType.HSPACE:
-            if pos == 0 and bdepth == 0:
-                # See https://docs.python.org/3/reference/lexical_analysis.html#indentation
+        spec_split = [
+            (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'),  # The end of a physical line.
+            (TokenType.HSPACE, r' +'),  # Horizontal space, i.e. a sequence of space characters.
+            (TokenType.LINEJOIN, r'\\\n'),
+            (TokenType.LITERAL, r'(\d+(\.\d+)?)|"([^"\\\n]|(\\.))*"|"""([^"\\]|(\\.))*"""'),
+            # integer, decimal, or string.
+            (TokenType.LITERAL_PREFIX, r'(\d+\.(?!\d)|"([^"\\\n]|(\\.))*(?!")|"""([^"\\]|(\\.))*(?!")'),
+            # A prefix that definitely needs to be continued in order to become a valid literal.
+            (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
+                                                                  kw=pattern_keyword,
+                                                                  nocont=r'(?!\w)')),
+            (TokenType.IDENTIFIER, pattern_identifier)
+        ]
 
-                i = len(text)
+        self._pattern = re.compile("|".join('(?P<type%d>%s)' % pair for pair in spec_split))
+
+    def generate_tokens(self, buffer):
+
+        # This code follows https://docs.python.org/3/reference/lexical_analysis.html
+
+        pos = TokenPosition(0, 0, 0)  # What's our position in the input stream?
+        istack = [0]  # The stack of indendation depths.
+        bdepth = 0  # How deep are we nested in parentheses?
+
+        def advance(t, s):
+            nonlocal pos
+            o, l, c = pos
+            n = len(s)
+
+            if t in (TokenType.LINEEND, TokenType.LINEJOIN):
+                pos = (o + n, l + 1, 0)
+            elif t == TokenType.LITERAL and s.startswith("\"\"\""):
+                l -= 1
+                for line in s.splitlines():
+                    l += 1
+                pos = (o + n, l, 0 + len(line))
+            else:
+                pos = (o + n, l, c + n)
+
+        while True:
+
+            try:
+                # Important: The following call will never silently "skip" input. We get to see *every* bit of input
+                #            in some output of the call!
+                #            Also, the 'text' contains a newline if and only if 'kind' is TokenType.NEWILNE.
+
+                kind, text = buffer.match_prefix(self._pattern)
+            except EOFError:
+                # Generate DEDENT tokens until indendation stack is back to where it was at the beginning of the input.
+                while len(istack) > 1:
+                    yield TokenType.DEDENT, None, pos
+                    istack.pop()
+
+                yield TokenType.END, None, pos
+                return
+
+            if kind is not None:
+                kind = TokenType(int(kind))
+
+            if kind is None or kind == TokenType.LITERAL_PREFIX:
+                raise LexError(LexErrorReason.INVALIDINPUT, pos)
+            elif kind in (TokenType.LINEJOIN, TokenType.COMMENT):
+                # Comments or explicit line joins should not be passed on.
                 advance(kind, text)
+            elif kind == TokenType.HSPACE:
+                if pos == 0 and bdepth == 0:
+                    # See https://docs.python.org/3/reference/lexical_analysis.html#indentation
 
-                if i > istack[-1]:
-                    istack.append(i)
-                    yield TokenType.INDENT, None, pos
+                    i = len(text)
+                    advance(kind, text)
+
+                    if i > istack[-1]:
+                        istack.append(i)
+                        yield TokenType.INDENT, None, pos
+                    else:
+                        while i < istack[-1]:
+                            yield TokenType.DEDENT, None, pos
+                            istack.pop()
                 else:
-                    while i < istack[-1]:
-                        yield TokenType.DEDENT, None, pos
-                        istack.pop()
+                    advance(kind, text)
+            elif kind == TokenType.LINEEND:
+                if pos == 0 or bdepth > 0:
+                    # Empty lines, or line ends inside of braces are to be skipped.
+                    advance(kind, text)
+                else:
+                    offset = text.find("\n")
+                    _o, _l, _c = pos
+                    yield TokenType.NEWLINE, "\n", TokenPosition(_o + offset, _l, _c + offset)
+                    advance(kind, text)
             else:
-                advance(kind, text)
-        elif kind == TokenType.LINEEND:
-            if pos == 0 or bdepth > 0:
-                # Empty lines, or line ends inside of braces are to be skipped.
-                advance(kind, text)
-            else:
-                offset = text.find("\n")
-                _o, _l, _c = pos
-                yield TokenType.NEWLINE, "\n", TokenPosition(_o + offset, _l, _c + offset)
-                advance(kind, text)
-        else:
-            if kind == TokenType.KEYWORD and text in ("(", "[", "{"):
-                bdepth += 1
-            elif kind == TokenType.KEYWORD and text in (")", "]", "}"):
-                bdepth -= 1
+                if kind == TokenType.KEYWORD and text in ("(", "[", "{"):
+                    bdepth += 1
+                elif kind == TokenType.KEYWORD and text in (")", "]", "}"):
+                    bdepth -= 1
 
-            yield kind, text, pos
-            advance(kind, text)
+                yield kind, text, pos
+                advance(kind, text)
 
 
 class Lexer:
@@ -307,18 +320,14 @@ class Lexer:
     A lexer makes a sequence of characters available as a sequence of tokens, to be processed by a parser.
     """
 
-    def __init__(self, keywords, separators, source):
+    def __init__(self, spec, source):
         """
         Creates a new lexer.
-        :param keywords: The strings that are to be lexed as keyword tokens.
-                         They must contain only alphanumeric characters and the underscore and they
-                         must not start with a digit.
-        :param separators: The strings that are to be lexed as separators. Separators have the same token type
-                           as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
+        :param spec: The LexicalGrammar used for lexing.
         :param source: A text stream providing input characters.
         """
 
-        self._g = iter(lex(compile_pattern(keywords, separators), BufferedMatchStream(source)))
+        self._g = iter(spec.generate_tokens(BufferedMatchStream(source)))
         self._peek = None
 
     def peek(self):
