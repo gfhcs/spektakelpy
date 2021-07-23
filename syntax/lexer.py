@@ -118,7 +118,7 @@ class BufferedMatchStream:
 
             m = pattern.match(self._buffer.getvalue(), pos=self._buffer_offset)
 
-            if m is not None and m.end() < self._buffer_length:
+            if m is not None and (m.end() < self._buffer_length or self._source is None):
                 # Valid token ends before the end of the buffer. Must be a complete token.
                 # Mark the range of m as consumed:
                 t = m.group(0)
