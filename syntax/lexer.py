@@ -5,6 +5,7 @@ from typing import NamedTuple
 from util import check_type
 import abc
 
+
 class LexErrorReason(Enum):
     """
     The reason for a lexer error.
@@ -65,10 +66,11 @@ class TokenType(Enum):
     """
     Describes types of syntactic tokens.
     """
-    LINEJOIN = -3  # An explicit line join token. Never emitted by the lexer.
-    HSPACE = -2  # A white space string without newlines. Never emitted by the lexer.
-    LINEEND = -1   # The end of a line, possibly including white space and line comments,
+    LINEEND = 101   # The end of a line, possibly including white space and line comments,
                    # but definitely a newline sequence. Never emitted by the lexer.
+    HSPACE = 102  # A white space string without newlines. Never emitted by the lexer.
+    LINEJOIN = 103  # An explicit line join token. Never emitted by the lexer.
+
     COMMENT = 1  # A line comment.
     IDENTIFIER = 2  # An identifier.
     KEYWORD = 3  # A keyword.
@@ -197,7 +199,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
 
         # This code is loosely based on https://docs.python.org/3/library/re.html#writing-a-tokenizer
 
-        pattern_identifier = r'(?!\D)\w+'
+        pattern_identifier = r'(?!\d)\w+'
 
         # All keywords should be accepted by the identifier rule:
         automaton_identifier = re.compile(pattern_identifier)
@@ -217,20 +219,23 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
         pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
 
         spec_split = [
-            (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'),  # The end of a physical line.
-            (TokenType.HSPACE, r' +'),  # Horizontal space, i.e. a sequence of space characters.
+            # The end of a physical line:
+            (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'),
+            # Horizontal space, i.e. a sequence of space characters:
+            (TokenType.HSPACE, r' +'),
+            # Explicit join of physical lines:
             (TokenType.LINEJOIN, r'\\\n'),
+            # Complete literals (integers, decimals, or strings):
             (TokenType.LITERAL, r'(\d+(\.\d+)?)|"([^"\\\n]|(\\.))*"|"""([^"\\]|(\\.))*"""'),
-            # integer, decimal, or string.
-            (TokenType.LITERAL_PREFIX, r'(\d+\.(?!\d)|"([^"\\\n]|(\\.))*(?!")|"""([^"\\]|(\\.))*(?!")'),
-            # A prefix that definitely needs to be continued in order to become a valid literal.
-            (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep,
-                                                                  kw=pattern_keyword,
-                                                                  nocont=r'(?!\w)')),
+            # A prefix that definitely needs to be continued in order to become a valid literal:
+            (TokenType.LITERAL_PREFIX, r'(\d+\.(?!\d))|"([^"\\\n]|(\\.))*(?!")|"""([^"\\]|(\\.))*(?!")'),
+            # Alphanumeric keywords:
+            (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep, kw=pattern_keyword, nocont=r'(?!\w)')),
+            # Identifiers:
             (TokenType.IDENTIFIER, pattern_identifier)
         ]
 
-        self._pattern = re.compile("|".join('(?P<type%d>%s)' % pair for pair in spec_split))
+        self._pattern = re.compile("|".join('(?P<t%d>(%s))' % (t.value, p) for t, p in spec_split))
 
     def generate_tokens(self, buffer):
 
