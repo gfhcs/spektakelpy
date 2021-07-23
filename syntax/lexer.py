@@ -264,14 +264,14 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
             n = len(s)
 
             if t in (TokenType.LINEEND, TokenType.LINEJOIN):
-                pos = (o + n, l + 1, 0)
+                pos = TokenPosition(o + n, l + 1, 0)
             elif t == TokenType.LITERAL and s.startswith("\"\"\""):
                 l -= 1
                 for line in s.splitlines():
                     l += 1
-                pos = (o + n, l, 0 + len(line))
+                pos = TokenPosition(o + n, l, 0 + len(line))
             else:
-                pos = (o + n, l, c + n)
+                pos = TokenPosition(o + n, l, c + n)
 
         while True:
 
