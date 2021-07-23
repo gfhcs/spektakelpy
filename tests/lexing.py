@@ -28,7 +28,7 @@ class TestPythonLexer(unittest.TestCase):
 
     def setUp(self):
         self._specs_python = []
-        for cs in (1024, 2, 3, 5, 7):
+        for cs in (1024, 3, 5, 7):
             self._specs_python.append((lexer.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
 
     def lex(self, spec, sample):
