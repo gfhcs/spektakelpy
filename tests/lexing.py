@@ -63,3 +63,8 @@ class TestPythonLexer(unittest.TestCase):
         g_python = PythonesqueLexicalGrammar(kw_python, sep_python)
         tokens = self.lex(g_python, "")
         self.match_tokens([], tokens)
+
+    def test_allwhite(self):
+        g_python = PythonesqueLexicalGrammar(kw_python, sep_python)
+        tokens = self.lex(g_python, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
+        self.match_tokens([], tokens)
