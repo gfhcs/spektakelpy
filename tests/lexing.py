@@ -51,7 +51,7 @@ class TestPythonLexer(unittest.TestCase):
         :param reference: A list of tokens that must be matched.
         :param tokens: A list of tokens that must match the reference.
         """
-        self.assertEqual(len(reference), len(tokens))
+        self.assertEqual(len(reference), len(tokens), "Number of emitted tokens does not match the reference!")
         for (rt, rs, _), (t, s, _) in zip(reference, tokens):
             self.assertEqual(rt, t)
             self.assertEqual(rs, s)
