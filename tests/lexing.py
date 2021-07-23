@@ -39,7 +39,7 @@ class TestPythonLexer(unittest.TestCase):
         :return: A list of tokens.
         """
         sample = StringIO(sample)
-        l = lexer.Lexer(spec, lexer.BufferedMatchStream(sample))
+        l = lexer.Lexer(spec, sample)
         tokens = []
         while not l.seeing(lexer.end()):
             tokens.append(l.read())
