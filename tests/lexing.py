@@ -1,6 +1,6 @@
 import unittest
 from io import StringIO
-from syntax.lexer import Lexer, PythonesqueLexicalGrammar, end
+from syntax import lexer
 
 kw_python = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
              "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "from", "nonlocal",
@@ -26,6 +26,11 @@ def perm(l):
 
 class TestPythonLexer(unittest.TestCase):
 
+    def setUp(self):
+        self._specs_python = []
+        for cs in (1024, 2, 3, 5, 7):
+            self._specs_python.append((lexer.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
+
     def lex(self, spec, sample):
         """
         Turns a string into a sequence of tokens, using the given lexical grammar.
@@ -34,9 +39,9 @@ class TestPythonLexer(unittest.TestCase):
         :return: A list of tokens.
         """
         sample = StringIO(sample)
-        l = Lexer(spec, sample)
+        l = lexer.Lexer(spec, lexer.BufferedMatchStream(sample))
         tokens = []
-        while not l.seeing(end()):
+        while not l.seeing(lexer.end()):
             tokens.append(l.read())
         return tokens
 
@@ -51,20 +56,14 @@ class TestPythonLexer(unittest.TestCase):
             self.assertEqual(rt, t)
             self.assertEqual(rs, s)
 
-    def test_construction(self):
-        """
-        Tests if the usual workflow of building a lexer works without crashes.
-        """
-        g_python = PythonesqueLexicalGrammar(kw_python, sep_python)
-        code = StringIO(sample_python1)
-        Lexer(g_python, code)
-
     def test_empty(self):
-        g_python = PythonesqueLexicalGrammar(kw_python, sep_python)
-        tokens = self.lex(g_python, "")
-        self.match_tokens([], tokens)
+        for s, cs in self._specs_python:
+            with self.subTest(chunk_size=cs):
+                tokens = self.lex(s, "")
+                self.match_tokens([], tokens)
 
     def test_allwhite(self):
-        g_python = PythonesqueLexicalGrammar(kw_python, sep_python)
-        tokens = self.lex(g_python, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
-        self.match_tokens([], tokens)
+        for s, cs in self._specs_python:
+            with self.subTest(chunk_size=cs):
+                tokens = self.lex(s, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
+                self.match_tokens([], tokens)
