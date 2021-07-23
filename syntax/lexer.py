@@ -225,8 +225,10 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
         if chunk_size < 1:
             raise ValueError("Chunk size must be positive!")
 
-        if chunk_size < max(map(len, chain(keywords, separators))):
-            raise ValueError("The chunk size {} is too short for the given set of keywords and separators!")
+        mincs = max(map(len, separators))
+        if chunk_size < mincs:
+            raise ValueError("The chunk size {} is too short for the given"
+                             " set of keywords and separators! It must be at least {}!".format(chunk_size, mincs))
 
         spec_split = [
             # The end of a physical line:
