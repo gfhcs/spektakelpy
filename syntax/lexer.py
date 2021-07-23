@@ -1,9 +1,11 @@
+import abc
 import io
 import re
 from enum import Enum
+from itertools import chain
 from typing import NamedTuple
+
 from util import check_type
-import abc
 
 
 class LexErrorReason(Enum):
@@ -187,7 +189,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
     It implements most principles from https://docs.python.org/3/reference/lexical_analysis.html
     """
 
-    def __init__(self, keywords, separators):
+    def __init__(self, keywords, separators, chunk_size):
         """
         Compiles a regular expression for lexing a Python-like language that has the given keywords and separators.
         :param keywords: The strings that are to be lexed as keyword tokens.
@@ -218,6 +220,14 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
 
         pattern_sep = '|'.join(re.escape(s) for s in reversed(sorted(separators, key=len)))
 
+        if chunk_size < 2:
+            raise ValueError("Chunk size must be at least 2, for lexing explicit line joins!")
+        if chunk_size < 1:
+            raise ValueError("Chunk size must be positive!")
+
+        if chunk_size < max(map(len, chain(keywords, separators))):
+            raise ValueError("The chunk size {} is too short for the given set of keywords and separators!")
+
         spec_split = [
             # The end of a physical line:
             (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'),
@@ -236,6 +246,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
         ]
 
         self._pattern = re.compile("|".join('(?P<t%d>(%s))' % (t.value, p) for t, p in spec_split))
+        self._chunk_size = chunk_size
 
     def generate_tokens(self, buffer):
 
@@ -267,7 +278,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                 #            in some output of the call!
                 #            Also, the 'text' contains a newline if and only if 'kind' is TokenType.NEWILNE.
 
-                kind, text = buffer.match_prefix(self._pattern)
+                kind, text = buffer.match_prefix(self._pattern, self._chunk_size)
             except EOFError:
                 # Generate DEDENT tokens until indendation stack is back to where it was at the beginning of the input.
                 while len(istack) > 1:
