@@ -402,6 +402,14 @@ def expected(s=None, t=None):
     return p
 
 
+def end():
+    """
+    Constructs a predicate asserting that a given token is the END token.
+    :return: A predicate procedure.
+    """
+    return expected(t=TokenType.END)
+
+
 def keyword(s=None):
     """
     Constructs a predicate asserting that a given token is the expected keyword.
