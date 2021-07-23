@@ -291,7 +291,8 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                 return
 
             if kind is not None:
-                kind = TokenType(int(kind))
+                assert kind.startswith("t")
+                kind = TokenType(int(kind[1:]))
 
             if kind is None or kind == TokenType.LITERAL_PREFIX:
                 raise LexError(LexErrorReason.INVALIDINPUT, pos)
