@@ -336,7 +336,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                 # Comments or explicit line joins should not be passed on.
                 advance(kind, text)
             elif kind == TokenType.HSPACE:
-                if pos == 0 and bdepth == 0:
+                if pos.column == 0 and bdepth == 0:
                     # See https://docs.python.org/3/reference/lexical_analysis.html#indentation
 
                     i = len(text)
