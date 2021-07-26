@@ -87,11 +87,11 @@ class TokenType(Enum):
 
     def __repr__(self):
         s = super().__repr__()
-        return s[s.find(".") + 1: s.find(":")]
+        return s[s.find(".") + 1:]
 
     def __str__(self):
         s = super().__str__()
-        return s[s.find(".") + 1: s.find(":")]
+        return s[s.find(".") + 1:]
 
 
 class BufferedMatchStream:
