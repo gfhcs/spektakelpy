@@ -1,6 +1,7 @@
 import unittest
 from io import StringIO
 from syntax import lexer
+from . import samples_python
 
 kw_python = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
              "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "from", "nonlocal",
@@ -8,20 +9,6 @@ kw_python = ["False", "await", "else", "import", "pass", "None", "break", "excep
 sep_python = ["+", "-", "*", "**", "/", "//", "%", "@", "<<", ">>", "&", "|", "^", "~", ":=", "<", ">", "<=", ">=",
               "==", "!=", "(", ")", "[", "]", "{", "}", ",", ":", ".", ";", "@", "=", "->", "+=", "-=", "*=", "/=",
               "//=", "%=", "@=", "&=", "|=", "^=", ">>=", "<<=", "**="]
-
-sample_python1 = """
-def perm(l):
-        # Compute the list of all permutations of l
-    if len(l) <= 1:
-                  return [l]
-    r = []
-    for i in range(len(l)):
-             s = l[:i] + l[i+1:]
-             p = perm(s)
-             for x in p:
-              r.append(l[i:i+1] + x)
-    return r
-"""
 
 
 def lex(spec, sample):
@@ -111,3 +98,14 @@ class TestPythonLexer(unittest.TestCase):
             with self.subTest(chunk_size=cs):
                 tokens = lex(s, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
                 self.tokens_equal([], tokens)
+
+    def test_simple_samples(self):
+        """
+        Tests the lexer on several simple Python programs.
+        """
+
+        for sk, (code, reference) in samples_python.items():
+            for s, cs in self._specs_python:
+                with self.subTest(sample=sk, chunk_size=cs):
+                    tokens = lex(s, code)
+                    self.tokens_equal(reference, tokens)
