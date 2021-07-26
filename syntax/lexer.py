@@ -267,9 +267,9 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
             # Explicit join of physical lines:
             (TokenType.LINEJOIN, r'\\\n'),
             # Complete literals (integers, decimals, or strings):
-            (TokenType.LITERAL, r'(\d+(\.\d+)?)|"([^"\\\n]|(\\.))*"(?!")|"""([^"\\]|(\\.))*"""'),
+            (TokenType.LITERAL, r'(\d+(?!(\d|\.)))|(\d+\.\d+)|"([^"\\\n]|(\\.))*"(?!")|"""([^"\\]|(\\.))*"""'),
             # A prefix that definitely needs to be continued in order to become a valid literal:
-            (TokenType.LITERAL_PREFIX, r'(\d+\.\Z)|"([^"\\\n]|(\\.))*\Z|"""([^"\\]|(\\.))*("?"?\Z)'),
+            (TokenType.LITERAL_PREFIX, r'(\d+\.?\Z)|"([^"\\\n]|(\\.))*\Z|"""([^"\\]|(\\.))*("?"?\Z)'),
             # Alphanumeric keywords:
             (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep, kw=pattern_keyword, nocont=r'(?!\w)')),
             # Identifiers:
