@@ -1,7 +1,7 @@
 import unittest
 from io import StringIO
 from syntax import lexer
-from . import samples_python
+from tests.samples_python import samples
 
 kw_python = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
              "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "from", "nonlocal",
@@ -114,7 +114,7 @@ class TestPythonLexer(unittest.TestCase):
         Tests the lexer on several simple Python programs.
         """
 
-        for sk, (code, reference) in samples_python.items():
+        for sk, (code, reference) in samples.items():
             for s, cs in self._specs_python:
                 with self.subTest(sample=sk, chunk_size=cs):
                     tokens = lex(s, code)
