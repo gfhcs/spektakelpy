@@ -24,6 +24,21 @@ def perm(l):
 """
 
 
+def lex(spec, sample):
+    """
+    Turns a string into a sequence of tokens, using the given lexical grammar.
+    :param spec: The LexicalGrammar to use for lexing.
+    :param sample: A string that is to be lexed.
+    :return: A list of tokens.
+    """
+    sample = StringIO(sample)
+    l = lexer.Lexer(spec, sample)
+    tokens = []
+    while not l.seeing(lexer.end()):
+        tokens.append(l.read())
+    return tokens
+
+
 class TestPythonLexer(unittest.TestCase):
 
     def setUp(self):
@@ -31,21 +46,7 @@ class TestPythonLexer(unittest.TestCase):
         for cs in (1024, 3, 5, 7):
             self._specs_python.append((lexer.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
 
-    def lex(self, spec, sample):
-        """
-        Turns a string into a sequence of tokens, using the given lexical grammar.
-        :param spec: The LexicalGrammar to use for lexing.
-        :param sample: A string that is to be lexed.
-        :return: A list of tokens.
-        """
-        sample = StringIO(sample)
-        l = lexer.Lexer(spec, sample)
-        tokens = []
-        while not l.seeing(lexer.end()):
-            tokens.append(l.read())
-        return tokens
-
-    def match_tokens(self, reference, tokens):
+    def tokens_equal(self, reference, tokens):
         """
         Asserts that the given token list equals the reference.
         :param reference: A list of tokens that must be matched.
@@ -59,11 +60,11 @@ class TestPythonLexer(unittest.TestCase):
     def test_empty(self):
         for s, cs in self._specs_python:
             with self.subTest(chunk_size=cs):
-                tokens = self.lex(s, "")
-                self.match_tokens([], tokens)
+                tokens = lex(s, "")
+                self.tokens_equal([], tokens)
 
     def test_allwhite(self):
         for s, cs in self._specs_python:
             with self.subTest(chunk_size=cs):
-                tokens = self.lex(s, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
-                self.match_tokens([], tokens)
+                tokens = lex(s, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
+                self.tokens_equal([], tokens)
