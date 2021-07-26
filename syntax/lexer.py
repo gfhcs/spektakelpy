@@ -182,7 +182,7 @@ class TokenPosition(NamedTuple):
     def __str__(self):
         return "Line {}, column {}".format(self.line + 1, self.column + 1)
 
-    def __str__(self):
+    def __repr__(self):
         return "Line {}, column {}".format(self.line + 1, self.column + 1)
 
 
