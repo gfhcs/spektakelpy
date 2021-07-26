@@ -175,40 +175,41 @@ tokens02 = [(TokenType.KEYWORD, "if"),
 
 
 sample03 = """
-month_names = ['Januari', 'Februari', 'Maart',      # These are the
-               'April',   'Mei',      'Juni',       # Dutch names
-               'Juli',    'Augustus', 'September',  # for the months
-               'Oktober', 'November', 'December']   # of the year
+month_names = [\"Januari\", \"Februari\", \"Maart\",      # These are the
+               \"April\",   \"Mei\",      \"Juni\",       # Dutch names
+               \"Juli\",    \"Augustus\", \"September\",  # for the months
+               \"Oktober\", \"November\", \"December\"]   # of the year
 """
 
 
 tokens03 = [(TokenType.IDENTIFIER, "month_names"),
             (TokenType.KEYWORD, "="),
             (TokenType.KEYWORD, "["),
-            (TokenType.LITERAL, "'Januari'"),
+            (TokenType.LITERAL, "\"Januari\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Februari'"),
+            (TokenType.LITERAL, "\"Februari\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Maart'"),
+            (TokenType.LITERAL, "\"Maart\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'April'"),
+            (TokenType.LITERAL, "\"April\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Mei'"),
+            (TokenType.LITERAL, "\"Mei\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Juni'"),
+            (TokenType.LITERAL, "\"Juni\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Juli'"),
+            (TokenType.LITERAL, "\"Juli\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Augustus'"),
+            (TokenType.LITERAL, "\"Augustus\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'September'"),
+            (TokenType.LITERAL, "\"September\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'Oktober'"),
+            (TokenType.LITERAL, "\"Oktober\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'November'"),
+            (TokenType.LITERAL, "\"November\""),
             (TokenType.KEYWORD, ","),
-            (TokenType.LITERAL, "'December'"),
+            (TokenType.LITERAL, "\"December\""),
             (TokenType.KEYWORD, "]"),
+            (TokenType.NEWLINE, "\n"),
             ]
 
 
