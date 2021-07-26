@@ -70,12 +70,19 @@ class TestPythonLexer(unittest.TestCase):
             self.assertEqual(rs, s)
 
     def test_empty(self):
+        """
+        Tests that the empty input stream does not cause any trouble.
+        """
         for s, cs in self._specs_python:
             with self.subTest(chunk_size=cs):
                 tokens = lex(s, "")
                 self.tokens_equal([], tokens)
 
     def test_buffer_allwhite(self):
+        """
+        Tests the BufferedMatchStream on an input sequence that consists of various flavors of empty lines.
+        """
+
         text = "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n"
 
         reference = [("t101", "   \n"),
@@ -94,6 +101,9 @@ class TestPythonLexer(unittest.TestCase):
                 self.assertListEqual(reference, matches)
 
     def test_allwhite(self):
+        """
+        Tests the lexer on an input sequence that consists of various flavors of empty lines.
+        """
         for s, cs in self._specs_python:
             with self.subTest(chunk_size=cs):
                 tokens = lex(s, "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n")
