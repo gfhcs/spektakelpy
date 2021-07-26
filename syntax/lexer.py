@@ -250,6 +250,13 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
         self._pattern = re.compile("|".join('(?P<t%d>(%s))' % (t.value, p) for t, p in spec_split))
         self._chunk_size = chunk_size
 
+    @property
+    def pattern(self):
+        """
+        The compile regular expression this grammar uses for matching raw (sub-)tokens.
+        """
+        return self._pattern
+
     def generate_tokens(self, buffer):
 
         # This code follows https://docs.python.org/3/reference/lexical_analysis.html

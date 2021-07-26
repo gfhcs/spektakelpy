@@ -39,6 +39,31 @@ def lex(spec, sample):
     return tokens
 
 
+def match(pattern, sample, chunk_size):
+    """
+    Turns a string into a sequence of raw matches, using the given lexical grammar.
+    This is NOT actual lexing. Instead, only the BufferedMatchStream is tested.
+    :param pattern: A compiled regular expression (re) used for matching.
+    :param sample: A string that is to be processed.
+    :param chunk_size: The chunk size to be used for buffering.
+    :return: A list of pairs (kind, text).
+    """
+    buffer = lexer.BufferedMatchStream(StringIO(sample))
+    matches = []
+    while True:
+        try:
+            m = buffer.match_prefix(pattern, chunk_size)
+        except EOFError:
+            break
+
+        if m[0] is None:
+            raise lexer.LexError(lexer.LexErrorReason.INVALIDINPUT)
+
+        matches.append(m)
+
+    return matches
+
+
 class TestPythonLexer(unittest.TestCase):
 
     def setUp(self):
@@ -62,6 +87,24 @@ class TestPythonLexer(unittest.TestCase):
             with self.subTest(chunk_size=cs):
                 tokens = lex(s, "")
                 self.tokens_equal([], tokens)
+
+    def test_buffer_allwhite(self):
+        text = "   \n \n\n   # This is a comment \n\n \n #Another ocmment .\n\n    \n"
+
+        reference = [("t101", "   \n"),
+                     ("t101", " \n"),
+                     ("t101", "\n"),
+                     ("t101", "   # This is a comment \n"),
+                     ("t101", "\n"),
+                     ("t101", " \n"),
+                     ("t101", " #Another ocmment .\n"),
+                     ("t101", "\n"),
+                     ("t101", "    \n")]
+
+        for s, cs in self._specs_python:
+            with self.subTest(chunk_size=cs):
+                matches = match(s.pattern, text, chunk_size=cs)
+                self.assertListEqual(reference, matches)
 
     def test_allwhite(self):
         for s, cs in self._specs_python:
