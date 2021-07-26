@@ -66,8 +66,7 @@ class TestPythonLexer(unittest.TestCase):
         """
 
         for (rt, rs, *_), (t, s, _) in zip(reference, tokens):
-            self.assertEqual(rt, t)
-            self.assertEqual(rs, s)
+            self.assertTrue(rt == t and rs == s, "Token {}: {} does not match the reference {}: {}".format(t, s, rt, rs))
         self.assertEqual(len(reference), len(tokens), "Number of emitted tokens does not match the reference!")
 
     def test_empty(self):
