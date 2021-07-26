@@ -180,7 +180,10 @@ class TokenPosition(NamedTuple):
     column: int
 
     def __str__(self):
-        return "Line {}, column {}".format(self.line, self.column)
+        return "Line {}, column {}".format(self.line + 1, self.column + 1)
+
+    def __str__(self):
+        return "Line {}, column {}".format(self.line + 1, self.column + 1)
 
 
 class LexicalGrammar(abc.ABC):
@@ -287,7 +290,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
 
         # This code follows https://docs.python.org/3/reference/lexical_analysis.html
 
-        pos = TokenPosition(0, 1, 0)  # What's our position in the input stream?
+        pos = TokenPosition(0, 0, 0)  # What's our position in the input stream?
         istack = [0]  # The stack of indendation depths.
         bdepth = 0  # How deep are we nested in parentheses?
 
