@@ -318,6 +318,10 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
 
                 kind, text = buffer.match_prefix(self._pattern, self._chunk_size)
             except EOFError:
+                # Properly end the line, if necessary:
+                if pos.column > 0:
+                    yield TokenType.NEWLINE, "\n", pos
+
                 # Generate DEDENT tokens until indendation stack is back to where it was at the beginning of the input.
                 while len(istack) > 1:
                     yield TokenType.DEDENT, None, pos
