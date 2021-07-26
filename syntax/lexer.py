@@ -68,7 +68,9 @@ class TokenType(Enum):
     """
     Describes types of syntactic tokens.
     """
-    LINEEND = 101   # The end of a line, possibly including white space and line comments,
+    LINEEND_PREFIX = 100  # An incomplete end of a line, i.e. a sequence that
+                          # *might* be continued to form the end of a line. Never emitted by the lexer.
+    LINEEND = 101  # The end of a line, possibly including white space and line comments,
                    # but definitely a newline sequence. Never emitted by the lexer.
     HSPACE = 102  # A white space string without newlines. Never emitted by the lexer.
     LINEJOIN = 103  # An explicit line join token. Never emitted by the lexer.
@@ -116,6 +118,7 @@ class BufferedMatchStream:
 
         while True:
 
+            self._buffer.seek(0)
             m = pattern.match(self._buffer.getvalue(), pos=self._buffer_offset)
 
             if m is not None and (m.end() < self._buffer_length or self._source is None):
@@ -158,6 +161,7 @@ class BufferedMatchStream:
                 chunk = self._source.read(chunk_size)
                 if len(chunk) < chunk_size:
                     self._source = None
+                self._buffer.seek(self._buffer_length)
                 self._buffer.write(chunk)
                 self._buffer_length += len(chunk)
 
@@ -231,8 +235,19 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                              " set of keywords and separators! It must be at least {}!".format(chunk_size, mincs))
 
         spec_split = [
+            # The _PREFIX categories are necessary, because we need to buffer the source input in a StringIO object:
+            # At the end of the buffer, we might not have managed to match a complete token (yet!), or we might be
+            # considering the 'wrong' token type. In both cases, the continuation of the buffer would change the result.
+            # This is why we need _PREFIX types, to make sure two things:
+            # 1. There is a maximum number of characters after which we are guaranteed to match SOMETHING.
+            # 2. If we are looking at an 'incomplete' token, the match will extend up to the end of the buffer,
+            #    s.t. we can detect that we should extend the buffer.
+            # Note that patterns will be matched with a precedence of the order in which they are listed.
+            #
             # The end of a physical line:
-            (TokenType.LINEEND, r'( *\n)|( *#[^\n]*\n)'),
+            (TokenType.LINEEND, r' *(#[^\n]*)?\n'),
+            # A prefix of a lineend:
+            (TokenType.LINEEND_PREFIX, r' +\Z| *#[^\n]*\Z'),
             # Horizontal space, i.e. a sequence of space characters:
             (TokenType.HSPACE, r' +'),
             # Explicit join of physical lines:
@@ -240,7 +255,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
             # Complete literals (integers, decimals, or strings):
             (TokenType.LITERAL, r'(\d+(\.\d+)?)|"([^"\\\n]|(\\.))*"|"""([^"\\]|(\\.))*"""'),
             # A prefix that definitely needs to be continued in order to become a valid literal:
-            (TokenType.LITERAL_PREFIX, r'(\d+\.(?!\d))|"([^"\\\n]|(\\.))*(?!")|"""([^"\\]|(\\.))*(?!")'),
+            (TokenType.LITERAL_PREFIX, r'(\d+\.\Z)|"([^"\\\n]|(\\.))*\Z|"""([^"\\]|(\\.))*("?"?\Z)'),
             # Alphanumeric keywords:
             (TokenType.KEYWORD, '({sep})|(({kw}){nocont})'.format(sep=pattern_sep, kw=pattern_keyword, nocont=r'(?!\w)')),
             # Identifiers:
