@@ -213,7 +213,22 @@ tokens03 = [(TokenType.IDENTIFIER, "month_names"),
             ]
 
 
+sample04 = "e = m * c ** 2"
+
+
+tokens04 = [(TokenType.IDENTIFIER, "e"),
+            (TokenType.KEYWORD, "="),
+            (TokenType.IDENTIFIER, "m"),
+            (TokenType.KEYWORD, "*"),
+            (TokenType.IDENTIFIER, "c"),
+            (TokenType.KEYWORD, "**"),
+            (TokenType.LITERAL, "2"),
+            (TokenType.NEWLINE, "\n"),
+            ]
+
+
 samples = {"sample01": (sample01, tokens01),
            "sample02": (sample02, tokens02),
-           "sample03": (sample03, tokens03)
+           "sample03": (sample03, tokens03),
+           "sample04": (sample04, tokens04)
            }
