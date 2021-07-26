@@ -316,7 +316,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                 else:
                     advance(kind, text)
             elif kind == TokenType.LINEEND:
-                if pos == 0 or bdepth > 0:
+                if pos.column == 0 or bdepth > 0:
                     # Empty lines, or line ends inside of braces are to be skipped.
                     advance(kind, text)
                 else:
