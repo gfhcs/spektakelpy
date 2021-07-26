@@ -169,6 +169,7 @@ tokens02 = [(TokenType.KEYWORD, "if"),
             (TokenType.INDENT, None),
             (TokenType.KEYWORD, "return"),
             (TokenType.LITERAL, "1"),
+            (TokenType.NEWLINE, "\n"),
             (TokenType.DEDENT, None),
             ]
 
