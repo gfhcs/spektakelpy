@@ -248,8 +248,7 @@ Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deseru
 now_let_us_have_some_really_long_identifier_to_make_sure_that_the_lexer_can_handle_it
 3.14159265359654634769089756345678909876543456789098765432345
 314159265359654634769089756345678909876543456789098765432345
-whil
-"""
+whil"""
 
 tokens05 = [(TokenType.LITERAL, "\" Hello, this is a rather lengthy string.\""),
             (TokenType.NEWLINE, "\n"),
@@ -281,7 +280,8 @@ Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deseru
             (TokenType.NEWLINE, "\n"),
             (TokenType.LITERAL, "314159265359654634769089756345678909876543456789098765432345"),
             (TokenType.NEWLINE, "\n"),
-            (TokenType.KEYWORD, "whil"),
+            (TokenType.IDENTIFIER, "whil"),
+            (TokenType.NEWLINE, "\n"),
             ]
 
 
