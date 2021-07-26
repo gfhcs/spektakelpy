@@ -105,6 +105,7 @@ tokens01 = [(TokenType.KEYWORD, "def"),
             (TokenType.DEDENT, None),
             (TokenType.KEYWORD, "return"),
             (TokenType.IDENTIFIER, "r"),
+            (TokenType.NEWLINE, "\n"),
             (TokenType.DEDENT, None)
             ]
 
