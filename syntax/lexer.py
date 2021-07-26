@@ -85,6 +85,14 @@ class TokenType(Enum):
     DEDENT = 8  # Represents a decrease of the indendation level.
     END = 9  # The end of the source stream.
 
+    def __repr__(self):
+        s = super().__repr__()
+        return s[s.find(".") + 1: s.find(":")]
+
+    def __str__(self):
+        s = super().__str__()
+        return s[s.find(".") + 1: s.find(":")]
+
 
 class BufferedMatchStream:
     """
@@ -170,6 +178,9 @@ class TokenPosition(NamedTuple):
     offset: int
     line: int
     column: int
+
+    def __str__(self):
+        return "Line {}, column {}".format(self.line, self.column)
 
 
 class LexicalGrammar(abc.ABC):
