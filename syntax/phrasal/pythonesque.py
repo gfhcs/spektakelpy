@@ -33,14 +33,7 @@ class SpektakelLangParser(Parser):
             return Identifier(s, start=p, end=lexer.position)
         elif t == LT:
             lexer.read()
-            if s.startswith("\""):
-                value = String(s[1:-1])
-            else:
-                try:
-                    value = Int(s)
-                except TypeError:
-                    value = Float(s)
-            return Constant(value, start=p, end=lexer.position)
+            return Constant(s, start=p, end=lexer.peek()[-1])
         elif t == KW and s == "(":
             lexer.read()
             components = []

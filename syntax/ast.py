@@ -69,16 +69,16 @@ class Constant(Expression):
     An expression that does not have any children and always evaluates to the same value, regardless of the given
     valuation.
     """
-    def __init__(self, value, start=None, end=None):
+    def __init__(self, text, start=None, end=None):
         super().__init__(start=start, end=end)
-        self._value = check_type(value, Value)
+        self._value = check_type(text, str)
 
     @property
-    def value(self):
+    def text(self):
         """
-        The Value object that this constant represents.
+        The text representation of this constant.
         """
-        return self._value
+        return self._text
 
 
 class AssignableExpression(Expression, abc.ABC):
