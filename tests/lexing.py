@@ -1,5 +1,8 @@
 import unittest
 from io import StringIO
+
+import syntax.buffer
+import syntax.lexical.pythonesque
 from syntax import lexer
 from tests.samples_python import samples
 
@@ -35,7 +38,7 @@ def match(pattern, sample, chunk_size):
     :param chunk_size: The chunk size to be used for buffering.
     :return: A list of pairs (kind, text).
     """
-    buffer = lexer.BufferedMatchStream(StringIO(sample))
+    buffer = syntax.buffer.BufferedMatchStream(StringIO(sample))
     matches = []
     while True:
         try:
@@ -56,7 +59,7 @@ class TestPythonLexer(unittest.TestCase):
     def setUp(self):
         self._specs_python = []
         for cs in (1024, 3, 5, 7):
-            self._specs_python.append((lexer.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
+            self._specs_python.append((syntax.lexical.pythonesque.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
 
     def tokens_equal(self, reference, tokens):
         """

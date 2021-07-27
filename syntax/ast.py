@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 
 from util import check_type
-from .lexer import TokenPosition
+from .tokens import TokenPosition
 from .state import Value
 
 

@@ -1,4 +1,4 @@
-from syntax.lexer import TokenType
+from syntax.tokens import TokenType
 
 sample01 = """
 def perm(l):
