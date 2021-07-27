@@ -3,8 +3,15 @@ from syntax.ast import Identifier, Constant, Tuple, Attribute, Projection, Call,
     BooleanBinaryOperation, BooleanBinaryOperator, AssignableExpression, Assignment, ExpressionStatement, Return, \
     Continue, Break, Block, Nop, While
 from syntax.lexer import keyword, identifier
-from syntax.parser import Parser, ID, LT, KW, ParserError
-from syntax.types import String, Int, Float
+from syntax.parser import Parser, ParserError
+from syntax.lexical.pythonesque import TokenType
+
+ID = TokenType.IDENTIFIER
+LT = TokenType.LITERAL
+KW = TokenType.KEYWORD
+NL = TokenType.NEWLINE
+INDENT = TokenType.INDENT
+DEDENT = TokenType.DEDENT
 
 
 class SpektakelLangParser(Parser):

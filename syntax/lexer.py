@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 
 from syntax.buffer import BufferedMatchStream
-from syntax.tokens import TokenType
+from syntax.lexical.pythonesque import TokenType
 
 
 class LexErrorReason(Enum):
