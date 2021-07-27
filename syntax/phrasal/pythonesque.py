@@ -51,7 +51,7 @@ class SpektakelLangParser(Parser):
                         assert len(components) == 1
                         return components[0]
 
-        raise ParserError("Expected an expression!", lexer.position)
+        raise ParserError("Expected an identifier, literal, or opening parenthesis!", p)
 
     @classmethod
     def _parse_application(cls, lexer):
