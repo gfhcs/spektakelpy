@@ -8,12 +8,13 @@ class ParserError(Exception):
 
     def __init__(self, msg, pos=None):
         """
-        Instantiates a new LexError.
+        Instantiates a new ParserError.
         :param msg: The message for this error.
         :param pos: The position in the input stream at which this error was encountered.
         """
 
         if pos is not None:
+            check_type(pos, TokenPosition)
             msg = "Line {}, column {}: ".format(pos.line, pos.column) + msg
 
         super().__init__(msg)
