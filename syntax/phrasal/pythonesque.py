@@ -507,3 +507,8 @@ class SpektakelLangParser(Parser):
     @classmethod
     def parse_behavior(cls, lexer):
         return cls._parse_pheno
+
+     @classmethod
+    def parse_block(cls, lexer):
+
+         pass

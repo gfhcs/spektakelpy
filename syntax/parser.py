@@ -35,19 +35,9 @@ class Parser(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def parse_expression(cls, lexer):
+    def parse_block(cls, lexer):
         """
-        Parses the AST of an expression.
-        :param lexer: The lexer to consume tokens from.
-        :return: An expression object.
-        """
-        pass
-
-    @classmethod
-    @abc.abstractmethod
-    def parse_process(cls, lexer):
-        """
-        Parses the AST of a process.
+        Parses the AST of a block statement.
         :param lexer: The lexer to consume tokens from.
         :return: A Statement object.
         """
