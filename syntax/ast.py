@@ -629,6 +629,7 @@ class ProcedureDefinition(Statement):
         """
         return self.children[-1]
 
+
 class PropertyDefinition(Statement):
     """
     A statement defining a getter and (possibly) setter for an instance property.
@@ -668,6 +669,7 @@ class PropertyDefinition(Statement):
         The setter statement of the property (may be None).
         """
         return self.children[2]
+
 
 class ClassDefinition(Statement):
     """
