@@ -14,6 +14,22 @@ INDENT = TokenType.INDENT
 DEDENT = TokenType.DEDENT
 
 
+def end(token):
+    t, s, (o, l, c) = token
+    o += len(s)
+
+    if t == LT and s.startswith("\"\"\""):
+        for line in s.iterlines():
+            l += 1
+        l -= 1
+        c = len(line)
+        return TokenPosition(o, l, c)
+    elif t in (INDENT, DEDENT):
+        return TokenPosition(o, l, c)
+    else:
+        return TokenPosition(o, l, c + len(s))
+
+
 class SpektakelLangParser(Parser):
     """
     A parser for the spektakelpy default language.
@@ -28,12 +44,11 @@ class SpektakelLangParser(Parser):
         :return: An Expression node.
         """
         t, s, p = lexer.peek()
+
         if t == ID:
-            lexer.read()
-            return Identifier(s, start=p, end=lexer.peek()[-1])
+            return Identifier(s, start=p, end=end(lexer.read()))
         elif t == LT:
-            lexer.read()
-            return Constant(s, start=p, end=lexer.peek()[-1])
+            return Constant(s, start=p, end=end(lexer.read()))
         elif t == KW and s == "(":
             lexer.read()
             components = []
@@ -45,8 +60,7 @@ class SpektakelLangParser(Parser):
                     lexer.read()
                 if lexer.seeing(keyword(")")):
                     if is_tuple:
-                        lexer.read()
-                        return Tuple(*components, start=p, end=lexer.peek()[-1])
+                        return Tuple(*components, start=p, end=end(lexer.read()))
                     else:
                         assert len(components) == 1
                         return components[0]
@@ -66,27 +80,26 @@ class SpektakelLangParser(Parser):
         while True:
             if t == KW and s == ".":
                 lexer.read()
-                _, name, _ = lexer.match(identifier())
-                e = Attribute(e, name, start=e.start, end=lexer.peek()[-1])
+                name = lexer.match(identifier())
+                e = Attribute(e, name[1], start=e.start, end=end(name))
             elif t == KW and s == "[":
                 lexer.read()
                 index = cls.parse_expression(lexer)
-                lexer.match(keyword("]"))
-                e = Projection(e, index, start=e.start, end=lexer.peek()[-1])
+                e = Projection(e, index, start=e.start, end=end(lexer.match(keyword("]"))))
             elif t == KW and s == "(":
                 lexer.read()
                 args = []
                 require_comma = False
                 while True:
                     if lexer.seeing(keyword(")")):
-                        lexer.read()
+                        ep = end(lexer.read())
                         break
                     if require_comma:
                         lexer.match(keyword(","))
                     args.append(cls.parse_expression(lexer))
                     require_comma = True
 
-                e = Call(e, *args, start=e.start, end=lexer.peek()[-1])
+                e = Call(e, *args, start=e.start, end=ep)
             else:
                 return e
 
@@ -105,7 +118,7 @@ class SpektakelLangParser(Parser):
         while t == KW and s == "**":
             lexer.read()
             e = cls._parse_application(lexer)
-            base = BinaryOperation(ArithmeticBinaryOperator.POWER, base, e, start=base.start, end=lexer.peek()[-1])
+            base = BinaryOperation(ArithmeticBinaryOperator.POWER, base, e, start=base.start, end=e.end)
 
         return base
 
@@ -117,9 +130,12 @@ class SpektakelLangParser(Parser):
         :return: An Expression node.
         """
 
+        start = None
         positive = True
         while lexer.seeing(keyword("-")):
-            lexer.read()
+            _, _, p = lexer.read()
+            if start is None:
+                start = p
             positive = not positive
 
         e = cls._parse_pow(lexer)
@@ -127,7 +143,7 @@ class SpektakelLangParser(Parser):
         if positive:
             return e
         else:
-            return UnaryOperation(UnaryOperator.MINUS, e, start=e.start, end=lexer.peek()[-1])
+            return UnaryOperation(UnaryOperator.MINUS, e, start=e.start if start is None else start, end=e.end)
 
     @classmethod
     def _parse_mult(cls, lexer):
@@ -152,7 +168,7 @@ class SpektakelLangParser(Parser):
                 return base
             lexer.read()
             right = cls._parse_unary(lexer)
-            base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=lexer.peek()[-1])
+            base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=right.end)
 
     @classmethod
     def _parse_add(cls, lexer):
@@ -175,7 +191,7 @@ class SpektakelLangParser(Parser):
                 return base
             lexer.read()
             right = cls._parse_mult(lexer)
-            base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=lexer.peek()[-1])
+            base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=right.end)
 
     @classmethod
     def _parse_comparison(cls, lexer):
@@ -208,7 +224,7 @@ class SpektakelLangParser(Parser):
                 else:
                     return base
             right = cls._parse_add(lexer)
-            base = Comparison(op, base, right, start=base.start, end=lexer.peek()[-1])
+            base = Comparison(op, base, right, start=base.start, end=right.end)
 
     @classmethod
     def _parse_not(cls, lexer):
@@ -218,9 +234,12 @@ class SpektakelLangParser(Parser):
         :return: An Expression node.
         """
 
+        start = None
         positive = True
         while lexer.seeing(keyword("not")):
-            lexer.read()
+            _, _, p = lexer.read()
+            if start is None:
+                start = p
             positive = not positive
 
         e = cls._parse_comparison(lexer)
@@ -228,7 +247,7 @@ class SpektakelLangParser(Parser):
         if positive:
             return e
         else:
-            return UnaryOperation(UnaryOperator.NOT, e, start=e.start, end=lexer.peek()[-1])
+            return UnaryOperation(UnaryOperator.NOT, e, start=e.start if start is None else start, end=e.end)
 
     @classmethod
     def _parse_and(cls, lexer):
@@ -244,7 +263,7 @@ class SpektakelLangParser(Parser):
         while t == KW and s == "and":
             lexer.read()
             right = cls._parse_not(lexer)
-            base = BooleanBinaryOperation(BooleanBinaryOperator.AND, base, right, start=base.start, end=lexer.peek()[-1])
+            base = BooleanBinaryOperation(BooleanBinaryOperator.AND, base, right, start=base.start, end=right.end)
 
         return base
 
@@ -262,7 +281,7 @@ class SpektakelLangParser(Parser):
         while t == KW and s == "or":
             lexer.read()
             right = cls._parse_and(lexer)
-            base = BooleanBinaryOperation(BooleanBinaryOperator.OR, base, right, start=base.start, end=lexer.peek()[-1])
+            base = BooleanBinaryOperation(BooleanBinaryOperator.OR, base, right, start=base.start, end=right.end)
 
         return base
 
@@ -333,7 +352,7 @@ class SpektakelLangParser(Parser):
         """
         _, _, p = lexer.match(keyword("return"))
         e = cls.parse_expression(lexer)
-        return Return(e, start=p, end=lexer.peek()[-1])
+        return Return(e, start=p, end=e.end)
 
     @classmethod
     def _parse_continue(cls, lexer):
@@ -342,8 +361,8 @@ class SpektakelLangParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: A Continue node.
         """
-        _, _, p = lexer.match(keyword("continue"))
-        return Continue(start=p, end=lexer.peek()[-1])
+        t = lexer.match(keyword("continue"))
+        return Continue(start=t[-1], end=end(t))
 
     @classmethod
     def _parse_break(cls, lexer):
@@ -352,8 +371,8 @@ class SpektakelLangParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: A Break node.
         """
-        _, _, p = lexer.match(keyword("break"))
-        return Break(start=p, end=lexer.peek()[-1])
+        t = lexer.match(keyword("break"))
+        return Break(start=t[-1], end=end(t))
 
     @classmethod
     def _parse_statements(cls, lexer, t):
