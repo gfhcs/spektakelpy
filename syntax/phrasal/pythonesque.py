@@ -458,7 +458,7 @@ class SpektakelLangParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: A While node.
         """
-        _, _, start = lexer.match(keyword("when"))
+        _, _, start = lexer.match(keyword("while"))
 
         lexer.match(keyword("("))
         condition = cls.parse_expression(lexer)
