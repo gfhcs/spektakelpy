@@ -3,8 +3,9 @@ from syntax.ast import Identifier, Constant, Tuple, Attribute, Projection, Call,
     BooleanBinaryOperation, BooleanBinaryOperator, AssignableExpression, Assignment, ExpressionStatement, Return, \
     Continue, Break, Block, Nop, While, Await, Launch
 from syntax.lexer import keyword, identifier
-from syntax.parser import Parser, ParserError
 from syntax.lexical.pythonesque import TokenType
+from syntax.parser import Parser, ParserError
+from syntax.tokens import TokenPosition
 
 ID = TokenType.IDENTIFIER
 LT = TokenType.LITERAL
