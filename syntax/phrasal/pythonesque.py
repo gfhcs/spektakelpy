@@ -1,7 +1,7 @@
 from syntax.ast import Identifier, Constant, Tuple, Attribute, Projection, Call, BinaryOperation, \
     ArithmeticBinaryOperator, UnaryOperation, UnaryOperator, ArithmeticBinaryOperation, ComparisonOperator, Comparison, \
     BooleanBinaryOperation, BooleanBinaryOperator, AssignableExpression, Assignment, ExpressionStatement, Return, \
-    Continue, Break, Block, Nop, While
+    Continue, Break, Block, Nop, While, Await, Launch
 from syntax.lexer import keyword, identifier
 from syntax.parser import Parser, ParserError
 from syntax.lexical.pythonesque import TokenType
@@ -106,9 +106,45 @@ class SpektakelLangParser(Parser):
             t, s, p = lexer.peek()
 
     @classmethod
+    def _parse_call(cls, lexer):
+        """
+        Behaves like _parse_application, but makes sure that the resulting expression is of type Call.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+
+        c = cls._parse_application(lexer)
+
+        if not isinstance(c, Call):
+            raise ParserError("Expected a call expression, but found a different kind of expression!", c.start)
+
+        return c
+
+    @classmethod
+    def _parse_async(cls, lexer):
+        """
+        Parses either a 'process' expression or an 'await' expression, or behaves like _parse_application.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        t, s, p = lexer.peek()
+
+        if t == KW and s == "await":
+            lexer.read()
+            e = cls._parse_application(lexer)
+            return Await(e, start=p, end=e.end)
+        elif t == KW and s == "process":
+            lexer.read()
+            e = cls._parse_call(lexer)
+            return Launch(e, start=p, end=e.end)
+        else:
+            return cls._parse_application(lexer)
+
+
+    @classmethod
     def _parse_pow(cls, lexer):
         """
-        Parses either an exponentiation, or behaves like _parse_application.
+        Parses either an exponentiation, or behaves like _parse_async.
         :param lexer: The lexer to consume tokens from.
         :return: An Expression node.
         """
