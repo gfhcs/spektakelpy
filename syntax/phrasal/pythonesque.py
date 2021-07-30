@@ -389,67 +389,6 @@ class SpektakelLangParser(Parser):
         return ss
 
     @classmethod
-    def _parse_block(cls, lexer):
-        """
-        Parses a block statement.
-        :param lexer: The lexer to consume tokens from.
-        :return: A Block node.
-        """
-        _, _, start = lexer.match(keyword("{"))
-        statements = cls._parse_statements(lexer, keyword("}"))
-        lexer.match(keyword("}"))
-        return Block(statements, start=start, end=lexer.peek()[-1])
-
-    @classmethod
-    def _parse_when(cls, lexer):
-        """
-        Parses a 'when' statement.
-        :param lexer: The lexer to consume tokens from.
-        :return: A When node.
-        """
-        _, _, start = lexer.match(keyword("when"))
-
-        lexer.match(keyword("("))
-        condition = cls.parse_expression(lexer)
-        lexer.match(keyword(")"))
-        statement = cls._parse_statement(lexer)
-
-        return When(condition, statement, start=start, end=lexer.peek()[-1])
-
-    @classmethod
-    def _parse_select(cls, lexer):
-        """
-        Parses a 'select' statement.
-        :param lexer: The lexer to consume tokens from.
-        :return: A Select node.
-        """
-        _, _, start = lexer.match(keyword("select"))
-
-        lexer.match(keyword("{"))
-
-        t, s, p = lexer.peek()
-
-        def t(token):
-            t, s, p = token
-            return t == KW and s in ("::", "}")
-
-        alternatives = []
-        while not (t == KW and s == "}"):
-            _, _, sstart = lexer.match(keyword("::"))
-
-            ss = cls._parse_statements(lexer, t)
-            if len(ss) != 1:
-                s = Block(ss, start=sstart, end=lexer.peek()[-1])
-            else:
-                s, = ss
-
-            alternatives.append(s)
-
-        lexer.match(keyword("}"))
-
-        return Select(alternatives, start=start, end=lexer.peek()[-1])
-
-    @classmethod
     def _parse_if(cls, lexer):
         """
         Parses an 'if' statement.
