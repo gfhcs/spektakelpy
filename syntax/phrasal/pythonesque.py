@@ -493,6 +493,11 @@ class SpektakelLangParser(Parser):
         return ss
 
     @classmethod
+    def _parse_atomic(cls, lexer):
+        # TODO: Implement this!
+        pass
+
+    @classmethod
     def _parse_if(cls, lexer):
         """
         Parses an 'if' statement.
@@ -536,41 +541,19 @@ class SpektakelLangParser(Parser):
         return While(condition, body, start=start, end=lexer.peek()[-1])
 
     @classmethod
-    def _parse_procdef(cls, lexer):
-        # TODO: Implement procedure definition parsing
+    def _parse_def(cls, lexer):
+        # TODO: Implement this.
         pass
 
-    def _parse_declaration(cls, lexer):
+    def _parse_prop(cls, lexer):
+        # TODO: Implement this.
+        pass
 
-        # Like with statements, we have to branch into the different declaration types here.
-
-    @classmethod
-    def _parse_declarations(cls, lexer):
-        # TODO: This should simply parse a sequence of declarations.
-
-    def _parse_decl_label(cls, lexer):
-        # TODO: Parses a label declaration (offer or sync)
-
-    def _parse_decl_var(cls, lexer):
-        # TODO: Parses a variable declaration
-
-    def _parse_decl_procdure(cls, lexer):
-        # TODO: Parses a procedure declaration (either def or public)
-
-    def _parse_decl_property(cls, lexer):
-        # TODO: Parses a property declaration.
-
-    def _parse_decl_process(cls, lexer):
-        # TODO: Parses a process declaration
-
-    def _parse_decl_pheno(cls, lexer):
-        # TODO: This should mostly call _parse_declarations.
+    def _parse_class(cls, lexer):
+        # TODO: Implement this.
+        pass
 
     @classmethod
-    def parse_behavior(cls, lexer):
-        return cls._parse_pheno
-
-     @classmethod
     def parse_block(cls, lexer):
-
-         pass
+        # Just call _parse_statement until you see the end of the input.
+        pass
