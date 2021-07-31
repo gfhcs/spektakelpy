@@ -1,7 +1,4 @@
-from syntax.ast import Identifier, Constant, Tuple, Attribute, Projection, Call, BinaryOperation, \
-    ArithmeticBinaryOperator, UnaryOperation, UnaryOperator, ArithmeticBinaryOperation, ComparisonOperator, Comparison, \
-    BooleanBinaryOperation, BooleanBinaryOperator, AssignableExpression, Assignment, ExpressionStatement, Return, \
-    Continue, Break, Block, Nop, While, Await, Launch
+from syntax.ast import *
 from syntax.lexer import keyword, identifier
 from syntax.lexical.pythonesque import TokenType
 from syntax.parser import Parser, ParserError
@@ -16,6 +13,11 @@ DEDENT = TokenType.DEDENT
 
 
 def end(token):
+    """
+    Given a token, returns the TokenPosition of the *end* of the token.
+    :param token: A triple (t, s, p), as emitted by a lexer.
+    :return: A TokenPosition object.
+    """
     t, s, (o, l, c) = token
     o += len(s)
 
@@ -30,11 +32,32 @@ def end(token):
     else:
         return TokenPosition(o, l, c + len(s))
 
+def match_newline(lexer, enabled=True):
+    """
+    Consumes a newline token from the given lexer.
+    :param lexer: The lexer to consume the token from.
+    :param enabled: Whether this call should actually have an effect (True, default), or not (False).
+    """
+    if enabled:
+        def newline(token):
+            return token[0] == NL
+
+        lexer.match(newline)
 
 class SpektakelLangParser(Parser):
     """
     A parser for the spektakelpy default language.
     """
+
+    @classmethod
+    def _parse_identifier(cls, lexer):
+        """
+        Parses exactly one identifier.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        t, s, p = lexer.match(identifier())
+        return Identifier(s, start=p, end=end((t, s, p)))
 
     @classmethod
     def _parse_simple_expression(cls, lexer):
@@ -333,83 +356,127 @@ class SpektakelLangParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: A Statement node.
         """
-        t, s, p = lexer.peek()
 
-        cs = {(KW, "{"): cls._parse_block,
-              (KW, "return"): cls._parse_return,
-              (KW, "break"): cls._parse_break,
-              (KW, "continue"): cls._parse_continue,
-              (KW, "when"): cls._parse_when,
-              (KW, "select"): cls._parse_select,
-              (KW, "if"): cls._parse_if,
-              (KW, "while"): cls._parse_while,
-              (KW, "def"): cls._parse_procdef}
+        # This method and the ones it calls respect are based on the parsing rules laid out in
+        # https://docs.python.org/3/reference/compound_stmts.html
 
-        try:
-            sub_parser = cs[(t, s)]
-        except KeyError:
-            es = [cls.parse_expression(lexer)]
+        t, s, start = lexer.peek()
 
+        cs = {"pass": cls._parse_pass,
+              "return": cls._parse_return,
+              "break": cls._parse_break,
+              "continue": cls._parse_continue,
+              "if": cls._parse_if,
+              "while": cls._parse_while,
+              "def": cls._parse_procdef,
+              "prop": cls._parse_prop,
+              "class": cls._parse_class}
+
+        if t == KW and s in cs:
+            return (cs[s])(lexer)
+        else:
+
+            eparse = cls.parse_expression
+
+            # Maybe this is a declaration?
+            var = False
+            if lexer.seeing(keyword("var")):
+                lexer.read()
+                var = True
+                # For declarations, only (a tuple of) identifiers must be parsed.
+                eparse = cls._parse_identifier
+
+            # Parse an expression, which might be an unparenthesised tuple:
+            es = [eparse(lexer)]
             t, s, p = lexer.peek()
-
             while t == KW and s == ",":
                 lexer.read()
-                es.append(cls.parse_expression(lexer))
+                es.append(eparse(lexer))
                 t, s, p = lexer.peek()
-
             if len(es) == 1:
                 e = es
             else:
-                e = Tuple(*es, start=es[0].start, end=lexer.peek()[-1])
+                e = Tuple(*es, start=es[0].start, end=es[-1].end)
 
-            if t == KW and s == ":":
-                if not isinstance(e, Identifier):
-                    raise ParserError("Only an identifier is allowed on the left hand side of ':'!", pos=lexer.peek()[-1])
-                lexer.read()
-                s = cls._parse_statement(lexer)
-                return ActionStatement(e, s, start=e.start, end=lexer.peek()[-1])
-            elif t == KW and s == "=":
+            if t == KW and s == "=":
                 if not isinstance(e, AssignableExpression):
-                    raise ParserError("Only 'assignable' expressions must occuron the left hand side of an assignment!",
-                                      pos=lexer.peek()[-1])
+                    raise ParserError("Only 'assignable' expressions must occur on the left hand side of '='!",pos=p)
                 lexer.read()
-                right = cls.parse_expression(lexer)
-                return Assignment(e, right, start=e.start, end=lexer.peek()[-1])
-            else:
-                return ExpressionStatement(e, start=e.start, end=lexer.peek()[-1])
 
-        return sub_parser(lexer)
+                # Parse right hand side, which might be an unparenthesised tuple as well:
+                rs = [cls.parse_expression(lexer)]
+                t, s, p = lexer.peek()
+                while t == KW and s == ",":
+                    lexer.read()
+                    rs.append(cls.parse_expression(lexer))
+                    t, s, p = lexer.peek()
+                if len(rs) == 1:
+                    right = rs
+                else:
+                    right = Tuple(*rs, start=rs[0].start, end=rs[-1].end)
+
+                match_newline(lexer)
+
+                if var:
+                    return VariableDeclaration(pattern=e, expression=right, start=start, end=right.end)
+                else:
+                    return Assignment(e, right, start=start, end=right.end)
+            else:
+                match_newline(lexer)
+                if var:
+                    return VariableDeclaration(pattern=e, expression=None, start=start, end=e.end)
+                else:
+                    return ExpressionStatement(e, start=e.start, end=e.end)
+
 
     @classmethod
-    def _parse_return(cls, lexer):
+    def _parse_return(cls, lexer, newline=True):
         """
         Parses a return statement.
         :param lexer: The lexer to consume tokens from.
+        :param newline: Whether this statement parser should also match a newline token after the actual statement.
         :return: A Return node.
         """
         _, _, p = lexer.match(keyword("return"))
         e = cls.parse_expression(lexer)
+        match_newline(lexer, enabled=newline)
         return Return(e, start=p, end=e.end)
 
     @classmethod
-    def _parse_continue(cls, lexer):
+    def _parse_continue(cls, lexer, newline=True):
         """
         Parses a continue statement.
         :param lexer: The lexer to consume tokens from.
+        :param newline: Whether this statement parser should also match a newline token after the actual statement.
         :return: A Continue node.
         """
         t = lexer.match(keyword("continue"))
+        match_newline(lexer, enabled=newline)
         return Continue(start=t[-1], end=end(t))
 
     @classmethod
-    def _parse_break(cls, lexer):
+    def _parse_break(cls, lexer, newline=True):
         """
         Parses a break statement.
         :param lexer: The lexer to consume tokens from.
+        :param newline: Whether this statement parser should also match a newline token after the actual statement.
         :return: A Break node.
         """
         t = lexer.match(keyword("break"))
+        match_newline(lexer, enabled=newline)
         return Break(start=t[-1], end=end(t))
+
+    @classmethod
+    def _parse_pass(cls, lexer, newline=True):
+        """
+        Parses a pass statement.
+        :param lexer: The lexer to consume tokens from.
+        :param newline: Whether this statement parser should also match a newline token after the actual statement.
+        :return: A Pass node.
+        """
+        t = lexer.match(keyword("pass"))
+        match_newline(lexer, enabled=newline)
+        return Pass(start=t[-1], end=end(t))
 
     @classmethod
     def _parse_statements(cls, lexer, t):
@@ -444,7 +511,7 @@ class SpektakelLangParser(Parser):
             lexer.read()
             alternative = cls._parse_statement(lexer)
         else:
-            alternative = Nop()
+            alternative = Pass()
 
         return Select([
             When(condition, consequence, start=start, end=consequence.end),

@@ -410,7 +410,7 @@ class Statement(Node, abc.ABC):
     pass
 
 
-class Nop(Statement):
+class Pass(Statement):
     """
     A statement that does nothing.
     """
@@ -563,23 +563,23 @@ class VariableDeclaration(Statement):
      A statement declaring a variable.
      """
 
-    def __init__(self, name, expression, **kwargs):
+    def __init__(self, pattern, expression=None, **kwargs):
         """
         Creates a variable declaration.
-        :param name: The name of the variable to be declared.
-        :param expression: The expression the evaluation result of which the newly declared variable should be bound to.
-                           May be None.
+        :param pattern: The expression holding the identifiers to be declared.
+        :param expression: The expression the evaluation result of which the newly declared variable(s)
+                           should be bound to. May be None.
         :param kwargs: See statement constructor.
         """
         if expression is not None:
             check_type(expression, Expression)
 
-        super().__init__(check_type(name, Identifier), expression, **kwargs)
+        super().__init__(check_type(pattern, Expression), expression, **kwargs)
 
     @property
-    def name(self):
+    def pattern(self):
         """
-        The name of the variable to be declared.
+        The expression holding the identifiers to be declared.
         """
         return self.children[0]
 
