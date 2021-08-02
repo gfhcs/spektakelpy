@@ -581,11 +581,34 @@ class SpektakelLangParser(Parser):
         return While(condition, body, start=start, end=body.end)
 
     @classmethod
-    def _parse_def(cls, lexer):
-        # TODO: Implement this.
-        pass
-
     def _parse_prop(cls, lexer):
+        """
+        Parses a property declaration.
+        :param lexer: The lexer to consume tokens from.
+        :return: A PropertyDefinition node.
+        """
+        _, _, start = lexer.match(keyword("prop"))
+        name = cls._parse_identifier(lexer)
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        match_indent(lexer)
+        lexer.match(keyword("get"))
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        getter = cls._parse_body(lexer)
+        if lexer.seeing(keyword("set")):
+            lexer.match(keyword("set"))
+            lexer.match(keyword(":"))
+            match_newline(lexer)
+            setter = cls._parse_body(lexer)
+        else:
+            setter = None
+        match_dedent(lexer)
+        end = getter.end if setter is None else setter.end
+        return PropertyDefinition(name, getter, setter, start=start, end=end)
+
+    @classmethod
+    def _parse_def(cls, lexer):
         # TODO: Implement this.
         pass
 
