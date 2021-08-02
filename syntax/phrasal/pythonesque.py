@@ -618,5 +618,14 @@ class SpektakelLangParser(Parser):
 
     @classmethod
     def parse_block(cls, lexer):
-        # Just call _parse_statement until you see the end of the input.
-        pass
+        """
+        Parses a sequence of statements, followed by the end of the input stream.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Statement object.
+        """
+        ss = []
+        while not lexer.seeing(lambda token: token[0] == TokenType.END):
+            ss.append(cls._parse_statement(lexer))
+        lexer.match(lambda token: token[0] == TokenType.END)
+
+        return Block(ss, start=ss[0].start, end=ss[-1].end)
