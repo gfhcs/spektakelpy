@@ -32,6 +32,7 @@ def end(token):
     else:
         return TokenPosition(o, l, c + len(s))
 
+
 def match_newline(lexer, enabled=True):
     """
     Consumes a newline token from the given lexer.
@@ -43,6 +44,23 @@ def match_newline(lexer, enabled=True):
             return token[0] == NL
 
         lexer.match(newline)
+
+
+def match_indent(lexer):
+    """
+    Consumes an INDENT token from the given lexer.
+    :param lexer: The lexer to consume the token from.
+    """
+    lexer.match(lambda token: token[0] == INDENT)
+
+
+def match_dedent(lexer):
+    """
+    Consumes an DEDENT token from the given lexer.
+    :param lexer: The lexer to consume the token from.
+    """
+    lexer.match(lambda token: token[0] == DEDENT)
+
 
 class SpektakelLangParser(Parser):
     """
@@ -479,23 +497,33 @@ class SpektakelLangParser(Parser):
         return Pass(start=t[-1], end=end(t))
 
     @classmethod
-    def _parse_statements(cls, lexer, t):
+    def _parse_body(cls, lexer):
         """
-        Parses a sequence of statements.
+        Parses a sequence of statements, preceded by an INDENT token and followed by a DEDENT token.
         :param lexer: The lexer to consume tokens from.
-        :param t: A predicate over tokens, deciding if the current token delimits the end of the statement list.
-        :return: A list of Statement nodes.
+        :return: A statement object.
         """
-        ss = []
-        while not t(lexer.peek()):
-            ss.append(cls._parse_statement(lexer))
 
-        return ss
+        match_indent(lexer)
+        ss = []
+        while not lexer.seeing(lambda token: token[0] == DEDENT):
+            ss.append(cls._parse_statement(lexer))
+        match_dedent(lexer)
+
+        return Block(ss, start=ss[0].start, end=ss[-1].end)
 
     @classmethod
     def _parse_atomic(cls, lexer):
-        # TODO: Implement this!
-        pass
+        """
+        Parses an atomic block, i.e. a sequence of statements the execution of which is not to be interrupted by
+        other processes.
+        :param lexer: The lexer to consume tokens from.
+        :return: An AtomicBlock node.
+        """
+        lexer.match(keyword("atomic"))
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        return AtomicBlock(cls._parse_body(lexer))
 
     @classmethod
     def _parse_if(cls, lexer):
@@ -504,25 +532,39 @@ class SpektakelLangParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: A Statement node.
         """
-        _, _, start = lexer.match(keyword("if"))
 
-        lexer.match(keyword("("))
-        condition = cls.parse_expression(lexer)
-        lexer.match(keyword(")"))
-        consequence = cls._parse_statement(lexer)
+        def _recur(lexer):
+            condition = cls.parse_expression(lexer)
+            lexer.match(keyword(":"))
+            match_newline(lexer)
+            consequence = cls._parse_body(lexer)
+            alternative = _parse_clause(lexer, False)
+            end = consequence.end if alternative is None else alternative.end
+            return Conditional(condition, consequence, alternative, start=start, end=end)
 
-        t, s, p = lexer.peek()
-        if t == KW and s == "else":
-            lexer.read()
-            alternative = cls._parse_statement(lexer)
-        else:
-            alternative = Pass()
+        def _parse_clause(lexer, initial=True):
 
-        return Select([
-            When(condition, consequence, start=start, end=consequence.end),
-            When(UnaryOperation(UnaryOperator.NOT, condition, start=alternative.start, end=alternative.start),
-                 alternative, start=alternative.start, end=alternative.end)
-        ], start=start, end=lexer.peek()[-1])
+            t, s, start = lexer.peek()
+
+            if t != KW:
+                raise ParserError("Expected a keyword!", start)
+
+            if initial:
+                lexer.match(keyword("if"))
+                return _recur(lexer)
+            elif not initial and s == "elif":
+                lexer.read()
+                return _recur(lexer)
+            elif not initial and s == "else":
+                lexer.read()
+                lexer.match(keyword(":"))
+                match_newline(lexer)
+                alternative = cls._parse_body(lexer)
+                return alternative
+            else:
+                return None
+
+        return _parse_clause(lexer, True)
 
     @classmethod
     def _parse_while(cls, lexer):
@@ -532,13 +574,11 @@ class SpektakelLangParser(Parser):
         :return: A While node.
         """
         _, _, start = lexer.match(keyword("while"))
-
-        lexer.match(keyword("("))
         condition = cls.parse_expression(lexer)
-        lexer.match(keyword(")"))
-        body = cls._parse_statement(lexer)
-
-        return While(condition, body, start=start, end=lexer.peek()[-1])
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        body = cls._parse_body(lexer)
+        return While(condition, body, start=start, end=body.end)
 
     @classmethod
     def _parse_def(cls, lexer):

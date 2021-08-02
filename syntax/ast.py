@@ -481,12 +481,25 @@ class Block(Statement):
         super().__init__(*(check_type(s, Statement) for s in statements), **kwargs)
 
 
-class AtomicBlock(Block):
+class AtomicBlock(Statement):
     """
     A block statement the sub-statements of which should be executed without being interrupted by the execution
     of other processes/tasks.
     """
-    pass
+    def __init__(self, s, **kwargs):
+        """
+        Creates a new block statement.
+        :param s: The statement protected by this atomic clause.
+        :param kwargs: See Statement constructor.
+        """
+        super().__init__(check_type(s, Statement), **kwargs)
+
+    @property
+    def statement(self):
+        """
+        The statement protected by this atomic clause.
+        """
+        return self.children[0]
 
 
 class Return(Statement):
@@ -527,6 +540,46 @@ class Continue(AtomicStatement):
     A statement that jumps to the end of a loop body.
     """
     pass
+
+
+class Conditional(Statement):
+    """
+    A statement composed of several conditional alternatives.
+    """
+
+    def __init__(self, condition, consequence, alternative, **kwargs):
+        """
+        Creates a Conditional statement.
+        :param condition: The expression to be evaluated in order to decide which statement is to be executed.
+        :param consequence: The statement to be executed if the condition was evaluated positively.
+        :param alternative: The statement to be executed if the condition was evaluated negatively.
+        :param kwargs: See statement constructor.
+        """
+
+        super().__init__(check_type(condition, Expression),
+                         check_type(consequence, Statement),
+                         None if alternative is None else check_type(alternative, Statement), **kwargs)
+
+    @property
+    def condition(self):
+        """
+        The expression to be evaluated in order to decide which statement is to be executed.
+        """
+        return self.children[0]
+
+    @property
+    def consequence(self):
+        """
+        The statement to be executed if the condition was evaluated positively.
+        """
+        return self.children[1]
+
+    @property
+    def alternative(self):
+        """
+        The statement to be executed if the condition was evaluated negatively.
+        """
+        return self.children[2]
 
 
 class While(Statement):
