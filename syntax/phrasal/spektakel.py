@@ -32,6 +32,32 @@ class SpektakelLexer(Lexer):
         super().__init__(lexical_grammar, source)
 
 
+def keyword(s=None):
+    """
+    Constructs a predicate asserting that a given token is the expected keyword.
+    :param s: The expected text of the token.
+    :return: A predicate procedure.
+    """
+    return expected(t=TokenType.KEYWORD, s=s)
+
+
+def identifier(s=None):
+    """
+    Constructs a predicate asserting that a given token is an identifier.
+    :param s: The expected text of the token.
+    :return: A predicate procedure.
+    """
+    return expected(t=TokenType.IDENTIFIER, s=s)
+
+
+def literal():
+    """
+    Constructs a predicate asserting that a given token is a literal.
+    :return: A predicate procedure.
+    """
+    return expected(t=TokenType.LITERAL)
+
+
 def end(token):
     """
     Given a token, returns the TokenPosition of the *end* of the token.

@@ -2,7 +2,7 @@ import unittest
 from io import StringIO
 
 import syntax.buffer
-import syntax.lexical.pythonesque
+from syntax.lexical import pythonesque
 from syntax import lexer
 from tests.samples_python import samples
 
@@ -12,6 +12,14 @@ kw_python = ["False", "await", "else", "import", "pass", "None", "break", "excep
 sep_python = ["+", "-", "*", "**", "/", "//", "%", "@", "<<", ">>", "&", "|", "^", "~", ":=", "<", ">", "<=", ">=",
               "==", "!=", "(", ")", "[", "]", "{", "}", ",", ":", ".", ";", "@", "=", "->", "+=", "-=", "*=", "/=",
               "//=", "%=", "@=", "&=", "|=", "^=", ">>=", "<<=", "**="]
+
+
+def end():
+    """
+    Constructs a predicate asserting that a given token is the END token.
+    :return: A predicate procedure.
+    """
+    return lexer.expected(t=pythonesque.TokenType.END)
 
 
 def lex(spec, sample):
@@ -24,7 +32,7 @@ def lex(spec, sample):
     sample = StringIO(sample)
     l = lexer.Lexer(spec, sample)
     tokens = []
-    while not l.seeing(lexer.end()):
+    while not l.seeing(end()):
         tokens.append(l.read())
     return tokens
 

@@ -115,6 +115,10 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
         self._chunk_size = chunk_size
 
     @property
+    def type_end(self):
+        return TokenType.END
+
+    @property
     def pattern(self):
         """
         The compile regular expression this grammar uses for matching raw (sub-)tokens.

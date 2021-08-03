@@ -2,7 +2,6 @@ import abc
 from enum import Enum
 
 from syntax.buffer import BufferedMatchStream
-from syntax.lexical.pythonesque import TokenType
 
 
 class LexErrorReason(Enum):
@@ -66,6 +65,16 @@ class LexicalGrammar(abc.ABC):
     An instance of this class completely specifies the lexical grammar of a formal language.
     """
 
+    @property
+    @abc.abstractmethod
+    def type_end(self):
+        """
+        A value that represents the token type for the "end of input", i.e. the type of the token that signals
+        that the entire input has been lexed all the way to the end.
+        :return: A value that is valid as the first component of a token triple.
+        """
+        pass
+
     @abc.abstractmethod
     def generate_tokens(self, buffer):
         """
@@ -88,6 +97,7 @@ class Lexer:
         :param source: A text stream providing input characters.
         """
 
+        self._end = spec.type_end
         self._g = iter(spec.generate_tokens(BufferedMatchStream(source)))
         self._peek = None
 
@@ -115,7 +125,7 @@ class Lexer:
         :return: A tuple as returned by Lexer.peek.
         """
         t, s, p = self.peek()
-        if t == TokenType.END:
+        if t == self._end:
             raise LexError(LexErrorReason.OUTOFTOKENS, pos=p)
         self._peek = None
         return t, s, p
@@ -156,37 +166,3 @@ def expected(s=None, t=None):
         return (t is None or ft == t) and (s is None or fs == s)
 
     return p
-
-
-def end():
-    """
-    Constructs a predicate asserting that a given token is the END token.
-    :return: A predicate procedure.
-    """
-    return expected(t=TokenType.END)
-
-
-def keyword(s=None):
-    """
-    Constructs a predicate asserting that a given token is the expected keyword.
-    :param s: The expected text of the token.
-    :return: A predicate procedure.
-    """
-    return expected(t=TokenType.KEYWORD, s=s)
-
-
-def identifier(s=None):
-    """
-    Constructs a predicate asserting that a given token is an identifier.
-    :param s: The expected text of the token.
-    :return: A predicate procedure.
-    """
-    return expected(t=TokenType.IDENTIFIER, s=s)
-
-
-def literal():
-    """
-    Constructs a predicate asserting that a given token is a literal.
-    :return: A predicate procedure.
-    """
-    return expected(t=TokenType.LITERAL)
