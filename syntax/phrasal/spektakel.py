@@ -458,7 +458,7 @@ class SpektakelParser(Parser):
                 es.append(eparse(lexer))
                 t, s, p = lexer.peek()
             if len(es) == 1:
-                e = es
+                e = es[0]
             else:
                 e = Tuple(*es, start=es[0].start, end=es[-1].end)
 
@@ -491,7 +491,6 @@ class SpektakelParser(Parser):
                     return VariableDeclaration(pattern=e, expression=None, start=start, end=e.end)
                 else:
                     return ExpressionStatement(e, start=e.start, end=e.end)
-
 
     @classmethod
     def _parse_return(cls, lexer, newline=True):

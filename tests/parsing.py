@@ -36,7 +36,7 @@ class TestSpektakelParser(unittest.TestCase):
         Tests that simple identifiers are parsed correctly.
         """
 
-        samples = ["x", " x\n\n", "  helloworld", "\nhello_world"]
+        samples = ["x", "x\n\n", "helloworld", "\nhello_world"]
 
         for idx, s in enumerate(samples):
             with self.subTest(idx=idx):
