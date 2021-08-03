@@ -94,7 +94,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
             # Note that patterns will be matched with a precedence of the order in which they are listed.
             #
             # The end of a physical line:
-            (TokenType.LINEEND, r' *(#[^\n]*)?\n'),
+            (TokenType.LINEEND, r' *(#[^\n]*)?(\n|\Z)'),
             # A prefix of a lineend:
             (TokenType.LINEEND_PREFIX, r' +\Z| *#[^\n]*\Z'),
             # Horizontal space, i.e. a sequence of space characters:

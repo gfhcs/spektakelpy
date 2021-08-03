@@ -33,6 +33,9 @@ class BufferedMatchStream:
                  (None, "") is returned.
         """
 
+        if self._buffer_length - self._buffer_offset == 0 and self._source is None:
+            raise EOFError("No input left!")
+
         while True:
 
             self._buffer.seek(0)
@@ -58,7 +61,7 @@ class BufferedMatchStream:
                         # We would need to consume more input, but there is none left!
                         if self._buffer_length - self._buffer_offset == 0:
                             # We're exactly at the end, i.e. we properly matched *all* the input and are done.
-                            raise EOFError("No prefix of the remaining input matches the given pattern!")
+                            raise EOFError("No input left!")
                         else:
                             # There is some remaining input that cannot be matched anymore.
                             return None, ""
