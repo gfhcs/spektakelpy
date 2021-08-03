@@ -131,12 +131,12 @@ class SpektakelParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: An Expression node.
         """
-        t, s, p = lexer.peek()
+        t, s, start = lexer.peek()
 
         if t == ID:
-            return Identifier(s, start=p, end=end(lexer.read()))
+            return Identifier(s, start=start, end=end(lexer.read()))
         elif t == LT:
-            return Constant(s, start=p, end=end(lexer.read()))
+            return Constant(s, start=start, end=end(lexer.read()))
         elif t == KW and s == "(":
             lexer.read()
             components = []
@@ -146,9 +146,10 @@ class SpektakelParser(Parser):
                 if lexer.seeing(keyword(",")):
                     is_tuple = True
                     lexer.read()
-                if lexer.seeing(keyword(")")):
+                else:
+                    t, s, p = lexer.match(keyword(")"))
                     if is_tuple:
-                        return Tuple(*components, start=p, end=end(lexer.read()))
+                        return Tuple(*components, start=p, end=p)
                     else:
                         assert len(components) == 1
                         return components[0]
@@ -227,7 +228,6 @@ class SpektakelParser(Parser):
             return Launch(e, start=p, end=e.end)
         else:
             return cls._parse_application(lexer)
-
 
     @classmethod
     def _parse_pow(cls, lexer):
