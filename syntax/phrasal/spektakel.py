@@ -1,6 +1,6 @@
-from syntax.ast import *
-from syntax.lexer import keyword, identifier
-from syntax.lexical.pythonesque import TokenType
+from syntax.phrasal.ast import *
+from syntax.lexer import keyword, identifier, Lexer
+from syntax.lexical.pythonesque import TokenType, PythonesqueLexicalGrammar
 from syntax.parser import Parser, ParserError
 from syntax.tokens import TokenPosition
 
@@ -10,6 +10,26 @@ KW = TokenType.KEYWORD
 NL = TokenType.NEWLINE
 INDENT = TokenType.INDENT
 DEDENT = TokenType.DEDENT
+
+
+separators = ["+", "-", "*", "**", "/", "//", "%", "@", "<<", ">>", "&", "|", "^", "~", ":=", "<", ">", "<=", ">=",
+              "==", "!=", "(", ")", "[", "]", "{", "}", ",", ":", ".", ";", "@", "=", "->", "+=", "-=", "*=", "/=",
+              "//=", "%=", "@=", "&=", "|=", "^=", ">>=", "<<=", "**="]
+
+keywords = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
+            "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "from", "nonlocal",
+            "while", "assert", "del", "global", "not", "with", "async", "elif", "if", "or", "yield",
+            "var", "atomic", "prop", "get", "set"]
+
+lexical_grammar = PythonesqueLexicalGrammar(separators=separators, keywords=keywords, chunk_size=1024)
+
+
+class SpektakelLexer(Lexer):
+    """
+    A Lexer using the the lexical grammar for the Spektakel language.
+    """
+    def __init__(self, source):
+        super().__init__(lexical_grammar, source)
 
 
 def end(token):
@@ -62,7 +82,7 @@ def match_dedent(lexer):
     lexer.match(lambda token: token[0] == DEDENT)
 
 
-class SpektakelLangParser(Parser):
+class SpektakelParser(Parser):
     """
     A parser for the spektakelpy default language.
     """

@@ -2,8 +2,8 @@ import abc
 from enum import Enum
 
 from util import check_type
-from .tokens import TokenPosition
-from .state import Value
+from syntax.tokens import TokenPosition
+from syntax.state import Value
 
 
 class Node:

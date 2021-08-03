@@ -1,4 +1,4 @@
-from .ast import *
+from syntax.phrasal.ast import *
 
 
 class ParserError(Exception):

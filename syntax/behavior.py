@@ -3,7 +3,7 @@ import itertools
 from enum import Enum
 
 from core.process import Process
-from syntax.ast import BooleanExpression, Assignment
+from syntax.phrasal.ast import BooleanExpression, Assignment
 from syntax.state import Variable, Valuation
 from util import check_type
 from . import OwnershipError
