@@ -7,7 +7,7 @@ from syntax.tokens import TokenPosition
 
 class TokenType(Enum):
     """
-    Describes types of syntactic tokens.
+    The types of tokens that a Pythonesque lexer might produce, some of them only internally.
     """
     LINEEND_PREFIX = 100  # An incomplete end of a line, i.e. a sequence that
                           # *might* be continued to form the end of a line. Never emitted by the lexer.
@@ -16,11 +16,12 @@ class TokenType(Enum):
     HSPACE = 102  # A white space string without newlines. Never emitted by the lexer.
     LINEJOIN = 103  # An explicit line join token. Never emitted by the lexer.
 
-    COMMENT = 1  # A line comment.
+    COMMENT = 1  # A line comment. Never emitted by the lexer.
     IDENTIFIER = 2  # An identifier.
     KEYWORD = 3  # A keyword.
     LITERAL = 4  # A complete literal
-    LITERAL_PREFIX = 5  # A string that could be a prefix of a literal, but is definitely not a complete literal.
+    LITERAL_PREFIX = 5  # A string that could be a prefix of a literal,
+                        # but is definitely not a complete literal. Never emitted by the lexer.
     NEWLINE = 6  # A newline sequence, i.e. the end of a line and the start of a new line.
     INDENT = 7  # Represents an increase of the indendation level.
     DEDENT = 8  # Represents a decrease of the indendation level.
