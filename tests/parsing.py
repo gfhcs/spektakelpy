@@ -31,3 +31,20 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(n, ast.Block)
                 self.assertEquals(len(n.children), 0)
 
+    def test_identifier(self):
+        """
+        Tests that simple identifiers are parsed correctly.
+        """
+
+        samples = ["x", " x\n\n", "  helloworld", "\nhello_world"]
+
+        for idx, s in enumerate(samples):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEquals(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], ast.Identifier)
