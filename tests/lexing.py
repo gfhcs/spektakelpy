@@ -84,10 +84,13 @@ class TestPythonLexer(unittest.TestCase):
         """
         Tests that the empty input stream does not cause any trouble.
         """
+        samples = ["",         "      "]
+
         for s, cs in self._specs_python:
-            with self.subTest(chunk_size=cs):
-                tokens = lex(s, "")
-                self.tokens_equal([], tokens)
+            for sample in samples:
+                with self.subTest(chunk_size=cs):
+                    tokens = lex(s, sample)
+                    self.tokens_equal([], tokens)
 
     def test_buffer_allwhite(self):
         """
