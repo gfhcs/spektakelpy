@@ -609,12 +609,46 @@ class SpektakelLangParser(Parser):
 
     @classmethod
     def _parse_def(cls, lexer):
-        # TODO: Implement this.
-        pass
+        """
+        Parses a procedure declaration.
+        :param lexer: The lexer to consume tokens from.
+        :return: A ProcedureDefintion node.
+        """
+        _, _, start = lexer.match(keyword("def"))
+        name = cls._parse_identifier(lexer)
+        lexer.match(keyword("("))
+        argnames = []
+        if not lexer.seeing(keyword(")")):
+            argnames.append(cls._parse_identifier(lexer))
+        while lexer.seeing(keyword(",")):
+            lexer.read()
+            argnames.append(cls._parse_identifier(lexer))
+        lexer.match(keyword(")"))
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        body = cls._parse_body(lexer)
+        return ProcedureDefinition(name, argnames, body, start=start, end=body.end)
 
     def _parse_class(cls, lexer):
-        # TODO: Implement this.
-        pass
+        """
+        Parses a class declaration.
+        :param lexer: The lexer to consume tokens from.
+        :return: A ClassDefinition node.
+        """
+        _, _, start = lexer.match(keyword("class"))
+        name = cls._parse_identifier(lexer)
+        lexer.match(keyword("("))
+        basenames = []
+        if not lexer.seeing(keyword(")")):
+            basenames.append(cls._parse_identifier(lexer))
+        while lexer.seeing(keyword(",")):
+            lexer.read()
+            basenames.append(cls._parse_identifier(lexer))
+        lexer.match(keyword(")"))
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        body = cls._parse_body(lexer)
+        return ClassDefinition(name, basenames, body, start=start, end=body.end)
 
     @classmethod
     def parse_block(cls, lexer):
