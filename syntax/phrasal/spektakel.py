@@ -1,7 +1,7 @@
-from syntax.phrasal.ast import *
-from syntax.lexer import keyword, identifier, Lexer
+from syntax.lexer import Lexer, expected
 from syntax.lexical.pythonesque import TokenType, PythonesqueLexicalGrammar
 from syntax.parser import Parser, ParserError
+from syntax.phrasal.ast import *
 from syntax.tokens import TokenPosition
 
 ID = TokenType.IDENTIFIER
