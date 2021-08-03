@@ -703,11 +703,20 @@ class SpektakelParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: A Statement object.
         """
+        start = None
+        end = None
         ss = []
         while not lexer.seeing(lambda token: token[0] == TokenType.END):
             ss.append(cls._parse_statement(lexer))
-            
+
         if not lexer.seeing(lambda token: token[0] == TokenType.END):
             raise ParserError("Expected end of input!", lexer.peek()[-1])
 
-        return Block(ss, start=ss[0].start, end=ss[-1].end)
+        if len(ss) > 0:
+            start = ss[0].start
+            end = ss[-1].end
+        else:
+            _, _, start = lexer.peek()
+            end = start
+
+        return Block(ss, start=start, end=end)

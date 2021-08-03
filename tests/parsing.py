@@ -28,6 +28,6 @@ class TestSpektakelParser(unittest.TestCase):
         for idx, s in enumerate(samples):
             with self.subTest(idx=idx):
                 n = parse(s)
-                self.assertIs(n, ast.Block)
+                self.assertIsInstance(n, ast.Block)
                 self.assertEquals(len(n.children), 0)
 
