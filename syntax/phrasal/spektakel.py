@@ -432,7 +432,7 @@ class SpektakelParser(Parser):
               "continue": cls._parse_continue,
               "if": cls._parse_if,
               "while": cls._parse_while,
-              "def": cls._parse_procdef,
+              "def": cls._parse_def,
               "prop": cls._parse_prop,
               "class": cls._parse_class}
 
@@ -706,6 +706,8 @@ class SpektakelParser(Parser):
         ss = []
         while not lexer.seeing(lambda token: token[0] == TokenType.END):
             ss.append(cls._parse_statement(lexer))
-        lexer.match(lambda token: token[0] == TokenType.END)
+            
+        if not lexer.seeing(lambda token: token[0] == TokenType.END):
+            raise ParserError("Expected end of input!", lexer.peek()[-1])
 
         return Block(ss, start=ss[0].start, end=ss[-1].end)

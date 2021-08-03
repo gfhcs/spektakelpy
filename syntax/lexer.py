@@ -130,16 +130,16 @@ class Lexer:
         self._peek = None
         return t, s, p
 
-    def match(self, p):
+    def match(self, predicate):
         """
         Asserts that the token the lexer is currently seeing satisfies the given predicate, retrieves it and
         advances to the next token.
-        :param p: The predicate to be satisfied by the token to be retrieved.
+        :param predicate: The predicate to be satisfied by the token to be retrieved.
         :exception LexError: If the lexer is not seeing a satisfying token.
         :return: A tuple as returned by Lexer.peek.
         """
         t, s, p = self.peek()
-        if not p(t):
+        if not predicate((t, s, p)):
             raise LexError(LexErrorReason.UNEXPECTEDTOKEN, p)
         return self.read()
 
