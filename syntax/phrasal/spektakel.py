@@ -318,6 +318,7 @@ class SpektakelParser(Parser):
             lexer.read()
             right = cls._parse_mult(lexer)
             base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=right.end)
+            t, s, _ = lexer.peek()
 
     @classmethod
     def _parse_comparison(cls, lexer):
