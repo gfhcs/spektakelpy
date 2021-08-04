@@ -140,3 +140,25 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement, ast.ExpressionStatement)
                 self.assertIsInstance(statement.children[0], t)
 
+    def test_unary_minus(self):
+        """
+        Tests that exponentiation expressions are parsed correctly.
+        """
+
+        samples = {"-42": ast.UnaryOperation,
+                   "-x": ast.UnaryOperation,
+                   "- async f(x)": ast.UnaryOperation,
+                   "- f(x)": ast.UnaryOperation,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], t)
+
