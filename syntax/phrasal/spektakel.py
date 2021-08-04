@@ -137,6 +137,8 @@ class SpektakelParser(Parser):
             return Identifier(s, start=start, end=end(lexer.read()))
         elif t == LT:
             return Constant(s, start=start, end=end(lexer.read()))
+        elif t == KW and s in ("True", "False"):
+            return Constant(s, start=start, end=end(lexer.read()))
         elif t == KW and s == "(":
             lexer.read()
             components = []
@@ -392,6 +394,7 @@ class SpektakelParser(Parser):
             lexer.read()
             right = cls._parse_not(lexer)
             base = BooleanBinaryOperation(BooleanBinaryOperator.AND, base, right, start=base.start, end=right.end)
+            t, s, p = lexer.peek()
 
         return base
 
@@ -410,6 +413,7 @@ class SpektakelParser(Parser):
             lexer.read()
             right = cls._parse_and(lexer)
             base = BooleanBinaryOperation(BooleanBinaryOperator.OR, base, right, start=base.start, end=right.end)
+            t, s, p = lexer.peek()
 
         return base
 
