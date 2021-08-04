@@ -117,3 +117,26 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement, ast.ExpressionStatement)
                 self.assertIsInstance(statement.children[0], t)
 
+    def test_pow(self):
+        """
+        Tests that exponentiation expressions are parsed correctly.
+        """
+
+        samples = {"x ** 2": ast.ArithmeticBinaryOperation,
+                   "2 ** x": ast.ArithmeticBinaryOperation,
+                   "async f(x) ** 2": ast.ArithmeticBinaryOperation,
+                   "object.method(x, y) ** 2": ast.ArithmeticBinaryOperation,
+                   "base(x) ** power(x)": ast.ArithmeticBinaryOperation,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], t)
+
