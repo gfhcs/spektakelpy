@@ -71,7 +71,7 @@ class TestSpektakelParser(unittest.TestCase):
 
     def test_application(self):
         """
-        Tests that simple expressions are parsed correctly.
+        Tests that application expressions are parsed correctly.
         """
 
         samples = {"x.y": ast.Attribute,
@@ -96,7 +96,7 @@ class TestSpektakelParser(unittest.TestCase):
 
     def test_async(self):
         """
-        Tests that simple expressions are parsed correctly.
+        Tests that async/await expressions are parsed correctly.
         """
 
         samples = {"async f(x)": ast.Launch,
