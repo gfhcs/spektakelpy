@@ -29,7 +29,7 @@ class TestSpektakelParser(unittest.TestCase):
             with self.subTest(idx=idx):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
-                self.assertEquals(len(n.children), 0)
+                self.assertEqual(len(n.children), 0)
 
     def test_identifier(self):
         """
@@ -42,7 +42,7 @@ class TestSpektakelParser(unittest.TestCase):
             with self.subTest(idx=idx):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
-                self.assertEquals(len(n.children), 1)
+                self.assertEqual(len(n.children), 1)
 
                 statement = n.children[0]
 
@@ -62,7 +62,7 @@ class TestSpektakelParser(unittest.TestCase):
             with self.subTest(idx=idx):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
-                self.assertEquals(len(n.children), 1)
+                self.assertEqual(len(n.children), 1)
 
                 statement = n.children[0]
 
