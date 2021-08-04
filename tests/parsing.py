@@ -1,6 +1,8 @@
 import unittest
 from io import StringIO
 
+from syntax.lexer import LexError
+from syntax.parser import ParserError
 from syntax.phrasal import spektakel, ast
 
 
@@ -254,7 +256,6 @@ class TestSpektakelParser(unittest.TestCase):
                    "not x": ast.UnaryOperator.NOT,
                    "not not not x": ast.UnaryOperator.NOT,
                    "f(x) == g(x) and a > b": ast.BooleanBinaryOperator.AND,
-                   "not (x and y) == not x or not y": ast.BooleanBinaryOperator.OR,
                    "not (x and y) == (not x or not y)": ast.UnaryOperator.NOT,
                    "(not (x and y)) == (not x or not y)": ast.ComparisonOperator.EQ,
                    "not x and y": ast.BooleanBinaryOperator.AND,
@@ -272,3 +273,16 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement, ast.ExpressionStatement)
                 if t is not None:
                     self.assertEqual(statement.children[0].operator, t)
+
+    def test_negative(self):
+        """
+        Lumps together all the test cases in which the parser should complain.
+        """
+
+        samples = ["not (x and y) == not x or not y"  # Must not work, because the second not cannot follow the == .
+                  ]
+
+        for idx, s in enumerate(samples):
+            with self.subTest(idx=idx):
+                with self.assertRaises((LexError, ParserError)):
+                    parse(s)
