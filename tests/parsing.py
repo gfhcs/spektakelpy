@@ -102,6 +102,8 @@ class TestSpektakelParser(unittest.TestCase):
         samples = {"async f(x)": ast.Launch,
                    "await async f(x)": ast.Await,
                    "async object.method(x)": ast.Launch,
+                   "async x[5]": ast.Launch,
+                   "async y": ast.Launch,
                    }
 
         for idx, (s, t) in enumerate(samples.items()):
