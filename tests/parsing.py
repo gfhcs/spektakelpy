@@ -94,3 +94,24 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement, ast.ExpressionStatement)
                 self.assertIsInstance(statement.children[0], t)
 
+    def test_async(self):
+        """
+        Tests that simple expressions are parsed correctly.
+        """
+
+        samples = {"async f(x)": ast.Launch,
+                   "await async f(x)": ast.Await,
+                   "async object.method(x)": ast.Launch,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], t)
+
