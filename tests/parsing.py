@@ -69,3 +69,28 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement, ast.ExpressionStatement)
                 self.assertIsInstance(statement.children[0], t)
 
+    def test_application(self):
+        """
+        Tests that simple expressions are parsed correctly.
+        """
+
+        samples = {"x.y": ast.Attribute,
+                   "x.y.z": ast.Attribute,
+                   "x[5]": ast.Projection,
+                   "x[\"hello\"]": ast.Projection,
+                   "f(x)": ast.Call,
+                   "f(x, y)": ast.Call,
+                   "object.method(arg1, arg2)[index1][index2]": ast.Projection,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], t)
+
