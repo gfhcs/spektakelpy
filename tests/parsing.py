@@ -149,6 +149,7 @@ class TestSpektakelParser(unittest.TestCase):
                    "-x": ast.UnaryOperation,
                    "- async f(x)": ast.UnaryOperation,
                    "- f(x)": ast.UnaryOperation,
+                   "- - ---x": ast.UnaryOperation
                    }
 
         for idx, (s, t) in enumerate(samples.items()):
