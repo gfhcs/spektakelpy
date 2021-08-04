@@ -142,7 +142,7 @@ class TestSpektakelParser(unittest.TestCase):
 
     def test_unary_minus(self):
         """
-        Tests that exponentiation expressions are parsed correctly.
+        Tests that unary minus expressions are parsed correctly.
         """
 
         samples = {"-42": ast.UnaryOperation,
@@ -164,7 +164,7 @@ class TestSpektakelParser(unittest.TestCase):
 
     def test_mult(self):
         """
-        Tests that exponentiation expressions are parsed correctly.
+        Tests that product expressions are parsed correctly.
         """
 
         samples = {"x * y": ast.ArithmeticBinaryOperation,
@@ -190,7 +190,7 @@ class TestSpektakelParser(unittest.TestCase):
 
     def test_add(self):
         """
-        Tests that exponentiation expressions are parsed correctly.
+        Tests that summation expressions are parsed correctly.
         """
 
         samples = {"x + y": ast.ArithmeticBinaryOperator.PLUS,
@@ -219,7 +219,7 @@ class TestSpektakelParser(unittest.TestCase):
 
     def test_comparison(self):
         """
-        Tests that exponentiation expressions are parsed correctly.
+        Tests that comparison expressions are parsed correctly.
         """
 
         samples = {"x > y": ast.ComparisonOperator.GREATER,
