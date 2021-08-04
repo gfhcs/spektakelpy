@@ -217,3 +217,29 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement.children[0], ast.ArithmeticBinaryOperation)
                 self.assertEqual(statement.children[0].operator, t)
 
+    def test_comparison(self):
+        """
+        Tests that exponentiation expressions are parsed correctly.
+        """
+
+        samples = {"x > y": ast.ComparisonOperator.GREATER,
+                   "14 < pi": ast.ComparisonOperator.LESS,
+                   "x + y <= x ** 2 + y ** 2": ast.ComparisonOperator.LESSOREQUAL,
+                   "f(x)  + g(x) >= z(x)": ast.ComparisonOperator.GREATEROREQUAL,
+                   "x in (x, y, z)": ast.ComparisonOperator.IN,
+                   "E == m * c ** 2": ast.ComparisonOperator.EQ,
+                   "1 + 2 + 3 != 4": ast.ComparisonOperator.NEQ,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], ast.Comparison)
+                self.assertEqual(statement.children[0].operator, t)
+
