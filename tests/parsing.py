@@ -188,4 +188,32 @@ class TestSpektakelParser(unittest.TestCase):
                 self.assertIsInstance(statement, ast.ExpressionStatement)
                 self.assertIsInstance(statement.children[0], t)
 
+    def test_add(self):
+        """
+        Tests that exponentiation expressions are parsed correctly.
+        """
+
+        samples = {"x + y": ast.ArithmeticBinaryOperator.PLUS,
+                   "1 + 1": ast.ArithmeticBinaryOperator.PLUS,
+                   "a - b": ast.ArithmeticBinaryOperator.MINUS,
+                   "a + b * b": ast.ArithmeticBinaryOperator.PLUS,
+                   "(a + b) * b": ast.ArithmeticBinaryOperator.TIMES,
+                   "(async f(x)) + 42": ast.ArithmeticBinaryOperator.PLUS,
+                   "(x + y) ** (kuno - 3)": ast.ArithmeticBinaryOperator.POWER,
+                   "a + b * a - b": ast.ArithmeticBinaryOperator.MINUS,
+                   "a + b * (a - b)": ast.ArithmeticBinaryOperator.PLUS,
+                   "(a + b) * (a - b)": ast.ArithmeticBinaryOperator.TIMES,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], ast.ArithmeticBinaryOperation)
+                self.assertEqual(statement.children[0].operator, t)
 
