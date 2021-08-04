@@ -206,19 +206,19 @@ class Launch(Expression):
     """
     An expression launching a new process.
     """
-    def __init__(self, call, **kwargs):
+    def __init__(self, work, **kwargs):
         """
         Creates a new process launch expression.
-        :param call: A call expression representing the computation that
+        :param work: An expression representing the computation that
                      the newly launched process is supposed to execute.
         :param kwargs: See Expression constructor.
         """
-        super().__init__(check_type(call, Call), **kwargs)
+        super().__init__(check_type(work, Expression), **kwargs)
 
     @property
-    def call(self):
+    def work(self):
         """
-        The call that the new process is supposed to execute.
+        The expression that the new process is supposed to evaluate.
         :return: A Call object.
         """
         return self.children[0]

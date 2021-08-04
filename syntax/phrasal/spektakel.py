@@ -154,7 +154,7 @@ class SpektakelParser(Parser):
                         assert len(components) == 1
                         return components[0]
 
-        raise ParserError("Expected an identifier, literal, or opening parenthesis!", p)
+        raise ParserError("Expected an identifier, literal, or opening parenthesis!", start)
 
     @classmethod
     def _parse_application(cls, lexer):
@@ -220,11 +220,11 @@ class SpektakelParser(Parser):
 
         if t == KW and s == "await":
             lexer.read()
-            e = cls._parse_application(lexer)
+            e = cls.parse_expression(lexer)
             return Await(e, start=p, end=e.end)
-        elif t == KW and s == "process":
+        elif t == KW and s == "async":
             lexer.read()
-            e = cls._parse_call(lexer)
+            e = cls.parse_expression(lexer)
             return Launch(e, start=p, end=e.end)
         else:
             return cls._parse_application(lexer)
@@ -236,7 +236,7 @@ class SpektakelParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: An Expression node.
         """
-        base = cls._parse_application(lexer)
+        base = cls._parse_async(lexer)
         t, s, p = lexer.peek()
 
         while t == KW and s == "**":
