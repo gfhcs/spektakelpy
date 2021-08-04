@@ -294,6 +294,7 @@ class SpektakelParser(Parser):
             lexer.read()
             right = cls._parse_unary(lexer)
             base = ArithmeticBinaryOperation(op, base, right, start=base.start, end=right.end)
+            t, s, p = lexer.peek()
 
     @classmethod
     def _parse_add(cls, lexer):
