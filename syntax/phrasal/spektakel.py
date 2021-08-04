@@ -241,8 +241,9 @@ class SpektakelParser(Parser):
 
         while t == KW and s == "**":
             lexer.read()
-            e = cls._parse_application(lexer)
-            base = BinaryOperation(ArithmeticBinaryOperator.POWER, base, e, start=base.start, end=e.end)
+            e = cls._parse_async(lexer)
+            base = ArithmeticBinaryOperation(ArithmeticBinaryOperator.POWER, base, e, start=base.start, end=e.end)
+            t, s, p = lexer.peek()
 
         return base
 

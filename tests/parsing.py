@@ -124,7 +124,7 @@ class TestSpektakelParser(unittest.TestCase):
 
         samples = {"x ** 2": ast.ArithmeticBinaryOperation,
                    "2 ** x": ast.ArithmeticBinaryOperation,
-                   "async f(x) ** 2": ast.ArithmeticBinaryOperation,
+                   "(async f(x)) ** 2": ast.ArithmeticBinaryOperation,
                    "object.method(x, y) ** 2": ast.ArithmeticBinaryOperation,
                    "base(x) ** power(x)": ast.ArithmeticBinaryOperation,
                    }
