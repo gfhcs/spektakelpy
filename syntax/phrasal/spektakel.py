@@ -352,6 +352,7 @@ class SpektakelParser(Parser):
                     return base
             right = cls._parse_add(lexer)
             base = Comparison(op, base, right, start=base.start, end=right.end)
+            t, s, p = lexer.peek()
 
     @classmethod
     def _parse_not(cls, lexer):
