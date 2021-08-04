@@ -425,7 +425,7 @@ class SpektakelParser(Parser):
         :return: A Statement node.
         """
 
-        # This method and the ones it calls respect are based on the parsing rules laid out in
+        # This method and the ones it calls are based on the parsing rules laid out in
         # https://docs.python.org/3/reference/compound_stmts.html
 
         t, s, start = lexer.peek()
