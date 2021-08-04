@@ -169,8 +169,8 @@ class SpektakelParser(Parser):
         while True:
             if t == KW and s == ".":
                 lexer.read()
-                name = lexer.match(identifier())
-                e = Attribute(e, name[1], start=e.start, end=end(name))
+                name = cls._parse_identifier(lexer)
+                e = Attribute(e, name, start=e.start, end=name.end)
             elif t == KW and s == "[":
                 lexer.read()
                 index = cls.parse_expression(lexer)
