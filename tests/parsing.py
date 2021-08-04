@@ -173,7 +173,7 @@ class TestSpektakelParser(unittest.TestCase):
                    "a / b": ast.ArithmeticBinaryOperation,
                    "x % r": ast.ArithmeticBinaryOperation,
                    "(a // b) * b": ast.ArithmeticBinaryOperation,
-                   "async f(x) * 42": ast.ArithmeticBinaryOperation,
+                   "(async f(x)) * 42": ast.ArithmeticBinaryOperation,
                    "(x * y) ** (kuno % 3)": ast.ArithmeticBinaryOperation,
                    }
 
