@@ -508,10 +508,17 @@ class SpektakelParser(Parser):
         :param newline: Whether this statement parser should also match a newline token after the actual statement.
         :return: A Return node.
         """
-        _, _, p = lexer.match(keyword("return"))
-        e = cls.parse_expression(lexer)
+        t, s, p = lexer.match(keyword("return"))
+
+        def nl(token):
+            return token[0] == NL
+
+        if lexer.seeing(nl):
+            e = None
+        else:
+            e = cls.parse_expression(lexer)
         match_newline(lexer, enabled=newline)
-        return Return(e, start=p, end=e.end)
+        return Return(e, start=p, end=end((t, s, p)) if e is None else e.end)
 
     @classmethod
     def _parse_continue(cls, lexer, newline=True):

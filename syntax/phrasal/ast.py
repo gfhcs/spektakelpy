@@ -512,7 +512,20 @@ class Return(Statement):
         :param value: The expression computing the value that is to be returned.
         :param kwargs: See Statement constructor.
         """
-        super().__init__(check_type(value, Expression), **kwargs)
+        if value is None:
+            super().__init__(**kwargs)
+        else:
+            super().__init__(check_type(value, Expression), **kwargs)
+
+    @property
+    def value(self):
+        """
+        The expression computing the value that is to be returned. May be None.
+        """
+        try:
+            return self.children[0]
+        except IndexError:
+            return None
 
 
 class AtomicStatement(Statement, abc.ABC):
