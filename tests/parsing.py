@@ -286,3 +286,28 @@ class TestSpektakelParser(unittest.TestCase):
             with self.subTest(idx=idx):
                 with self.assertRaises((LexError, ParserError)):
                     parse(s)
+
+    def test_assignment(self):
+        """
+        Tests assignment statements.
+        """
+
+        samples = {"x = 42": ast.Assignment,
+                   "(a, b) = 1, 2": ast.Assignment,
+                   "a, b, c = 1, 2, 3": ast.Assignment,
+                   "hello = world": ast.Assignment,
+                   "a, b = f(x)": ast.Assignment,
+                   "a, b, c = await async (3 * x + 12 * y)": ast.Assignment,
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
+                self.assertIsInstance(statement.children[0], t)
+
