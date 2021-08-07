@@ -483,7 +483,7 @@ class SpektakelParser(Parser):
                     rs.append(cls.parse_expression(lexer))
                     t, s, p = lexer.peek()
                 if len(rs) == 1:
-                    right = rs
+                    right = rs[0]
                 else:
                     right = Tuple(*rs, start=rs[0].start, end=rs[-1].end)
 
