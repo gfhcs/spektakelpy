@@ -311,4 +311,26 @@ class TestSpektakelParser(unittest.TestCase):
 
                 self.assertIsInstance(statement, ast.Assignment)
 
+    def test_simple_statements(self):
+        """
+        Tests simple statements, like pass, break, continue and return.
+        """
+
+        samples = {"pass": ast.Pass,
+                   "break": ast.Break,
+                   "continue": ast.Continue,
+                   "return": ast.Return,
+                   "return m*c**2": ast.Return
+                   }
+
+        for idx, (s, t) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, t)
+
 
