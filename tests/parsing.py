@@ -293,15 +293,15 @@ class TestSpektakelParser(unittest.TestCase):
         Tests assignment statements.
         """
 
-        samples = {"x = 42": ast.Assignment,
-                   "(a, b) = 1, 2": ast.Assignment,
-                   "a, b, c = 1, 2, 3": ast.Assignment,
-                   "hello = world": ast.Assignment,
-                   "a, b = f(x)": ast.Assignment,
-                   "a, b, c = await async (3 * x + 12 * y)": ast.Assignment,
-                   }
+        samples = ["x = 42",
+                   "(a, b) = 1, 2",
+                   "a, b, c = 1, 2, 3",
+                   "hello = world",
+                   "a, b = f(x)",
+                   "a, b, c = await async (3 * x + 12 * y)",
+                   ]
 
-        for idx, (s, t) in enumerate(samples.items()):
+        for idx, s in enumerate(samples):
             with self.subTest(idx=idx):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
@@ -309,6 +309,6 @@ class TestSpektakelParser(unittest.TestCase):
 
                 statement = n.children[0]
 
-                self.assertIsInstance(statement, ast.ExpressionStatement)
-                self.assertIsInstance(statement.children[0], t)
+                self.assertIsInstance(statement, ast.Assignment)
+
 
