@@ -568,9 +568,12 @@ class Conditional(Statement):
         :param kwargs: See statement constructor.
         """
 
-        super().__init__(check_type(condition, Expression),
-                         check_type(consequence, Statement),
-                         None if alternative is None else check_type(alternative, Statement), **kwargs)
+        if alternative is None:
+            super().__init__(check_type(condition, Expression), check_type(consequence, Statement), **kwargs)
+        else:
+            super().__init__(check_type(condition, Expression),
+                             check_type(consequence, Statement),
+                             check_type(alternative, Statement), **kwargs)
 
     @property
     def condition(self):

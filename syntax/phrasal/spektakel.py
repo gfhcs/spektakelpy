@@ -438,6 +438,7 @@ class SpektakelParser(Parser):
               "return": cls._parse_return,
               "break": cls._parse_break,
               "continue": cls._parse_continue,
+              "atomic": cls._parse_atomic,
               "if": cls._parse_if,
               "while": cls._parse_while,
               "def": cls._parse_def,
@@ -580,10 +581,11 @@ class SpektakelParser(Parser):
         :param lexer: The lexer to consume tokens from.
         :return: An AtomicBlock node.
         """
-        lexer.match(keyword("atomic"))
+        _, _, start = lexer.match(keyword("atomic"))
         lexer.match(keyword(":"))
         match_newline(lexer)
-        return AtomicBlock(cls._parse_body(lexer))
+        body = cls._parse_body(lexer)
+        return AtomicBlock(body, start=start, end=body.end)
 
     @classmethod
     def _parse_if(cls, lexer):
@@ -593,7 +595,7 @@ class SpektakelParser(Parser):
         :return: A Statement node.
         """
 
-        def _recur(lexer):
+        def _recur(lexer, start):
             condition = cls.parse_expression(lexer)
             lexer.match(keyword(":"))
             match_newline(lexer)
@@ -607,14 +609,14 @@ class SpektakelParser(Parser):
             t, s, start = lexer.peek()
 
             if t != KW:
-                raise ParserError("Expected a keyword!", start)
+                return None
 
             if initial:
                 lexer.match(keyword("if"))
-                return _recur(lexer)
+                return _recur(lexer, start)
             elif not initial and s == "elif":
                 lexer.read()
-                return _recur(lexer)
+                return _recur(lexer, start)
             elif not initial and s == "else":
                 lexer.read()
                 lexer.match(keyword(":"))
