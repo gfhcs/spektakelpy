@@ -291,6 +291,41 @@ Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui officia deseru
             (TokenType.NEWLINE, "\n"),
             ]
 
+sample07 = """
+if a ** 2 + b ** 2 == c ** 2:
+    return True
+else:
+    panic()
+"""
+tokens07 =  [(TokenType.NEWLINE, "\n"),
+             (TokenType.KEYWORD, "if"),
+            (TokenType.IDENTIFIER, "a"),
+            (TokenType.KEYWORD, "**"),
+            (TokenType.LITERAL, "2"),
+            (TokenType.KEYWORD, "+"),
+            (TokenType.IDENTIFIER, "b"),
+            (TokenType.KEYWORD, "**"),
+            (TokenType.LITERAL, "2"),
+            (TokenType.KEYWORD, "=="),
+            (TokenType.IDENTIFIER, "c"),
+            (TokenType.KEYWORD, "**"),
+            (TokenType.LITERAL, "2"),
+            (TokenType.KEYWORD, ":"),
+            (TokenType.NEWLINE, "\n"),
+            (TokenType.INDENT, None),
+             (TokenType.KEYWORD, "return"),
+             (TokenType.KEYWORD, "True"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.DEDENT, None),
+             (TokenType.KEYWORD, ":"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.INDENT, None),
+             (TokenType.IDENTIFIER, "panic"),
+             (TokenType.KEYWORD, "("),
+             (TokenType.KEYWORD, ")"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.DEDENT, None),
+             ]
 
 samples = {"sample01": (sample01, tokens01),
            "sample02": (sample02, tokens02),
