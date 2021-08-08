@@ -327,10 +327,11 @@ tokens07 =  [(TokenType.NEWLINE, "\n"),
              (TokenType.DEDENT, None),
              ]
 
-samples = {"sample01": (sample01, tokens01),
-           "sample02": (sample02, tokens02),
-           "sample03": (sample03, tokens03),
-           "sample04": (sample04, tokens04),
-           "sample05": (sample05, tokens05),
-           "sample06": (sample06, tokens06)
-           }
+
+vars = list(locals().items())
+samples = {}
+for vname, v in vars:
+    if vname.startswith("sample"):
+        idx = int(vname[len("sample"):])
+        p = (v, eval("tokens{:02d}".format(idx)))
+        samples[vname] = p
