@@ -297,8 +297,7 @@ if a ** 2 + b ** 2 == c ** 2:
 else:
     panic()
 """
-tokens07 =  [(TokenType.NEWLINE, "\n"),
-             (TokenType.KEYWORD, "if"),
+tokens07 =  [(TokenType.KEYWORD, "if"),
             (TokenType.IDENTIFIER, "a"),
             (TokenType.KEYWORD, "**"),
             (TokenType.LITERAL, "2"),
@@ -317,6 +316,7 @@ tokens07 =  [(TokenType.NEWLINE, "\n"),
              (TokenType.KEYWORD, "True"),
              (TokenType.NEWLINE, "\n"),
              (TokenType.DEDENT, None),
+             (TokenType.KEYWORD, "else"),
              (TokenType.KEYWORD, ":"),
              (TokenType.NEWLINE, "\n"),
              (TokenType.INDENT, None),
@@ -326,7 +326,6 @@ tokens07 =  [(TokenType.NEWLINE, "\n"),
              (TokenType.NEWLINE, "\n"),
              (TokenType.DEDENT, None),
              ]
-
 
 vars = list(locals().items())
 samples = {}
