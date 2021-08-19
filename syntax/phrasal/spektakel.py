@@ -660,14 +660,16 @@ class SpektakelParser(Parser):
         getter = cls._parse_body(lexer)
         if lexer.seeing(keyword("set")):
             lexer.match(keyword("set"))
+            vname = cls._parse_identifier(lexer)
             lexer.match(keyword(":"))
             match_newline(lexer)
             setter = cls._parse_body(lexer)
         else:
+            vname = None
             setter = None
         match_dedent(lexer)
         end = getter.end if setter is None else setter.end
-        return PropertyDefinition(name, getter, setter, start=start, end=end)
+        return PropertyDefinition(name, getter, vname, setter, start=start, end=end)
 
     @classmethod
     def _parse_def(cls, lexer):

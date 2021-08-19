@@ -703,19 +703,27 @@ class PropertyDefinition(Statement):
     A statement defining a getter and (possibly) setter for an instance property.
     """
 
-    def __init__(self, name, getter, setter, **kwargs):
+    def __init__(self, name, getter, vname, setter, **kwargs):
         """
         Creates a procedure definition.
         :param name: The name of the property to be defined.
         :param getter: The getter statement of the property.
+        :param vname: The identifier for the variable holding the value that is to be written by the setter (may be None)
         :param setter: The setter statement of the property (may be None).
         :param kwargs: See statement constructor.
         """
 
-        if setter is not None:
-            check_type(setter, Statement)
+        if not ((vname is None) == (setter is None)):
+            raise ValueError("The given 'vname' must be None if and only if the given 'setter' is None!")
 
-        super().__init__(check_type(name, Identifier), check_type(getter, Statement), setter, **kwargs)
+        if setter is None:
+            super().__init__(check_type(name, Identifier), check_type(getter, Statement), **kwargs)
+        else:
+            super().__init__(check_type(name, Identifier),
+                             check_type(getter, Statement),
+                             check_type(vname, Identifier),
+                             check_type(setter, Statement),
+                             **kwargs)
 
     @property
     def name(self):
@@ -732,11 +740,24 @@ class PropertyDefinition(Statement):
         return self.children[1]
 
     @property
+    def vname(self):
+        """
+        The identifier for the variable holding the value that is to be written by the setter (may be None)
+        """
+        try:
+            return self.children[-2]
+        except IndexError:
+            return None
+
+    @property
     def setter(self):
         """
         The setter statement of the property (may be None).
         """
-        return self.children[2]
+        try:
+            return self.children[-1]
+        except IndexError:
+            return None
 
 
 class ClassDefinition(Statement):
