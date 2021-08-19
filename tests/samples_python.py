@@ -327,6 +327,66 @@ tokens07 =  [(TokenType.KEYWORD, "if"),
              (TokenType.DEDENT, None),
              ]
 
+sample08 = """
+class C(B):
+
+    def __init__(self, x, y):
+        self._x = x
+        self._y = y
+
+    def x():
+        return self._x
+
+"""
+tokens08 =  [(TokenType.KEYWORD, "class"),
+             (TokenType.IDENTIFIER, "C"),
+             (TokenType.KEYWORD, "("),
+             (TokenType.IDENTIFIER, "B"),
+             (TokenType.KEYWORD, ")"),
+             (TokenType.KEYWORD, ":"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.INDENT, None),
+             (TokenType.KEYWORD, "def"),
+             (TokenType.IDENTIFIER, "__init__"),
+             (TokenType.KEYWORD, "("),
+             (TokenType.IDENTIFIER, "self"),
+             (TokenType.KEYWORD, ","),
+             (TokenType.IDENTIFIER, "x"),
+             (TokenType.KEYWORD, ","),
+             (TokenType.IDENTIFIER, "y"),
+             (TokenType.KEYWORD, ")"),
+             (TokenType.KEYWORD, ":"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.INDENT, None),
+             (TokenType.IDENTIFIER, "self"),
+             (TokenType.KEYWORD, "."),
+             (TokenType.IDENTIFIER, "_x"),
+             (TokenType.KEYWORD, "="),
+             (TokenType.IDENTIFIER, "x"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.IDENTIFIER, "self"),
+             (TokenType.KEYWORD, "."),
+             (TokenType.IDENTIFIER, "_y"),
+             (TokenType.KEYWORD, "="),
+             (TokenType.IDENTIFIER, "y"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.DEDENT, None),
+             (TokenType.KEYWORD, "def"),
+             (TokenType.IDENTIFIER, "x"),
+             (TokenType.KEYWORD, "("),
+             (TokenType.KEYWORD, ")"),
+             (TokenType.KEYWORD, ":"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.INDENT, None),
+             (TokenType.KEYWORD, "return"),
+             (TokenType.IDENTIFIER, "self"),
+             (TokenType.KEYWORD, "."),
+             (TokenType.IDENTIFIER, "_x"),
+             (TokenType.NEWLINE, "\n"),
+             (TokenType.DEDENT, None),
+             (TokenType.DEDENT, None)
+             ]
+
 vars = list(locals().items())
 samples = {}
 for vname, v in vars:
