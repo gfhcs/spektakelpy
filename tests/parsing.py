@@ -345,10 +345,9 @@ class TestSpektakelParser(unittest.TestCase):
             with self.subTest(idx=idx):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
-                self.assertEqual(len(n.children), 1)
 
-                statement = n.children[0]
-
-                self.assertIsInstance(statement, t)
+                if t is not None:
+                    for statement in n.children:
+                        self.assertIsInstance(statement, t)
 
 

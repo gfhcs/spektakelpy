@@ -48,7 +48,7 @@ if x in words:
 while energy < 100:
     energy = energy + sleep(energy)
 print("Good morning :-)")    
-""": ast.While,
+""": None,
 
 """
 while True:
@@ -60,5 +60,5 @@ while True:
             break
 do_stuff()
 locked = False
-""": ast.While
+""": None
 }
