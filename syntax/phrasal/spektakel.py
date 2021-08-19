@@ -693,6 +693,7 @@ class SpektakelParser(Parser):
         body = cls._parse_body(lexer)
         return ProcedureDefinition(name, argnames, body, start=start, end=body.end)
 
+    @classmethod
     def _parse_class(cls, lexer):
         """
         Parses a class declaration.
@@ -701,14 +702,17 @@ class SpektakelParser(Parser):
         """
         _, _, start = lexer.match(keyword("class"))
         name = cls._parse_identifier(lexer)
-        lexer.match(keyword("("))
-        basenames = []
-        if not lexer.seeing(keyword(")")):
-            basenames.append(cls._parse_identifier(lexer))
-        while lexer.seeing(keyword(",")):
+        if lexer.seeing(keyword("(")):
             lexer.read()
-            basenames.append(cls._parse_identifier(lexer))
-        lexer.match(keyword(")"))
+            basenames = []
+            if not lexer.seeing(keyword(")")):
+                basenames.append(cls._parse_identifier(lexer))
+            while lexer.seeing(keyword(",")):
+                lexer.read()
+                basenames.append(cls._parse_identifier(lexer))
+            lexer.match(keyword(")"))
+        else:
+            basenames = None
         lexer.match(keyword(":"))
         match_newline(lexer)
         body = cls._parse_body(lexer)

@@ -773,8 +773,11 @@ class ClassDefinition(Statement):
         :param body: The body of the procedure.
         :param kwargs: See statement constructor.
         """
-        super().__init__(check_type(name, Identifier), *(check_type(b, Identifier) for b in bases),
-                         check_type(body, Statement), **kwargs)
+        if bases is None:
+            super().__init__(check_type(name, Identifier), check_type(body, Statement), **kwargs)
+        else:
+            super().__init__(check_type(name, Identifier), *(check_type(b, Identifier) for b in bases),
+                             check_type(body, Statement), **kwargs)
 
     @property
     def name(self):
