@@ -174,27 +174,28 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                 assert kind.startswith("t")
                 kind = TokenType(int(kind[1:]))
 
+            # Handle indendation, as described in https://docs.python.org/3/reference/lexical_analysis.html#indentation
+            if pos.column == 0 and bdepth == 0:
+                if kind == TokenType.HSPACE:
+                    i = len(text)
+                else:
+                    i = 0
+
+                if i > istack[-1]:
+                    istack.append(i)
+                    yield TokenType.INDENT, None, pos
+                else:
+                    while i < istack[-1]:
+                        yield TokenType.DEDENT, None, pos
+                        istack.pop()
+
             if kind is None or kind == TokenType.LITERAL_PREFIX:
                 raise LexError(LexErrorReason.INVALIDINPUT, pos)
             elif kind in (TokenType.LINEJOIN, TokenType.COMMENT):
                 # Comments or explicit line joins should not be passed on.
                 advance(kind, text)
             elif kind == TokenType.HSPACE:
-                if pos.column == 0 and bdepth == 0:
-                    # See https://docs.python.org/3/reference/lexical_analysis.html#indentation
-
-                    i = len(text)
-                    advance(kind, text)
-
-                    if i > istack[-1]:
-                        istack.append(i)
-                        yield TokenType.INDENT, None, pos
-                    else:
-                        while i < istack[-1]:
-                            yield TokenType.DEDENT, None, pos
-                            istack.pop()
-                else:
-                    advance(kind, text)
+                advance(kind, text)
             elif kind == TokenType.LINEEND:
                 if pos.column == 0 or bdepth > 0:
                     # Empty lines, or line ends inside of braces are to be skipped.
