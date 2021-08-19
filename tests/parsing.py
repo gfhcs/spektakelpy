@@ -5,6 +5,7 @@ from syntax.lexer import LexError
 from syntax.parser import ParserError
 from syntax.phrasal import spektakel, ast
 from tests.samples_controlflow import samples as samples_controlflow
+from tests.samples_prop import samples as samples_prop
 
 
 def parse(sample):
@@ -342,6 +343,20 @@ class TestSpektakelParser(unittest.TestCase):
         """
 
         for idx, (s, t) in enumerate(samples_controlflow.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+
+                if t is not None:
+                    for statement in n.children:
+                        self.assertIsInstance(statement, t)
+
+    def test_prop(self):
+        """
+        Tests property declarations.
+        """
+
+        for idx, (s, t) in enumerate(samples_prop.items()):
             with self.subTest(idx=idx):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
