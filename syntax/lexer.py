@@ -36,7 +36,7 @@ class LexError(Exception):
             raise NotImplementedError("No exception message has been defined for {}!".format(reason))
 
         if pos is not None:
-            msg = "Line {}, column {}: ".format(pos.line, pos.column) + msg
+            msg = "Line {}, column {}: ".format(pos.line + 1, pos.column + 1) + msg
 
         super().__init__(msg)
 
