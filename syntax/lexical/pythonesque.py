@@ -175,7 +175,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
                 kind = TokenType(int(kind[1:]))
 
             # Handle indendation, as described in https://docs.python.org/3/reference/lexical_analysis.html#indentation
-            if pos.column == 0 and bdepth == 0:
+            if pos.column == 0 and bdepth == 0 and kind != TokenType.LINEEND:
                 if kind == TokenType.HSPACE:
                     i = len(text)
                 else:
