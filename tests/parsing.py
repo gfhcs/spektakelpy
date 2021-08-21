@@ -8,6 +8,7 @@ from tests.samples_controlflow import samples as samples_controlflow
 from tests.samples_prop import samples as samples_prop
 from tests.samples_def import samples as samples_def
 from tests.samples_class import samples as samples_class
+from tests.samples_large import samples as samples_large
 
 
 def parse(sample):
@@ -394,4 +395,14 @@ class TestSpektakelParser(unittest.TestCase):
                 if t is not None:
                     for statement in n.children:
                         self.assertIsInstance(statement, t)
+
+    def test_large(self):
+        """
+        Tests larger samples.
+        """
+
+        for idx, s in enumerate(samples_large):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
 
