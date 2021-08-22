@@ -1,9 +1,12 @@
+import os.path
 import unittest
 from io import StringIO
 
 import syntax.buffer
-from syntax.lexical import pythonesque
+from examples import paths as example_paths
 from syntax import lexer
+from syntax.lexical import pythonesque
+from syntax.phrasal import spektakel
 from tests.samples_python import samples
 
 kw_python = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
@@ -133,3 +136,16 @@ class TestPythonLexer(unittest.TestCase):
                 with self.subTest(sample=sk, chunk_size=cs):
                     tokens = lex(s, code)
                     self.tokens_equal(reference, tokens)
+
+    def test_examples(self):
+        """
+        Tests the lexer on all spek examples.
+        """
+
+        for path in example_paths:
+            _, filename = os.path.split(path)
+            with self.subTest(example=os.path.splitext(filename)[0]):
+                with open(path, 'r') as sample:
+                    lexer = spektakel.SpektakelLexer(sample)
+                    while not lexer.seeing(end()):
+                        lexer.read()
