@@ -1,0 +1,45 @@
+"""
+A slightly more elaborate version of "Hello World", that has the text bounce up and down,
+after it has been made to appear with a soft alpha blend.
+"""
+
+var hello = Located(Alpha(Text("Hello"), 0), 0.5, 0.25)
+var world = Located(Alpha(Text("World"), 0), 0.5, 0.75)
+
+spektakel.add(text)
+
+def bounce():
+    """
+    Makes 'hello' and 'world' slowly bounce up and down.
+    """
+    var delta = 0.01
+    while True:
+        for _ in range(10):
+            await spektakel.sleep(0.1)
+            hello.cy = hello.cy + delta
+            world.cy = world.cy + delta
+        delta = - delta
+
+def soft(widget):
+    """
+    Makes the given widget appear by smooth alpha blending.
+    """
+    def a():
+        var fps = spektakel.framerate
+        for _ in range(fps):
+            await spektakel.sleep(1 / fps)
+            widget.alpha += 0.1
+
+    launch a()
+
+launch bounce()
+
+await spektakel.next
+
+soft(hello)
+
+await spektakel.next
+
+soft(world)
+
+await spektakel.next

@@ -1,0 +1,12 @@
+"""
+A very simple spektakel example, that just shows "Hello World" and terminates when the presenter presses "next".
+"""
+
+# Create a text visual:
+var text = Text("Hello World")
+
+# Put the text visual on the screen:
+spektakel.add(text)
+
+# Wait until the process waiting for the 'next' interaction terminates:
+await spektakel.next
