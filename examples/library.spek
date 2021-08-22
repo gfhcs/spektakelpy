@@ -1,10 +1,4 @@
 
-# TODO: Define spektakel {next, sleep},
-
-# TODO: Define the name spektakel
-
-# TODO: Define the name 'stop' as one special object that terminates loops when returned by __next__.
-
 class List:
     """
     A list has a head item and a tail list (possibly empty).
@@ -18,7 +12,8 @@ class List:
         def __next__():
 
             if self._data is None:
-                return stop
+                # STOP is an externally defined name, for the purpose of signalling the end of an iteration.
+                return STOP
 
             item, data = self._data
             self._data = data
@@ -52,7 +47,6 @@ class Spektakel:
         self._visuals = List()
         self._next = None
 
-
     def add(visual):
         """
         Adds the given visual content to this spektakel, such that it can be rendered.
@@ -68,18 +62,23 @@ class Spektakel:
         set fps:
             self._fps = fps
 
+    def next():
+        """
+        Blocks until the user issues the 'NEXT' command.
+        """
+        # NEXT is an action label, defined externally. It is completely opaque in spek, just an object with no
+        # useful members.
+        await NEXT
 
-    prop next:
-        get:
-            if self._next is None:
-                atomic:
-                    def p():
+    def sleep(seconds):
+        """
+        Blocks for precisely the given amount of seconds (up to imprecisions arising from the framerate).
+        """
+        var time = TIME
+        while TIME < time + seconds:
+            await TICK
 
-
-                    self._next = launch p()
-
-
-            return self._next
+spektakel = Spektakel()
 
 def range(n):
     """
@@ -122,7 +121,12 @@ class Wrapper:
     def __init__(inner):
         self._inner = inner
 
-    # TODO: Implement wrapper inheritance!
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self._inner, name)
+
 
 class Located(Wrapper):
     """
