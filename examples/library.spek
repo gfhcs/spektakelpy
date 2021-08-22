@@ -4,7 +4,11 @@ class List:
     A list has a head item and a tail list (possibly empty).
     """
 
+    var _data = None
+
     class Iterator:
+
+        var _data
 
         def __init__(data):
             self._data = data
@@ -18,9 +22,6 @@ class List:
             item, data = self._data
             self._data = data
             return item
-
-    def __init__():
-        self._data = None
 
     def __iter__():
         return Iterator(self._data)
@@ -42,10 +43,8 @@ class List:
 
 class Spektakel:
 
-    def __init__():
-
-        self._visuals = List()
-        self._next = None
+    var _visuals = List()
+    var _next = None
 
     def add(visual):
         """
@@ -78,7 +77,7 @@ class Spektakel:
         while TIME < time + seconds:
             await TICK
 
-spektakel = Spektakel()
+var spektakel = Spektakel()
 
 def range(n):
     """
@@ -96,12 +95,13 @@ class Text:
     A visual displaying text.
     """
 
+    var _text
+
     def __init__(text):
         """
         Creates a new Text visual.
         :param text: The text to display in this visual.
         """
-        super().__init__()
         self._text = text
 
     prop text:
@@ -118,6 +118,8 @@ class Wrapper:
     Wrapper objects 'inherit' all the members of the object they wrap.
     """
 
+    var _inner
+
     def __init__(inner):
         self._inner = inner
 
@@ -132,6 +134,8 @@ class Located(Wrapper):
     """
     Equips a visual with a location inside its container.
     """
+
+    var _cx, _cy
 
     def __init__(inner, cx, cy):
         """
@@ -166,6 +170,8 @@ class Alpha(Wrapper):
     """
     Controls the transparency of its inner node.
     """
+
+    var _alpha
 
     def __init__(inner, alpha):
         """
