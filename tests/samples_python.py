@@ -387,6 +387,12 @@ tokens08 =  [(TokenType.KEYWORD, "class"),
              (TokenType.DEDENT, None)
              ]
 
+
+sample09 = "\"\"\"This is a \"Hello World\" test.\"\"\""
+tokens09 = [(TokenType.LITERAL, "\"\"\"This is a \"Hello World\" test.\"\"\""),
+            (TokenType.NEWLINE, "\n")]
+
+
 vars = list(locals().items())
 samples = {}
 for vname, v in vars:
