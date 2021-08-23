@@ -1,14 +1,16 @@
+import os.path
 import unittest
 from io import StringIO
 
+from examples import paths as example_paths
 from syntax.lexer import LexError
 from syntax.parser import ParserError
 from syntax.phrasal import spektakel, ast
-from tests.samples_controlflow import samples as samples_controlflow
-from tests.samples_prop import samples as samples_prop
-from tests.samples_def import samples as samples_def
 from tests.samples_class import samples as samples_class
+from tests.samples_controlflow import samples as samples_controlflow
+from tests.samples_def import samples as samples_def
 from tests.samples_large import samples as samples_large
+from tests.samples_prop import samples as samples_prop
 
 
 def parse(sample):
@@ -406,3 +408,13 @@ class TestSpektakelParser(unittest.TestCase):
                 n = parse(s)
                 self.assertIsInstance(n, ast.Block)
 
+    def test_examples(self):
+        """
+        Tests the parser on all spek examples.
+        """
+        for path in example_paths:
+            _, filename = os.path.split(path)
+            with self.subTest(example=os.path.splitext(filename)[0]):
+                with open(path, 'r') as sample:
+                    lexer = spektakel.SpektakelLexer(sample)
+                    spektakel.SpektakelParser.parse_block(lexer)
