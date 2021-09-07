@@ -242,6 +242,10 @@ class TestSpektakelParser(unittest.TestCase):
                    "x in (x, y, z)": ast.ComparisonOperator.IN,
                    "E == m * c ** 2": ast.ComparisonOperator.EQ,
                    "1 + 2 + 3 != 4": ast.ComparisonOperator.NEQ,
+                   "x in (a, b, c)": ast.ComparisonOperator.IN,
+                   "y not in samples": ast.ComparisonOperator.NOTIN,
+                   "m is None": ast.ComparisonOperator.IS,
+                   "m is not None": ast.ComparisonOperator.ISNOT
                    }
 
         for idx, (s, t) in enumerate(samples.items()):

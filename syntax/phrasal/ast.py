@@ -333,6 +333,8 @@ class ComparisonOperator(Enum):
     GREATEROREQUAL = 5
     IN = 6
     NOTIN = 7
+    IS = 8
+    ISNOT = 9
 
 
 class Comparison(BinaryOperation):
