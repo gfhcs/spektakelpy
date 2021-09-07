@@ -65,7 +65,10 @@ class TestSpektakelParser(unittest.TestCase):
 
         samples = {"(((x)))": ast.Identifier,
                    "\n3.1415926\n": ast.Constant,
-                   "\"Hello world :-)\"": ast.Constant}
+                   "\"Hello world :-)\"": ast.Constant,
+                   "True": ast.Constant,
+                   "False": ast.Constant,
+                   "None": ast.Constant}
 
         for idx, (s, t) in enumerate(samples.items()):
             with self.subTest(idx=idx):
