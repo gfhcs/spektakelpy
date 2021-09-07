@@ -137,7 +137,7 @@ class SpektakelParser(Parser):
             return Identifier(s, start=start, end=end(lexer.read()))
         elif t == LT:
             return Constant(s, start=start, end=end(lexer.read()))
-        elif t == KW and s in ("True", "False"):
+        elif t == KW and s in ("True", "False", "None"):
             return Constant(s, start=start, end=end(lexer.read()))
         elif t == KW and s == "(":
             lexer.read()
