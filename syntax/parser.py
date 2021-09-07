@@ -15,7 +15,7 @@ class ParserError(Exception):
 
         if pos is not None:
             check_type(pos, TokenPosition)
-            msg = "Line {}, column {}: ".format(pos.line, pos.column) + msg
+            msg = "Line {}, column {}: ".format(pos.line + 1, pos.column + 1) + msg
 
         super().__init__(msg)
         self._pos = pos
