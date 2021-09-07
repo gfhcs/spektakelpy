@@ -68,7 +68,7 @@ def end(token):
     o += len(s)
 
     if t == LT and s.startswith("\"\"\""):
-        for line in s.iterlines():
+        for line in s.splitlines():
             l += 1
         l -= 1
         c = len(line)
