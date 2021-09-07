@@ -639,10 +639,12 @@ class VariableDeclaration(Statement):
                            should be bound to. May be None.
         :param kwargs: See statement constructor.
         """
-        if expression is not None:
-            check_type(expression, Expression)
 
-        super().__init__(check_type(pattern, Expression), expression, **kwargs)
+        if expression is None:
+            super().__init__(check_type(pattern, Expression), **kwargs)
+        else:
+            check_type(expression, Expression)
+            super().__init__(check_type(pattern, Expression), expression, **kwargs)
 
     @property
     def pattern(self):
