@@ -334,6 +334,7 @@ class SpektakelParser(Parser):
         t, s, p = lexer.peek()
 
         cs = {(KW, "in"): ComparisonOperator.IN,
+              (KW, "is"): ComparisonOperator.IS,
               (KW, ">"): ComparisonOperator.GREATER,
               (KW, "=="): ComparisonOperator.EQ,
               (KW, ">="): ComparisonOperator.GREATEROREQUAL,
@@ -345,6 +346,9 @@ class SpektakelParser(Parser):
             try:
                 op = cs[(t, s)]
                 lexer.read()
+                if op == ComparisonOperator.IS and lexer.seeing(keyword("not")):
+                    lexer.read()
+                    op = ComparisonOperator.ISNOT
             except KeyError:
                 if t == KW and s == "not":
                     lexer.read()
