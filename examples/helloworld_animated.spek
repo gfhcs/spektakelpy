@@ -14,10 +14,12 @@ def bounce():
     """
     var delta = 0.01
     while True:
-        for _ in range(10):
+        i = 0
+        while i < 10:
             await spektakel.sleep(0.1)
             hello.cy = hello.cy + delta
             world.cy = world.cy + delta
+            i = i + 1
         delta = - delta
 
 def soft(widget):
@@ -26,13 +28,15 @@ def soft(widget):
     """
     def a():
         var fps = spektakel.framerate
-        for _ in range(fps):
+        var i = 0
+        while i < fps:
             await spektakel.sleep(1 / fps)
-            widget.alpha += 0.1
+            widget.alpha = widget.alpha + 0.1
+            i = i + 1
 
-    launch a()
+    async a()
 
-launch bounce()
+async bounce()
 
 await spektakel.next
 
