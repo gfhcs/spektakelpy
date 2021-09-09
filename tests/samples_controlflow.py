@@ -60,5 +60,20 @@ while True:
             break
 do_stuff()
 locked = False
+""": None,
+
+"""
+for x in xs:
+    if x > 0:
+        return False
+return True
+""": None,
+
+"""
+for x, y in zip(xs, ys):
+    if x < y:
+        return False
+return True
 """: None
+
 }
