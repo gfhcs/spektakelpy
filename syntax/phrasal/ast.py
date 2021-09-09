@@ -628,6 +628,46 @@ class While(Statement):
         return self.children[1]
 
 
+class For(Statement):
+    """
+    A for loop.
+    """
+
+    def __init__(self, pattern, iterable, body, **kwargs):
+        """
+        Creates a new 'for' loop.
+        :param pattern: The pattern to which the item for the current iteration should be assigned.
+        :param iterable: The expression denoting the iterable to iterate over.
+        :param body: The loop body.
+        :param kwargs: See statement constructor.
+        """
+        super().__init__(check_type(pattern, Expression),
+                         check_type(iterable, Expression),
+                         check_type(body, Statement),
+                         **kwargs)
+
+    @property
+    def pattern(self):
+        """
+        The pattern to which the item for the current iteration should be assigned.
+        """
+        return self.children[0]
+
+    @property
+    def iterable(self):
+        """
+        The expression denoting the iterable to iterate over.
+        """
+        return self.children[1]
+
+    @property
+    def body(self):
+        """
+        The loop body.
+        """
+        return self.children[2]
+
+
 class VariableDeclaration(Statement):
     """
      A statement declaring a variable.
