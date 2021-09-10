@@ -690,6 +690,11 @@ class SpektakelParser(Parser):
         lexer.match(keyword(":"))
         match_newline(lexer)
         match_indent(lexer)
+        t, s, p = lexer.peek()
+        while t == TokenType.LITERAL and s.startswith("\"\"\""):
+            lexer.read()
+            match_newline(lexer)
+            t, s, p = lexer.peek()
         lexer.match(keyword("get"))
         lexer.match(keyword(":"))
         match_newline(lexer)
