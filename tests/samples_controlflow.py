@@ -74,6 +74,46 @@ for x, y in zip(xs, ys):
     if x < y:
         return False
 return True
-""": None
+""": None,
 
+"""
+try:
+    e = m * c ** 2
+finally:
+    print("All is relative!")
+""": ast.Try,
+
+"""
+try:
+    work()
+except:
+    print("Sorry!")
+""": ast.Try,
+
+"""
+try:
+    work()
+except ValueError:
+    print("Sorry!")
+""": ast.Try,
+
+"""
+try:
+    work()
+except ValueError as ve:
+    print("Sorry!")
+""": ast.Try,
+
+"""
+try:
+    work()
+except ValueError:
+    print("Sorry!")
+except RuntimeError as re:
+    print("RuntimeError!")
+except:
+    print("Unknown error!")
+finally:
+    print("Done.")
+""": ast.Try,
 }
