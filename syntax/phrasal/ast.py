@@ -668,6 +668,101 @@ class For(Statement):
         return self.children[2]
 
 
+class Except(Node):
+    """
+    An except clause for a try-statement.
+    """
+    def __init__(self, type, name, body, **kwargs):
+        """
+        Creates a new 'except' clause.
+        :param type: The expression denoting the type of the exception to catch.
+        :param name: The name to which the exception that was caught should be assigned.
+        :param body: The statement to execute in order to handle the exception.
+        :param kwargs: See Node constructor.
+        """
+
+        children = [check_type(type, Expression)]
+
+        if name is not None:
+            children.append(check_type(name, Identifier))
+
+        children.append(check_type(body, Statement))
+
+        super().__init__(*children, **kwargs)
+
+    @property
+    def type(self):
+        """
+        The expression denoting the type of the exception to catch.
+        """
+        return self.children[0]
+
+    @property
+    def identifier(self):
+        """
+        The name to which the exception that was caught should be assigned.
+        """
+        if len(self.children) == 2:
+            return None
+        elif len(self.children) == 3:
+            return self.children[1]
+        else:
+            raise Exception("Unexpected number of children in an Except node!")
+
+    @property
+    def body(self):
+        """
+        The statement to execute in order to handle the exception.
+        """
+        return self.children[-1]
+
+
+class Try(Statement):
+    """
+    A try statement.
+    """
+
+    def __init__(self, body, handlers, final, **kwargs):
+        """
+        Creates a new try statement.
+        :param body: The code block that may raise exceptions.
+        :param handlers: An iterable of Except objects.
+        :param final: The code block to be executed when control leaves the try statement.
+        :param kwargs: See statement constructor.
+        """
+
+        children = [check_type(body, Statement)]
+
+        for h in handlers:
+            children.append(check_type(h, Except))
+
+        if final is not None:
+            children.append(check_type(final, Statement))
+
+        super().__init__(*children, **kwargs)
+
+    @property
+    def body(self):
+        """
+        The code block that may raise exceptions.
+        """
+        return self.children[0]
+
+    @property
+    def handlers(self):
+        """
+        The Except objects defining how to handle exceptions.
+        """
+        return self.children[1:-1]
+
+    @property
+    def final(self):
+        """
+        The code block to be executed when control leaves the try statement.
+        """
+        return self.children[-1]
+
+
 class VariableDeclaration(Statement):
     """
      A statement declaring a variable.
