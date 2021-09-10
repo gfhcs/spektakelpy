@@ -29,7 +29,7 @@ class List:
     def push(item):
         self._data = (item, self._data)
 
-    def get(index):
+    def item(index):
         for item in self:
             if index == 0:
                 return item
