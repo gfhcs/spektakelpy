@@ -681,7 +681,10 @@ class Except(Node):
         :param kwargs: See Node constructor.
         """
 
-        children = [check_type(type, Expression)]
+        children = []
+
+        if type is not None:
+            children.append(check_type(type, Expression))
 
         if name is not None:
             children.append(check_type(name, Identifier))
@@ -695,14 +698,17 @@ class Except(Node):
         """
         The expression denoting the type of the exception to catch.
         """
-        return self.children[0]
+        if len(self.children) == 0:
+            return None
+        else:
+            return self.children[0]
 
     @property
     def identifier(self):
         """
         The name to which the exception that was caught should be assigned.
         """
-        if len(self.children) == 2:
+        if len(self.children) < 2:
             return None
         elif len(self.children) == 3:
             return self.children[1]
