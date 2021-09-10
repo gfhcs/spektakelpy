@@ -464,6 +464,7 @@ class SpektakelParser(Parser):
               "if": cls._parse_if,
               "while": cls._parse_while,
               "for": cls._parse_for,
+              "try": cls._parse_try,
               "def": cls._parse_def,
               "prop": cls._parse_prop,
               "class": cls._parse_class}
@@ -677,6 +678,45 @@ class SpektakelParser(Parser):
         body = cls._parse_body(lexer)
         return For(pattern, iterable, body, start=start, end=body.end)
 
+    @classmethod
+    def _parse_try(cls, lexer):
+        """
+        Parses a 'try' statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Try node.
+        """
+
+        _, _, start = lexer.match(keyword("try"))
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        body = cls._parse_body(lexer)
+
+        handlers = []
+        while lexer.seeing(keyword("except")):
+            _, _, s = lexer.match(keyword("except"))
+
+            t, n = None, None
+            if not lexer.seeing(keyword(":")):
+                t = cls.parse_expression(lexer)
+                if lexer.seeing(keyword("as")):
+                    lexer.read()
+                    n = cls._parse_identifier(lexer)
+
+            lexer.match(keyword(":"))
+            match_newline(lexer)
+            b = cls._parse_body(lexer)
+            end = b.end
+            handlers.append(Except(t, n, b, start=s, end=b.end))
+
+        final = None
+        if lexer.seeing(keyword("finally")):
+            _, _, start = lexer.match(keyword("finally"))
+            lexer.match(keyword(":"))
+            match_newline(lexer)
+            final = cls._parse_body(lexer)
+            end = final.end
+
+        return Try(body, handlers, final, start=start, end=end)
 
     @classmethod
     def _parse_prop(cls, lexer):
