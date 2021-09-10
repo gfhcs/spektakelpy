@@ -426,6 +426,24 @@ class SpektakelParser(Parser):
         return cls._parse_or(lexer)
 
     @classmethod
+    def _parse_pattern(cls, lexer):
+        """
+        Parses a pattern expression, i.e. an expression to which values can be assigned.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        es = [cls._parse_simple_expression(lexer)]
+        t, s, p = lexer.peek()
+        while t == KW and s == ",":
+            lexer.read()
+            es.append(cls._parse_simple_expression(lexer))
+            t, s, p = lexer.peek()
+        if len(es) == 1:
+            return es[0]
+        else:
+            return Tuple(*es, start=es[0].start, end=es[-1].end)
+
+    @classmethod
     def _parse_statement(cls, lexer):
         """
         Parses a statement.
@@ -445,6 +463,7 @@ class SpektakelParser(Parser):
               "atomic": cls._parse_atomic,
               "if": cls._parse_if,
               "while": cls._parse_while,
+              "for": cls._parse_for,
               "def": cls._parse_def,
               "prop": cls._parse_prop,
               "class": cls._parse_class}
@@ -453,31 +472,27 @@ class SpektakelParser(Parser):
             return (cs[s])(lexer)
         else:
 
-            eparse = cls.parse_expression
-
             # Maybe this is a declaration?
             var = False
             if lexer.seeing(keyword("var")):
                 lexer.read()
                 var = True
-                # For declarations, only (a tuple of) identifiers must be parsed.
-                eparse = cls._parse_identifier
 
-            # Parse an expression, which might be an unparenthesised tuple:
-            es = [eparse(lexer)]
+            es = [cls.parse_expression(lexer)]
             t, s, p = lexer.peek()
             while t == KW and s == ",":
                 lexer.read()
-                es.append(eparse(lexer))
+                es.append(cls.parse_expression(lexer))
                 t, s, p = lexer.peek()
             if len(es) == 1:
-                e = es[0]
+                pattern = es[0]
             else:
-                e = Tuple(*es, start=es[0].start, end=es[-1].end)
+                pattern = Tuple(*es, start=es[0].start, end=es[-1].end)
 
+            t, s, p = lexer.peek()
             if t == KW and s == "=":
-                if not isinstance(e, AssignableExpression):
-                    raise ParserError("Only 'assignable' expressions must occur on the left hand side of '='!",pos=p)
+                if not isinstance(pattern, AssignableExpression):
+                    raise ParserError("Only 'assignable' expressions must occur on the left hand side of '='!", pos=p)
                 lexer.read()
 
                 # Parse right hand side, which might be an unparenthesised tuple as well:
@@ -495,15 +510,15 @@ class SpektakelParser(Parser):
                 match_newline(lexer)
 
                 if var:
-                    return VariableDeclaration(pattern=e, expression=right, start=start, end=right.end)
+                    return VariableDeclaration(pattern=pattern, expression=right, start=start, end=right.end)
                 else:
-                    return Assignment(e, right, start=start, end=right.end)
+                    return Assignment(pattern, right, start=start, end=right.end)
             else:
                 match_newline(lexer)
                 if var:
-                    return VariableDeclaration(pattern=e, expression=None, start=start, end=e.end)
+                    return VariableDeclaration(pattern=pattern, expression=None, start=start, end=pattern.end)
                 else:
-                    return ExpressionStatement(e, start=e.start, end=e.end)
+                    return ExpressionStatement(pattern, start=pattern.start, end=pattern.end)
 
     @classmethod
     def _parse_return(cls, lexer, newline=True):
@@ -645,6 +660,23 @@ class SpektakelParser(Parser):
         match_newline(lexer)
         body = cls._parse_body(lexer)
         return While(condition, body, start=start, end=body.end)
+
+    @classmethod
+    def _parse_for(cls, lexer):
+        """
+        Parses a 'for' loop.
+        :param lexer: The lexer to consume tokens from.
+        :return: A For node.
+        """
+        _, _, start = lexer.match(keyword("for"))
+        pattern = cls._parse_pattern(lexer)
+        lexer.match(keyword("in"))
+        iterable = cls.parse_expression(lexer)
+        lexer.match(keyword(":"))
+        match_newline(lexer)
+        body = cls._parse_body(lexer)
+        return For(pattern, iterable, body, start=start, end=body.end)
+
 
     @classmethod
     def _parse_prop(cls, lexer):
