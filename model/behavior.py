@@ -3,9 +3,9 @@ import itertools
 from enum import Enum
 
 from core.process import Process
-from lang.state import Variable, Valuation
+from model.state import Variable, Valuation
 from util import check_type
-from . import OwnershipError
+from lang import OwnershipError
 
 
 class Location:

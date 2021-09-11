@@ -1,8 +1,8 @@
 from util import check_type
-from . import OwnershipError
-from .behavior import SymbolicProcess
+from lang import OwnershipError
+from model.behavior import SymbolicProcess
 from core.compact import CompactObject
-from .types import Value
+
 
 class Variable(CompactObject):
     """
