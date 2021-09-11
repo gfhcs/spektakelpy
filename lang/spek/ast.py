@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 
-from syntax.tokens import TokenPosition
+from lang.tokens import TokenPosition
 from util import check_type
 
 

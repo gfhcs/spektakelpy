@@ -1,4 +1,4 @@
-from syntax.phrasal.ast import *
+from lang.spek.ast import *
 
 
 class ParserError(Exception):

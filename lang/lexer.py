@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 
-from syntax.buffer import BufferedMatchStream
+from lang.buffer import BufferedMatchStream
 
 
 class LexErrorReason(Enum):

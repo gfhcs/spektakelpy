@@ -2,11 +2,10 @@ import os.path
 import unittest
 from io import StringIO
 
-import syntax.buffer
+import lang.buffer
 from examples import paths as example_paths
-from syntax import lexer
-from syntax.lexical import pythonesque
-from syntax.phrasal import spektakel
+from lang import lexer, pythonesque
+from lang.spek import syntax
 from tests.samples_python import samples
 
 kw_python = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
@@ -49,7 +48,7 @@ def match(pattern, sample, chunk_size):
     :param chunk_size: The chunk size to be used for buffering.
     :return: A list of pairs (kind, text).
     """
-    buffer = syntax.buffer.BufferedMatchStream(StringIO(sample))
+    buffer = lang.buffer.BufferedMatchStream(StringIO(sample))
     matches = []
     while True:
         try:
@@ -70,7 +69,7 @@ class TestPythonLexer(unittest.TestCase):
     def setUp(self):
         self._specs_python = []
         for cs in (1024, 3, 5, 7):
-            self._specs_python.append((syntax.lexical.pythonesque.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
+            self._specs_python.append((lang.pythonesque.PythonesqueLexicalGrammar(kw_python, sep_python, cs), cs))
 
     def tokens_equal(self, reference, tokens):
         """
@@ -146,6 +145,6 @@ class TestPythonLexer(unittest.TestCase):
             _, filename = os.path.split(path)
             with self.subTest(example=os.path.splitext(filename)[0]):
                 with open(path, 'r') as sample:
-                    lexer = spektakel.SpektakelLexer(sample)
+                    lexer = syntax.SpektakelLexer(sample)
                     while not lexer.seeing(end()):
                         lexer.read()

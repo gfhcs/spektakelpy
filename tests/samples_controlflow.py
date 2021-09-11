@@ -1,4 +1,4 @@
-from syntax.phrasal import ast
+from lang.spek import ast
 
 samples = {
 """

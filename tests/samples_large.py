@@ -1,5 +1,3 @@
-from syntax.phrasal import ast
-
 samples = [
 """
 

@@ -1,8 +1,8 @@
-from syntax.lexer import Lexer, expected
-from syntax.lexical.pythonesque import TokenType, PythonesqueLexicalGrammar
-from syntax.parser import Parser, ParserError
-from syntax.phrasal.ast import *
-from syntax.tokens import TokenPosition
+from lang.lexer import Lexer, expected
+from lang.pythonesque import TokenType, PythonesqueLexicalGrammar
+from lang.parser import Parser, ParserError
+from lang.spek.ast import *
+from lang.tokens import TokenPosition
 
 ID = TokenType.IDENTIFIER
 LT = TokenType.LITERAL

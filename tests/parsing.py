@@ -3,9 +3,9 @@ import unittest
 from io import StringIO
 
 from examples import paths as example_paths
-from syntax.lexer import LexError
-from syntax.parser import ParserError
-from syntax.phrasal import spektakel, ast
+from lang.lexer import LexError
+from lang.parser import ParserError
+from lang.spek import ast, syntax
 from tests.samples_class import samples as samples_class
 from tests.samples_controlflow import samples as samples_controlflow
 from tests.samples_def import samples as samples_def
@@ -21,8 +21,8 @@ def parse(sample):
     :return: A Node object.
     """
     sample = StringIO(sample)
-    lexer = spektakel.SpektakelLexer(sample)
-    return spektakel.SpektakelParser.parse_block(lexer)
+    lexer = syntax.SpektakelLexer(sample)
+    return syntax.SpektakelParser.parse_block(lexer)
 
 
 class TestSpektakelParser(unittest.TestCase):
@@ -423,5 +423,5 @@ class TestSpektakelParser(unittest.TestCase):
             _, filename = os.path.split(path)
             with self.subTest(example=os.path.splitext(filename)[0]):
                 with open(path, 'r') as sample:
-                    lexer = spektakel.SpektakelLexer(sample)
-                    spektakel.SpektakelParser.parse_block(lexer)
+                    lexer = syntax.SpektakelLexer(sample)
+                    syntax.SpektakelParser.parse_block(lexer)

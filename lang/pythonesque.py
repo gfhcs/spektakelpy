@@ -1,8 +1,8 @@
 import re
 from enum import Enum
 
-from syntax.lexer import LexicalGrammar, LexError, LexErrorReason
-from syntax.tokens import TokenPosition
+from lang.lexer import LexicalGrammar, LexError, LexErrorReason
+from lang.tokens import TokenPosition
 
 
 class TokenType(Enum):

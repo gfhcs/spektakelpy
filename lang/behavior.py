@@ -3,7 +3,7 @@ import itertools
 from enum import Enum
 
 from core.process import Process
-from syntax.state import Variable, Valuation
+from lang.state import Variable, Valuation
 from util import check_type
 from . import OwnershipError
 
