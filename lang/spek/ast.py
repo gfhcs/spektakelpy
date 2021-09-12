@@ -509,26 +509,14 @@ class Return(Statement):
             return None
 
 
-class AtomicStatement(Statement, abc.ABC):
-    """
-    A statement that does not have any children.
-    """
-    def __init__(self, **kwargs):
-        """
-        Creates a new atomic statement.
-        :param kwargs: See Statement constructor.
-        """
-        super().__init__(**kwargs)
-
-
-class Break(AtomicStatement):
+class Break(Statement):
     """
     A statement that jumps out of a loop.
     """
     pass
 
 
-class Continue(AtomicStatement):
+class Continue(Statement):
     """
     A statement that jumps to the end of a loop body.
     """
