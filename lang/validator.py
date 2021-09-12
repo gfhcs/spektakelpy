@@ -40,7 +40,8 @@ class Validator(abc.ABC):
         Validates an AST node.
         :param node: The AST node to validate.
         :param env: An Environment, mapping names to definitions.
-        :return: A pair (e, d), where e is an Environment and d is dict mapping AST nodes to decorations.
+        :return: A pair (env2, dec, err), where env2 is an Environment, dec is a dict mapping AST nodes to decorations
+                 and err is an iterable of ValidationError objects.
         """
         pass
 
