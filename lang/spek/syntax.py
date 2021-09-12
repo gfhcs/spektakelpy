@@ -19,7 +19,7 @@ separators = ["+", "-", "*", "**", "/", "//", "%", "@", "<<", ">>", "&", "|", "^
 keywords = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
             "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "from", "nonlocal",
             "while", "assert", "del", "global", "not", "with", "async", "elif", "if", "or", "yield",
-            "var", "atomic", "prop", "get", "set"]
+            "var", "prop", "get", "set"]
 
 lexical_grammar = PythonesqueLexicalGrammar(separators=separators, keywords=keywords, chunk_size=1024)
 
@@ -460,7 +460,6 @@ class SpektakelParser(Parser):
               "return": cls._parse_return,
               "break": cls._parse_break,
               "continue": cls._parse_continue,
-              "atomic": cls._parse_atomic,
               "if": cls._parse_if,
               "while": cls._parse_while,
               "for": cls._parse_for,
@@ -592,20 +591,6 @@ class SpektakelParser(Parser):
         match_dedent(lexer)
 
         return Block(ss, start=ss[0].start, end=ss[-1].end)
-
-    @classmethod
-    def _parse_atomic(cls, lexer):
-        """
-        Parses an atomic block, i.e. a sequence of statements the execution of which is not to be interrupted by
-        other processes.
-        :param lexer: The lexer to consume tokens from.
-        :return: An AtomicBlock node.
-        """
-        _, _, start = lexer.match(keyword("atomic"))
-        lexer.match(keyword(":"))
-        match_newline(lexer)
-        body = cls._parse_body(lexer)
-        return AtomicBlock(body, start=start, end=body.end)
 
     @classmethod
     def _parse_if(cls, lexer):

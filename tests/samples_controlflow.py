@@ -1,12 +1,6 @@
 from lang.spek import ast
 
 samples = {
-"""
-atomic:
-    h = x
-    x = y
-    y = h
-""": ast.AtomicBlock,
 
 """
 if e == m * c ** 2:
@@ -52,7 +46,7 @@ print("Good morning :-)")
 
 """
 while True:
-    atomic:
+    # atomic:
         if locked:
             continue
         else:
