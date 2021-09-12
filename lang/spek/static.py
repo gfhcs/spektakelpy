@@ -87,26 +87,63 @@ class SpektakelValidator(Validator):
                  and err is an iterable of ValidationError objects.
         """
 
-        """ TODO:
-        Statement:
-            Pass
-            ExpressionStatement
-            Assignment
-            Block
-            AtomicBlock
-            Return
-            Break
-            Continue
-            Conditional
-            While
-            For
-            Try
-            VariableDeclaration
-            ProcedureDefinition
-            PropertyDefinition
-            ClassDefinition
-        """
-        pass
+        if isinstance(node, Pass):
+            return env, {}, []
+        elif isinstance(node, ExpressionStatement):
+            # TODO: Unless we are *in* a procedure/property or *outside* of a class definition, only expressions without
+            #       any side effects are allowed, which must be syntactically clear!
+            return (env, *cls.validate_expression(node.expression, env))
+        elif isinstance(node, Assignment):
+            # TODO: Not allowed in a class.
+            # TODO: Left hand side must be assignable
+            # TODO: Left hand and right hand side must be valid
+        elif isinstance(node, Block):
+            dec = {}
+            err = []
+            for s in node.children:
+                env, sdec, serr = cls.validate_statement(s, env)
+                dec.update(sdec)
+                err.extend(serr)
+            return env, dec, err
+        elif isinstance(node, Return):
+            # TODO: Expression must be valid.
+            # TODO: Must decorate this node with the procedure it is contained in. Error if there is no such procedure!
+        elif isinstance(node, (Break, Continue)):
+            # TODO: Must decorate with enclosing loop, error if there is none.
+        elif isinstance(node, Conditional):
+            # TODO: Conditions must be valid.
+            # TODO: Blocks must be validated, but the resulting environment is the INPUT ENVIRONMENT, UNMODIFIED!
+        elif isinstance(node, While):
+            # TODO: Condition must be valid.
+            # TODO: Body must be validated, but the resulting environment is the INPUT ENVIRONMENT, UNMODIFIED!
+        elif isinstance(node, For):
+            # TODO: Iterable must be valid.
+            # TODO: Pattern must be assignable, but declares its names shadowingly!
+            # TODO: Body must be validated, but the resulting environment is the INPUT ENVIRONMENT, UNMODIFIED!
+        elif isinstance(node, Try):
+            # TODO: Block must be valid.
+            # TODO: Finally-Block must be valid.
+            # TODO: Except clauses must be valid.
+            # TODO: Resulting environment is the INPUT ENVIRONMENT, UNMODIFIED!
+        elif isinstance(node, VariableDeclaration):
+            # TODO: If there is an assigned expression, it must be valid!
+            # TODO: Updates the environment!
+            # TODO: Allowed everywhere.
+        elif isinstance(node, ProcedureDefinition):
+            # TODO: Declares the name of the procedure.
+            # TODO: Args are declared for the body.
+            # TODO: Body must be valid.
+        elif isinstance(node, PropertyDefinition):
+            # TODO: Only allowed in a class.
+            # TODO: Otherwise most things from procedures carry over.
+        elif isinstance(node, ClassDefinition):
+            # TODO: Allowed only on the top level.
+            # TODO: Should make 'self' available in enclosed procedures and properties.
+            # TODO: Declares class name.
+            # TODO: Validate super class names!
+        else:
+            return env, {}, (ValidationError("Invalid statement type: {}".format(type(node)), node), )
+
 
     @classmethod
     def validate(cls, node, env):
