@@ -75,7 +75,7 @@ class SpektakelValidator(Validator):
                 err.extend(cerr)
             return d, err
         else:
-            return {}, ValidationError("Invalid node type: {}".format(type(node)), node)
+            return {}, (ValidationError("Invalid node type: {}".format(type(node)), node), )
 
     @classmethod
     def validate_statement(cls, node, env):
