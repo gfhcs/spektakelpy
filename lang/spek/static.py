@@ -131,11 +131,11 @@ class SpektakelValidator(Validator):
         elif isinstance(node, Block):
             for s in node.children:
                 env, dec, err = cls.validate_statement(s, env, dec=dec, err=err)
-        elif isinstance(node, Return):
+        elif isinstance(node, (Return, Raise)):
             if node.value is not None:
                 cls.validate_expression(node.value, env, dec=dec, err=err)
             if env[ValidationKey.PROC] is None:
-                err.append(ValidationError("Return statements are only valid inside procedure bodies!", node))
+                err.append(ValidationError("'return' and 'raise' statements are only valid inside procedure bodies!", node))
             else:
                 dec[node] = env[ValidationKey.PROC]
         elif isinstance(node, (Break, Continue)):

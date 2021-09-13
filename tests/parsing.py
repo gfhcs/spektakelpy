@@ -336,7 +336,9 @@ class TestSpektakelParser(unittest.TestCase):
                    "return": ast.Return,
                    "return m*c**2": ast.Return,
                    "return True": ast.Return,
-                   "return False": ast.Return
+                   "return False": ast.Return,
+                   "raise": ast.Raise,
+                   "raise DummyError()": ast.Raise
                    }
 
         for idx, (s, t) in enumerate(samples.items()):

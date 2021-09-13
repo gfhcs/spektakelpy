@@ -509,6 +509,33 @@ class Return(Statement):
             return None
 
 
+class Raise(Statement):
+    """
+    A statement that raise an exception.
+    """
+
+    def __init__(self, value, **kwargs):
+        """
+        Creates a new raise statement.
+        :param value: The expression computing the value that is to be raised.
+        :param kwargs: See Statement constructor.
+        """
+        if value is None:
+            super().__init__(**kwargs)
+        else:
+            super().__init__(check_type(value, Expression), **kwargs)
+
+    @property
+    def value(self):
+        """
+        The expression computing the exception that is to be raised. May be None.
+        """
+        try:
+            return self.children[0]
+        except IndexError:
+            return None
+
+
 class Break(Statement):
     """
     A statement that jumps out of a loop.

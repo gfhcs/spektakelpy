@@ -458,6 +458,7 @@ class SpektakelParser(Parser):
 
         cs = {"pass": cls._parse_pass,
               "return": cls._parse_return,
+              "raise": cls._parse_raise,
               "break": cls._parse_break,
               "continue": cls._parse_continue,
               "if": cls._parse_if,
@@ -539,6 +540,26 @@ class SpektakelParser(Parser):
             e = cls.parse_expression(lexer)
         match_newline(lexer, enabled=newline)
         return Return(e, start=p, end=end((t, s, p)) if e is None else e.end)
+
+    @classmethod
+    def _parse_raise(cls, lexer, newline=True):
+        """
+        Parses a raise statement.
+        :param lexer: The lexer to consume tokens from.
+        :param newline: Whether this statement parser should also match a newline token after the actual statement.
+        :return: A Raise node.
+        """
+        t, s, p = lexer.match(keyword("raise"))
+
+        def nl(token):
+            return token[0] == NL
+
+        if lexer.seeing(nl):
+            e = None
+        else:
+            e = cls.parse_expression(lexer)
+        match_newline(lexer, enabled=newline)
+        return Raise(e, start=p, end=end((t, s, p)) if e is None else e.end)
 
     @classmethod
     def _parse_continue(cls, lexer, newline=True):
