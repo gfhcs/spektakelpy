@@ -12,6 +12,18 @@ class Environment:
         """
         self._base = base
         self._k2v = {} if k2v is None else dict(k2v)
+        self._len = len(base) + len(self._k2v)
+
+    def __len__(self):
+        return self._len
+
+    def __iter__(self):
+        for k, v in self._k2v.items():
+            yield k, v
+
+        for k, v in self._base:
+            if k not in self._k2v:
+                yield k, v
 
     def __getitem__(self, key):
         try:
