@@ -12,7 +12,9 @@ class Environment:
         """
         self._base = base
         self._k2v = {} if k2v is None else dict(k2v)
-        self._len = len(base) + len(self._k2v)
+        self._len = len(self._k2v)
+        if base is not None:
+            self._len += len(base)
 
     def __len__(self):
         return self._len
