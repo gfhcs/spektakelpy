@@ -44,6 +44,25 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertEqual(len(dec), 0)
         self.assertNoErrors(err)
 
+    def test_constants(self):
+        """
+        Tests the validator on all sorts of constants.
+        """
+        node, env, dec, err = validate("True\n"
+                                       "False\n"
+                                       "None\n"
+                                       "\"Hello world!\"\n"
+                                       "\"\"\"Hello world!\"\"\"\n"
+                                       "42\n"
+                                       "3.1415926\n")
+
+        self.assertEqual(len(env), 0)
+        self.assertNoErrors(err)
+
+        found = set(dec.values())
+        expected = {True, False, None, "Hello world!", 42, 3.1415926}
+        self.assertSetEqual(found, expected)
+
     def test_examples(self):
         """
         Tests the validator on all spek examples.
