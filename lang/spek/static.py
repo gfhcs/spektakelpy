@@ -135,7 +135,7 @@ class SpektakelValidator(Validator):
             pass
         elif isinstance(node, ExpressionStatement):
             cls.validate_expression(node.expression, env, dec=dec, err=err)
-            if env[ValidationKey.Level] == Level.CLASS and not isinstance(node.expression, Constant):
+            if env[ValidationKey.LEVEL] == Level.CLASS and not isinstance(node.expression, Constant):
                 err.append(ValidationError("Expression statements in the root of a class definition must "
                                            "contain nothing other than constants!", node))
         elif isinstance(node, Assignment):

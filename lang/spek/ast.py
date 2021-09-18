@@ -70,7 +70,7 @@ class Constant(Expression):
     """
     def __init__(self, text, start=None, end=None):
         super().__init__(start=start, end=end)
-        self._value = check_type(text, str)
+        self._text = check_type(text, str)
 
     @property
     def text(self):
