@@ -1,6 +1,7 @@
 from lang.spek.ast import *
 from lang.validator import *
 from enum import Enum
+from lang.environment import Environment
 
 
 class ValidationKey(Enum):
@@ -29,8 +30,18 @@ class SpektakelValidator(Validator):
 
     __t2v = {"True": True, "False": False, "None": None}
 
+    __env = Environment({ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None})
+
     @classmethod
-    def validate_expression(cls, node, env, dec=None, err=None):
+    def environment_default(cls):
+        """
+        The environment that a program is validated in by default.
+        :return: An Environment object.
+        """
+        return cls.__env
+
+    @classmethod
+    def validate_expression(cls, node, env=None, dec=None, err=None):
         """
         Validates an Expression node.
         :param node: The Expression node to validate.
@@ -45,6 +56,8 @@ class SpektakelValidator(Validator):
             dec = {}
         if err is None:
             err = []
+        if env is None:
+            env = cls.environment_default()
 
         if err is None:
             err = []
@@ -98,7 +111,7 @@ class SpektakelValidator(Validator):
         return env.adjoin(names)
 
     @classmethod
-    def validate_statement(cls, node, env, dec=None, err=None):
+    def validate_statement(cls, node, env=None, dec=None, err=None):
         """
         Validates a Statement node.
         :param node: The Statement node to validate.
@@ -115,6 +128,8 @@ class SpektakelValidator(Validator):
             dec = {}
         if err is None:
             err = []
+        if env is None:
+            env = cls.environment_default()
 
         if isinstance(node, Pass):
             pass
@@ -220,7 +235,7 @@ class SpektakelValidator(Validator):
         return env, dec, err
 
     @classmethod
-    def validate(cls, node, env):
+    def validate(cls, node, env=None):
         if isinstance(node, Expression):
             return (env, *(cls.validate_expression(node, env)))
         elif isinstance(node, Statement):

@@ -7,7 +7,7 @@ from lang.spek import syntax, static
 from io import StringIO
 
 
-def validate(sample, env=Environment()):
+def validate(sample, env=None):
     """
     Lexes, parses and validates the given code sample.
     :param env: The environment in which the AST of the given sample is to be validated.
@@ -38,9 +38,10 @@ class TestSpektakelValidator(unittest.TestCase):
         Tests the validator on the AST of the empty program.
         """
 
-        node, env, dec, err = validate("# Just some empty program.")
+        env_in = static.SpektakelValidator.environment_default()
+        node, env_out, dec, err = validate("# Just some empty program.", env=env_in)
 
-        self.assertEqual(len(env), 0)
+        self.assertEqual(len(env_in), len(env_out))
         self.assertEqual(len(dec), 0)
         self.assertNoErrors(err)
 
@@ -48,15 +49,17 @@ class TestSpektakelValidator(unittest.TestCase):
         """
         Tests the validator on all sorts of constants.
         """
-        node, env, dec, err = validate("True\n"
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("True\n"
                                        "False\n"
                                        "None\n"
                                        "\"Hello world!\"\n"
                                        "\"\"\"Hello world!\"\"\"\n"
                                        "42\n"
-                                       "3.1415926\n")
+                                       "3.1415926\n", env_in)
 
-        self.assertEqual(len(env), 0)
+        self.assertEqual(len(env_in), len(env_out))
         self.assertNoErrors(err)
 
         found = set(dec.values())
