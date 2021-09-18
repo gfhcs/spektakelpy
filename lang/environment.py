@@ -4,14 +4,14 @@ class Environment:
     An immutable mapping of keys to values, that supports adjunction.
     """
 
-    def __init__(self, k2v, base=None):
+    def __init__(self, k2v=None, base=None):
         """
         Creates a new environment, possibly by adjunction of an existing environemnt.
         :param base: The environment to adjoin.
         :param k2v: A dict-like object that maps keys in which the new environment should differ from the base to new values.
         """
         self._base = base
-        self._k2v = dict(k2v)
+        self._k2v = {} if k2v is None else dict(k2v)
 
     def __getitem__(self, key):
         try:
