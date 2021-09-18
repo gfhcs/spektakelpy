@@ -11,6 +11,7 @@ class ValidationKey(Enum):
     LOOP = 1
     PROC = 2
 
+
 class Level(Enum):
     """
     Denotes a level at which identifiers are being declared.
@@ -19,6 +20,7 @@ class Level(Enum):
     PROP = 1
     CLASS = 2
     GLOBAL = 3
+
 
 class SpektakelValidator(Validator):
     """
