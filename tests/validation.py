@@ -358,16 +358,16 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "      return 42\n"
                                            "  prop writable:\n"
                                            "    get:\n"
-                                           "      return x\n"
+                                           "      return self.x\n"
                                            "    set value:\n"
-                                           "      x = value\n"
+                                           "      self.x = value\n"
                                            "  prop simple: # Over-declaring should not be possible.\n"
                                            "    get:\n"
                                            "      return 42", env_in)
 
-        self.assertEqual(len(env_in) + 1, len(env_out))
+        self.assertEqual(len(env_in) + 2, len(env_out))
         self.assert_errors(2, err)
-        self.assertEqual(7, len(dec))
+        self.assertEqual(12, len(dec))
 
 
     def test_examples(self):
