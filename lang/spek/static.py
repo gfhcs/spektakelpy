@@ -175,7 +175,7 @@ class SpektakelValidator(Validator):
         elif isinstance(node, While):
             cls.validate_expression(node.condition, env, dec=dec, err=err)
             cls.validate_statement(node.body, env.adjoin({ValidationKey.LOOP: node}), dec=dec, err=err)
-            if env[ValidationKey.Level] == Level.CLASS:
+            if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'while' statements are not allowed in the root of a class definition!", node))
         elif isinstance(node, For):
             cls.validate_expression(node.iterable, env, dec=dec, err=err)
@@ -222,12 +222,12 @@ class SpektakelValidator(Validator):
             cls.validate_statement(node.body, senv, dec=dec, err=err)
             env = cls._declare(node, node.name, env)
         elif isinstance(node, ClassDefinition):
-            if env[ValidationKey.LEVEL != Level.GLOBAL]:
+            if env[ValidationKey.LEVEL] != Level.GLOBAL:
                 err.append(ValidationError("Class definitions are only allowed on the global level!", node))
             for b in node.bases:
                 cls.validate_expression(b, env, dec=dec, err=err)
             env = cls._declare(node, node.name, env)
-            ebody = env({ValidationKey.LEVEL: Level.CLASS, "self": node})
+            ebody = env.adjoin({ValidationKey.LEVEL: Level.CLASS, "self": node})
             cls.validate_statement(node.body, ebody, dec=dec, err=err)
         else:
             err.append(ValidationError("Invalid statement type: {}".format(type(node)), node))
