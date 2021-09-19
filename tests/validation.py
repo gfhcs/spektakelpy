@@ -240,6 +240,22 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(12, err)
         self.assertEqual(7, len(dec))
 
+    def test_while(self):
+        """
+        Tests the the validation of return statements.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("while True:\n"
+                                           "    pass\n"
+                                           "while False:\n"
+                                           "    do_some_work()", env_in)
+
+        self.assertEqual(len(env_in), len(env_out))
+        self.assert_errors(1, err)
+        self.assertEqual(2, len(dec))
+
 
     def test_examples(self):
         """
