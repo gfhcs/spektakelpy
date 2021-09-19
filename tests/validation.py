@@ -188,7 +188,8 @@ class TestSpektakelValidator(unittest.TestCase):
                 with open(path, 'r') as sample:
                     lexer = syntax.SpektakelLexer(sample)
                     ast = syntax.SpektakelParser.parse_block(lexer)
-                    env, dec, err = static.SpektakelValidator.validate(ast, Environment())
+                    env = static.SpektakelValidator.environment_default()
+                    env, dec, err = static.SpektakelValidator.validate(ast, env)
                     errs_str = ""
                     prefix = ""
                     for e in err:
