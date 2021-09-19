@@ -14,6 +14,22 @@ class Environment:
         self._k2v = {} if k2v is None else dict(k2v)
         self._len = None
 
+    @property
+    def base(self):
+        """
+        The environment that this one is based on.
+        """
+        return self._base
+
+    @property
+    def direct(self):
+        """
+        A dict of the keys that are *directly* recorded in this environment, i.e. not 'inherited' from the base
+        environment.
+        :return: A dict.
+        """
+        return dict(self._k2v)
+
     def __contains__(self, key):
         return key in self._k2v or (self._base is not None and key in self._base)
 

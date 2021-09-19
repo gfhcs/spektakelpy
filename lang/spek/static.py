@@ -217,14 +217,14 @@ class SpektakelValidator(Validator):
             env_body = env_body.adjoin({ValidationKey.LEVEL: Level.PROC, ValidationKey.PROC: node})
             cls.validate_statement(node.body, env_body, dec=dec, err=err)
         elif isinstance(node, PropertyDefinition):
-            if env[ValidationKey.LEVEL != Level.CLASS]:
-                err.append(ValidationError("Property definitions are only allowed as directly members of a class definition!", node))
             genv = env
-            genv = genv.adjoin({ValidationKey.LEVEL: Level.PROP})
+            genv = genv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
             cls.validate_statement(node.getter, genv, dec=dec, err=err)
             senv = cls._declare(node, node.vname, env)
-            senv = senv.adjoin({ValidationKey.LEVEL: Level.PROP})
-            cls.validate_statement(node.body, senv, dec=dec, err=err)
+            senv = senv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
+            cls.validate_statement(node.setter, senv, dec=dec, err=err)
+            if env[ValidationKey.LEVEL] != Level.CLASS:
+                err.append(ValidationError("Property definitions are only allowed as direct members of a class definition!", node))
             env = cls._declare(node, node.name, env)
         elif isinstance(node, ClassDefinition):
             if env[ValidationKey.LEVEL] != Level.GLOBAL:
@@ -233,7 +233,20 @@ class SpektakelValidator(Validator):
                 cls.validate_expression(b, env, dec=dec, err=err)
             env = cls._declare(node, node.name, env)
             ebody = env.adjoin({ValidationKey.LEVEL: Level.CLASS, "self": node})
-            cls.validate_statement(node.body, ebody, dec=dec, err=err)
+            members = {}
+            for d in node.body.children:
+                if isinstance(d, (VariableDeclaration, PropertyDefinition, ProcedureDefinition)):
+                    env_after, dec, err = cls.validate_statement(d, ebody, dec=dec, err=err)
+                    assert env_after is not ebody
+                    for k, v in env_after.direct.items():
+                        if k in members:
+                            err.append(ValidationError("A member with the name {} has already been declared!".format(k), d))
+                        members[k] = v
+                elif isinstance(d, ExpressionStatement):
+                    env, dec, err = cls.validate_statement(d, ebody, dec=dec, err=err)
+                else:
+                    err.append("Invalid statement type inside class declaration!")
+            dec[node] = members
         else:
             err.append(ValidationError("Invalid statement type: {}".format(type(node)), node))
 
