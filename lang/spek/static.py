@@ -143,7 +143,7 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("Left side of an assignment must be an assignable expression!", node.target))
             cls.validate_expression(node.target, env, dec=dec, err=err)
             cls.validate_expression(node.value, env, dec=dec, err=err)
-            if env[ValidationKey.Level] == Level.CLASS:
+            if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("Assignments are not allowed in the root of a class definition!", node))
         elif isinstance(node, Block):
             for s in node.children:
