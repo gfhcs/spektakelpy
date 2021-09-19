@@ -93,6 +93,7 @@ class TestSpektakelParser(unittest.TestCase):
                    "f(x)": ast.Call,
                    "f(x, y)": ast.Call,
                    "object.method(arg1, arg2)[index1][index2]": ast.Projection,
+                   "f(x == y)": ast.Call
                    }
 
         for idx, (s, t) in enumerate(samples.items()):
