@@ -12,20 +12,31 @@ class Environment:
         """
         self._base = base
         self._k2v = {} if k2v is None else dict(k2v)
-        self._len = len(self._k2v)
-        if base is not None:
-            self._len += len(base)
+        self._len = None
+
+    def __contains__(self, key):
+        return key in self._k2v or (self._base is not None and key in self._base)
 
     def __len__(self):
+        if self._len is None:
+            if self._base is None:
+                self._len = len(self._k2v)
+            else:
+                self._len = len(self._base)
+                for k, v in self._k2v.items():
+                    if k not in self._base:
+                        self._len += 1
+
         return self._len
 
     def __iter__(self):
         for k, v in self._k2v.items():
             yield k, v
 
-        for k, v in self._base:
-            if k not in self._k2v:
-                yield k, v
+        if self._base is not None:
+            for k, v in self._base:
+                if k not in self._k2v:
+                    yield k, v
 
     def __getitem__(self, key):
         try:
