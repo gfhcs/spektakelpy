@@ -260,6 +260,25 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(1, err)
         self.assertEqual(2, len(dec))
 
+    def test_for(self):
+        """
+        Tests the the validation of 'for' loops.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("var items\n"
+                                           "for x in items:\n"
+                                           "    work(x)\n"
+                                           "for (a, (b, c)) in items:\n"
+                                           "    work(b)\n"
+                                           "for 42 in items:\n"
+                                           "    assert(0 == 1)\n", env_in)
+
+        self.assertEqual(len(env_in), len(env_out) + 1)
+        self.assert_errors(4, err)
+        self.assertEqual(7, len(dec))
+
 
     def test_examples(self):
         """
