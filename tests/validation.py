@@ -95,6 +95,19 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(1, err)
         self.assertEqual(7, len(dec))
 
+    def test_pass(self):
+        """
+        Makes sure that pass statements don't crash the validator.
+        """
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("pass", env_in)
+
+        self.assertEqual(len(env_in), len(env_out))
+        self.assertNoErrors(err)
+
+        self.assertSetEqual(set(), set(dec.values()))
+
 
     def test_examples(self):
         """
