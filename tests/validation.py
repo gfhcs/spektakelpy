@@ -108,6 +108,22 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertSetEqual(set(), set(dec.values()))
 
+    def test_expressions(self):
+        """
+        Tests the the validation of some expressions
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("1 + 2\n"
+                                           "var x = 42\n"
+                                           "(await f(x)) + 42\n"
+                                           "a and x > 5\n", env_in)
+
+        self.assertEqual(len(env_out), len(env_in) + 1)
+        self.assert_errors(2, err)
+        self.assertEqual(7, len(dec))
+
 
     def test_examples(self):
         """
