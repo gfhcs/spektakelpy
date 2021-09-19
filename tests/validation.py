@@ -322,7 +322,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_var(self):
         """
-        Tests the validation of variable declaratoins.
+        Tests the validation of variable declarations.
         """
 
         env_in = static.SpektakelValidator.environment_default()
