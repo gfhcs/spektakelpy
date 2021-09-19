@@ -320,6 +320,25 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(15, err)
         self.assertEqual(6, len(dec))
 
+    def test_var(self):
+        """
+        Tests the validation of variable declaratoins.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("var x\n"
+                                           "var x\n"
+                                           "var 42\n"
+                                           "var y = x > 0\n"
+                                           "var (a, (b, c)) = f(y)\n"
+                                           "var a, b, c, d = g(y)\n"
+                                           "var z = z", env_in)
+
+        self.assertEqual(len(env_in) + 7, len(env_out))
+        self.assert_errors(4, err)
+        self.assertEqual(4, len(dec))
+
 
     def test_examples(self):
         """
