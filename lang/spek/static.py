@@ -172,8 +172,9 @@ class SpektakelValidator(Validator):
         elif isinstance(node, Conditional):
             cls.validate_expression(node.condition, env, dec=dec, err=err)
             cls.validate_statement(node.consequence, env, dec=dec, err=err)
-            cls.validate_statement(node.alternative, env, dec=dec, err=err)
-            if env[ValidationKey.Level] == Level.CLASS:
+            if node.alternative is not None:
+                cls.validate_statement(node.alternative, env, dec=dec, err=err)
+            if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'if' statements are not allowed in the root of a class definition!", node))
         elif isinstance(node, While):
             cls.validate_expression(node.condition, env, dec=dec, err=err)

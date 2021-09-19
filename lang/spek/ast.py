@@ -590,7 +590,7 @@ class Conditional(Statement):
         """
         The statement to be executed if the condition was evaluated negatively.
         """
-        return self.children[2]
+        return self.children[2] if len(self.children) > 2 else None
 
 
 class While(Statement):
