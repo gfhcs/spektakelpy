@@ -140,6 +140,27 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(1, err)
         self.assertEqual(9, len(dec))
 
+    def test_block(self):
+        """
+        Tests the the validation of statement blocks.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("var x, y, z\n"
+                                           "x, y, z = 42, 42, 42\n"
+                                           "var y = 4711 + y\n", env_in)
+
+        self.assertEqual(len(env_out), len(env_in) + 3)
+        self.assert_errors(0, err)
+        self.assertEqual(8, len(dec))
+
+        referents_y = [v for k, v in dec.items() if isinstance(k, syntax.Identifier) and k.name == "y"]
+
+        self.assertEqual(2, len(referents_y))
+        self.assertEqual(1, len(set(referents_y)))
+
+
 
     def test_examples(self):
         """
