@@ -339,6 +339,36 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(4, err)
         self.assertEqual(4, len(dec))
 
+    def test_prop(self):
+        """
+        Tests the validation of property declarations.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("prop fail: # Must fail, because it's outside a class.\n"
+                                           "  get:\n"
+                                           "    return 42\n"
+                                           "class C:\n"
+                                           "\n"
+                                           "  var x = 42\n"
+                                           "\n"
+                                           "  prop simple:\n"
+                                           "    get:\n"
+                                           "      return 42\n"
+                                           "  prop writable:\n"
+                                           "    get:\n"
+                                           "      return x\n"
+                                           "    set value:\n"
+                                           "      x = value\n"
+                                           "  prop simple: # Over-declaring should not be possible.\n"
+                                           "    get:\n"
+                                           "      return 42", env_in)
+
+        self.assertEqual(len(env_in) + 1, len(env_out))
+        self.assert_errors(2, err)
+        self.assertEqual(7, len(dec))
+
 
     def test_examples(self):
         """
