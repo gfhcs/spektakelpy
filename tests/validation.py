@@ -197,6 +197,24 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(0, err)
         self.assertEqual(3, len(dec))
 
+    def test_loop_jumps(self):
+        """
+        Tests the the validation of return statements.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("break # Must fail, because no loop.\n"
+                                           "continue # Must fail, because no loop.\n"
+                                           "while True:\n"
+                                           "    break\n"
+                                           "while False:\n"
+                                           "    continue", env_in)
+
+        self.assertEqual(len(env_in), len(env_out))
+        self.assert_errors(2, err)
+        self.assertEqual(4, len(dec))
+
 
     def test_examples(self):
         """
