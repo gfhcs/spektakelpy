@@ -796,7 +796,10 @@ class VariableDeclaration(Statement):
         The expression the evaluation result of which the newly declared variable should be bound to.
         May be None.
         """
-        return self.children[-1]
+        if len(self.children) > 1:
+            return self.children[-1]
+        else:
+            return None
 
 
 class ProcedureDefinition(Statement):
