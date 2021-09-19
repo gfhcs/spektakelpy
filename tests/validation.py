@@ -177,6 +177,26 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(1, err)  # return outside procedure.
         self.assertEqual(4, len(dec))
 
+    def test_raise(self):
+        """
+        Tests the the validation of raise statements.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("raise # Should work.\n"
+                                           "def f(x):\n"
+                                           "    return x\n"
+                                           "raise f() # This *should* work outside a catch block!\n"
+                                           "try:\n"
+                                           "    pass\n"
+                                           "except:\n"
+                                           "    raise # Should just work.\n", env_in)
+
+        self.assertEqual(len(env_out), len(env_in) + 1)
+        self.assert_errors(0, err)
+        self.assertEqual(3, len(dec))
+
 
     def test_examples(self):
         """
