@@ -160,6 +160,22 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertEqual(2, len(referents_y))
         self.assertEqual(1, len(set(referents_y)))
 
+    def test_return(self):
+        """
+        Tests the the validation of return statements.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("return 42\n"
+                                           "def f(x):\n"
+                                           "    return x\n"
+                                           "def g(x):\n"
+                                           "    return\n", env_in)
+
+        self.assertEqual(len(env_out), len(env_in) + 2)
+        self.assert_errors(1, err)  # return outside procedure.
+        self.assertEqual(4, len(dec))
 
 
     def test_examples(self):
