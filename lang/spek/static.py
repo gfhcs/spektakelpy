@@ -148,13 +148,16 @@ class SpektakelValidator(Validator):
         elif isinstance(node, Block):
             for s in node.children:
                 env, dec, err = cls.validate_statement(s, env, dec=dec, err=err)
-        elif isinstance(node, (Return, Raise)):
+        elif isinstance(node, Return):
             if node.value is not None:
                 cls.validate_expression(node.value, env, dec=dec, err=err)
             if env[ValidationKey.PROC] is None:
-                err.append(ValidationError("'return' and 'raise' statements are only valid inside procedure bodies!", node))
+                err.append(ValidationError("'return' statements are only valid inside procedure bodies!", node))
             else:
                 dec[node] = env[ValidationKey.PROC]
+        elif isinstance(node, Raise):
+            if node.value is not None:
+                cls.validate_expression(node.value, env, dec=dec, err=err)
         elif isinstance(node, (Break, Continue)):
             if env[ValidationKey.LOOP] is None:
                 if isinstance(node, Break):
@@ -194,9 +197,10 @@ class SpektakelValidator(Validator):
                     cls.validate_expression(h.type, env, dec=dec, err=err)
                 if h.identifier is not None:
                     henv = cls._declare(h, h.identifier, henv)
-                cls.validate_expression(h.body, henv, dec=dec, err=err)
-            cls.validate_statement(node.final, env, dec=dec, err=err)
-            if env[ValidationKey.Level] == Level.CLASS:
+                cls.validate_statement(h.body, henv, dec=dec, err=err)
+            if node.final is not None:
+                cls.validate_statement(node.final, env, dec=dec, err=err)
+            if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'try' statements are not allowed in the root of a class definition!", node))
         elif isinstance(node, VariableDeclaration):
             if not isinstance(node.pattern, AssignableExpression):
