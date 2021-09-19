@@ -92,7 +92,7 @@ class SpektakelValidator(Validator):
         return dec, err
 
     @classmethod
-    def _declare(cls, pattern, env):
+    def _declare(cls, decl, pattern, env):
         """
         Traverses the AST nodes of a pattern expression and adjoins the given environment.
         :param pattern: An AssignableExpression containing identifiers to be declared variables.
@@ -104,7 +104,7 @@ class SpektakelValidator(Validator):
         while len(agenda) > 0:
             node = agenda.pop()
             if isinstance(node, Identifier):
-                names[node.name] = node
+                names[node.name] = (decl, node)
             else:
                 agenda.extend(node.children)
 
@@ -181,7 +181,7 @@ class SpektakelValidator(Validator):
             cls.validate_expression(node.iterable, env, dec=dec, err=err)
             if not isinstance(node.pattern, AssignableExpression):
                 err.append(ValidationError("The pattern must be an assignable expression!", node.pattern))
-            env_body = cls._declare(node.pattern, env)
+            env_body = cls._declare(node, node.pattern, env)
             env_body = env_body.adjoin({ValidationKey.LOOP: node})
             cls.validate_statement(node.body, env_body, dec=dec, err=err)
             if env[ValidationKey.Level] == Level.CLASS:
@@ -193,7 +193,7 @@ class SpektakelValidator(Validator):
                 if h.type is not None:
                     cls.validate_expression(h.type, env, dec=dec, err=err)
                 if h.identifier is not None:
-                    henv = cls._declare(h.identifier, henv)
+                    henv = cls._declare(h, h.identifier, henv)
                 cls.validate_expression(h.body, henv, dec=dec, err=err)
             cls.validate_statement(node.final, env, dec=dec, err=err)
             if env[ValidationKey.Level] == Level.CLASS:
@@ -203,12 +203,12 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("Declared expression must be assignable!", node.pattern))
             if node.expression is not None:
                 cls.validate_expression(node.expression, env, dec=dec, err=err)
-            env = cls._declare(node.pattern, env)
+            env = cls._declare(node, node.pattern, env)
         elif isinstance(node, ProcedureDefinition):
-            env = cls._declare(node.name, env)
+            env = cls._declare(node, node.name, env)
             env_body = env
             for aname in node.argnames:
-                env_body = cls._declare(aname, env_body)
+                env_body = cls._declare(node, aname, env_body)
             env_body = env_body.adjoin({ValidationKey.LEVEL: Level.PROC, ValidationKey.PROC: node})
             cls.validate_statement(node.body, env_body, dec=dec, err=err)
         elif isinstance(node, PropertyDefinition):
@@ -217,16 +217,16 @@ class SpektakelValidator(Validator):
             genv = env
             genv = genv.adjoin({ValidationKey.LEVEL: Level.PROP})
             cls.validate_statement(node.getter, genv, dec=dec, err=err)
-            senv = cls._declare(node.vname, env)
+            senv = cls._declare(node, node.vname, env)
             senv = senv.adjoin({ValidationKey.LEVEL: Level.PROP})
             cls.validate_statement(node.body, senv, dec=dec, err=err)
-            env = cls._declare(node.name, env)
+            env = cls._declare(node, node.name, env)
         elif isinstance(node, ClassDefinition):
             if env[ValidationKey.LEVEL != Level.GLOBAL]:
                 err.append(ValidationError("Class definitions are only allowed on the global level!", node))
             for b in node.bases:
                 cls.validate_expression(b, env, dec=dec, err=err)
-            env = cls._declare(node.name, env)
+            env = cls._declare(node, node.name, env)
             ebody = env({ValidationKey.LEVEL: Level.CLASS, "self": node})
             cls.validate_statement(node.body, ebody, dec=dec, err=err)
         else:
