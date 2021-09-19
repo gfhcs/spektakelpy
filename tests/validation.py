@@ -215,6 +215,31 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(2, err)
         self.assertEqual(4, len(dec))
 
+    def test_if(self):
+        """
+        Tests the the validation of return statements.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("if meaning_of_life == 42:\n"
+                                           "    print(\"easy peasy\")\n"
+                                           "elif flyable(pig):\n"
+                                           "    print(\"We're lucky!\")\n"
+                                           "else:\n"
+                                           "    print(\"No free lunch :-(\")\n"
+                                           "\n"
+                                           "if iq > temp_room():\n"
+                                           "    print(\"You're a genius!\")\n"
+                                           "else:\n"
+                                           "    print(\"Do you want ice cream?\")\n"
+                                           "if done:\n"
+                                           "    print(\"No more work to do :-)\")", env_in)
+
+        self.assertEqual(len(env_in), len(env_out))
+        self.assert_errors(12, err)
+        self.assertEqual(7, len(dec))
+
 
     def test_examples(self):
         """
