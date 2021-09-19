@@ -199,7 +199,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_loop_jumps(self):
         """
-        Tests the the validation of return statements.
+        Tests the the validation of 'break' and 'continue'.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -217,7 +217,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_if(self):
         """
-        Tests the the validation of return statements.
+        Tests the the validation of 'if' statements.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -242,7 +242,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_while(self):
         """
-        Tests the the validation of return statements.
+        Tests the the validation of 'while' loops.
         """
 
         env_in = static.SpektakelValidator.environment_default()
