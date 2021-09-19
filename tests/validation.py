@@ -25,13 +25,25 @@ def validate(sample, env=None):
 
 class TestSpektakelValidator(unittest.TestCase):
 
+    def assert_errors(self, expected_count, err):
+        """
+        Asserts that the given number of errors was found and prints an informative error message if this is not the
+        case.
+        :param expected_count: The number of errors expected to be found.
+        :param err: An iterable of the errors that were found.
+        """
+
+        msg = "Expected {} errors, but got {}:\n{}".format(expected_count,
+                                                           len(err),
+                                                           "\n".join((str(e) for e in err)))
+        self.assertEqual(expected_count, len(err), msg=msg)
+
     def assertNoErrors(self, err):
-        errs_str = ""
-        prefix = ""
-        for e in err:
-            errs_str += prefix + str(e)
-            prefix = "\n"
-        self.assertEqual(len(err), 0, msg="The validator reported unexpected errors: " + errs_str)
+        """
+        Asserts that no errors were found, or prints an informative error message.
+        :param err: The errors that were found.
+        """
+        return self.assert_errors(0, err)
 
     def test_empty(self):
         """
@@ -65,6 +77,23 @@ class TestSpektakelValidator(unittest.TestCase):
         found = set(dec.values())
         expected = {True, False, None, "Hello world!", 42, 3.1415926}
         self.assertSetEqual(found, expected)
+
+    def test_identifiers(self):
+        """
+        Tests the correct resolution of identifiers.
+        """
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("x\n"
+                                           "var x\n"
+                                           "x = x + 42\n"
+                                           "var x\n"
+                                           "def x(a, b):\n"
+                                           "  return x(b, a)", env_in)
+
+        self.assertEqual(len(env_out), len(env_in) + 1)
+        self.assert_errors(1, err)
+        self.assertEqual(len(dec), 5)
 
     def test_examples(self):
         """
