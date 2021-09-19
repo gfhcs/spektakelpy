@@ -279,6 +279,47 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(4, err)
         self.assertEqual(7, len(dec))
 
+    def test_try(self):
+        """
+        Tests the the validation of 'try' statements.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("try:\n"
+                                           "    work()\n"
+                                           "except:\n"
+                                           "    print(\"An error, sadly\")\n"
+                                           "\n"
+                                           "try:\n"
+                                           "    work()\n"
+                                           "finally:\n"
+                                           "    print(\"It's over\")\n"
+                                           "\n"
+                                           "try:\n"
+                                           "    raise Exception()\n"
+                                           "except Exception:\n"
+                                           "    raise\n"
+                                           "try:\n"
+                                           "    raise Exception()\n"
+                                           "except Exception:\n"
+                                           "    raise\n"
+                                           "finally:\n"
+                                           "    print(\"Done.\")\n"
+                                           "\n"
+                                           "try:\n"
+                                           "   raise Exception()\n"
+                                           "except Exception as e:\n"
+                                           "   print(e)\n"
+                                           "except Fception:\n"
+                                           "   print(\"Weird\")\n"
+                                           "except:\n"
+                                           "   print(\"No idea\")", env_in)
+
+        self.assertEqual(len(env_in), len(env_out))
+        self.assert_errors(15, err)
+        self.assertEqual(6, len(dec))
+
 
     def test_examples(self):
         """
