@@ -692,7 +692,7 @@ class Except(Node):
         """
         The expression denoting the type of the exception to catch.
         """
-        if len(self.children) == 0:
+        if len(self.children) == 1:
             return None
         else:
             return self.children[0]
@@ -702,7 +702,7 @@ class Except(Node):
         """
         The name to which the exception that was caught should be assigned.
         """
-        if len(self.children) < 2:
+        if len(self.children) < 3:
             return None
         elif len(self.children) == 3:
             return self.children[1]
@@ -753,14 +753,14 @@ class Try(Statement):
         """
         The Except objects defining how to handle exceptions.
         """
-        return self.children[1:-1]
+        return self.children[1:] if self.final is None else self.children[1:-1]
 
     @property
     def final(self):
         """
         The code block to be executed when control leaves the try statement.
         """
-        return self.children[-1]
+        return None if isinstance(self.children[-1], Except) else self.children[-1]
 
 
 class VariableDeclaration(Statement):
