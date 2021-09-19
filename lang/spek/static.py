@@ -188,7 +188,7 @@ class SpektakelValidator(Validator):
             env_body = cls._declare(node, node.pattern, env)
             env_body = env_body.adjoin({ValidationKey.LOOP: node})
             cls.validate_statement(node.body, env_body, dec=dec, err=err)
-            if env[ValidationKey.Level] == Level.CLASS:
+            if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'for' statements are not allowed in the root of a class definition!", node))
         elif isinstance(node, Try):
             cls.validate_statement(node.body, env, dec=dec, err=err)
