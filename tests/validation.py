@@ -124,6 +124,22 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assert_errors(2, err)
         self.assertEqual(7, len(dec))
 
+    def test_assignment(self):
+        """
+        Tests the the validation of assignments
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("var x, y, z\n"
+                                           "x = 42\n"
+                                           "x, y = f(x)\n"
+                                           "x, y = (y, x)\n", env_in)
+
+        self.assertEqual(len(env_out), len(env_in) + 3)
+        self.assert_errors(1, err)
+        self.assertEqual(9, len(dec))
+
 
     def test_examples(self):
         """
