@@ -273,9 +273,9 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "for (a, (b, c)) in items:\n"
                                            "    work(b)\n"
                                            "for 42 in items:\n"
-                                           "    assert(0 == 1)\n", env_in)
+                                           "    learn(0 == 1)\n", env_in)
 
-        self.assertEqual(len(env_in), len(env_out) + 1)
+        self.assertEqual(len(env_in) + 1, len(env_out))
         self.assert_errors(4, err)
         self.assertEqual(7, len(dec))
 
