@@ -209,11 +209,15 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "while True:\n"
                                            "    break\n"
                                            "while False:\n"
+                                           "    continue\n"
+                                           "for x in items:\n"
+                                           "    break\n"
+                                           "for y in items:\n"
                                            "    continue", env_in)
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assert_errors(2, err)
-        self.assertEqual(4, len(dec))
+        self.assert_errors(4, err)
+        self.assertEqual(6, len(dec))
 
     def test_if(self):
         """
