@@ -110,7 +110,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_expressions(self):
         """
-        Tests the the validation of some expressions
+        Tests the validation of some expressions
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -126,7 +126,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_assignment(self):
         """
-        Tests the the validation of assignments
+        Tests the validation of assignments
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -142,7 +142,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_block(self):
         """
-        Tests the the validation of statement blocks.
+        Tests the validation of statement blocks.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -162,7 +162,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_return(self):
         """
-        Tests the the validation of return statements.
+        Tests the validation of return statements.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -179,7 +179,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_raise(self):
         """
-        Tests the the validation of raise statements.
+        Tests the validation of raise statements.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -199,7 +199,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_loop_jumps(self):
         """
-        Tests the the validation of 'break' and 'continue'.
+        Tests the validation of 'break' and 'continue'.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -221,7 +221,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_if(self):
         """
-        Tests the the validation of 'if' statements.
+        Tests the validation of 'if' statements.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -246,7 +246,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_while(self):
         """
-        Tests the the validation of 'while' loops.
+        Tests the validation of 'while' loops.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -262,7 +262,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_for(self):
         """
-        Tests the the validation of 'for' loops.
+        Tests the validation of 'for' loops.
         """
 
         env_in = static.SpektakelValidator.environment_default()
@@ -281,7 +281,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
     def test_try(self):
         """
-        Tests the the validation of 'try' statements.
+        Tests the validation of 'try' statements.
         """
 
         env_in = static.SpektakelValidator.environment_default()
