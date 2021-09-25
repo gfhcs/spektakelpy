@@ -369,6 +369,53 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertErrors(2, err)
         self.assertEqual(12, len(dec))
 
+    def test_proc(self):
+        """
+        Tests the validation of procedure declarations.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("def dummy():\n"
+                                           "  return 42\n"
+                                           "def id(x):\n"
+                                           "  return x\n"
+                                           "def sum(x, y, z):\n"
+                                           "  return x + y + z\n"
+                                           "def test(a):\n"
+                                           "  def t(b):\n"
+                                           "    return a + b\n"
+                                           "  return t\n"
+                                           "def fib(i):\n"
+                                           "    if i <= 1:\n"
+                                           "      return i\n"
+                                           "    else:\n"
+                                           "      return fib(i - 2) + fib(i - 1)\n"
+                                           "def test (x, x, x): # Should fail, because it's nonsense.\n"
+                                           "  return x\n"
+                                           "def even(x):\n"
+                                           "  if x == 0:\n"
+                                           "    return True\n"
+                                           "  else:\n"
+                                           "    return odd (x - 1) # Fails, because 'odd' is undefined.\n"
+                                           "var odd\n"
+                                           "def even(x):\n"
+                                           "  if x == 0:\n"
+                                           "    return True\n"
+                                           "  else:\n"
+                                           "    return odd (x - 1)\n"
+                                           "\n"
+                                           "def odd(x):\n"
+                                           "  if x == 0:\n"
+                                           "    return False\n"
+                                           "  else:\n"
+                                           "    return even(x - 1)\n"
+                                           "", env_in)
+
+        self.assertEqual(len(env_in) + 7, len(env_out))
+        self.assertErrors(2, err)
+        self.assertEqual(50, len(dec))
+
 
     def test_examples(self):
         """
