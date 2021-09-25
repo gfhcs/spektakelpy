@@ -134,10 +134,11 @@ class SpektakelValidator(Validator):
         if isinstance(node, Pass):
             pass
         elif isinstance(node, ExpressionStatement):
-            cls.validate_expression(node.expression, env, dec=dec, err=err)
             if env[ValidationKey.LEVEL] == Level.CLASS and not isinstance(node.expression, Constant):
                 err.append(ValidationError("Expression statements in the root of a class definition must "
                                            "contain nothing other than constants!", node))
+            else:
+                cls.validate_expression(node.expression, env, dec=dec, err=err)
         elif isinstance(node, Assignment):
             if not isinstance(node.target, AssignableExpression):
                 err.append(ValidationError("Left side of an assignment must be an assignable expression!", node.target))
@@ -247,10 +248,10 @@ class SpektakelValidator(Validator):
                         if k in members:
                             err.append(ValidationError("A member with the name {} has already been declared!".format(k), d))
                         members[k] = v
-                elif isinstance(d, ExpressionStatement):
-                    env, dec, err = cls.validate_statement(d, ebody, dec=dec, err=err)
+                elif isinstance(d, (Pass, ExpressionStatement)):
+                    _, dec, err = cls.validate_statement(d, ebody, dec=dec, err=err)
                 else:
-                    err.append("Invalid statement type inside class declaration!")
+                    err.append(ValidationError("Invalid statement type inside class declaration!", d))
             dec[node] = members
         else:
             err.append(ValidationError("Invalid statement type: {}".format(type(node)), node))
