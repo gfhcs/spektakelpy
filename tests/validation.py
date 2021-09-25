@@ -25,7 +25,7 @@ def validate(sample, env=None):
 
 class TestSpektakelValidator(unittest.TestCase):
 
-    def assert_errors(self, expected_count, err):
+    def assertErrors(self, expected_count, err):
         """
         Asserts that the given number of errors was found and prints an informative error message if this is not the
         case.
@@ -43,7 +43,7 @@ class TestSpektakelValidator(unittest.TestCase):
         Asserts that no errors were found, or prints an informative error message.
         :param err: The errors that were found.
         """
-        return self.assert_errors(0, err)
+        return self.assertErrors(0, err)
 
     def test_empty(self):
         """
@@ -92,7 +92,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "  return x(b, a)", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 1)
-        self.assert_errors(1, err)
+        self.assertErrors(1, err)
         self.assertEqual(7, len(dec))
 
     def test_pass(self):
@@ -121,7 +121,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "a and x > 5\n", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 1)
-        self.assert_errors(2, err)
+        self.assertErrors(2, err)
         self.assertEqual(7, len(dec))
 
     def test_assignment(self):
@@ -137,7 +137,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "x, y = (y, x)\n", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 3)
-        self.assert_errors(1, err)
+        self.assertErrors(1, err)
         self.assertEqual(9, len(dec))
 
     def test_block(self):
@@ -152,7 +152,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "var y = 4711 + y\n", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 3)
-        self.assert_errors(0, err)
+        self.assertErrors(0, err)
         self.assertEqual(8, len(dec))
 
         referents_y = [v for k, v in dec.items() if isinstance(k, syntax.Identifier) and k.name == "y"]
@@ -174,7 +174,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    return\n", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 2)
-        self.assert_errors(1, err)  # return outside procedure.
+        self.assertErrors(1, err)  # return outside procedure.
         self.assertEqual(4, len(dec))
 
     def test_raise(self):
@@ -194,7 +194,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    raise # Should just work.\n", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 1)
-        self.assert_errors(0, err)
+        self.assertErrors(0, err)
         self.assertEqual(3, len(dec))
 
     def test_loop_jumps(self):
@@ -216,7 +216,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    continue", env_in)
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assert_errors(4, err)
+        self.assertErrors(4, err)
         self.assertEqual(6, len(dec))
 
     def test_if(self):
@@ -241,7 +241,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    print(\"No more work to do :-)\")", env_in)
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assert_errors(12, err)
+        self.assertErrors(12, err)
         self.assertEqual(7, len(dec))
 
     def test_while(self):
@@ -257,7 +257,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    do_some_work()", env_in)
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assert_errors(1, err)
+        self.assertErrors(1, err)
         self.assertEqual(2, len(dec))
 
     def test_for(self):
@@ -276,7 +276,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    learn(0 == 1)\n", env_in)
 
         self.assertEqual(len(env_in) + 1, len(env_out))
-        self.assert_errors(4, err)
+        self.assertErrors(4, err)
         self.assertEqual(7, len(dec))
 
     def test_try(self):
@@ -317,7 +317,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "   print(\"No idea\")", env_in)
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assert_errors(15, err)
+        self.assertErrors(15, err)
         self.assertEqual(6, len(dec))
 
     def test_var(self):
@@ -336,7 +336,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "var z = z", env_in)
 
         self.assertEqual(len(env_in) + 7, len(env_out))
-        self.assert_errors(4, err)
+        self.assertErrors(4, err)
         self.assertEqual(4, len(dec))
 
     def test_prop(self):
@@ -366,7 +366,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "      return 42", env_in)
 
         self.assertEqual(len(env_in) + 2, len(env_out))
-        self.assert_errors(2, err)
+        self.assertErrors(2, err)
         self.assertEqual(12, len(dec))
 
 
@@ -382,9 +382,4 @@ class TestSpektakelValidator(unittest.TestCase):
                     ast = syntax.SpektakelParser.parse_block(lexer)
                     env = static.SpektakelValidator.environment_default()
                     env, dec, err = static.SpektakelValidator.validate(ast, env)
-                    errs_str = ""
-                    prefix = ""
-                    for e in err:
-                        errs_str += prefix + str(e)
-                        prefix = "\n"
-                    self.assertEqual(len(err), 0, msg="The validator reported unexpected errors: " + errs_str)
+                    self.assertNoErrors(err)
