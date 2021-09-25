@@ -1,4 +1,23 @@
 
+
+class ListIterator:
+
+    var _data
+
+    def __init__(data):
+        self._data = data
+
+    def __next__():
+
+        if self._data is None:
+            # STOP is an externally defined name, for the purpose of signalling the end of an iteration.
+            return STOP
+
+        item, data = self._data
+        self._data = data
+        return item
+
+
 class List:
     """
     A list has a head item and a tail list (possibly empty).
@@ -6,25 +25,9 @@ class List:
 
     var _data = None
 
-    class Iterator:
-
-        var _data
-
-        def __init__(data):
-            self._data = data
-
-        def __next__():
-
-            if self._data is None:
-                # STOP is an externally defined name, for the purpose of signalling the end of an iteration.
-                return STOP
-
-            item, data = self._data
-            self._data = data
-            return item
 
     def __iter__():
-        return Iterator(self._data)
+        return ListIterator(self._data)
 
     def push(item):
         self._data = (item, self._data)
