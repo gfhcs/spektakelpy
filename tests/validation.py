@@ -416,6 +416,67 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertErrors(2, err)
         self.assertEqual(49, len(dec))
 
+    def test_class(self):
+        """
+        Tests the validation of class declarations.
+        """
+
+        env_in = static.SpektakelValidator.environment_default()
+
+        node, env_out, dec, err = validate("class C():\n"
+                                           "  pass\n"
+                                           "class D(C):\n"
+                                           "  pass\n"
+                                           "class Point:\n"
+                                           "  var _x, _y\n"
+                                           "  def __init__(x, y):\n"
+                                           "    self._x, self._y = x, y\n"
+                                           "  prop x:\n"
+                                           "    get:\n"
+                                           "        return self._x\n"
+                                           "  prop y:\n"
+                                           "    get:\n"
+                                           "        return self._y\n"
+                                           "\n"
+                                           "def p():\n"
+                                           "  class A(): # Error: Class definitions are not allowed in procedures.\n"
+                                           "    pass\n"
+                                           "\n"
+                                           "class A(C, D):\n"
+                                           "  pass\n"
+                                           "class Z(Y): # Y undefined.\n"
+                                           "  pass\n"
+                                           "\n"
+                                           "class F():\n"
+                                           "  def f():\n"
+                                           "    return 42\n"
+                                           "  prop f: # Error: Duplicte member name.\n"
+                                           "    get:\n"
+                                           "      return 42\n"
+                                           "\n"
+                                           "class E:\n"
+                                           "  \"\"\"\n"
+                                           "  A fun little test class.\n"
+                                           "  \"\"\"\n"
+                                           "  def p():\n"
+                                           "    \"\"\"\n"
+                                           "    This works :-)\n"
+                                           "    \"\"\"\n"
+                                           "    return 1377\n"
+                                           "  prop q:\n"
+                                           "    \"\"\"\n"
+                                           "    This is a property.\n"
+                                           "    \"\"\"\n"
+                                           "    get:\n"
+                                           "        return 4711\n"
+                                           "  p() # Error.\n"
+                                           "\n"
+                                           "13 # This is allowed.\n"
+                                           "", env_in)
+
+        self.assertEqual(len(env_in) + 8, len(env_out))
+        self.assertErrors(4, err)
+        self.assertEqual(30, len(dec))
 
     def test_examples(self):
         """
