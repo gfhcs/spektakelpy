@@ -83,7 +83,7 @@ class SpektakelValidator(Validator):
             except KeyError:
                 err.append(ValidationError("Name '{}' undefined!".format(node.name), node))
         elif isinstance(node, (Tuple, Projection, Attribute, Call, Launch, Await,
-                               Comparison, BooleanBinaryOperation, ArithmeticBinaryOperation)):
+                               Comparison, BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation)):
             for c in node.children:
                 cls.validate_expression(c, env, dec=dec, err=err)
         else:
