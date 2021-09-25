@@ -391,7 +391,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "      return i\n"
                                            "    else:\n"
                                            "      return fib(i - 2) + fib(i - 1)\n"
-                                           "def test (x, x, x): # Should fail, because it's nonsense.\n"
+                                           "def test (x, x): # Should fail, because it's nonsense.\n"
                                            "  return x\n"
                                            "def even(x):\n"
                                            "  if x == 0:\n"
@@ -414,7 +414,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 7, len(env_out))
         self.assertErrors(2, err)
-        self.assertEqual(50, len(dec))
+        self.assertEqual(49, len(dec))
 
 
     def test_examples(self):
