@@ -212,8 +212,13 @@ class SpektakelValidator(Validator):
         elif isinstance(node, ProcedureDefinition):
             env = cls._declare(node, node.name, env)
             env_body = env
+            anames = set()
             for aname in node.argnames:
                 env_body = cls._declare(node, aname, env_body)
+                for n in env_body.direct.keys():
+                    if n in anames:
+                        err.append(ValidationError("Duplicate argument '{}' in procedure declaration!".format(n), aname))
+                    anames.add(n)
             env_body = env_body.adjoin({ValidationKey.LEVEL: Level.PROC, ValidationKey.PROC: node})
             cls.validate_statement(node.body, env_body, dec=dec, err=err)
         elif isinstance(node, PropertyDefinition):
