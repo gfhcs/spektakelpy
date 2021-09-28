@@ -802,6 +802,102 @@ class VariableDeclaration(Statement):
             return None
 
 
+class Source(Node):
+    """
+    Denotes a source from which to import definitions of names.
+    """
+    def __init__(self, *identifiers, **kwargs):
+        """
+        Creates a new import source.
+        :param identifiers: A sequence of identifiers that specify the source.
+        :param kwargs: See node constructor.
+        """
+        super().__init__(*(check_type(i, Identifier) for i in identifiers), **kwargs)
+
+    @property
+    def identifiers(self):
+        """
+        The sequence of identifiers that specify the source.
+        """
+        return self.children
+
+
+class ImportSource(Statement):
+    """
+     A statement that makes a source available under a name.
+     """
+
+    def __init__(self, source, alias=None, **kwargs):
+        """
+        Creates a an import statement.
+        :param source: A Source node.
+        :param alias: The alias under which the source should be made available by the import.
+        :param kwargs: See statement constructor.
+        """
+
+        check_type(source, Source)
+        if alias is None:
+            super().__init__(source, **kwargs)
+        else:
+            super().__init__(source, check_type(alias, Identifier), **kwargs)
+
+    @property
+    def source(self):
+        """
+        The source of the import.
+        """
+        return self.children[0]
+
+    @property
+    def alias(self):
+        """
+        The name under which the source should be made available. May be none.
+        """
+        return self.children[-1] if len(self.children) > 1 else None
+
+
+class ImportNames(Statement):
+    """
+     A statement importing names from other sources.
+     """
+
+    def __init__(self, source, name2alias=None, **kwargs):
+        """
+        Creates a an import statement.
+        :param source: A Source node.
+        :param name2alias: A mapping from names defined in the source to alias names. If omitted, *all* the names defined
+                           in the source will be imported.
+        :param kwargs: See statement constructor.
+        """
+        check_type(source, Source)
+        if name2alias is None:
+            super().__init__(source, **kwargs)
+        else:
+            super().__init__(source, *(check_type(c, Identifier) for t in name2alias.items() for c in t), **kwargs)
+
+    @property
+    def source(self):
+        """
+        The source of the import.
+        """
+        return self.children[0]
+
+    @property
+    def wildcard(self):
+        """
+        Indicates if this import is supposed to make all names from the source available in the current environment.
+        """
+        return len(self.children) == 1
+
+    @property
+    def aliases(self):
+        """
+        A mapping from names to aliases. If this mapping is empty or None, *all* names defined in the source will be
+        made available. Otherwise the keys of the mapping will be made available under their values.
+        """
+        return {self.children[idx]: self.children[idx + 1] for idx in range((len(self.children) - 1) // 2)}
+
+
 class ProcedureDefinition(Statement):
     """
     A statement defining a procedure.
