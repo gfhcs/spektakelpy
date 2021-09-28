@@ -463,6 +463,8 @@ class SpektakelParser(Parser):
               "continue": cls._parse_continue,
               "if": cls._parse_if,
               "while": cls._parse_while,
+              "import": cls._parse_import,
+              "from": cls._parse_import,
               "for": cls._parse_for,
               "try": cls._parse_try,
               "def": cls._parse_def,
@@ -653,6 +655,71 @@ class SpektakelParser(Parser):
                 return None
 
         return _parse_clause(lexer, True)
+
+    @classmethod
+    def _parse_source(cls, lexer):
+        """
+        Parses the source of an import.
+        :param lexer: The lexer to consume tokens from.
+        :return: A Source node.
+        """
+        pattern = []
+        while True:
+            pattern.append(cls._parse_identifier(lexer))
+            if lexer.seeing(keyword(".")):
+                lexer.read()
+            else:
+                return Source(*pattern)
+
+    @classmethod
+    def _parse_import(cls, lexer):
+        """
+        Parses an import statement.
+        :param lexer: The lexer to consume tokens from.
+        :return: An ImportSource or and ImportNames node.
+        """
+
+        t, s, start = lexer.peek()
+
+        if t != TokenType.KEYWORD:
+            raise ParserError("Expected a keyword!", start)
+
+        if s == "import":
+            lexer.read()
+            source = cls._parse_source(lexer)
+            e = source.end
+            if lexer.seeing(keyword("as")):
+                lexer.read()
+                alias = cls._parse_identifier(lexer)
+                e = alias.end
+            else:
+                alias = None
+            return ImportSource(source, alias=alias, start=start, end=e)
+        elif s == "from":
+            lexer.read()
+            source = cls._parse_source(lexer)
+            lexer.match(keyword("import"))
+
+            if lexer.seeing(keyword("*")):
+                _, _, p = lexer.read()
+                return ImportNames(source, start=start, end=p)
+            else:
+                name2alias = {}
+                while True:
+                    name = cls._parse_identifier(lexer)
+                    if lexer.seeing(keyword("as")):
+                        lexer.read()
+                        alias = cls._parse_identifier(lexer)
+                    else:
+                        alias = name
+                    e = alias.end
+                    name2alias[name] = alias
+                    if lexer.seeing(keyword(",")):
+                        lexer.read()
+                    else:
+                        return ImportNames(source, name2alias=name2alias, start=start, end=e)
+        else:
+            raise ParserError("Expected either 'import' or 'from'!", start)
 
     @classmethod
     def _parse_while(cls, lexer):
