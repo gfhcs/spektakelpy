@@ -669,13 +669,14 @@ class SpektakelParser(Parser):
             if lexer.seeing(keyword(".")):
                 lexer.read()
             else:
-                return Source(*pattern)
+                return Source(*pattern, start=pattern[0].start, end=pattern[-1].end)
 
     @classmethod
-    def _parse_import(cls, lexer):
+    def _parse_import(cls, lexer, newline=True):
         """
         Parses an import statement.
         :param lexer: The lexer to consume tokens from.
+        :param newline: Whether this statement parser should also match a newline token after the actual statement.
         :return: An ImportSource or and ImportNames node.
         """
 
@@ -694,6 +695,7 @@ class SpektakelParser(Parser):
                 e = alias.end
             else:
                 alias = None
+            match_newline(lexer, enabled=newline)
             return ImportSource(source, alias=alias, start=start, end=e)
         elif s == "from":
             lexer.read()
@@ -702,6 +704,7 @@ class SpektakelParser(Parser):
 
             if lexer.seeing(keyword("*")):
                 _, _, p = lexer.read()
+                match_newline(lexer, enabled=newline)
                 return ImportNames(source, start=start, end=p)
             else:
                 name2alias = {}
@@ -717,6 +720,7 @@ class SpektakelParser(Parser):
                     if lexer.seeing(keyword(",")):
                         lexer.read()
                     else:
+                        match_newline(lexer, enabled=newline)
                         return ImportNames(source, name2alias=name2alias, start=start, end=e)
         else:
             raise ParserError("Expected either 'import' or 'from'!", start)
