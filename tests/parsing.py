@@ -326,6 +326,33 @@ class TestSpektakelParser(unittest.TestCase):
 
                 self.assertIsInstance(statement, ast.Assignment)
 
+    def test_import(self):
+        """
+        Tests import statements.
+        """
+
+        samples = ["import mymodule",
+                   "import mymodule as m",
+                   "from mymodule import name1, name2",
+                   "from mymodule import name1 as n1, name2 as n2",
+                   "from mymodule import *",
+                   "import mypackage.mymodule",
+                   "import mypackage.mymodule as m",
+                   "from mypackage.mymodule import name1, name2",
+                   "from mypackage.mymodule import name1 as n1, name2 as n2",
+                   "from mypackage.mymodule import *"
+                   ]
+
+        for idx, s in enumerate(samples):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, (ast.ImportNames, ast.ImportSource))
+
     def test_simple_statements(self):
         """
         Tests simple statements, like pass, break, continue and return.
