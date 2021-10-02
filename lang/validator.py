@@ -33,9 +33,8 @@ class Validator(abc.ABC):
     A validator computes static properties of an AST.
     """
 
-    @classmethod
     @abc.abstractmethod
-    def validate(cls, node, env):
+    def validate(self, node, env):
         """
         Validates an AST node.
         :param node: The AST node to validate.
