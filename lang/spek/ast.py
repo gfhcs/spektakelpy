@@ -851,7 +851,7 @@ class ImportSource(Statement):
     @property
     def alias(self):
         """
-        The name under which the source should be made available. May be none.
+        The name under which the source should be made available. May be None.
         """
         return self.children[-1] if len(self.children) > 1 else None
 
