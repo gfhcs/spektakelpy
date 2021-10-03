@@ -125,7 +125,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "x.somefantasyname", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 1)
-        self.assertErrors(3, err)
+        self.assertErrors(2, err)
         self.assertEqual(8, len(dec))
 
     def test_assignment(self):
