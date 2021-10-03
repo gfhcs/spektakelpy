@@ -156,11 +156,12 @@ class SpektakelValidator(Validator):
             pass
         elif isinstance(node, (ImportNames, ImportSource)):
 
+            key = tuple(i.name for i in node.source.identifiers)
+
             try:
-                key = tuple(i.name for i in node.source.identifiers)
                 spec = self._finder.find(key, validator=self)
             except KeyError:
-                err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key))))
+                err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source))
                 spec = None
 
             if spec is not None:
@@ -171,7 +172,7 @@ class SpektakelValidator(Validator):
                     module = None
 
                 if module is not None:
-                    dec[node.soure] = module
+                    dec[node.source] = module
 
                     if isinstance(node, ImportSource):
                         if node.alias is None:
