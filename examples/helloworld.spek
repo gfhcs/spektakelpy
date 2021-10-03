@@ -2,6 +2,8 @@
 A very simple spektakel example, that just shows "Hello World" and terminates when the presenter presses "next".
 """
 
+from spektakel import Text, spektakel
+
 # Create a text visual:
 var text = Text("Hello World")
 

@@ -3,6 +3,8 @@ A slightly more elaborate version of "Hello World", that has the text bounce up 
 after it has been made to appear with a soft alpha blend.
 """
 
+from spektakel import Text, spektakel, Alpha, Located
+
 var hello = Located(Alpha(Text("Hello"), 0), 0.5, 0.25)
 var world = Located(Alpha(Text("World"), 0), 0.5, 0.75)
 
