@@ -180,7 +180,13 @@ class SpektakelValidator(Validator):
                         if node.wildcard:
                             bindings = (name, definition for name, definition in module)
                         else:
-                            bindings = (alias, module[name.name] for name, alias in node.aliases.items())
+                            bindings = []
+                            for name, alias in node.aliases.items():
+                                try:
+                                    bindings.append((alias, module[name.name]))
+                                except KeyError:
+                                    err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name)))
+                                    bindings.append((alias, None))
 
                         for alias, definition in bindings:
                             env = self._declare(node, alias, env)
