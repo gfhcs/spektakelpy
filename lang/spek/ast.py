@@ -163,15 +163,21 @@ class Attribute(AssignableExpression):
         :param identifier: The identifier of the attribute to retrieve.
         :param kwargs: See AssigneableExpression constructor.
         """
-        super().__init__(check_type(value, Expression), **kwargs)
-        self._identifier = check_type(identifier, Identifier)
+        super().__init__(check_type(value, Expression), check_type(identifier, Identifier), **kwargs)
+
+    @property
+    def value(self):
+        """
+        The expression representing the value to retrieve the attribute from.
+        """
+        return self.children[0]
 
     @property
     def name(self):
         """
-        The name of this attribute.
+        The name of the attribute to retrieve.
         """
-        return self._identifier
+        return self.children[1]
 
 
 class Call(Expression):
