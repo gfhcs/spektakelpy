@@ -164,41 +164,41 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source))
                 spec = None
 
+            module = None
             if spec is not None:
                 try:
                     module = spec.load()
                 except Exception as ex:
-                    err.append(ValidationError("Failed to load module {}: {}".format(".".join(key), str(ex))))
-                    module = None
+                    err.append(ValidationError("Failed to load module {}: {}".format(".".join(key), str(ex)), node.source))
 
-                if module is not None:
-                    dec[node.source] = module
+            if module is not None:
+                dec[node.source] = module
 
-                    if isinstance(node, ImportSource):
-                        if node.alias is None:
-                            # The first element of the key is considered declared now. The following items
-                            # are attributes of the first, which the validator does not care about:
-                            env = self._declare(node, node.source.identifiers[0], env)
-                        else:
-                            env = self._declare(node, node.alias, env)
-                    elif isinstance(node, ImportNames):
-                        if node.wildcard:
-                            bindings = ((name, definition) for name, definition in module)
-                        else:
-                            bindings = []
-                            for name, alias in node.aliases.items():
-                                try:
-                                    bindings.append((alias, module[name.name]))
-                                except KeyError:
-                                    err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name)))
-                                    bindings.append((alias, None))
+            if isinstance(node, ImportSource):
+                if node.alias is None:
+                    # The first element of the key is considered declared now. The following items
+                    # are attributes of the first, which the validator does not care about:
+                    env = self._declare(node, node.source.identifiers[0], env)
+                else:
+                    env = self._declare(node, node.alias, env)
+            elif isinstance(node, ImportNames):
+                if node.wildcard:
+                    bindings = ((name, definition) for name, definition in module)
+                else:
+                    bindings = []
+                    for name, alias in node.aliases.items():
+                        try:
+                            bindings.append((alias, module[name.name]))
+                        except KeyError:
+                            err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name)))
+                            bindings.append((alias, None))
 
-                        for alias, definition in bindings:
-                            env = self._declare(node, alias, env)
-                            dec[alias] = definition
-                    else:
-                        raise NotImplementedError("Handling import nodes of type {}"
-                                                  " has not been implemented!".format(type(node)))
+                for alias, definition in bindings:
+                    env = self._declare(node, alias, env)
+                    dec[alias] = definition
+            else:
+                raise NotImplementedError("Handling import nodes of type {}"
+                                          " has not been implemented!".format(type(node)))
         elif isinstance(node, ExpressionStatement):
             if env[ValidationKey.LEVEL] == Level.CLASS and not isinstance(node.expression, Constant):
                 err.append(ValidationError("Expression statements in the root of a class definition must "
