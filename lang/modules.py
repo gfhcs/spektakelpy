@@ -37,8 +37,8 @@ class Module(abc.ABC):
     A module maps a number of names to their definitions.
     """
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def names(self):
         """
         The names defined in this module.

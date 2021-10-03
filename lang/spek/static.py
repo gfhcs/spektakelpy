@@ -178,7 +178,7 @@ class SpektakelValidator(Validator):
                             env = self._declare(node, node.alias, env)
                     elif isinstance(node, ImportNames):
                         if node.wildcard:
-                            bindings = (name, definition for name, definition in module)
+                            bindings = ((name, definition) for name, definition in module)
                         else:
                             bindings = []
                             for name, alias in node.aliases.items():
