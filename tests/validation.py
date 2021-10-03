@@ -3,16 +3,17 @@ import unittest
 
 from examples import paths as example_paths
 from lang.environment import Environment
-from lang.spek import syntax, static
+from lang.spek import syntax, static, modules
 from io import StringIO
 
 
-def validate(sample, env=None):
+def validate(sample, env=None, roots=None):
     """
     Lexes, parses and validates the given code sample.
     :param env: The environment in which the AST of the given sample is to be validated.
     :exception ParserError: If the given string was not a syntactically correct Spektakel program.
     :param sample: The code to lex, parse and validate, as a string.
+    :param roots: The file system roots that should be searched for modules to be imported.
     :return: A tuple (node, env, dec, err), where node is the AST representing the code, env is an environment mapping
              names to their declarations, dec is a mapping of refering nodes to their referents and err is an iterable
              of ValidationErrors.
@@ -20,7 +21,9 @@ def validate(sample, env=None):
     sample = StringIO(sample)
     lexer = syntax.SpektakelLexer(sample)
     node = syntax.SpektakelParser.parse_block(lexer)
-    return (node, *static.SpektakelValidator.validate(node, env))
+    finder = modules.FileFinder([] if roots is None else roots)
+    v = static.SpektakelValidator(finder)
+    return (node, *v.validate(node, env))
 
 
 class TestSpektakelValidator(unittest.TestCase):
