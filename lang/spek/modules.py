@@ -1,9 +1,9 @@
 import abc
 
-from lang.modules import Module, ModuleSpecificaion
+from lang.modules import Module, ModuleSpecificaion, Finder
 from lang.validator import ValidationError
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
-
+import os.path
 
 class ASTSpecification(ModuleSpecificaion, abc.ABC):
     """
@@ -143,3 +143,41 @@ class PythonModule(Module):
 
     def resolve(self, name):
         raise NotImplementedError("PythonModule has not been implemented yet!")
+
+
+class FileFinder(Finder):
+    """
+    A finder that maps module names to file system paths to *.spek files.
+    """
+
+    def __init__(self, roots):
+        """
+        Instantiates a new FileFinder.
+        :param roots: An iterable of file system directory paths. They will be searched for modules in the given order.
+        """
+        super().__init__()
+        self._roots = list(roots)
+        self._cache = {}
+
+    @property
+    def roots(self):
+        """
+        The file system directories that are searched for *.spek files.
+        :return: A list of strings.
+        """
+        return self._roots
+
+    def find(self, name, validator=None):
+        try:
+            return self._cache[(validator, name)]
+        except KeyError:
+
+            for root in self._roots:
+                path = os.path.join(root, *name[:-1], name[-1] + ".spek")
+                if os.path.isfile(path):
+                    spec = SpekFileSpecification(path, validator=validator)
+                    self._cache[(validator, name)] = spec
+                    return spec
+
+            raise KeyError("No *.spek file could be found for the name {}!".format(name))
+
