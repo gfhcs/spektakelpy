@@ -488,7 +488,7 @@ class TestSpektakelValidator(unittest.TestCase):
         """
         root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_import")
 
-        finder = modules.FileFinder(os.path.join(root, "library"))
+        finder = modules.FileFinder([os.path.join(root, "library")])
         validator = static.SpektakelValidator(finder)
 
         for fn in os.listdir(root):
@@ -496,7 +496,8 @@ class TestSpektakelValidator(unittest.TestCase):
             if ext != ".spek":
                 continue
 
-            name, envsize, numerrors, decsize = name.split("_")
+            name, *sums = name.split("_")
+            envsize, numerrors, decsize = map(int, sums)
 
             with self.subTest(example=name):
                 with open(os.path.join(root, fn), 'r') as sample:
