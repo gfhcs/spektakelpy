@@ -901,7 +901,7 @@ class ImportNames(Statement):
         A mapping from names to aliases. If this mapping is empty or None, *all* names defined in the source will be
         made available. Otherwise the keys of the mapping will be made available under their values.
         """
-        return {self.children[idx]: self.children[idx + 1] for idx in range((len(self.children) - 1) // 2)}
+        return {self.children[1 + idx]: self.children[1 + idx + 1] for idx in range((len(self.children) - 1) // 2)}
 
 
 class ProcedureDefinition(Statement):
