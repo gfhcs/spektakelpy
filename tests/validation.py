@@ -118,11 +118,12 @@ class TestSpektakelValidator(unittest.TestCase):
         node, env_out, dec, err = validate("1 + 2\n"
                                            "var x = 42\n"
                                            "(await f(x)) + 42\n"
-                                           "a and x > 5\n", env_in)
+                                           "a and x > 5\n"
+                                           "x.somefantasyname", env_in)
 
         self.assertEqual(len(env_out), len(env_in) + 1)
-        self.assertErrors(2, err)
-        self.assertEqual(7, len(dec))
+        self.assertErrors(3, err)
+        self.assertEqual(8, len(dec))
 
     def test_assignment(self):
         """
