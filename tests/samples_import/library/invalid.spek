@@ -1,0 +1,4 @@
+ 
+# This file must have validation errors.
+
+var x = somefunnyundefinedvariable

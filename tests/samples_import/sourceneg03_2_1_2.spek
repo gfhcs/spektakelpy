@@ -1,0 +1,3 @@
+import invalid
+
+var x = invalid.meaning
