@@ -1,0 +1,3 @@
+import test.test.b as b
+
+var x = b.fun(42, 42)
