@@ -27,6 +27,8 @@ class SpektakelValidator(Validator):
     A validator for the Spektakel language.
     """
 
+    __env = Environment({ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None})
+
     def __init__(self, finder):
         """
         Initializes a new Spektakel validator.
@@ -40,7 +42,6 @@ class SpektakelValidator(Validator):
 
         self._finder = finder
         self.__t2v = {"True": True, "False": False, "None": None}
-        self.__env = Environment({ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None})
 
     @property
     def finder(self):
@@ -49,12 +50,13 @@ class SpektakelValidator(Validator):
         """
         return self._finder
 
-    def environment_default(self):
+    @classmethod
+    def environment_default(cls):
         """
         The environment that a program is validated in by default.
         :return: An Environment object.
         """
-        return self.__env
+        return cls.__env
 
     def validate_expression(self, node, env=None, dec=None, err=None):
         """
