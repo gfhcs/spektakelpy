@@ -482,6 +482,33 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertErrors(4, err)
         self.assertEqual(30, len(dec))
 
+    def test_import(self):
+        """
+        Tests the validation of import statements.
+        """
+        root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_import")
+
+        finder = modules.FileFinder(os.path.join(root, "library"))
+        validator = static.SpektakelValidator(finder)
+
+        for fn in os.listdir(root):
+            name, ext = os.path.splitext(fn)
+            if ext != ".spek":
+                continue
+
+            name, envsize, numerrors, decsize = name.split("_")
+
+            with self.subTest(example=name):
+                with open(os.path.join(root, fn), 'r') as sample:
+                    lexer = syntax.SpektakelLexer(sample)
+                    ast = syntax.SpektakelParser.parse_block(lexer)
+                    env_in = static.SpektakelValidator.environment_default()
+                    env_out, dec, err = validator.validate(ast, env_in)
+
+                    self.assertEqual(len(env_in) + envsize, len(env_out))
+                    self.assertErrors(numerrors, err)
+                    self.assertEqual(decsize, len(dec))
+
     def test_examples(self):
         """
         Tests the validator on all spek examples.
