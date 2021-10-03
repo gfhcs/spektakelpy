@@ -167,6 +167,8 @@ class SpektakelValidator(Validator):
                     module = None
 
                 if module is not None:
+                    dec[node.soure] = module
+
                     if isinstance(node, ImportSource):
                         if node.alias is None:
                             # The first element of the key is considered declared now. The following items
@@ -174,7 +176,6 @@ class SpektakelValidator(Validator):
                             env = self._declare(node, node.source.identifiers[0], env)
                         else:
                             env = self._declare(node, node.alias, env)
-                        dec[node.source] = module
                     elif isinstance(node, ImportNames):
                         if node.wildcard:
                             bindings = (name, definition for name, definition in module)
