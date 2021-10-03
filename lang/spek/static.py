@@ -1,8 +1,6 @@
-from lang.spek.ast import *
-from lang.validator import *
-from enum import Enum
 from lang.environment import Environment
 from lang.modules import Finder
+from lang.validator import *
 
 
 class ValidationKey(Enum):
@@ -113,7 +111,7 @@ class SpektakelValidator(Validator):
         """
         Traverses the AST nodes of a pattern expression and adjoins the given environment.
         :param decl: The node that represents the declaration.
-        :param pattern: An AssignableExpression containing identifiers to be declared variables.
+        :param pattern: An AssignableExpression containing identifiers to be declared variables, or a string.
         :param env: The environment that is to be adjoined. It will not be modified by this method.
         :return: The new environment in which the identifiers found in the pattern are declared. Based on env.
         """
@@ -121,7 +119,9 @@ class SpektakelValidator(Validator):
         names = {}
         while len(agenda) > 0:
             node = agenda.pop()
-            if isinstance(node, Identifier):
+            if isinstance(node, str):
+                names[node] = (decl, node)
+            elif isinstance(node, Identifier):
                 names[node.name] = (decl, node)
             else:
                 agenda.extend(node.children)
@@ -150,6 +150,43 @@ class SpektakelValidator(Validator):
 
         if isinstance(node, Pass):
             pass
+        elif isinstance(node, (ImportNames, ImportSource)):
+
+            try:
+                key = tuple(i.name for i in node.source.identifiers)
+                spec = self._finder.find(key, validator=self)
+            except KeyError:
+                err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key))))
+                spec = None
+
+            if spec is not None:
+                try:
+                    module = spec.load()
+                except Exception as ex:
+                    err.append(ValidationError("Failed to load module {}: {}".format(".".join(key), str(ex))))
+                    module = None
+
+                if module is not None:
+                    if isinstance(node, ImportSource):
+                        if node.alias is None:
+                            # The first element of the key is considered declared now. The following items
+                            # are attributes of the first, which the validator does not care about:
+                            env = self._declare(node, node.source.identifiers[0], env)
+                        else:
+                            env = self._declare(node, node.alias, env)
+                        dec[node.source] = module
+                    elif isinstance(node, ImportNames):
+                        if node.wildcard:
+                            bindings = (name, definition for name, definition in module)
+                        else:
+                            bindings = (alias, module[name.name] for name, alias in node.aliases.items())
+
+                        for alias, definition in bindings:
+                            env = self._declare(node, alias, env)
+                            dec[alias] = definition
+                    else:
+                        raise NotImplementedError("Handling import nodes of type {}"
+                                                  " has not been implemented!".format(type(node)))
         elif isinstance(node, ExpressionStatement):
             if env[ValidationKey.LEVEL] == Level.CLASS and not isinstance(node.expression, Constant):
                 err.append(ValidationError("Expression statements in the root of a class definition must "
