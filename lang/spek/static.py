@@ -58,13 +58,14 @@ class SpektakelValidator(Validator):
         """
         return cls.__env
 
-    def validate_expression(self, node, env=None, dec=None, err=None):
+    def validate_expression(self, node, env=None, dec=None, err=None, mspec=None):
         """
         Validates an Expression node.
         :param node: The Expression node to validate.
         :param env: An Environment, mapping names to definitions. This value will be modified by the procedure.
         :param dec: The mapping of nodes to decorations that should be extended.
         :param err: The list of ValidationErrors that is to be extended.
+        :param mspec: The ModuleSpecification object that yielded the given 'node'.
         :return: A pair (dec', err'), with the same semantics as parameters dec and err. If one of those parameters was
         given, they will be modified and returned as part of the pair.
         """
@@ -93,12 +94,12 @@ class SpektakelValidator(Validator):
                         try:
                             dec[node] = float(node.text)
                         except ValueError:
-                            err.append(ValidationError("Invalid constant: {}".format(node.text), node))
+                            err.append(ValidationError("Invalid constant: {}".format(node.text), node, mspec))
         elif isinstance(node, Identifier):
             try:
                 dec[node] = env[node.name]
             except KeyError:
-                err.append(ValidationError("Name '{}' undefined!".format(node.name), node))
+                err.append(ValidationError("Name '{}' undefined!".format(node.name), node, mspec))
         elif isinstance(node, Attribute):
             self.validate_expression(node.value, env, dec=dec, err=err)
         elif isinstance(node, (Tuple, Projection, Call, Launch, Await,
@@ -106,7 +107,7 @@ class SpektakelValidator(Validator):
             for c in node.children:
                 self.validate_expression(c, env, dec=dec, err=err)
         else:
-            err.append(ValidationError("Invalid node type: {}".format(type(node)), node), )
+            err.append(ValidationError("Invalid node type: {}".format(type(node)), node, mspec))
 
         return dec, err
 
@@ -132,13 +133,14 @@ class SpektakelValidator(Validator):
 
         return env.adjoin(names)
 
-    def validate_statement(self, node, env=None, dec=None, err=None):
+    def validate_statement(self, node, env=None, dec=None, err=None, mspec=None):
         """
         Validates a Statement node.
         :param node: The Statement node to validate.
         :param env: An Environment, mapping names to definitions. It will not be modified by this procedure.
         :param dec: The mapping of nodes to decorations that should be extended.
         :param err: The list of ValidationErrors that is to be extended.
+        :param mspec: The ModuleSpecification object that yielded the given 'node'.
         :return: A pair (env2, dec, err), where env2 is an Environment, dec is a dict mapping AST nodes to decorations
                  and err is an iterable of ValidationError objects.
         :return: A triple (env', dec', err'), with the same semantics as parameters env, dec and err.
@@ -161,7 +163,7 @@ class SpektakelValidator(Validator):
             try:
                 spec = self._finder.find(key, validator=self)
             except KeyError:
-                err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source))
+                err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source, mspec))
                 spec = None
 
             module = None
@@ -169,10 +171,13 @@ class SpektakelValidator(Validator):
                 try:
                     module = spec.load()
                 except Exception as ex:
-                    err.append(ValidationError("Failed to load module {}: {}".format(".".join(key), str(ex)), node.source))
+                    err.append(ValidationError("Failed to load module {}: {}".format(".".join(key), str(ex)), node.source, mspec))
 
             if module is not None:
                 dec[node.source] = module
+                if spec is not None:
+                    # Do not report errors from the same module multiple times:
+                    err.extend((e for e in module.errors if e.mspec != spec))
 
             if isinstance(node, ImportSource):
                 if node.alias is None:
@@ -190,7 +195,7 @@ class SpektakelValidator(Validator):
                         try:
                             bindings.append((alias, module[name.name]))
                         except KeyError:
-                            err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name)))
+                            err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name, mspec)))
                             bindings.append((alias, None))
 
                 for alias, definition in bindings:
@@ -202,16 +207,16 @@ class SpektakelValidator(Validator):
         elif isinstance(node, ExpressionStatement):
             if env[ValidationKey.LEVEL] == Level.CLASS and not isinstance(node.expression, Constant):
                 err.append(ValidationError("Expression statements in the root of a class definition must "
-                                           "contain nothing other than constants!", node))
+                                           "contain nothing other than constants!", node, mspec))
             else:
                 self.validate_expression(node.expression, env, dec=dec, err=err)
         elif isinstance(node, Assignment):
             if not isinstance(node.target, AssignableExpression):
-                err.append(ValidationError("Left side of an assignment must be an assignable expression!", node.target))
+                err.append(ValidationError("Left side of an assignment must be an assignable expression!", node.target, mspec))
             self.validate_expression(node.target, env, dec=dec, err=err)
             self.validate_expression(node.value, env, dec=dec, err=err)
             if env[ValidationKey.LEVEL] == Level.CLASS:
-                err.append(ValidationError("Assignments are not allowed in the root of a class definition!", node))
+                err.append(ValidationError("Assignments are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, Block):
             for s in node.children:
                 env, dec, err = self.validate_statement(s, env, dec=dec, err=err)
@@ -219,7 +224,7 @@ class SpektakelValidator(Validator):
             if node.value is not None:
                 self.validate_expression(node.value, env, dec=dec, err=err)
             if env[ValidationKey.PROC] is None:
-                err.append(ValidationError("'return' statements are only valid inside procedure bodies!", node))
+                err.append(ValidationError("'return' statements are only valid inside procedure bodies!", node, mspec))
             else:
                 dec[node] = env[ValidationKey.PROC]
         elif isinstance(node, Raise):
@@ -233,7 +238,7 @@ class SpektakelValidator(Validator):
                     t = "continue"
                 else:
                     raise NotImplementedError(node)
-                err.append(ValidationError("{} statements are only valid inside loop bodies!".format(t), node))
+                err.append(ValidationError("{} statements are only valid inside loop bodies!".format(t), node, mspec))
             else:
                 dec[node] = env[ValidationKey.LOOP]
         elif isinstance(node, Conditional):
@@ -242,21 +247,21 @@ class SpektakelValidator(Validator):
             if node.alternative is not None:
                 self.validate_statement(node.alternative, env, dec=dec, err=err)
             if env[ValidationKey.LEVEL] == Level.CLASS:
-                err.append(ValidationError("'if' statements are not allowed in the root of a class definition!", node))
+                err.append(ValidationError("'if' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, While):
             self.validate_expression(node.condition, env, dec=dec, err=err)
             self.validate_statement(node.body, env.adjoin({ValidationKey.LOOP: node}), dec=dec, err=err)
             if env[ValidationKey.LEVEL] == Level.CLASS:
-                err.append(ValidationError("'while' statements are not allowed in the root of a class definition!", node))
+                err.append(ValidationError("'while' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, For):
             self.validate_expression(node.iterable, env, dec=dec, err=err)
             if not isinstance(node.pattern, AssignableExpression):
-                err.append(ValidationError("The pattern must be an assignable expression!", node.pattern))
+                err.append(ValidationError("The pattern must be an assignable expression!", node.pattern, mspec))
             env_body = self._declare(node, node.pattern, env)
             env_body = env_body.adjoin({ValidationKey.LOOP: node})
             self.validate_statement(node.body, env_body, dec=dec, err=err)
             if env[ValidationKey.LEVEL] == Level.CLASS:
-                err.append(ValidationError("'for' statements are not allowed in the root of a class definition!", node))
+                err.append(ValidationError("'for' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, Try):
             self.validate_statement(node.body, env, dec=dec, err=err)
             for h in node.handlers:
@@ -269,10 +274,10 @@ class SpektakelValidator(Validator):
             if node.final is not None:
                 self.validate_statement(node.final, env, dec=dec, err=err)
             if env[ValidationKey.LEVEL] == Level.CLASS:
-                err.append(ValidationError("'try' statements are not allowed in the root of a class definition!", node))
+                err.append(ValidationError("'try' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, VariableDeclaration):
             if not isinstance(node.pattern, AssignableExpression):
-                err.append(ValidationError("Declared expression must be assignable!", node.pattern))
+                err.append(ValidationError("Declared expression must be assignable!", node.pattern, mspec))
             if node.expression is not None:
                 self.validate_expression(node.expression, env, dec=dec, err=err)
             env = self._declare(node, node.pattern, env)
@@ -284,7 +289,7 @@ class SpektakelValidator(Validator):
                 env_body = self._declare(node, aname, env_body)
                 for n in env_body.direct.keys():
                     if n in anames:
-                        err.append(ValidationError("Duplicate argument '{}' in procedure declaration!".format(n), aname))
+                        err.append(ValidationError("Duplicate argument '{}' in procedure declaration!".format(n), aname, mspec))
                     anames.add(n)
             env_body = env_body.adjoin({ValidationKey.LEVEL: Level.PROC, ValidationKey.PROC: node})
             self.validate_statement(node.body, env_body, dec=dec, err=err)
@@ -296,11 +301,11 @@ class SpektakelValidator(Validator):
             senv = senv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
             self.validate_statement(node.setter, senv, dec=dec, err=err)
             if env[ValidationKey.LEVEL] != Level.CLASS:
-                err.append(ValidationError("Property definitions are only allowed as direct members of a class definition!", node))
+                err.append(ValidationError("Property definitions are only allowed as direct members of a class definition!", node, mspec))
             env = self._declare(node, node.name, env)
         elif isinstance(node, ClassDefinition):
             if env[ValidationKey.LEVEL] != Level.GLOBAL:
-                err.append(ValidationError("Class definitions are only allowed on the global level!", node))
+                err.append(ValidationError("Class definitions are only allowed on the global level!", node, mspec))
             for b in node.bases:
                 self.validate_expression(b, env, dec=dec, err=err)
             env = self._declare(node, node.name, env)
@@ -312,23 +317,23 @@ class SpektakelValidator(Validator):
                     assert env_after is not ebody
                     for k, v in env_after.direct.items():
                         if k in members:
-                            err.append(ValidationError("A member with the name {} has already been declared!".format(k), d))
+                            err.append(ValidationError("A member with the name {} has already been declared!".format(k), d, mspec))
                         members[k] = v
                 elif isinstance(d, (Pass, ExpressionStatement)):
                     _, dec, err = self.validate_statement(d, ebody, dec=dec, err=err)
                 else:
-                    err.append(ValidationError("Invalid statement type inside class declaration!", d))
+                    err.append(ValidationError("Invalid statement type inside class declaration!", d, mspec))
             dec[node] = members
         else:
-            err.append(ValidationError("Invalid statement type: {}".format(type(node)), node))
+            err.append(ValidationError("Invalid statement type: {}".format(type(node)), node, mspec))
 
         return env, dec, err
 
-    def validate(self, node, env=None):
+    def validate(self, node, env=None, mspec=None):
         if isinstance(node, Expression):
-            return (env, *(self.validate_expression(node, env)))
+            return (env, *(self.validate_expression(node, env, mspec)))
         elif isinstance(node, Statement):
-            return self.validate_statement(node, env)
+            return self.validate_statement(node, env, mspec)
         else:
             raise TypeError("Unknown node type: {}".format(node))
 

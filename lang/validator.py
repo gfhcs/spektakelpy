@@ -43,11 +43,12 @@ class Validator(abc.ABC):
     """
 
     @abc.abstractmethod
-    def validate(self, node, env):
+    def validate(self, node, env=None, mspec=None):
         """
         Validates an AST node.
         :param node: The AST node to validate.
         :param env: An Environment, mapping names to definitions.
+        :param mspec: The ModuleSpecification specifying the AST that contains the given 'node'.
         :return: A pair (env2, dec, err), where env2 is an Environment, dec is a dict mapping AST nodes to decorations
                  and err is an iterable of ValidationError objects.
         """

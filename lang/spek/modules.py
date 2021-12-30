@@ -37,7 +37,7 @@ class ASTSpecification(ModuleSpecificaion, abc.ABC):
             try:
                 self._loading = True
                 ast = self.load_ast()
-                env, dec, err = self._validator.validate(ast)
+                env, dec, err = self._validator.validate(ast, mspec=self)
                 self._module = ASTModule(ast, env, dec, err)
             finally:
                 self._loading = False

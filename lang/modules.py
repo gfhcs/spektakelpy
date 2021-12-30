@@ -39,6 +39,14 @@ class Module(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def errors(self):
+        """
+        An iterable of ValidationError objects that occured in this module.
+        """
+        pass
+
+    @property
+    @abc.abstractmethod
     def names(self):
         """
         The names defined in this module.
