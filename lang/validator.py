@@ -6,11 +6,12 @@ class ValidationError(Exception):
     A failure to validate an AST node.
     """
 
-    def __init__(self, msg, node):
+    def __init__(self, msg, node, mspec):
         """
         Instantiates a new ValidationError.
         :param msg: The message for this error.
         :param node: The node to which the error belongs.
+        :param mspec: The ModuleSpecification for the module the validation failure occured in.
         """
 
         check_type(node, Node)
@@ -18,6 +19,7 @@ class ValidationError(Exception):
 
         super().__init__(msg)
         self._node = node
+        self._mspec = mspec
 
     @property
     def node(self):
@@ -26,6 +28,13 @@ class ValidationError(Exception):
         :return: A Node object.
         """
         return self._node
+
+    @property
+    def mspec(self):
+        """
+        The ModuleSpecification for the module the validation error occured in.
+        """
+        return self._mspec
 
 
 class Validator(abc.ABC):
