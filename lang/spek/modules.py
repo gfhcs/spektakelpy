@@ -5,9 +5,10 @@ from lang.validator import ValidationError
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 import os.path
 
+
 class ASTSpecification(ModuleSpecificaion, abc.ABC):
     """
-    Specifies that ASTModule is to be loaded.
+    Specifies that an ASTModule is to be loaded.
     """
 
     def __init__(self, validator):
@@ -30,8 +31,9 @@ class ASTSpecification(ModuleSpecificaion, abc.ABC):
     def load(self):
         if self._module is None:
             if self._loading:
-                raise ValidationError("The loading of this module seems to depend on loading this module, "
-                                      "i.e. there is a circular dependency somewhere!")
+                raise ValidationError("Circular reference: "
+                                      "The loading of this module seems to depend on loading this module, "
+                                      "i.e. there is a circular dependency somewhere!", None, None)
             try:
                 self._loading = True
                 ast = self.load_ast()
