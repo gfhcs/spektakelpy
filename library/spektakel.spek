@@ -13,7 +13,7 @@ class ListIterator:
             # STOP is an externally defined name, for the purpose of signalling the end of an iteration.
             return STOP
 
-        item, data = self._data
+        var item, data = self._data
         self._data = data
         return item
 
@@ -40,7 +40,7 @@ class List:
                 index = index - 1
 
     def pop():
-        item, data = self._data
+        var item, data = self._data
         self._data = data
         return item
 
@@ -86,7 +86,7 @@ def range(n):
     """
     Returns an iterable of all natural numbers smaller than 'n'.
     """
-    r = List()
+    var r = List()
     while n > 0:
         r.push(n - 1)
         n = n - 1

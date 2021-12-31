@@ -8,7 +8,8 @@ from spektakel import Text, spektakel, Alpha, Located
 var hello = Located(Alpha(Text("Hello"), 0), 0.5, 0.25)
 var world = Located(Alpha(Text("World"), 0), 0.5, 0.75)
 
-spektakel.add(text)
+spektakel.add(hello)
+spektakel.add(world)
 
 def bounce():
     """
@@ -16,7 +17,7 @@ def bounce():
     """
     var delta = 0.01
     while True:
-        i = 0
+        var i = 0
         while i < 10:
             await spektakel.sleep(0.1)
             hello.cy = hello.cy + delta
