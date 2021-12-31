@@ -333,7 +333,7 @@ class SpektakelValidator(Validator):
         if isinstance(node, Expression):
             return (env, *(self.validate_expression(node, env, mspec)))
         elif isinstance(node, Statement):
-            return self.validate_statement(node, env, mspec)
+            return self.validate_statement(node, env, mspec=mspec)
         else:
             raise TypeError("Unknown node type: {}".format(node))
 

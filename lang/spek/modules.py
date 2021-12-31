@@ -84,6 +84,10 @@ class ASTModule(Module):
         self._env = env
 
     @property
+    def errors(self):
+        return self._err
+
+    @property
     def ast(self):
         """
         The abstract syntax tree (AST) defining this module.
