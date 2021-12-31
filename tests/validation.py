@@ -515,17 +515,15 @@ class TestSpektakelValidator(unittest.TestCase):
         Tests the validator on all spek examples.
         """
 
-        root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "library")
+        roots = ["examples", "library"]
+        roots = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", r) for r in roots]
 
-        finder = modules.FileFinder([root])
+        finder = modules.FileFinder(roots)
         validator = static.SpektakelValidator(finder)
 
         for path in example_paths:
             _, filename = os.path.split(path)
             with self.subTest(example=os.path.splitext(filename)[0]):
-                with open(path, 'r') as sample:
-                    lexer = syntax.SpektakelLexer(sample)
-                    ast = syntax.SpektakelParser.parse_block(lexer)
-                    env_in = static.SpektakelValidator.environment_default()
-                    env_out, dec, err = validator.validate(ast, env_in)
-                    self.assertNoErrors(err)
+                mspec = modules.SpekFileSpecification(path, validator)
+                module = mspec.load()
+                self.assertNoErrors(module.errors)
