@@ -177,7 +177,7 @@ class SpektakelValidator(Validator):
                 dec[node.source] = module
                 if spec is not None:
                     # Do not report errors from the same module multiple times:
-                    err.extend((e for e in module.errors if e.mspec != spec))
+                    err.extend((e for e in module.errors if e.mspec != mspec))
 
             if isinstance(node, ImportSource):
                 if node.alias is None:
