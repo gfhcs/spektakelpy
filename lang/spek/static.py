@@ -101,11 +101,11 @@ class SpektakelValidator(Validator):
             except KeyError:
                 err.append(ValidationError("Name '{}' undefined!".format(node.name), node, mspec))
         elif isinstance(node, Attribute):
-            self.validate_expression(node.value, env, dec=dec, err=err)
+            self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, (Tuple, Projection, Call, Launch, Await,
                                Comparison, BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation)):
             for c in node.children:
-                self.validate_expression(c, env, dec=dec, err=err)
+                self.validate_expression(c, env, dec=dec, err=err, mspec=mspec)
         else:
             err.append(ValidationError("Invalid node type: {}".format(type(node)), node, mspec))
 
@@ -209,27 +209,27 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("Expression statements in the root of a class definition must "
                                            "contain nothing other than constants!", node, mspec))
             else:
-                self.validate_expression(node.expression, env, dec=dec, err=err)
+                self.validate_expression(node.expression, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, Assignment):
             if not isinstance(node.target, AssignableExpression):
                 err.append(ValidationError("Left side of an assignment must be an assignable expression!", node.target, mspec))
-            self.validate_expression(node.target, env, dec=dec, err=err)
-            self.validate_expression(node.value, env, dec=dec, err=err)
+            self.validate_expression(node.target, env, dec=dec, err=err, mspec=mspec)
+            self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("Assignments are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, Block):
             for s in node.children:
-                env, dec, err = self.validate_statement(s, env, dec=dec, err=err)
+                env, dec, err = self.validate_statement(s, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, Return):
             if node.value is not None:
-                self.validate_expression(node.value, env, dec=dec, err=err)
+                self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.PROC] is None:
                 err.append(ValidationError("'return' statements are only valid inside procedure bodies!", node, mspec))
             else:
                 dec[node] = env[ValidationKey.PROC]
         elif isinstance(node, Raise):
             if node.value is not None:
-                self.validate_expression(node.value, env, dec=dec, err=err)
+                self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, (Break, Continue)):
             if env[ValidationKey.LOOP] is None:
                 if isinstance(node, Break):
@@ -242,44 +242,44 @@ class SpektakelValidator(Validator):
             else:
                 dec[node] = env[ValidationKey.LOOP]
         elif isinstance(node, Conditional):
-            self.validate_expression(node.condition, env, dec=dec, err=err)
-            self.validate_statement(node.consequence, env, dec=dec, err=err)
+            self.validate_expression(node.condition, env, dec=dec, err=err, mspec=mspec)
+            self.validate_statement(node.consequence, env, dec=dec, err=err, mspec=mspec)
             if node.alternative is not None:
-                self.validate_statement(node.alternative, env, dec=dec, err=err)
+                self.validate_statement(node.alternative, env, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'if' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, While):
-            self.validate_expression(node.condition, env, dec=dec, err=err)
-            self.validate_statement(node.body, env.adjoin({ValidationKey.LOOP: node}), dec=dec, err=err)
+            self.validate_expression(node.condition, env, dec=dec, err=err, mspec=mspec)
+            self.validate_statement(node.body, env.adjoin({ValidationKey.LOOP: node}), dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'while' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, For):
-            self.validate_expression(node.iterable, env, dec=dec, err=err)
+            self.validate_expression(node.iterable, env, dec=dec, err=err, mspec=mspec)
             if not isinstance(node.pattern, AssignableExpression):
                 err.append(ValidationError("The pattern must be an assignable expression!", node.pattern, mspec))
             env_body = self._declare(node, node.pattern, env)
             env_body = env_body.adjoin({ValidationKey.LOOP: node})
-            self.validate_statement(node.body, env_body, dec=dec, err=err)
+            self.validate_statement(node.body, env_body, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'for' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, Try):
-            self.validate_statement(node.body, env, dec=dec, err=err)
+            self.validate_statement(node.body, env, dec=dec, err=err, mspec=mspec)
             for h in node.handlers:
                 henv = env
                 if h.type is not None:
-                    self.validate_expression(h.type, env, dec=dec, err=err)
+                    self.validate_expression(h.type, env, dec=dec, err=err, mspec=mspec)
                 if h.identifier is not None:
                     henv = self._declare(h, h.identifier, henv)
-                self.validate_statement(h.body, henv, dec=dec, err=err)
+                self.validate_statement(h.body, henv, dec=dec, err=err, mspec=mspec)
             if node.final is not None:
-                self.validate_statement(node.final, env, dec=dec, err=err)
+                self.validate_statement(node.final, env, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'try' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, VariableDeclaration):
             if not isinstance(node.pattern, AssignableExpression):
                 err.append(ValidationError("Declared expression must be assignable!", node.pattern, mspec))
             if node.expression is not None:
-                self.validate_expression(node.expression, env, dec=dec, err=err)
+                self.validate_expression(node.expression, env, dec=dec, err=err, mspec=mspec)
             env = self._declare(node, node.pattern, env)
         elif isinstance(node, ProcedureDefinition):
             env = self._declare(node, node.name, env)
@@ -292,14 +292,14 @@ class SpektakelValidator(Validator):
                         err.append(ValidationError("Duplicate argument '{}' in procedure declaration!".format(n), aname, mspec))
                     anames.add(n)
             env_body = env_body.adjoin({ValidationKey.LEVEL: Level.PROC, ValidationKey.PROC: node})
-            self.validate_statement(node.body, env_body, dec=dec, err=err)
+            self.validate_statement(node.body, env_body, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, PropertyDefinition):
             genv = env
             genv = genv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
-            self.validate_statement(node.getter, genv, dec=dec, err=err)
+            self.validate_statement(node.getter, genv, dec=dec, err=err, mspec=mspec)
             senv = self._declare(node, node.vname, env)
             senv = senv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
-            self.validate_statement(node.setter, senv, dec=dec, err=err)
+            self.validate_statement(node.setter, senv, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] != Level.CLASS:
                 err.append(ValidationError("Property definitions are only allowed as direct members of a class definition!", node, mspec))
             env = self._declare(node, node.name, env)
@@ -307,20 +307,20 @@ class SpektakelValidator(Validator):
             if env[ValidationKey.LEVEL] != Level.GLOBAL:
                 err.append(ValidationError("Class definitions are only allowed on the global level!", node, mspec))
             for b in node.bases:
-                self.validate_expression(b, env, dec=dec, err=err)
+                self.validate_expression(b, env, dec=dec, err=err, mspec=mspec)
             env = self._declare(node, node.name, env)
             ebody = env.adjoin({ValidationKey.LEVEL: Level.CLASS, "self": node})
             members = {}
             for d in node.body.children:
                 if isinstance(d, (VariableDeclaration, PropertyDefinition, ProcedureDefinition)):
-                    env_after, dec, err = self.validate_statement(d, ebody, dec=dec, err=err)
+                    env_after, dec, err = self.validate_statement(d, ebody, dec=dec, err=err, mspec=mspec)
                     assert env_after is not ebody
                     for k, v in env_after.direct.items():
                         if k in members:
                             err.append(ValidationError("A member with the name {} has already been declared!".format(k), d, mspec))
                         members[k] = v
                 elif isinstance(d, (Pass, ExpressionStatement)):
-                    _, dec, err = self.validate_statement(d, ebody, dec=dec, err=err)
+                    _, dec, err = self.validate_statement(d, ebody, dec=dec, err=err, mspec=mspec)
                 else:
                     err.append(ValidationError("Invalid statement type inside class declaration!", d, mspec))
             dec[node] = members
@@ -331,7 +331,7 @@ class SpektakelValidator(Validator):
 
     def validate(self, node, env=None, mspec=None):
         if isinstance(node, Expression):
-            return (env, *(self.validate_expression(node, env, mspec)))
+            return (env, *(self.validate_expression(node, env, mspec=mspec)))
         elif isinstance(node, Statement):
             return self.validate_statement(node, env, mspec=mspec)
         else:
