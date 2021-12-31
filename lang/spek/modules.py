@@ -63,6 +63,9 @@ class SpekFileSpecification(ASTSpecification):
             lexer = SpektakelLexer(file)
             return SpektakelParser.parse_block(lexer)
 
+    def __str__(self):
+        return self._path
+
 
 class ASTModule(Module):
     """
