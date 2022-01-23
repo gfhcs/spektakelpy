@@ -1,6 +1,6 @@
 from tkinter import *
 import time
-from core.events import TickEvent, ForwardEvent, BackwardEvent
+from legacy.core.events import TickEvent, ForwardEvent, BackwardEvent
 
 
 def render(canvas, s):

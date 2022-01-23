@@ -1,7 +1,7 @@
 from util import check_type
 from lang import OwnershipError
 from model.behavior import SymbolicProcess
-from core.compact import CompactObject
+from legacy.core import CompactObject
 
 
 class Variable(CompactObject):

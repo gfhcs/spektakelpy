@@ -1,5 +1,5 @@
 import abc
-from core import compact
+from legacy.core import compact
 from util import check_type
 
 

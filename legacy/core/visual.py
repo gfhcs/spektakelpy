@@ -1,23 +1,22 @@
-from core.visual import Visual
+import abc
 
 
-class Widget(Visual):
+class Visual(abc.ABC):
     """
-    A 2-dimensional visual that is placed in the image plane.
+    An object with a visual representation.
     """
 
+    @property
+    @
+    def origin(self):
+
+    # TODO: This should have a position.
+
+    @abc.abstractmethod
     def intersect(self, ray):
         """
         Decides in which way a ray intersects this visual.
         :param ray: A ray through the stage space.
         :returns: An Intersection object indicating the way in which the given ray intersects this visual.
         """
-        pass
-
-        # TODO: Call self.rasterize!
-
-    @abc.abstractmethod
-    def rasterize(self):
-
-
         pass

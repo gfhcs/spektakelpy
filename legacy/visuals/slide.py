@@ -1,4 +1,4 @@
-from visuals.widget import Widget
+from legacy.visuals.widget import Widget
 
 
 class Slide(Widget):

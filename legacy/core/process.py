@@ -1,5 +1,5 @@
 import abc
-from core.compact import CompactObject
+from legacy.core.compact import CompactObject
 
 
 class State(CompactObject):
