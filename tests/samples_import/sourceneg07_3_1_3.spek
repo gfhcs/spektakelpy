@@ -1,0 +1,3 @@
+from nonexistent import a as A, b as B
+
+var y = A

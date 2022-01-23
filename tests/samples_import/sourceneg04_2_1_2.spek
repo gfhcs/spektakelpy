@@ -1,0 +1,3 @@
+from invalid import *
+
+var y = x

@@ -1,0 +1,3 @@
+from invalid import a, b
+
+var y = a
