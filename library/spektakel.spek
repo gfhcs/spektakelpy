@@ -1,4 +1,4 @@
-import interactions
+import interaction
 import environment
 
 class ListIterator:
@@ -70,15 +70,15 @@ class Spektakel:
         """
         # NEXT is an action label, defined externally. It is completely opaque in spek, just an object with no
         # useful members.
-        await interactions.NEXT
+        await interaction.next
 
     def sleep(seconds):
         """
         Blocks for precisely the given amount of seconds (up to imprecisions arising from the framerate).
         """
-        var time = environment.TIME
-        while environment.TIME < time + seconds:
-            await interactions.TICK
+        var time = environment.time
+        while environment.time < time + seconds:
+            await interaction.tick
 
 var spektakel = Spektakel()
 
