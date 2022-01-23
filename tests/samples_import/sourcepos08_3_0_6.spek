@@ -1,0 +1,3 @@
+from a import meaning, answer
+
+var x = (meaning + answer) // 2

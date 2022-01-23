@@ -1,0 +1,3 @@
+from a import meaning as fourtytwo
+
+var x = fourtytwo + 1

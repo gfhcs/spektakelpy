@@ -1,0 +1,3 @@
+from a import *
+
+var x = meaning + 1
