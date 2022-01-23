@@ -45,6 +45,19 @@ class Environment:
 
         return self._len
 
+    @property
+    def names(self):
+        """
+        The names resolved by this environment.
+        """
+        for k in self._k2v.keys():
+            yield k
+
+        if self._base is not None:
+            for k in self._base.names:
+                if k not in self._k2v:
+                    yield k
+
     def __iter__(self):
         for k, v in self._k2v.items():
             yield k, v
