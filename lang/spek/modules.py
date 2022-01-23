@@ -253,7 +253,9 @@ class BuiltinModuleFinder(Finder):
         self._m = dict(mapping)
 
     def find(self, name, validator=None):
-        return self._m[name]
+        if not isinstance(name, tuple) or len(name) != 1:
+            raise KeyError("The module key {} could not be resolved!".format(".".join(name)))
+        return self._m[name[0]]
 
 
 class BuiltinAction(Enum):
