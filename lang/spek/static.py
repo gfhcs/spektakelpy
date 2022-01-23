@@ -203,7 +203,7 @@ class SpektakelValidator(Validator):
                     env = self._declare(node, node.alias, env)
             elif isinstance(node, ImportNames):
                 if node.wildcard:
-                    bindings = ((name, definition) for name, definition in module)
+                    bindings = ((name, definition) for name, definition in module if isinstance(name, str))
                 else:
                     bindings = []
                     for name, alias in node.aliases.items():
@@ -215,7 +215,8 @@ class SpektakelValidator(Validator):
 
                 for alias, definition in bindings:
                     env = self._declare(node, alias, env)
-                    dec[alias] = definition
+                    if isinstance(alias, Node):
+                        dec[alias] = definition
             else:
                 raise NotImplementedError("Handling import nodes of type {}"
                                           " has not been implemented!".format(type(node)))

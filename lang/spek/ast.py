@@ -869,7 +869,7 @@ class ImportNames(Statement):
 
     def __init__(self, source, name2alias=None, **kwargs):
         """
-        Creates a an import statement.
+        Creates an import statement.
         :param source: A Source node.
         :param name2alias: A mapping from names defined in the source to alias names. If omitted, *all* the names defined
                            in the source will be imported.
@@ -901,7 +901,7 @@ class ImportNames(Statement):
         A mapping from names to aliases. If this mapping is empty or None, *all* names defined in the source will be
         made available. Otherwise the keys of the mapping will be made available under their values.
         """
-        return {self.children[1 + idx]: self.children[1 + idx + 1] for idx in range((len(self.children) - 1) // 2)}
+        return {self.children[1 + 2 * idx]: self.children[1 + 2 * idx + 1] for idx in range((len(self.children) - 1) // 2)}
 
 
 class ProcedureDefinition(Statement):
