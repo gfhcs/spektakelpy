@@ -1,9 +1,57 @@
 import abc
-
-from lang.modules import Module, ModuleSpecificaion, Finder
-from lang.validator import ValidationError
-from lang.spek.syntax import SpektakelLexer, SpektakelParser
 import os.path
+from enum import Enum
+
+from lang.modules import Module, ModuleSpecificaion, Finder, AdjoinedFinder
+from lang.spek.syntax import SpektakelLexer, SpektakelParser
+from lang.validator import ValidationError
+
+
+class BuiltinModuleSpecification(ModuleSpecificaion):
+    """
+    Specifies that a module made up of builtin symbols is to be loaded.
+    """
+
+    def __init__(self, name, symbols):
+        """
+        Creates the specification for a module that is defined by an AST.
+        :param name: The name of the builtin module.
+        :param symbols: A dictionary mapping names to objects that represent the semantics of symbols.
+        """
+        super().__init__()
+        self._name = name
+        self._module = BuiltinModule(symbols)
+
+    @property
+    def name(self):
+        """
+        The name of the builtin module specified by this object.
+        """
+        return self._name
+
+    def load(self):
+        return self._module
+
+
+class BuiltinModule(Module):
+    """
+    A module mapping names to variables that are defined by builtin semantics of the runtime environment.
+    """
+
+    def __init__(self, symbols):
+        super().__init__()
+        self._symbols = dict(symbols)
+
+    @property
+    def names(self):
+        return self._symbols.keys()
+
+    @property
+    def errors(self):
+        return []
+
+    def resolve(self, name):
+        return self._symbols[name]
 
 
 class ASTSpecification(ModuleSpecificaion, abc.ABC):
@@ -190,3 +238,46 @@ class FileFinder(Finder):
 
             raise KeyError("No *.spek file could be found for the name {}!".format(name))
 
+
+class BuiltinModuleFinder(Finder):
+    """
+    A finder that maps a list of names to BuiltinModuleSpecification objects.
+    """
+
+    def __init__(self, mapping):
+        """
+        Instantiates a new BuiltinModuleFinder.
+        :param mapping: A dict-like object mapping names to BuildingModuleSpecification objects.
+        """
+        super().__init__()
+        self._m = dict(mapping)
+
+    def find(self, name, validator=None):
+        return self._m[name]
+
+
+class BuiltinAction(Enum):
+    """
+    Built-in action labels.
+    """
+    TICK = 0
+    NEXT = 1
+    PREV = 2
+
+
+class BuiltinVariable(Enum):
+    """
+    Builtin variables.
+    """
+    TIME = 0
+
+
+def build_default_finder(roots):
+    ffinder = FileFinder(roots)
+    m = [BuiltinModuleSpecification("interaction", {"next": BuiltinAction.NEXT,
+                                                    "tick": BuiltinAction.TICK,
+                                                    "prev": BuiltinAction.PREV}),
+         BuiltinModuleSpecification("environment", {"time": BuiltinVariable.TIME})]
+    bfinder = BuiltinModuleFinder({mspec.name: mspec for mspec in m})
+
+    return AdjoinedFinder(ffinder, bfinder)

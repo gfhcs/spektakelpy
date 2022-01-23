@@ -1,4 +1,5 @@
-
+import interactions
+import environment
 
 class ListIterator:
 
@@ -10,8 +11,7 @@ class ListIterator:
     def __next__():
 
         if self._data is None:
-            # STOP is an externally defined name, for the purpose of signalling the end of an iteration.
-            return STOP
+            raise StopIteration()
 
         var item, data = self._data
         self._data = data
@@ -70,15 +70,15 @@ class Spektakel:
         """
         # NEXT is an action label, defined externally. It is completely opaque in spek, just an object with no
         # useful members.
-        await NEXT
+        await interactions.NEXT
 
     def sleep(seconds):
         """
         Blocks for precisely the given amount of seconds (up to imprecisions arising from the framerate).
         """
-        var time = TIME
-        while TIME < time + seconds:
-            await TICK
+        var time = environment.TIME
+        while environment.TIME < time + seconds:
+            await interactions.TICK
 
 var spektakel = Spektakel()
 

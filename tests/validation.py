@@ -1,10 +1,9 @@
 import os.path
 import unittest
+from io import StringIO
 
 from examples import paths as example_paths
-from lang.environment import Environment
 from lang.spek import syntax, static, modules
-from io import StringIO
 
 
 def validate(sample, env=None, roots=None):
@@ -21,7 +20,7 @@ def validate(sample, env=None, roots=None):
     sample = StringIO(sample)
     lexer = syntax.SpektakelLexer(sample)
     node = syntax.SpektakelParser.parse_block(lexer)
-    finder = modules.FileFinder([] if roots is None else roots)
+    finder = modules.build_default_finder([] if roots is None else roots)
     v = static.SpektakelValidator(finder)
     return (node, *v.validate(node, env))
 
@@ -488,7 +487,7 @@ class TestSpektakelValidator(unittest.TestCase):
         """
         root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_import")
 
-        finder = modules.FileFinder([os.path.join(root, "library")])
+        finder = modules.build_default_finder([os.path.join(root, "library")])
         validator = static.SpektakelValidator(finder)
 
         for fn in os.listdir(root):
@@ -518,7 +517,7 @@ class TestSpektakelValidator(unittest.TestCase):
         roots = ["examples", "library"]
         roots = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", r) for r in roots]
 
-        finder = modules.FileFinder(roots)
+        finder = modules.build_default_finder(roots)
         validator = static.SpektakelValidator(finder)
 
         for path in example_paths:

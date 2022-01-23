@@ -22,12 +22,27 @@ class Level(Enum):
     GLOBAL = 3
 
 
+class BuiltinSymbols(Enum):
+    """
+    Symbols that are pre-defined in the Spektakel language.
+    """
+    SUPER = 0
+    GETATTR = 1
+    STOPITERATION = 2
+    ATTRIBUTEERROR = 3
+
+
 class SpektakelValidator(Validator):
     """
     A validator for the Spektakel language.
     """
 
-    __env = Environment({ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None})
+    __env = Environment({ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None,
+                         "StopIteration": BuiltinSymbols.STOPITERATION,
+                         "AttributeError": BuiltinSymbols.ATTRIBUTEERROR,
+                         "super": BuiltinSymbols.SUPER,
+                         "getattr": BuiltinSymbols.GETATTR,
+                         })
 
     def __init__(self, finder):
         """
