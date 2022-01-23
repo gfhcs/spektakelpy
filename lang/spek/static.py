@@ -203,20 +203,20 @@ class SpektakelValidator(Validator):
                     env = self._declare(node, node.alias, env)
             elif isinstance(node, ImportNames):
                 if node.wildcard:
-                    bindings = ((name, definition) for name, definition in module if isinstance(name, str))
+                    if module is not None:
+                        for name, definition in module:
+                            if isinstance(name, str):
+                                env = self._declare(node, name, env)
                 else:
-                    bindings = []
                     for name, alias in node.aliases.items():
                         try:
-                            bindings.append((alias, module[name.name]))
+                            env = self._declare(node, alias, env)
+                            if alias is not name:
+                                dec[alias] = name
+                            if module is not None:
+                                dec[name] = module[name.name]
                         except KeyError:
-                            err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name, mspec)))
-                            bindings.append((alias, None))
-
-                for alias, definition in bindings:
-                    env = self._declare(node, alias, env)
-                    if isinstance(alias, Node):
-                        dec[alias] = definition
+                            err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name), name, mspec))
             else:
                 raise NotImplementedError("Handling import nodes of type {}"
                                           " has not been implemented!".format(type(node)))
