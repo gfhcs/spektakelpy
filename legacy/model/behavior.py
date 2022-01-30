@@ -3,7 +3,7 @@ import itertools
 from enum import Enum
 
 from legacy.core.process import Process
-from model.state import Variable, Valuation
+from engine.state import Variable, Valuation
 from util import check_type
 from lang import OwnershipError
 
