@@ -1,36 +1,41 @@
 
 import abc
 from enum import Enum
+from util.immutable import ImmutableEquatable
 
 
 class TaskStatus(Enum):
     """
     Describes the status of a task.
     """
-    SCHEDULED = 0  # Task is scheduled for execution on a TaskMachine, but inactive.
-    ACTIVE = 1  # Task is being executed.
-    WAITING = 2  # Task execution is been interrupted, task is waiting to resume execution.
-    COMPLETED = 3  # Task has finished execution successfully.
-    FAILED = 4  # Task execution has failed.
+    WAITING = 0    # Task is waiting to being/resume execution.
+    RUNNING = 1    # Task is currently being computed and changing the state.
+    COMPLETED = 2  # Task has finished successfully.
+    FAILED = 3     # Task has failed.
 
 
-class TaskState(abc.ABC):
+class TaskState(abc.ABC, ImmutableEquatable):
     """
-    Represents a computation that is currently in the process of being executed by a TaskMachine.
+    Represents the current state of a computation.
     """
 
-    def __init__(self, m):
+    def __init__(self, taskid, status):
         """
-        Creates a new task and adds it to the given TaskMachine.
-        :param m: The TaskMachine that this task is created for and to which it is added by this constructor.
+        Creates a new task state.
+        :param taskid: The identity of the task that this object represents a state of.
+        :param status: The status of the task, i.e. a TaskStatus object.
         """
         super().__init__()
+        self._taskid = taskid
+        self._status = status
 
-        self._machine = None
-        self._status = TaskStatus.SCHEDULED
-
-        m.add(self)
-        self._machine = m
+    @property
+    def taskid(self):
+        """
+        The identity of the task that this object represents a state of.
+        :return: An object.
+        """
+        return self._taskid
 
     @property
     def status(self):
@@ -40,18 +45,20 @@ class TaskState(abc.ABC):
         return self._status
 
     @abc.abstractmethod
-    def decide_guard(self):
+    def enabled(self, mstate):
         """
-        Decides whether this task can continue its execution in the current state of the task machine it belongs to.
-        This procedure does not change the state of the TaskMachine or any of its tasks.
+        Indicates whether this task can continue its execution in the current machine state.
+        :param mstate: A MachineState object based on which enabledness is to be decided.
         :return: A boolean value.
         """
+        pass
 
     @abc.abstractmethod
-    def execute(self):
+    def run(self, mstate):
         """
         Progresses in the execution of this task, until the task either terminates, or yields control.
-        This procedure advances the state of its TaskMachine.
-        :exception RuntimeError: If self.decide_guard does not return True at the time this method is called.
+        :param mstate: A MachineState object based on which the result of running this task is to be computed.
+        :exception RuntimeError: If self.enabled is not True when this method is called.
+        :return: A MachineState object that represents the result of running this task until it yields control again.
         """
         pass

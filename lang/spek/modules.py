@@ -171,7 +171,7 @@ class ASTModule(Module):
 
     @property
     def names(self):
-        return self._env.names
+        return self._env.keys
 
     def resolve(self, name):
         return self._env[name]

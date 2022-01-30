@@ -1,64 +1,50 @@
 from .state import Valuation
+from util import check_type
+from .task import TaskState
+from util.immutable import ImmutableEquatable
 
 
-class MachineState:
+class MachineState(ImmutableEquatable):
     """
     Represents the state of a virtual machine that is executing tasks.
     """
 
-    def __int__(self):
+    def __init__(self, valuation, task_states):
         """
-        Creates a new State.
+        Describes the state of the machine.
+        :param valuation: The valuation of the machine.
+        :param task_states: The states of all the tasks running on the machine.
         """
-        self._tasks = []
-        self._valuation = Valuation()
+        super().__init__()
+        self._tstates = frozenset(check_type(s, TaskState) for s in task_states)
+        self._valuation = check_type(valuation, Valuation)
+        self._hash = None
+
+    def hash(self):
+        if self._hash is None:
+            h = hash(self._valuation)
+            for s in self._tstates:
+                h ^= hash(s)
+            self._hash = h
+
+        return self._hash
+
+    def equals(self, other):
+        if not isinstance(other, MachineState) or other.hash() != self.hash():
+            return False
+        return self._valuation == other._valuation and self._tstates == other._tstates
 
     @property
-    def tasks(self):
+    def task_states(self):
         """
-        The tasks that are in the process of being executed.
+        The TaskStates for all the tasks running on the machine.
         """
-        return tuple(self._tasks)
+        return self._tstates
 
     @property
     def valuation(self):
         """
-        Maps Variable objects to Value objects.
+        The Valuation of the machine.
         """
-        return self._valuation.view()
-
-    def write(self, var, val):
-        """
-        Binds the giving variable to the given value.
-        :param var: A Variable object.
-        :param val: A Value object.
-        """
-        self._valuation[var] = val
-
-    def read(self, var):
-        """
-        Retrieves the value that the given variable is bound to in this TaskMachine.
-        :param var: A Variable object.
-        :return: A Value object.
-        """
-        return self._valuation[var]
-
-    def add(self, task):
-        """
-        Adds the given task to this TaskMachine.
-        :param task: The Task object to add.
-        :exception ValueError: If the given task already belongs to some TaskMachine.
-        """
-        if task.machine is not None:
-            raise ValueError("The given task already belongs to a TaskMachine!")
-        self._tasks.append(task)
-
-    def remove(self, task):
-        """
-        Removes the given task from the agenda of this TaskMachine.
-        :param task: The Task object to remove.
-        :exception ValueError: If the given task is not part of this TaskMachine.
-        """
-        self._tasks.remove(task)
-
+        return self._valuation
 

@@ -46,7 +46,7 @@ class Environment:
         return self._len
 
     @property
-    def names(self):
+    def keys(self):
         """
         The names resolved by this environment.
         """
@@ -54,7 +54,7 @@ class Environment:
             yield k
 
         if self._base is not None:
-            for k in self._base.names:
+            for k in self._base.keys:
                 if k not in self._k2v:
                     yield k
 

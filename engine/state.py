@@ -1,6 +1,8 @@
 
 from util import check_type
+from util.immutable import ImmutableEquatable
 from .values import Value
+from util.environment import Environment
 
 
 class Variable:
@@ -15,6 +17,9 @@ class Variable:
         super().__init__()
         self._name = name
 
+    def __hash__(self):
+        return hash(id(self))
+
     @property
     def name(self):
         """
@@ -23,32 +28,34 @@ class Variable:
         return self._name
 
 
-class Valuation:
+class Valuation(Environment, ImmutableEquatable):
     """
     A mapping of Variable objects to Value objects.
     """
 
-    def __init__(self, m):
+    def __init__(self, m, base=None):
         """
         Creates a new valuation
         :param m: A dict mapping Variable objects to Value objects.
+        :param base: A Valuation that serves as the basis for adjunction:
+                     Any keys not mapped by m are defined by 'base'.
         """
-        super().__init__()
+        super().__init__(k2v={check_type(k, Variable): check_type(v, Value) for k, v in m.items()},
+                         base=check_type(base, Valuation))
+        self._hash = None
 
-        if isinstance(m, Valuation):
-            self._m = dict(m._m)
-        else:
-            self._m = {check_type(k, Variable): check_type(v, Value) for k, v in m.items()}
+    def hash(self):
+        if self._hash is None:
+            h = len(self)
+            for _, v in self:
+                h ^= hash(v)
+            self._hash = h
 
-    def __len__(self):
-        return len(self._m)
+        return self._hash
 
-    def __getitem__(self, var):
-        return self._m[check_type(var, Variable)]
-
-    def __setitem__(self, var, value):
-        self._m[check_type(var, Variable)] = check_type(value, Value)
-
-    def __iter__(self):
-        return iter(self._m.items())
-
+    def equals(self, other):
+        if not isinstance(other, Valuation) or other.hash() != self.hash():
+            return False
+        if len(self) != len(other):
+            return False
+        return all(other[var] == val for var, val in self)

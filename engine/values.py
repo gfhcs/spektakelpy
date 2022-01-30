@@ -1,7 +1,8 @@
 import abc
+from util.immutable import ImmutableEquatable
 
 
-class Value(abc.ABC):
+class Value(abc.ABC, ImmutableEquatable):
     """
     Represents a runtime value.
     """
