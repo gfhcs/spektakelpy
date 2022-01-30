@@ -6,19 +6,17 @@ def explore(mstate, scheduler=None):
     """
     Enumerates the entire state space of a task machine.
     :param mstate: The MachineState object forming the root of the exploration.
-    :param scheduler: A callable (s) -> ts, mapping MachineState s to an iterable ts of TaskState objects belonging to s
-    that specifies which Tasks are eligible for being scheduled in state s. By default, *all* tasks are eligible in
-    all states.
-    :return: An iterable of tuples (s, es), where es is an iterable of pairs (t, s'), where t is a TaskState that is
-    part of MachineState s, execution of which leads to MachineState s'. es comprises *all* pairs with this
-    property.
+    :param scheduler: A callable (s) -> ts, mapping MachineState s to an iterable ts of task ID objects, specifying
+    which Tasks are eligible for being scheduled in state s. By default, *all* tasks are eligible in all states.
+    :return: An iterable of tuples (s, es), where es is an iterable of pairs (tid, s'), where tid is a task ID object
+    specifying a task execution of which transforms s into s'. es comprises *all* pairs with this property.
     """
 
     check_type(mstate, MachineState)
 
     if scheduler is None:
         def scheduler(s):
-            return s.tasks
+            return [ss.taskid for ss in s.task_states]
 
     visited = set()
     agenda = [mstate]
@@ -28,9 +26,9 @@ def explore(mstate, scheduler=None):
         if s in visited:
             continue
         es = []
-        for t in scheduler(s):
-            ss = t.execute()
-            es.append((t, ss))
+        for tid in scheduler(s):
+            ss = s.get_task_state(tid).run(s)
+            es.append((tid, ss))
             agenda.append(ss)
 
         yield s, es
