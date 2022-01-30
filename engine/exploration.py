@@ -35,3 +35,14 @@ def explore(mstate, scheduler=None):
 
         yield s, es
         visited.add(s)
+
+
+def state_space(transitions):
+    """
+    Assembles a set of transitions into a labelled-transition-system.
+    :param transitions: An iterable of tuples (s, es), where es is an iterable of pairs (t, s'), where t is a TaskState
+    that is part of MachineState s, execution of which leads to MachineState s'. es comprises *all* pairs with this
+    property.
+    :return: An LTS object.
+    """
+    raise NotImplementedError()
