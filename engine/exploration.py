@@ -1,16 +1,37 @@
+from util import check_type
+from .machine import MachineState
 
 
-
-def explore(m, s):
+def explore(mstate, scheduler=None):
     """
     Enumerates the entire state space of a task machine.
-    :param m: The TaskMachine object the state space of which is to be explored.
-    :param s: A Scheduler object that specifies which tasks are to be executed in which state.
-    :return: An iterable of State objects.
+    :param mstate: The MachineState object forming the root of the exploration.
+    :param scheduler: A callable (s) -> ts, mapping MachineState s to an iterable ts of TaskState objects belonging to s
+    that specifies which Tasks are eligible for being scheduled in state s. By default, *all* tasks are eligible in
+    all states.
+    :return: An iterable of tuples (s, es), where es is an iterable of pairs (t, s'), where t is a TaskState that is
+    part of MachineState s, execution of which leads to MachineState s'. es comprises *all* pairs with this
+    property.
     """
 
-    # TODO: Careful, there will be loops.
+    check_type(mstate, MachineState)
 
-    # TODO: There needs to be a scheduler that ensures that we never execute "external" actions while there
-    #       still are *internal* actions possible.
-    pass
+    if scheduler is None:
+        def scheduler(s):
+            return s.tasks
+
+    visited = set()
+    agenda = [mstate]
+
+    while len(agenda) > 0:
+        s = agenda.pop()
+        if s in visited:
+            continue
+        es = []
+        for t in scheduler(s):
+            ss = t.execute()
+            es.append((t, ss))
+            agenda.append(ss)
+
+        yield s, es
+        visited.add(s)

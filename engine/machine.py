@@ -1,14 +1,14 @@
 from .state import Valuation
 
 
-class TaskMachine:
+class MachineState:
     """
     Represents the state of a virtual machine that is executing tasks.
     """
 
     def __int__(self):
         """
-        Creates a new TaskMachine.
+        Creates a new State.
         """
         self._tasks = []
         self._valuation = Valuation()
@@ -16,7 +16,7 @@ class TaskMachine:
     @property
     def tasks(self):
         """
-        The tasks being processed by this TaskMachine.
+        The tasks that are in the process of being executed.
         """
         return tuple(self._tasks)
 

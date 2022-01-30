@@ -14,7 +14,7 @@ class TaskStatus(Enum):
     FAILED = 4  # Task execution has failed.
 
 
-class Task(abc.ABC):
+class TaskState(abc.ABC):
     """
     Represents a computation that is currently in the process of being executed by a TaskMachine.
     """
