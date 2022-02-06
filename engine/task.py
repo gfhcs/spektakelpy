@@ -8,7 +8,7 @@ class TaskStatus(Enum):
     """
     Describes the status of a task.
     """
-    WAITING = 0    # Task is waiting to being/resume execution.
+    WAITING = 0    # Task is waiting to begin/resume execution.
     RUNNING = 1    # Task is currently being computed and changing the state.
     COMPLETED = 2  # Task has finished successfully.
     FAILED = 3     # Task has failed.
@@ -62,3 +62,4 @@ class TaskState(abc.ABC, ImmutableEquatable):
         :return: A MachineState object that represents the result of running this task until it yields control again.
         """
         pass
+
