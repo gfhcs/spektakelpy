@@ -139,7 +139,8 @@ class StackState(TaskState):
             mstate = MachineState(mstate.valuation, task_states=task_states_new)
 
             for i in enabled.instructions:
-                tstate, mstate = i.execute(tstate, mstate)
+                mstate = i.execute(tstate, mstate)
+                tstate = mstate.get_task_state(tstate.taskid)
 
         #  The task is deallocated only if some task actively deallocates it.
 
