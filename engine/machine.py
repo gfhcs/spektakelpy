@@ -9,30 +9,29 @@ class MachineState(ImmutableEquatable):
     Represents the state of a virtual machine that is executing tasks.
     """
 
-    def __init__(self, valuation, task_states):
+    def __init__(self, heap, task_states):
         """
         Describes the state of the machine.
-        :param valuation: The valuation of the machine.
+        :param heap: The heap memory of the machine, i.e. an array of values.
         :param task_states: The states of all the tasks running on the machine.
         """
         super().__init__()
         self._tstates = {check_type(s, TaskState).task_id: s for s in task_states}
-        self._valuation = check_type(valuation, Valuation)
+        self._heap = tuple(check_type(c, ImmutableEquatable) for c in heap)
         self._hash = None
 
     def hash(self):
         if self._hash is None:
-            h = hash(self._valuation)
+            h = hash(self._heap)
             for s in self._tstates.values():
                 h ^= hash(s)
             self._hash = h
-
         return self._hash
 
     def equals(self, other):
         if not isinstance(other, MachineState) or other.hash() != self.hash():
             return False
-        return self._valuation == other._valuation \
+        return self._heap == other._heap \
                and frozenset(self._tstates.values()) == frozenset(other._tstates.values())
 
     @property
@@ -43,11 +42,11 @@ class MachineState(ImmutableEquatable):
         return self._tstates.values()
 
     @property
-    def valuation(self):
+    def heap(self):
         """
-        The Valuation of the machine.
+        The heap memory of the machine.
         """
-        return self._valuation
+        return self._heap
 
     def get_task_state(self, tid):
         """
