@@ -33,7 +33,7 @@ class InteractionState(TaskState):
         return MachineState(mstate.valuation, task_states)
 
     def hash(self):
-        return hash(self.taskid) ^ hash(self._interaction)
+        return hash((self.taskid, self._interaction))
 
     def equals(self, other):
         return isinstance(other, InteractionState) \

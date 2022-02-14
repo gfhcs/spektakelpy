@@ -20,14 +20,10 @@ class Frame(ImmutableEquatable):
         self._local_values = tuple(check_type(v, ImmutableEquatable) for v in local_values)
 
     def hash(self):
-        h = hash(self._location)
-        for v in self._local_values:
-            h ^= v.hash()
-        return h
+        return hash((self._program, self._location, self._local_values))
 
     def equals(self, other):
-        return isinstance(other, Frame) \
-               and self._location == other._location \
+        return isinstance(other, Frame) and (self._program, self._location) == (other._program, other._location) \
                and len(self._local_values) == len(other._local_values) \
                and all(x == y for x, y in zip(self._local_values, other._local_values))
 
@@ -95,10 +91,11 @@ class StackState(TaskState):
         return self._returned
 
     def hash(self):
-        return hash(self._stack) ^ hash(self._exception) ^ hash(self._returned)
+        return hash((self._stack, self._exception, self._returned))
 
     def equals(self, other):
-        return isinstance(other, StackState) and self._stack == other._stack and self._exception == other._exception and self._returned == other._returned
+        return isinstance(other, StackState) \
+               and (self._stack, self._exception, self._returned) == (other._stack, other._exception, other._returned)
 
     def enabled(self, mstate):
         top = self.stack[0]

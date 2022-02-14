@@ -18,15 +18,12 @@ class MachineState(ImmutableEquatable):
         super().__init__()
         self._tstates = {check_type(s, TaskState).task_id: s for s in task_states}
         self._heap = tuple(check_type(c, ImmutableEquatable) for c in heap)
-        self._hash = None
 
     def hash(self):
-        if self._hash is None:
-            h = hash(self._heap)
-            for s in self._tstates.values():
-                h ^= hash(s)
-            self._hash = h
-        return self._hash
+        h = hash(self._heap)
+        for s in self._tstates.values():
+            h ^= hash(s)
+        return h
 
     def equals(self, other):
         if not isinstance(other, MachineState) or other.hash() != self.hash():
