@@ -14,12 +14,25 @@ class Instruction(ImmutableEquatable, abc.ABC):
     @abc.abstractmethod
     def execute(self, tstate, mstate):
         """
-        Executes this instruction in the given state.
+        Executes this instruction in the given state, leading to a new state, that in particular determines which
+        instruction to execute next.
         :param tstate: The task state that this instruction is to be executed in. It must be part of the given machine
         state. Any references to task-local variables will be interpreted with respect to this task state.
         :param mstate: The machine state that this instruction is to be executed in. It must contain the given task
         state.
         :return: A new MachineState object that represents the result of executing this instruction.
+        """
+        pass
+
+    @abc.abstractmethod
+    def enabled(self, tstate, mstate):
+        """
+        Decides if executing this instruction is going to modify *any* part of the machine state.
+        :param tstate: The task state that this instruction is to be executed in. It must be part of the given machine
+        state. Any references to task-local variables will be interpreted with respect to this task state.
+        :param mstate: The machine state that this instruction is to be executed in. It must contain the given task
+        state.
+        :return: A boolean value indicating if executing the instruction will lead to *any* change in the machine state.
         """
         pass
 
