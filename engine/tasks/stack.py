@@ -6,17 +6,20 @@ from ..task import TaskStatus
 
 
 class Frame(ImmutableEquatable):
+    """
+    Represents a set of local variables and a pointer to the next machine instruction to execute.
+    """
 
-    def __init__(self, cfg, location, local_values):
+    def __init__(self, program, instruction_index, local_values):
         """
         Allocates a new stack frame.
-        :param cfg: The control flow graph that this stack frame belongs to.
-        :param location: A CFG location that the task owning this stack frame is currently resting in.
+        :param program: The machine program to which this stack frame belongs.
+        :param instruction_index: The index of the instruction in the given program that is to be executed next.
         :param local_values: The array of values of the local variables stored in this stack frame.
         """
         super().__init__()
-        self._cfg = cfg
-        self._location = check_type(location, int)
+        self._program = program
+        self._location = check_type(instruction_index, int)
         self._local_values = tuple(check_type(v, ImmutableEquatable) for v in local_values)
 
     def hash(self):
@@ -28,11 +31,11 @@ class Frame(ImmutableEquatable):
                and all(x == y for x, y in zip(self._local_values, other._local_values))
 
     @property
-    def cfg(self):
+    def program(self):
         """
-        The control flow graph that this stack frame belongs to.
+        The machine program to which this stack frame belongs.
         """
-        return self._cfg
+        return self._program
 
     @property
     def location(self):

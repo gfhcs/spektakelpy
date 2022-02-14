@@ -1,5 +1,7 @@
 import abc
 
+from util import check_type
+from util.immutable import ImmutableEquatable
 from .reference import Reference
 from .expressions import Expression
 
@@ -55,3 +57,32 @@ class UpdateInstruction(Instruction):
         value = self._expression.evaluate(tstate, mstate)
         return self._address.write(mstate, value)
 
+
+class StackProgram(ImmutableEquatable):
+    """
+    An array of stack machine instructions. Each instruction updates the state of a stack machine, in particular
+    determining which instruction to execute next.
+    """
+
+    def __init__(self, instructions):
+        """
+        Creates a new stack program.
+        :param instructions: An iterable of Instruction objects.
+        """
+        super().__init__()
+        self._instructions = tuple(check_type(i, Instruction) for i in instructions)
+
+    def hash(self):
+        return hash(self._instructions)
+
+    def equals(self, other):
+        return isinstance(other, StackProgram) and self._instructions == other._instructions
+
+    def __len__(self):
+        return self._instructions
+
+    def __iter__(self):
+        return iter(self._instructions)
+
+    def __getitem__(self, item):
+        return self._instructions[item]
