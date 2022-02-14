@@ -6,7 +6,7 @@ from .reference import Reference
 from .expressions import Expression
 
 
-class Instruction(abc.ABC):
+class Instruction(ImmutableEquatable, abc.ABC):
     """
     Models the smallest, atomic execution steps.
     """
