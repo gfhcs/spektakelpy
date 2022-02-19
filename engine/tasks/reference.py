@@ -1,6 +1,7 @@
 import abc
+from util.immutable import Sealable
 
-class Reference(abc.ABC):
+class Reference(Sealable):
     """
     A reference points to a part of a machine state.
     """

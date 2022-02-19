@@ -1,11 +1,12 @@
-from util import check_type
-from util.immutable import ImmutableEquatable
-from ..machine import MachineState
+from util import check_type, check_types
+from util.immutable import ImmutableEquatable, Sealable, check_sealed, check_unsealed
+from .instructions import StackProgram
 from ..task import TaskState
 from ..task import TaskStatus
+from ..values import Value
 
 
-class Frame(ImmutableEquatable):
+class Frame(Sealable):
     """
     Represents a set of local variables and a pointer to the next machine instruction to execute.
     """
@@ -18,11 +19,18 @@ class Frame(ImmutableEquatable):
         :param local_values: The array of values of the local variables stored in this stack frame.
         """
         super().__init__()
-        self._program = program
+        self._program = check_type(program, StackProgram)
         self._location = check_type(instruction_index, int)
-        self._local_values = tuple(check_type(v, ImmutableEquatable) for v in local_values)
+        self._local_values = list(check_types(local_values, Value))
+
+    def _seal(self):
+        self._local_values = tuple(v.seal() for v in self._local_values)
+
+    def clone_unsealed(self):
+        return Frame(self._program, self._location, (v.clone_unsealed() for v in self._local_values))
 
     def hash(self):
+        check_sealed(self)
         return hash((self._program, self._location, self._local_values))
 
     def equals(self, other):
@@ -38,11 +46,16 @@ class Frame(ImmutableEquatable):
         return self._program
 
     @property
-    def location(self):
+    def instruction_index(self):
         """
-        A CFG location that the task owning this stack frame is currently resting in.
+        The index of the instruction in the given program that is to be executed next.
         """
         return self._location
+
+    @instruction_index.setter
+    def instruction_index(self, value):
+        check_unsealed(self)
+        self._location = check_type(value, int)
 
     @property
     def local(self):
@@ -68,9 +81,19 @@ class StackState(TaskState):
         """
         super().__init__(taskid, status)
 
-        self._stack = tuple(check_type(f, Frame) for f in stack)
-        self._exception = check_type(exception, ImmutableEquatable)
-        self._returned = check_type(returned, ImmutableEquatable)
+        self._stack = list(check_types(stack, Frame))
+        self._exception = check_type(exception, Value)
+        self._returned = check_type(returned, Value)
+
+    def _seal(self):
+        self._stack = tuple(self._stack)
+        for f in self._stack:
+            f.seal()
+
+    def clone_unsealed(self):
+        return StackState(self.taskid, self.status, (f.clone_unsealed() for f in self.stack),
+                          exception=self.exception.clone_unsealed(),
+                          returned=self.returned.clone_unsealed())
 
     @property
     def stack(self):
@@ -86,6 +109,11 @@ class StackState(TaskState):
         """
         return self._exception
 
+    @exception.setter
+    def exception(self, value):
+        check_unsealed(self)
+        self._exception = check_type(value, Value)
+
     @property
     def returned(self):
         """
@@ -93,7 +121,13 @@ class StackState(TaskState):
         """
         return self._returned
 
+    @returned.setter
+    def returned(self, value):
+        check_unsealed(self)
+        self._returned = check_type(value, Value)
+
     def hash(self):
+        check_sealed(self)
         return hash((self._stack, self._exception, self._returned))
 
     def equals(self, other):
@@ -101,47 +135,36 @@ class StackState(TaskState):
                and (self._stack, self._exception, self._returned) == (other._stack, other._exception, other._returned)
 
     def enabled(self, mstate):
+        if len(self.stack) == 0:
+            return False
         top = self.stack[0]
-        for e in top.cfg.edges[top.location]:
-            if e.guard.evaluate(self, mstate):
-                return True
-        return False
+        i = top.program[top.instruction_index]
+        return i.enabled(self, mstate)
 
     def run(self, mstate):
-
+        check_unsealed(self)
         tstate = self
+
+        mstate.status = TaskStatus.RUNNING
+        progress = False
 
         # A task is not supposed to yield control unless it really has to.
         # So in order to keep overhead from interleavings low, we just continue execution
         # as long as possible:
         while True:
+
+            if len(tstate.stack) == 0:
+                break
+
             top = tstate.stack[0]
-            enabled = None
-            for e in top.cfg.edges[top.location]:
-                if e.guard.evaluate(tstate, mstate):
-                    if enabled is None:
-                        enabled = e
-                    else:
-                        raise RuntimeError("More than one control flow edge of this task is enabled. Such control flow"
-                                           " nondeterminism is not supported, because it is not visible to the scheduler"
-                                           " and can thus not be taken into account properly!")
-            if enabled is None:
-                if tstate is self:
-                    raise RuntimeError("self.run was called even though self.enabled was not True !")
-                else:
-                    break
 
-            top_new = Frame(top.cfg, enabled.destination, top.local)
-            task_states_new = list(mstate.task_states)
-            task_states_new.remove(tstate)
-            tstate = StackState(self.taskid, TaskStatus.WAITING, (top_new, *tstate.stack[1:]))
-            task_states_new.append(tstate)
-            mstate = MachineState(mstate.valuation, task_states=task_states_new)
+            i = top.program[top.instruction_index]
 
-            for i in enabled.instructions:
-                mstate = i.execute(tstate, mstate)
-                tstate = mstate.get_task_state(tstate.taskid)
-
-        #  The task is deallocated only if some task actively deallocates it.
-
-        return mstate
+            if i.enabled(tstate, mstate):
+                i.execute(tstate, mstate)
+                progress = True
+            else:
+                if not progress:
+                    raise RuntimeError("This task was not enabled and thus should not have been run!")
+                tstate.status = TaskStatus.WAITING
+                break

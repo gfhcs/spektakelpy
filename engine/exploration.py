@@ -10,7 +10,8 @@ def explore(mstate, scheduler=None):
     :param scheduler: A callable (s) -> ts, mapping MachineState s to an iterable ts of task ID objects, specifying
     which Tasks are eligible for being scheduled in state s. By default, *all* tasks are eligible in all states.
     :return: An iterable of tuples (s, es), where es is an iterable of pairs (tid, s'), where tid is a task ID object
-    specifying a task execution of which transforms s into s'. es comprises *all* pairs with this property.
+    specifying a task execution of which transforms MachineState s into MachineState s'. s and s' are sealed.
+    es comprises *all* pairs with this property.
     The very first s enumerated by this method will be the initial state. es may be empty.
     """
 
@@ -19,6 +20,10 @@ def explore(mstate, scheduler=None):
     if scheduler is None:
         def scheduler(s):
             return [ss.taskid for ss in s.task_states]
+
+    if not mstate.sealed:
+        mstate = mstate.clone_unsealed()
+        mstate.seal()
 
     visited = set()
     agenda = [mstate]
@@ -29,7 +34,9 @@ def explore(mstate, scheduler=None):
             continue
         es = []
         for tid in scheduler(s):
-            ss = s.get_task_state(tid).run(s)
+            ss = s.clone_unsealed()
+            ss.get_task_state(tid).run(ss)
+            ss.seal()
             es.append((tid, ss))
             agenda.append(ss)
 

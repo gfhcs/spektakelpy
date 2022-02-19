@@ -1,8 +1,8 @@
 import abc
-from util.immutable import ImmutableEquatable
+from util.immutable import Sealable
 
 
-class Value(abc.ABC, ImmutableEquatable):
+class Value(Sealable, abc.ABC):
     """
     Represents a runtime value.
     """

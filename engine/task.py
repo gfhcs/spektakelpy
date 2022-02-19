@@ -1,7 +1,9 @@
 
 import abc
 from enum import Enum
-from util.immutable import ImmutableEquatable
+
+from util import check_type
+from util.immutable import Sealable, check_unsealed
 
 
 class TaskStatus(Enum):
@@ -14,7 +16,7 @@ class TaskStatus(Enum):
     FAILED = 3     # Task has failed.
 
 
-class TaskState(abc.ABC, ImmutableEquatable):
+class TaskState(Sealable, abc.ABC):
     """
     Represents the current state of a computation.
     """
@@ -27,7 +29,7 @@ class TaskState(abc.ABC, ImmutableEquatable):
         """
         super().__init__()
         self._taskid = taskid
-        self._status = status
+        self._status = check_type(status, TaskStatus)
 
     @property
     def taskid(self):
@@ -44,6 +46,11 @@ class TaskState(abc.ABC, ImmutableEquatable):
         """
         return self._status
 
+    @status.setter
+    def status(self, value):
+        check_unsealed(self)
+        self._status = check_type(value, TaskStatus)
+
     @abc.abstractmethod
     def enabled(self, mstate):
         """
@@ -57,9 +64,9 @@ class TaskState(abc.ABC, ImmutableEquatable):
     def run(self, mstate):
         """
         Progresses in the execution of this task, until the task either terminates, or yields control.
-        :param mstate: A MachineState object based on which the result of running this task is to be computed.
+        This procedure may modify the given mstate object.
+        :param mstate: An unsealed MachineState object that is to be modified to become the result of running this task.
         :exception RuntimeError: If self.enabled is not True when this method is called.
-        :return: A MachineState object that represents the result of running this task until it yields control again.
         """
         pass
 

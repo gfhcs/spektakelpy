@@ -1,10 +1,9 @@
-from .state import Valuation
-from util import check_type
+from util import check_type, check_types
+from util.immutable import Sealable, check_sealed
 from .task import TaskState
-from util.immutable import ImmutableEquatable
 
 
-class MachineState(ImmutableEquatable):
+class MachineState(Sealable):
     """
     Represents the state of a virtual machine that is executing tasks.
     """
@@ -17,18 +16,29 @@ class MachineState(ImmutableEquatable):
         """
         super().__init__()
         self._tstates = {check_type(s, TaskState).task_id: s for s in task_states}
-        self._heap = tuple(check_type(c, ImmutableEquatable) for c in heap)
+        self._heap = list(check_types(heap, Sealable))
+
+    def _seal(self):
+        for t in self._tstates.values():
+            t.seal()
+        self._heap = tuple(self._heap)
+        for h in self._heap:
+            h.seal()
+
+    def clone_unsealed(self):
+        return MachineState((h.clone_unsealed() for h in self._heap),
+                            (t.clone_unsealed() for t in self._tstates.values()))
 
     def hash(self):
+        check_sealed(self)
         h = hash(self._heap)
         for s in self._tstates.values():
             h ^= hash(s)
         return h
 
     def equals(self, other):
-        if not isinstance(other, MachineState) or other.hash() != self.hash():
-            return False
-        return self._heap == other._heap \
+        return isinstance(other, MachineState) \
+               and tuple(self._heap) == tuple(other._heap) \
                and frozenset(self._tstates.values()) == frozenset(other._tstates.values())
 
     @property

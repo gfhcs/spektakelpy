@@ -2,8 +2,8 @@ import abc
 
 from util import check_type
 from util.immutable import ImmutableEquatable
-from .reference import Reference
 from .expressions import Expression
+from .reference import Reference
 
 
 class Instruction(ImmutableEquatable, abc.ABC):
@@ -16,18 +16,20 @@ class Instruction(ImmutableEquatable, abc.ABC):
         """
         Executes this instruction in the given state, leading to a new state, that in particular determines which
         instruction to execute next.
-        :param tstate: The task state that this instruction is to be executed in. It must be part of the given machine
-        state. Any references to task-local variables will be interpreted with respect to this task state.
-        :param mstate: The machine state that this instruction is to be executed in. It must contain the given task
-        state.
-        :return: A new MachineState object that represents the result of executing this instruction.
+        This procedure may modify the given TaskState and MachineState objects.
+        :param tstate: The unsealed TaskState object that this instruction is to be executed in.
+        It must be part of the given machine state.
+        Any references to task-local variables will be interpreted with respect to this task state.
+        :param mstate: The unsealed MachineState object that this instruction is to be executed in.
+        It must contain the given task state.
         """
         pass
 
     @abc.abstractmethod
     def enabled(self, tstate, mstate):
         """
-        Decides if executing this instruction is going to modify *any* part of the machine state.
+        Decides if executing this instruction is going to modify *any* part of the machine state, i.e. if any progress
+        will be made.
         :param tstate: The task state that this instruction is to be executed in. It must be part of the given machine
         state. Any references to task-local variables will be interpreted with respect to this task state.
         :param mstate: The machine state that this instruction is to be executed in. It must contain the given task
