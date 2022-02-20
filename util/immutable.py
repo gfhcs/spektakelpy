@@ -1,39 +1,6 @@
 import abc
 
 
-class ImmutableEquatable:
-    """
-    An object that is both immutable and defines an abstract equality.
-    """
-
-    @abc.abstractmethod
-    def hash(self):
-        """
-        Computes a hash value for this object.
-        This method must be compatible with self.equals.
-        """
-        pass
-
-    @abc.abstractmethod
-    def equals(self, other):
-        """
-        Decides whether this object is considered equal to another object.
-        This method must be compatible with self.hash
-        :param other: An object.
-        :return: A boolean value.
-        """
-        pass
-
-    def __hash__(self):
-        return self.hash()
-
-    def __eq__(self, other):
-        return self.equals(other)
-
-    def __ne__(self, other):
-        return not self.equals(other)
-
-
 class UnsealedException(RuntimeError):
     """
     An exception that occurs when an object would have to be immutable, but is still mutable.
@@ -72,7 +39,7 @@ def check_unsealed(sealable):
     return sealable
 
 
-class Sealable(ImmutableEquatable):
+class Sealable:
     """
     An object that is mutable after its construction, but can be sealed, to become immutable.
     """
@@ -80,6 +47,33 @@ class Sealable(ImmutableEquatable):
     def __init__(self):
         super().__init__()
         self._sealed = False
+
+    @abc.abstractmethod
+    def hash(self):
+        """
+        Computes a hash value for this object.
+        This method must be compatible with self.equals.
+        """
+        pass
+
+    @abc.abstractmethod
+    def equals(self, other):
+        """
+        Decides whether this object is considered equal to another object.
+        This method must be compatible with self.hash
+        :param other: An object.
+        :return: A boolean value.
+        """
+        pass
+
+    def __hash__(self):
+        return self.hash()
+
+    def __eq__(self, other):
+        return self.equals(other)
+
+    def __ne__(self, other):
+        return not self.equals(other)
 
     @abc.abstractmethod
     def _seal(self):
@@ -111,4 +105,13 @@ class Sealable(ImmutableEquatable):
         """
         Creates a deep copy of this object, that is unsealed and equal to this object.
         """
+        pass
+
+
+class Immutable(Sealable, abc.ABC):
+    """
+    An object that is both immutable and defines an abstract equality.
+    """
+
+    def _seal(self):
         pass

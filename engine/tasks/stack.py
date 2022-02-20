@@ -1,5 +1,5 @@
 from util import check_type, check_types
-from util.immutable import ImmutableEquatable, Sealable, check_sealed, check_unsealed
+from util.immutable import Immutable, Sealable, check_sealed, check_unsealed
 from .instructions import StackProgram
 from ..task import TaskState
 from ..task import TaskStatus

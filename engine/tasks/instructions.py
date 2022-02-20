@@ -1,12 +1,12 @@
 import abc
 
 from util import check_type
-from util.immutable import ImmutableEquatable
+from util.immutable import Immutable
 from .expressions import Expression
 from .reference import Reference
 
 
-class Instruction(ImmutableEquatable, abc.ABC):
+class Instruction(Immutable, abc.ABC):
     """
     Models the smallest, atomic execution steps.
     """
@@ -73,7 +73,7 @@ class UpdateInstruction(Instruction):
         return self._address.write(mstate, value)
 
 
-class StackProgram(ImmutableEquatable):
+class StackProgram(Immutable):
     """
     An array of stack machine instructions. Each instruction updates the state of a stack machine, in particular
     determining which instruction to execute next.
