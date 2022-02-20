@@ -1,5 +1,5 @@
 from util import check_type, check_types
-from util.immutable import Sealable, check_sealed
+from util.immutable import Sealable, check_sealed, check_unsealed
 from .task import TaskState
 
 
@@ -47,6 +47,25 @@ class MachineState(Sealable):
         The TaskStates for all the tasks running on the machine.
         """
         return self._tstates.values()
+
+    def add_task(self, t):
+        """
+        Adds a new task to this machine state.
+        :param t: The TaskState object to add.
+        """
+        check_type(t, TaskState)
+        check_unsealed(self)
+        if t.taskid in self._tstates:
+            raise ValueError("A task with ID {} is already part of this machine state!".format(t.taskid))
+        self._tstates[t.taskid] = t
+
+    def remove_task(self, tid):
+        """
+        Removes a task state from this machine state.
+        :param tid: The ID of the task state to remove.
+        """
+        check_unsealed(self)
+        del self._tstates[tid]
 
     @property
     def heap(self):

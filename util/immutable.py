@@ -113,5 +113,12 @@ class Immutable(Sealable, abc.ABC):
     An object that is both immutable and defines an abstract equality.
     """
 
+    def __init__(self):
+        super().__init__()
+        self._sealed = True
+
     def _seal(self):
         pass
+
+    def clone_unsealed(self):
+        return self

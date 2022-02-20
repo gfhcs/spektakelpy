@@ -60,10 +60,10 @@ class FrameReference(Reference):
 
     def write(self, tstate, mstate, value):
         check_unsealed(self)
-        tstate.stack[0].local[self._index] = value
+        tstate.stack[-1].local[self._index] = value
 
     def read(self, tstate, mstate):
-        return tstate.stack[0].local[self._index]
+        return tstate.stack[-1].local[self._index]
 
 
 class HeapReference(Reference):

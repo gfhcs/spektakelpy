@@ -1,6 +1,7 @@
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_sealed, check_unsealed
 from .instructions import StackProgram
+from .instructions import ProgramLocation
 from ..task import TaskState
 from ..task import TaskStatus
 from ..values import Value
@@ -11,30 +12,29 @@ class Frame(Sealable):
     Represents a set of local variables and a pointer to the next machine instruction to execute.
     """
 
-    def __init__(self, program, instruction_index, local_values):
+    def __init__(self, location, local_values):
         """
         Allocates a new stack frame.
-        :param program: The machine program to which this stack frame belongs.
-        :param instruction_index: The index of the instruction in the given program that is to be executed next.
+        :param location: The program location of the instruction that is to be executed next.
         :param local_values: The array of values of the local variables stored in this stack frame.
         """
         super().__init__()
-        self._program = check_type(program, StackProgram)
-        self._location = check_type(instruction_index, int)
+        self._location = check_type(location, ProgramLocation)
         self._local_values = list(check_types(local_values, Value))
 
     def _seal(self):
+        self._location._seal()
         self._local_values = tuple(v.seal() for v in self._local_values)
 
     def clone_unsealed(self):
-        return Frame(self._program, self._location, (v.clone_unsealed() for v in self._local_values))
+        return Frame(self._location, (v.clone_unsealed() for v in self._local_values))
 
     def hash(self):
         check_sealed(self)
-        return hash((self._program, self._location, self._local_values))
+        return hash((self._location, self._local_values))
 
     def equals(self, other):
-        return isinstance(other, Frame) and (self._program, self._location) == (other._program, other._location) \
+        return isinstance(other, Frame) and self._location == other._location \
                and len(self._local_values) == len(other._local_values) \
                and all(x == y for x, y in zip(self._local_values, other._local_values))
 
@@ -43,19 +43,18 @@ class Frame(Sealable):
         """
         The machine program to which this stack frame belongs.
         """
-        return self._program
+        return self._location.program
 
     @property
     def instruction_index(self):
         """
         The index of the instruction in the given program that is to be executed next.
         """
-        return self._location
+        return self._location.index
 
     @instruction_index.setter
     def instruction_index(self, value):
-        check_unsealed(self)
-        self._location = check_type(value, int)
+        self._location.index = value
 
     @property
     def local(self):
@@ -137,7 +136,7 @@ class StackState(TaskState):
     def enabled(self, mstate):
         if len(self.stack) == 0:
             return False
-        top = self.stack[0]
+        top = self.stack[-1]
         i = top.program[top.instruction_index]
         return i.enabled(self, mstate)
 
@@ -156,7 +155,7 @@ class StackState(TaskState):
             if len(tstate.stack) == 0:
                 break
 
-            top = tstate.stack[0]
+            top = tstate.stack[-1]
 
             i = top.program[top.instruction_index]
 
