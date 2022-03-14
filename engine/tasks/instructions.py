@@ -312,9 +312,7 @@ class Launch(Instruction):
         :param destination: The instruction index at which execution should continue after the successful execution of
                             this instruction, as soon as the newly pushed stack frame has been popped again.
         :param edestination: The instruction index at which execution should continue in case this instruction causes
-                             an error. Note that any errors caused as long as the newly pushed stack frame still exists
-                             will _not_ lead to this error destination! To handle those errors,
-                             code reached via 'destination' must explicitly treat them.
+                             an error.
         """
         super().__init__()
         self._entry = check_type(entry, Expression)
