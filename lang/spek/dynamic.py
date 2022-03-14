@@ -5,6 +5,66 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
 
+
+class Chain:
+    """
+    Represents a sequence of instructions. Control flow can enter this chain only at its start.
+    """
+    def __init__(self):
+        pass
+
+    def append_update(self, ref, expression, on_error):
+        """
+        Appends a prototype of an update instruction to this chain.
+        :param ref: An Expression specifying which part of the state is to be updated.
+        :param expression: The Expression object specifying how to compute the new value.
+        :param on_error: The chain to jump to if the instruction causes an error.
+        """
+        pass
+
+    def append_guard(self, alternatives, on_error):
+        """
+        Appends a prototype of a guard instruction to this chain. The chain cannot be continued after a guard
+        instruction.
+        :param alternatives: A mapping from Expressions to Chains, specifying to which chain to jump under which
+                             condition.
+        :param on_error: The chain to jump to in case the instruction causes an error.
+        """
+        pass
+
+    def append_push(self, entry, aexpressions, on_error):
+        """
+        Appends a prototype of a Push instruction to this chain.
+        :param entry: An Expression that evaluates to a ProgramLocation.
+        :param aexpressions: An iterable of Expression objects that determine the values for the local variables that
+                            are to be pushed as part of the stack frame.
+        :param on_error: The chain to jump to in case the instruction causes an error.
+                         Note that any errors caused as long as the newly pushed stack frame still exists will _not_
+                         lead to this error destination! To handle those errors, instructions following the push
+                         instruction must explicitly treat them!
+        """
+        pass
+
+    def append_pop(self):
+        """
+        Appends a prototype of a Pop instruction to this chain.
+        """
+        pass
+
+    def append_launch(self, entry, aexpressions, on_error):
+        """
+        Appends a prototype of a Launch instruction to this chain.
+        :param entry: An Expression that evaluates to a ProgramLocation.
+        :param aexpressions: An iterable of Expression objects that determine the values for the local variables that
+                            are to be pushed as part of the stack frame.
+        :param on_error: The chain to jump to in case the instruction causes an error.
+                         Note that any errors caused as long as the newly pushed stack frame still exists will _not_
+                         lead to this error destination! To handle those errors, instructions following the push
+                         instruction must explicitly treat them!
+        """
+        pass
+
+
 class Spektakel2Stack(Translator):
     """
     A translator that translates Spektakel AST nodes into stack programs.
