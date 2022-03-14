@@ -70,6 +70,12 @@ class Spektakel2Stack(Translator):
     A translator that translates Spektakel AST nodes into stack programs.
     """
 
+    def __init__(self):
+        super().__init__()
+        self._decl2ref = {} # Maps declaration nodes to references.
+        self._loop_headers = [] # Stack of loop entry points.
+        self._loop_successors = [] # Stack of loop successor blocks.
+
     def translate_expression(self, node, dec):
         """
         Translates an AST expression into a machine expression.
