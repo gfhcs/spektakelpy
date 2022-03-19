@@ -5,7 +5,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
-
+from engine.tasks.reference import ReturnValueReference, ExceptionReference
 
 class Chain:
     """
@@ -47,6 +47,14 @@ class Chain:
             self._targets.add(t)
         self._targets.add(on_error)
         self._can_continue = False
+
+    def append_jump(self, target):
+        """
+        Appends a prototype of an unconditional jump instruction to this chain. The chain cannot be continued after this.
+        :param target: The chain to jump to.
+        """
+        # According to the semantics, there cannot be an error in evaluating Truth():
+        self.append_guard({Truth(): target}, None)
 
     def append_push(self, entry, aexpressions, on_error):
         """
@@ -145,13 +153,16 @@ class Spektakel2Stack(Translator):
         self._loop_headers = [] # Stack of loop entry points.
         self._loop_successors = [] # Stack of loop successor blocks.
 
-    def translate_expression(self, node, dec):
+    def translate_expression(self, chain, node, dec, on_error):
         """
         Translates an AST expression into a machine expression.
         :param node: An AST node representing an expression.
         :param dec: A dict mapping AST nodes to decorations.
         :return: A machine Expression object.
         """
+
+        # TODO: For some expressions, such as Launch, we will need to emit some instructions in addition to
+        # building an expression object.
 
         if isinstance(node, Constant):
 
@@ -165,12 +176,16 @@ class Spektakel2Stack(Translator):
         else:
             raise NotImplementedError()
 
-    def translate_statement(self, node, dec):
+    def translate_statement(self, chain, node, dec, on_error):
         """
         Translates a statement into a StackProgram.
+        :param chain: The chain to which to append the translation of the statement.
         :param node: An AST node representing a Statement.
         :param dec: A dict mapping AST nodes to decorations.
-        :return: A StackProgram.
+        :param on_error: The chain to jump to in case an (unhandled) error occurs during the execution of the translated
+                         statement.
+        :return: A Chain object that the instructions resulting from the translation of the statement will jump to
+                 after completing the execution of the statement.
         """
 
         if isinstance(node, Pass):
@@ -178,23 +193,65 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, (ImportNames, ImportSource)):
 
         elif isinstance(node, ExpressionStatement):
+            e = self.translate_expression(chain, node.expression, dec, on_error)
+            # The previous line generated code for any side effects. Thus we do not really need to use the expression
+            # e, because its evaluation result is not to be bound to anything.
+            return chain
         elif isinstance(node, Assignment):
-
+            e = self.translate_expression(chain, node.value, dec, on_error)
+            t = self.translate_target(chain, node.target, dec, on_error)
+            chain.append_update(t, e, on_error)
+            return chain
         elif isinstance(node, Block):
-
+            for s in node:
+                chain = self.translate_statement(chain, s, dec, on_error)
+            return chain
         elif isinstance(node, Return):
-
+            if node.value is not None:
+                r = self.translate_expression(chain, node.value, dec, on_error)
+                chain.append_update(ConstantExpression(ReturnValueReference()), r, on_error)
+            chain.append_pop()
+            return Chain()
         elif isinstance(node, Raise):
-
+            if node.value is not None:
+                e = self.translate_expression(chain, node.value, dec, on_error)
+                chain.append_update(ConstantExpression(ExceptionReference()), e, on_error)
+            chain.append_jump(on_error)
+            return Chain()
         elif isinstance(node, (Break, Continue)):
-
+            chain.append_jump(self._loop_successors[-1] if isinstance(node, Break) else self._loop_headers[-1])
+            return Chain()
         elif isinstance(node, Conditional):
-
+            consequence = Chain()
+            alternative = Chain()
+            successor = Chain()
+            condition = self.translate_expression(chain, node.condition, dec, on_error)
+            chain.append_guard({condition: consequence, ~condition: alternative}, on_error)
+            self.translate_statement(consequence, node.consequence, dec, on_error)
+            consequence.append_jump(successor)
+            self.translate_statement(alternative, node.consequence, dec, on_error)
+            alternative.append_jump(successor)
+            return successor
         elif isinstance(node, While):
-
+            head = Chain()
+            body = Chain()
+            successor = Chain()
+            chain.append_jump(head)
+            condition = self.translate_expression(head, node.condition, dec, on_error)
+            head.append_guard({condition: body, ~condition: successor}, on_error)
+            self._loop_headers.append(head)
+            self._loop_successors.append(successor)
+            self.translate_statement(body, node.body, dec, on_error)
+            self._loop_headers.pop()
+            self._loop_successors.pop()
+            body.append_jump(head)
+            return successor
         elif isinstance(node, For):
 
         elif isinstance(node, Try):
+
+            # TODO: Any errors occuring in the body must lead to a jump into a general handler. This general handler
+            # must further distinguish between the different kinds of error.
 
         elif isinstance(node, VariableDeclaration):
 
