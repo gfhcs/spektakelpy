@@ -193,9 +193,10 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, (ImportNames, ImportSource)):
 
         elif isinstance(node, ExpressionStatement):
-            e = self.translate_expression(chain, node.expression, dec, on_error)
-            # The previous line generated code for any side effects. Thus we do not really need to use the expression
-            # e, because its evaluation result is not to be bound to anything.
+            _ = self.translate_expression(chain, node.expression, dec, on_error)
+            # The previous line generated code for any side effects of the expression.
+            # We do not really need to use the expression itself,
+            # because its evaluation result is not to be bound to anything.
             return chain
         elif isinstance(node, Assignment):
             e = self.translate_expression(chain, node.value, dec, on_error)
