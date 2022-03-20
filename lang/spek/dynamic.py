@@ -161,16 +161,46 @@ class Spektakel2Stack(Translator):
         :return: A machine Expression object.
         """
 
-        # TODO: For some expressions, such as Launch, we will need to emit some instructions in addition to
+        # TODO: For those expressions that can be interrupted by other tasks, i.e. for Call and Await
         # building an expression object.
 
         if isinstance(node, Constant):
 
+            # TODO: Return a Term object that represents the constant.
+
         elif isinstance(node, Identifier):
+
+            # TODO: Here we have to use dec to look up the declaration for the *node* (not the name!).
+            #       Some member of the Translator must map *declarations* (i.e. AST nodes) to Term objects that represent
+            #       the declared variable.
 
         elif isinstance(node, Attribute):
 
-        elif isinstance(node, (Tuple, Projection, Call, Launch, Await,
+            # TODO: The code we generate here must do the following:
+            #       1. Evaluate the value.
+            #       2. Get its type object of the value.
+            #       3. Ask the type object for the identifier.
+
+            # Probably we will need some special kind of machine instructions/term that can deal with type objects.
+
+        elif isinstance(node, Call):
+
+            # TODO: This must generate a push instruction. But also we must check if the callee is in fact callable!
+
+        elif isinstance(node, Launch):
+
+            # TODO: We must generate a launch instruction here. Otherwise there are similar problems as for Call.
+
+        elif isinstance(node, Await):
+
+            # TODO: This must generate a guard instruction with only one alternative. The condition is that
+            #       the task we are waiting for (obtained by evaluating the given expression, represented by a TID)
+            #       completely clears its stack.
+            #       After this guard instruction, we need to check the return and exception variables of the task,
+            #       to determine whether we can just pass on the return value or whether an exception occured in the
+            #       task.
+
+        elif isinstance(node, (Tuple, Projection,
                                Comparison, BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation)):
 
         else:
@@ -191,6 +221,12 @@ class Spektakel2Stack(Translator):
         if isinstance(node, Pass):
             pass
         elif isinstance(node, (ImportNames, ImportSource)):
+
+            # TODO: These things should basically call procedures that execute the imported modules, building Module
+            #       values. To match Python's behavior, the procedure building a module must be executed at most once,
+            #       i.e. repeated imports of the same module must use a cache!
+            #       Other than that, Python's behavior can be matched if we simply declare the import aliases
+            #       as local variables and assign the corresponding module members to them.
 
         elif isinstance(node, ExpressionStatement):
             _ = self.translate_expression(chain, node.expression, dec, on_error)
@@ -290,11 +326,26 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, VariableDeclaration):
 
+            # TODO: This thing should just ask for some new variable to be created, via self.create_local()
+            #       Such declarations are collected and will eventually be recorded as a property of the function
+            #       such that whenever this function is called, the stack frame can be allocated properly.
+
         elif isinstance(node, ProcedureDefinition):
+
+            # TODO: Here, some Function object must be built, i.e. we need to translate the body of the function and
+            #       record its signature and stack frame layout. We then simply declare the name of the function as
+            #       a variable (see VariableDeclaration) and assign the function object to that variable.
 
         elif isinstance(node, PropertyDefinition):
 
+            # TODO: Note that these things work like procedures basically, but should probably be turned into "special"
+            #       procedure objects, such that they can be treated properly when assigning to properties or reading
+            #       from properties.
+
         elif isinstance(node, ClassDefinition):
+
+            # TODO: Similar as with a Procedure definition we need to construct a type object here, declare the name
+            #       of the type as a variable and then assign the type object to that variable.
 
         else:
             raise NotImplementedError()
