@@ -2,7 +2,7 @@ import abc
 
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
-from .expressions import EvaluationException, Expression
+from .terms import EvaluationException, Expression
 from .reference import Reference
 from .stack import Frame, StackState
 from ..task import TaskStatus

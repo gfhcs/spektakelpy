@@ -7,9 +7,9 @@ class EvaluationException(Exception):
     pass
 
 
-class Expression(Immutable, abc.ABC):
+class Term(Immutable, abc.ABC):
     """
-    Models expressions and their semantics.
+    Defines the types and semantics of expressions that the virtual machine can evaluate.
     """
 
     @abc.abstractmethod
@@ -28,3 +28,5 @@ class Expression(Immutable, abc.ABC):
 
 # TODO: I want an expression that tells me an upper bound of the heap length.
 #       This can be used for allocating new memory.
+
+# TODO: Expression must not have side effects and must be executed atomically! This means that there cannot be expressions for Calls, Launches or Awaits!
