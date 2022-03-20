@@ -248,7 +248,41 @@ class Spektakel2Stack(Translator):
             body.append_jump(head)
             return successor
         elif isinstance(node, For):
+            """
+            A for loop is syntactic sugar for:
+                it = xs.__iter__()
+                while True:
+                    try:
+                        x = it.__next__()
+                    except StopIteration:
+                        break
+                    <body>
+            """
 
+            head = Chain()
+            stopper = Chain()
+            body = Chain()
+            successor = Chain()
+
+            iterable = self.translate_expression(chain, node.iterable, dec, on_error)
+            iterator = self.emit_call(chain, terms.Member(iterable, "__iter__"), [], on_error)
+
+            chain.append_jump(head)
+
+            element = self.emit_call(head, terms.Member(iterator, "__next__"), [], stopper)
+
+            # TODO: Define stopper: Should jump to successor on StopIteration, but go to on_error otherwise.
+
+            head.append_jump(body)
+
+            self._loop_headers.append(head)
+            self._loop_successors.append(successor)
+            # TODO: Here we need to bind the term 'element' to the pattern the iteration element is assigned to!
+            self.translate_statement(body, node.body, dec, on_error)
+            self._loop_headers.pop()
+            self._loop_successors.pop()
+            body.append_jump(head)
+            return successor
         elif isinstance(node, Try):
 
             # TODO: Any errors occuring in the body must lead to a jump into a general handler. This general handler
