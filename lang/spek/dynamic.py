@@ -3,7 +3,7 @@ from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackPro
 from engine.tasks.reference import ReturnValueReference, ExceptionReference
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
-    BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
+    BooleanBinaryOperation, BooleanBinaryOperator, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
@@ -255,11 +255,29 @@ class Spektakel2Stack(Translator):
                                     self.translate_expression(chain, node.left, dec, on_error),
                                     self.translate_expression(chain, node.right, dec, on_error)), chain
         elif isinstance(node, BooleanBinaryOperation):
-            # TODO: Attention! We need to generate actual control flow here, because the right hand side of such
-            #       an expression might not actually be evaluated!
-            return terms.BooleanBinaryOperation(node.operator,
-                                                self.translate_expression(chain, node.left, dec, on_error),
-                                                self.translate_expression(chain, node.right, dec, on_error)), chain
+            # Note: Like in Python, we want AND and OR to be short-circuited. This means that we require some control
+            #       flow in order to possibly skip the evaluation of the right operand.
+
+            v = self.get_local()
+            left, chain = self.translate_expression(chain, node.left, dec, on_error)
+            chain.append_update(v, left, on_error)
+
+            rest = Chain()
+            successor = Chain()
+
+            if node.operator == BooleanBinaryOperator.AND:
+                skip = ~terms.Read(v)
+            elif node.operator == BooleanBinaryOperator.OR:
+                skip = terms.Read(v)
+            else:
+                skip = terms.CFalse()
+
+            chain.append_guard({skip: successor, ~skip: rest})
+
+            right, rest = self.translate_expression(rest, node.right, dec, on_error)
+            chain.append_update(v, terms.BooleanBinaryOperation(node.operator, terms.Read(v), right), on_error)
+            chain.append_jump(successor)
+            return terms.Read(v), successor
         elif isinstance(node, Tuple):
             return terms.Tuple(*(self.translate_expression(chain, c, dec, on_error) for c in node.children)), chain
         else:

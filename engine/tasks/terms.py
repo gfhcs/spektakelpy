@@ -10,6 +10,8 @@ class EvaluationException(Exception):
 class Term(Immutable, abc.ABC):
     """
     Defines the types and semantics of expressions that the virtual machine can evaluate.
+    A term is an expression the evaluation of which happens atomically and cannot cause any side effects.
+    This means that evaluation is not observable and that evaluating a term can in no way change the machine state.
     """
 
     @abc.abstractmethod
