@@ -298,14 +298,14 @@ class Spektakel2Stack(Translator):
         if isinstance(node, Pass):
             pass
         elif isinstance(node, ExpressionStatement):
-            _ = self.translate_expression(chain, node.expression, dec, on_error)
+            _, chain = self.translate_expression(chain, node.expression, dec, on_error)
             # The previous line generated code for any side effects of the expression.
             # We do not really need to use the expression itself,
             # because its evaluation result is not to be bound to anything.
             return chain
         elif isinstance(node, Assignment):
-            e = self.translate_expression(chain, node.value, dec, on_error)
-            t = self.translate_target(chain, node.target, dec, on_error)
+            e, chain = self.translate_expression(chain, node.value, dec, on_error)
+            t, chain = self.translate_target(chain, node.target, dec, on_error)
             chain.append_update(t, e, on_error)
             return chain
         elif isinstance(node, Block):
@@ -314,14 +314,14 @@ class Spektakel2Stack(Translator):
             return chain
         elif isinstance(node, Return):
             if node.value is not None:
-                r = self.translate_expression(chain, node.value, dec, on_error)
-                chain.append_update(ConstantExpression(ReturnValueReference()), r, on_error)
+                r, chain = self.translate_expression(chain, node.value, dec, on_error)
+                chain.append_update(ReturnValueReference(), r, on_error)
             chain.append_pop()
             return Chain()
         elif isinstance(node, Raise):
             if node.value is not None:
-                e = self.translate_expression(chain, node.value, dec, on_error)
-                chain.append_update(ConstantExpression(ExceptionReference()), e, on_error)
+                e, chain = self.translate_expression(chain, node.value, dec, on_error)
+                chain.append_update(ExceptionReference(), e, on_error)
             chain.append_jump(on_error)
             return Chain()
         elif isinstance(node, (Break, Continue)):
@@ -331,11 +331,11 @@ class Spektakel2Stack(Translator):
             consequence = Chain()
             alternative = Chain()
             successor = Chain()
-            condition = self.translate_expression(chain, node.condition, dec, on_error)
+            condition, chain = self.translate_expression(chain, node.condition, dec, on_error)
             chain.append_guard({condition: consequence, ~condition: alternative}, on_error)
-            self.translate_statement(consequence, node.consequence, dec, on_error)
+            consequence = self.translate_statement(consequence, node.consequence, dec, on_error)
             consequence.append_jump(successor)
-            self.translate_statement(alternative, node.consequence, dec, on_error)
+            alternative = self.translate_statement(alternative, node.consequence, dec, on_error)
             alternative.append_jump(successor)
             return successor
         elif isinstance(node, While):
@@ -343,11 +343,11 @@ class Spektakel2Stack(Translator):
             body = Chain()
             successor = Chain()
             chain.append_jump(head)
-            condition = self.translate_expression(head, node.condition, dec, on_error)
+            condition, head = self.translate_expression(head, node.condition, dec, on_error)
             head.append_guard({condition: body, ~condition: successor}, on_error)
             self._loop_headers.append(head)
             self._loop_successors.append(successor)
-            self.translate_statement(body, node.body, dec, on_error)
+            body = self.translate_statement(body, node.body, dec, on_error)
             self._loop_headers.pop()
             self._loop_successors.pop()
             body.append_jump(head)
