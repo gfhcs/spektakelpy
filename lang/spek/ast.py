@@ -151,6 +151,20 @@ class Projection(AssignableExpression):
         """
         super().__init__(check_type(target, Expression), check_type(index, Expression), **kwargs)
 
+    @property
+    def value(self):
+        """
+        The expression representing the value to project.
+        """
+        return self.children[0]
+
+    @property
+    def index(self):
+        """
+        The expression representing the key to which projection should be computed.
+        """
+        return self.children[1]
+
 
 class Attribute(AssignableExpression):
     """

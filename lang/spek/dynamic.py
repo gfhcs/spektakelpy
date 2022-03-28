@@ -1,11 +1,13 @@
+from engine.tasks import terms
+from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
+from engine.tasks.reference import ReturnValueReference, ExceptionReference
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
-from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
-from engine.tasks.reference import ReturnValueReference, ExceptionReference
+
 
 class Chain:
     """
@@ -54,7 +56,7 @@ class Chain:
         :param target: The chain to jump to.
         """
         # According to the semantics, there cannot be an error in evaluating Truth():
-        self.append_guard({Truth(): target}, None)
+        self.append_guard({terms.Truth(): target}, None)
 
     def append_push(self, entry, aexpressions, on_error):
         """
@@ -153,56 +155,113 @@ class Spektakel2Stack(Translator):
         self._loop_headers = [] # Stack of loop entry points.
         self._loop_successors = [] # Stack of loop successor blocks.
 
+    def emit_call(self, chain, callee, args, on_error):
+        """
+        Emits VM code for a procedure call.
+        :param chain: The chain to which the call should be appended.
+        :param callee: A Term object representing the procedure to be called.
+        :param args: An iterable of term objects representing the arguments to the call.
+        :param on_error: The chain that execution should jump to in case of an error.
+        :return: A pair (t, c), where t is the term representing the return value of the call and c is the chain
+                 in which execution is to be continued after the call.
+        """
+        chain.append_push(callee, args, on_error)
+
+        successor = Chain()
+        noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
+        chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
+
+        rv = self.get_local()
+        rr = ReturnValueReference()
+        successor.append_update(rv, terms.Read(rr), on_error)
+        successor.append_update(rr, terms.CNone(), on_error)
+        return rv, successor
+
+    # noinspection PyRedundantParentheses
     def translate_expression(self, chain, node, dec, on_error):
         """
         Translates an AST expression into a machine expression.
         :param node: An AST node representing an expression.
         :param dec: A dict mapping AST nodes to decorations.
-        :return: A machine Expression object.
+        :return: A pair (t, c), where t is the term representing the result of expression evaluation and c is the chain
+                 in which execution is to be continued after evaluation of the expression.
         """
 
-        # TODO: For those expressions that can be interrupted by other tasks, i.e. for Call and Await
-        # building an expression object.
-
         if isinstance(node, Constant):
-
-            # TODO: Return a Term object that represents the constant.
-
+            value = dec[node]
+            if isinstance(value, bool):
+                return (terms.CTrue() if value == True else terms.CFalse()), chain
+            elif isinstance(value, str):
+                return (terms.String(value), chain)
+            elif value is None:
+                return (terms.CNone(), chain)
+            elif isinstance(value, int):
+                return (terms.Int(value), chain)
+            elif isinstance(value, float):
+                return (terms.Float(value), chain)
+            else:
+                raise NotImplementedError("Translation of constant expressions of type {}"
+                                          " has not been implemented!".format(type(value)))
         elif isinstance(node, Identifier):
-
-            # TODO: Here we have to use dec to look up the declaration for the *node* (not the name!).
-            #       Some member of the Translator must map *declarations* (i.e. AST nodes) to Term objects that represent
-            #       the declared variable.
-
+            return (self._decl2term[dec[node]], chain)
         elif isinstance(node, Attribute):
-
-            # TODO: The code we generate here must do the following:
-            #       1. Evaluate the value.
-            #       2. Get its type object of the value.
-            #       3. Ask the type object for the identifier.
-
-            # Probably we will need some special kind of machine instructions/term that can deal with type objects.
-
+            v, chain = self.translate_expression(chain, node.value, dec, on_error)
+            return terms.Lookup(v, node.name), chain
         elif isinstance(node, Call):
+            args = []
+            for a in node.arguments:
+                v, chain = self.translate_expression(chain, a, dec, on_error)
+                args.append(v)
 
-            # TODO: This must generate a push instruction. But also we must check if the callee is in fact callable!
-
+            callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
+            return self.emit_call(chain, callee, args, on_error)
         elif isinstance(node, Launch):
-
-            # TODO: We must generate a launch instruction here. Otherwise there are similar problems as for Call.
-
+            args = []
+            for a in node.arguments:
+                v, chain = self.translate_expression(chain, a, dec, on_error)
+                args.append(v)
+            callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
+            chain.append_launch(callee, args, on_error)
+            tid = self.get_local()
+            chain.append_update(tid, terms.Read(ReturnValueReference()), on_error)
+            return tid, chain
         elif isinstance(node, Await):
+            tid = self.translate_expression(chain, node.process, dec, on_error)
+            successor = Chain()
+            complete = terms.Terminated(tid)
+            chain.append_guard({complete: successor}, on_error)
 
-            # TODO: This must generate a guard instruction with only one alternative. The condition is that
-            #       the task we are waiting for (obtained by evaluating the given expression, represented by a TID)
-            #       completely clears its stack.
-            #       After this guard instruction, we need to check the return and exception variables of the task,
-            #       to determine whether we can just pass on the return value or whether an exception occured in the
-            #       task.
+            successor = Chain()
+            noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
+            chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
-        elif isinstance(node, (Tuple, Projection,
-                               Comparison, BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation)):
-
+            rv = self.get_local()
+            rr = ReturnValueReference()
+            successor.append_update(rv, terms.Read(rr), on_error)
+            successor.append_update(rr, terms.CNone(), on_error)
+            return rv, successor
+        elif isinstance(node, Projection):
+            idx, chain = self.translate_expression(chain, node.index, dec, on_error)
+            v, chain = self.translate_expression(chain, node.value, dec, on_error)
+            return self.emit_call(chain, terms.Lookup(v, "__getitem__"), [idx], on_error)
+        elif isinstance(node, UnaryOperation):
+            return terms.UnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
+        elif isinstance(node, ArithmeticBinaryOperation):
+            return terms.ArithmeticBinaryOperation(node.operator,
+                                                   self.translate_expression(chain, node.left, dec, on_error),
+                                                   self.translate_expression(chain, node.right, dec, on_error)), chain
+        elif isinstance(node, Comparison):
+            return terms.Comparison(node.operator,
+                                    self.translate_expression(chain, node.left, dec, on_error),
+                                    self.translate_expression(chain, node.right, dec, on_error)), chain
+        elif isinstance(node, BooleanBinaryOperation):
+            # TODO: Attention! We need to generate actual control flow here, because the right hand side of such
+            #       an expression might not actually be evaluated!
+            return terms.BooleanBinaryOperation(node.operator,
+                                                self.translate_expression(chain, node.left, dec, on_error),
+                                                self.translate_expression(chain, node.right, dec, on_error)), chain
+        elif isinstance(node, Tuple):
+            return terms.Tuple(*(self.translate_expression(chain, c, dec, on_error) for c in node.children)), chain
         else:
             raise NotImplementedError()
 
@@ -220,14 +279,6 @@ class Spektakel2Stack(Translator):
 
         if isinstance(node, Pass):
             pass
-        elif isinstance(node, (ImportNames, ImportSource)):
-
-            # TODO: These things should basically call procedures that execute the imported modules, building Module
-            #       values. To match Python's behavior, the procedure building a module must be executed at most once,
-            #       i.e. repeated imports of the same module must use a cache!
-            #       Other than that, Python's behavior can be matched if we simply declare the import aliases
-            #       as local variables and assign the corresponding module members to them.
-
         elif isinstance(node, ExpressionStatement):
             _ = self.translate_expression(chain, node.expression, dec, on_error)
             # The previous line generated code for any side effects of the expression.
@@ -321,9 +372,31 @@ class Spektakel2Stack(Translator):
             return successor
         elif isinstance(node, Try):
 
-            # TODO: Any errors occuring in the body must lead to a jump into a general handler. This general handler
-            # must further distinguish between the different kinds of error.
+            body = Chain()
+            handler = Chain()
+            successor = Chain()
+            self.translate_statement(body, node.body, dec, handler)
+            body.append_jump(successor)
 
+            # TODO: We need to take into account the 'finally' clause!
+
+            halternatives = {}
+
+            for h in node.handlers:
+                c = Chain()
+
+                # TODO: We must have the condition "None of the previous handlers fired, while the exception does have the right type for this handler"
+                self.translate_expression(chain, terms.IsInstance(...))
+
+                # TODO: At this point we need to allocate memory for the exception variable!
+                self.translate_statement(c, h.body, dec, on_error)
+                c.append_jump(successor)
+
+                halternatives[condition] = c
+
+            handler.append_guard(halternatives, on_error)
+
+            return successor
         elif isinstance(node, VariableDeclaration):
 
             # TODO: This thing should just ask for some new variable to be created, via self.create_local()
@@ -346,6 +419,14 @@ class Spektakel2Stack(Translator):
 
             # TODO: Similar as with a Procedure definition we need to construct a type object here, declare the name
             #       of the type as a variable and then assign the type object to that variable.
+
+        elif isinstance(node, (ImportNames, ImportSource)):
+
+            # TODO: These things should basically call procedures that execute the imported modules, building Module
+            #       values. To match Python's behavior, the procedure building a module must be executed at most once,
+            #       i.e. repeated imports of the same module must use a cache!
+            #       Other than that, Python's behavior can be matched if we simply declare the import aliases
+            #       as local variables and assign the corresponding module members to them.
 
         else:
             raise NotImplementedError()

@@ -26,6 +26,21 @@ class Term(Immutable, abc.ABC):
         pass
 
 
+class CTrue(Term):
+    pass
+
+class CFalse(Term):
+    pass
+
+class CNone(Term):
+    pass
+
+
+class Lookup(Term):
+    # TODO: This gets a term and a string in the constructor. To evaluate, one evaluates the term and then looks
+    # for the member with the given name.
+    pass
+
 # TODO: I want an expression that tells me an upper bound of the heap length.
 #       This can be used for allocating new memory.
 
