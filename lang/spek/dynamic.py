@@ -418,11 +418,10 @@ class Spektakel2Stack(Translator):
 
             return successor
         elif isinstance(node, VariableDeclaration):
-
-            # TODO: This thing should just ask for some new variable to be created, via self.create_local()
-            #       Such declarations are collected and will eventually be recorded as a property of the function
-            #       such that whenever this function is called, the stack frame can be allocated properly.
-
+            self.declare_pattern(node.pattern)
+            if node.expression is not None:
+                chain = self.emit_pattern_assignment(chain, node.pattern, dec, node.expression)
+            return chain
         elif isinstance(node, ProcedureDefinition):
 
             # TODO: Here, some Function object must be built, i.e. we need to translate the body of the function and
