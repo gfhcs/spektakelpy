@@ -174,7 +174,6 @@ class Spektakel2Stack(Translator):
         rv = self.get_local()
         rr = ReturnValueReference()
         successor.append_update(rv, terms.Read(rr), on_error)
-        successor.append_update(rr, terms.CNone(), on_error)
         return rv, successor
 
     # noinspection PyRedundantParentheses
@@ -305,8 +304,7 @@ class Spektakel2Stack(Translator):
             return chain
         elif isinstance(node, Assignment):
             e, chain = self.translate_expression(chain, node.value, dec, on_error)
-            t, chain = self.translate_target(chain, node.target, dec, on_error)
-            chain.append_update(t, e, on_error)
+            chain = self.emit_pattern_assignment(chain, node.target, dec, e, on_error)
             return chain
         elif isinstance(node, Block):
             for s in node:
@@ -358,35 +356,37 @@ class Spektakel2Stack(Translator):
                 it = xs.__iter__()
                 while True:
                     try:
-                        x = it.__next__()
+                        pattern = it.__next__()
                     except StopIteration:
                         break
                     <body>
             """
 
-            head = Chain()
             stopper = Chain()
             body = Chain()
             successor = Chain()
 
-            iterable = self.translate_expression(chain, node.iterable, dec, on_error)
-            iterator = self.emit_call(chain, terms.Member(iterable, "__iter__"), [], on_error)
+            iterable, chain = self.translate_expression(chain, node.iterable, dec, on_error)
+            iterator, chain = self.emit_call(chain, terms.Member(iterable, "__iter__"), [], on_error)
 
-            chain.append_jump(head)
+            self.declare_pattern(node.pattern)
 
-            element = self.emit_call(head, terms.Member(iterator, "__next__"), [], stopper)
+            chain.append_jump(body)
 
-            # TODO: Define stopper: Should jump to successor on StopIteration, but go to on_error otherwise.
+            element, body = self.emit_call(body, terms.Member(iterator, "__next__"), [], stopper)
 
-            head.append_jump(body)
+            s = terms.IsInstance(terms.Read(ExceptionReference()), types.builtin.StopIteration)
+            stopper.append_guard({s: successor, ~s: on_error}, on_error)
+            successor.append_update(ExceptionReference(), terms.CNone(), on_error)
+
+            head = self.emit_pattern_assignment(chain, node.pattern, dec, element, on_error)
 
             self._loop_headers.append(head)
             self._loop_successors.append(successor)
-            # TODO: Here we need to bind the term 'element' to the pattern the iteration element is assigned to!
             self.translate_statement(body, node.body, dec, on_error)
             self._loop_headers.pop()
             self._loop_successors.pop()
-            body.append_jump(head)
+            body.append_jump(body)
             return successor
         elif isinstance(node, Try):
 
@@ -397,6 +397,8 @@ class Spektakel2Stack(Translator):
             body.append_jump(successor)
 
             # TODO: We need to take into account the 'finally' clause!
+
+            # TODO: At the end of a handler, the exception for the current task must be set to None!
 
             halternatives = {}
 
