@@ -396,9 +396,18 @@ class Spektakel2Stack(Translator):
             self.translate_statement(body, node.body, dec, handler)
             body.append_jump(successor)
 
-            # TODO: We need to take into account the 'finally' clause!
+            # TODO: There are the following cases for the execution of the body:
+            # Jump (break, continue, return)
+            # Exception
+            # Normal termination
+            # In all those cases, the finally clause is executed as the final part of the statement.
+            # However, the *latest* exception occuring before the finally is saved and then re-raised, *if* the finally
+            # terminates normally.
 
-            # TODO: At the end of a handler, the exception for the current task must be set to None!
+
+            # TODO: When an exception is raised, it sits in the ExceptionReference() slots. We must clear this
+            # slot before any other procedures are called, because the exception will otherwise be interepreted as
+            # coming from those later calls!
 
             halternatives = {}
 
@@ -427,6 +436,9 @@ class Spektakel2Stack(Translator):
             # TODO: Here, some Function object must be built, i.e. we need to translate the body of the function and
             #       record its signature and stack frame layout. We then simply declare the name of the function as
             #       a variable (see VariableDeclaration) and assign the function object to that variable.
+
+            # TODO: This thing must, after the body has been translated, harvest self._decl2term , such that stack
+            #       frames of the right size can be allocated at call sites.
 
         elif isinstance(node, PropertyDefinition):
 
