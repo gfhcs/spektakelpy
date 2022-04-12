@@ -7,7 +7,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
-
+from collections import namedtuple
 
 class Chain:
     """
@@ -144,6 +144,45 @@ class Chain:
 
         return StackProgram(instructions)
 
+class BlockStack:
+    """
+    Models a stack to which information about syntactic blocks can be pushed during code generation.
+    """
+
+    LoopBlock = namedtuple("LoopBlock", ("headChain", "successorChain"))
+    ExceptionBlock = namedtuple("ExceptionBlock", ("exceptionReference", "finallyChain"))
+
+    def __init__(self):
+        super().__init__()
+        self._entries = []
+
+    def push(self, entry):
+        """
+        Pushes an entry to the top of the stack.
+        :param entry: The entry to push.
+        """
+        self._entries.append(entry)
+
+    def pop(self):
+        """
+        Removes the latest entry from the stack.
+        :return: The entry that was popped.
+        """
+        return self._entries.pop()
+
+    @property
+    def top(self):
+        """
+        The entry on the top of the stack.
+        """
+        return self._entries[-1]
+
+    def __iter__(self):
+        return reversed(self._entries)
+
+    def __len__(self):
+        return len(self._entries)
+
 class Spektakel2Stack(Translator):
     """
     A translator that translates Spektakel AST nodes into stack programs.
@@ -152,8 +191,7 @@ class Spektakel2Stack(Translator):
     def __init__(self):
         super().__init__()
         self._decl2ref = {} # Maps declaration nodes to references.
-        self._loop_headers = [] # Stack of loop entry points.
-        self._loop_successors = [] # Stack of loop successor blocks.
+        self._blocks = BlockStack()
 
     def emit_call(self, chain, callee, args, on_error):
         """
@@ -282,6 +320,80 @@ class Spektakel2Stack(Translator):
         else:
             raise NotImplementedError()
 
+    def emit_return(self, on_error, chain=None):
+        """
+        Emits code for a return statement, under the assumption that the return value has already been set for the task.
+        :param chain: The chain to emit the code to. If this is omitted, a new chain will be created.
+        :param on_error: The chain to jump to in case of an error.
+        :return: Either the given chain, or the newly created one (if no chain was given).
+        """
+
+        if chain is None:
+            chain = Chain()
+
+        # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
+        for entry in self._blocks:
+            if isinstance(entry, BlockStack.ExceptionBlock):
+                chain.append_update(ExceptionReference(), terms.ReturnException(), on_error=on_error)
+                chain.append_jump(entry.finallyChain)
+                return chain
+
+        # We made it to the function level without hitting an exception block.
+        chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
+        chain.append_pop()
+
+        return chain
+
+    def emit_break(self, on_error, chain=None):
+        """
+        Emits code for a break statement.
+        :param chain: The chain to emit the code to. If this is omitted, a new chain will be created.
+        :param on_error: The chain to jump to in case of an error.
+        :return: Either the given chain, or the newly created one (if no chain was given).
+        """
+
+        if chain is None:
+            chain = Chain()
+
+        # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
+        for entry in self._blocks:
+            if isinstance(entry, BlockStack.ExceptionBlock):
+                chain.append_update(ExceptionReference(), terms.BreakException(), on_error=on_error)
+                chain.append_jump(entry.finallyChain)
+                return chain
+            elif isinstance(entry, BlockStack.LoopBlock):
+                chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
+                chain.append_jump(entry.successorChain)
+                return chain
+
+        raise AssertionError("This code location must never be reached,"
+                             " because break statements cannot be emitted outside loops!")
+
+    def emit_continue(self, on_error, chain=None):
+        """
+        Emits code for a continue statement.
+        :param chain: The chain to emit the code to. If this is omitted, a new chain will be created.
+        :param on_error: The chain to jump to in case of an error.
+        :return: Either the given chain, or the newly created one (if no chain was given).
+        """
+
+        if chain is None:
+            chain = Chain()
+
+        # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
+        for entry in self._blocks:
+            if isinstance(entry, BlockStack.ExceptionBlock):
+                chain.append_update(ExceptionReference(), terms.ContinueException(), on_error=on_error)
+                chain.append_jump(entry.finallyChain)
+                return chain
+            elif isinstance(entry, BlockStack.LoopBlock):
+                chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
+                chain.append_jump(entry.headChain)
+                return chain
+
+        raise AssertionError("This code location must never be reached,"
+                             " because break statements cannot be emitted outside loops!")
+
     def translate_statement(self, chain, node, dec, on_error):
         """
         Translates a statement into a StackProgram.
@@ -314,16 +426,29 @@ class Spektakel2Stack(Translator):
             if node.value is not None:
                 r, chain = self.translate_expression(chain, node.value, dec, on_error)
                 chain.append_update(ReturnValueReference(), r, on_error)
-            chain.append_pop()
+            self.emit_return(on_error, chain)
             return Chain()
         elif isinstance(node, Raise):
-            if node.value is not None:
+            if node.value is None:
+                found = False
+                # Walk over the block stack ("outwards") to find the exception block this re-raise is contained in.
+                for entry in self._blocks:
+                    if isinstance(entry, BlockStack.ExceptionBlock):
+                        chain.append_update(ExceptionReference(), terms.Read(entry.exceptionVariable), on_error=on_error)
+                        found = True
+                if not found:
+                    raise AssertionError(
+                        "A raise statement without an expression should not occur outside a try block!")
+            else:
                 e, chain = self.translate_expression(chain, node.value, dec, on_error)
                 chain.append_update(ExceptionReference(), e, on_error)
             chain.append_jump(on_error)
             return Chain()
-        elif isinstance(node, (Break, Continue)):
-            chain.append_jump(self._loop_successors[-1] if isinstance(node, Break) else self._loop_headers[-1])
+        elif isinstance(node, Break):
+            self.emit_break(on_error, chain)
+            return Chain()
+        elif isinstance(node, Continue):
+            self.emit_continue(on_error, chain)
             return Chain()
         elif isinstance(node, Conditional):
             consequence = Chain()
@@ -343,11 +468,9 @@ class Spektakel2Stack(Translator):
             chain.append_jump(head)
             condition, head = self.translate_expression(head, node.condition, dec, on_error)
             head.append_guard({condition: body, ~condition: successor}, on_error)
-            self._loop_headers.append(head)
-            self._loop_successors.append(successor)
+            self._blocks.push(BlockStack.LoopBlock(head, successor))
             body = self.translate_statement(body, node.body, dec, on_error)
-            self._loop_headers.pop()
-            self._loop_successors.pop()
+            self._blocks.pop()
             body.append_jump(head)
             return successor
         elif isinstance(node, For):
@@ -381,49 +504,87 @@ class Spektakel2Stack(Translator):
 
             head = self.emit_pattern_assignment(chain, node.pattern, dec, element, on_error)
 
-            self._loop_headers.append(head)
-            self._loop_successors.append(successor)
+            self._blocks.push(BlockStack.LoopBlock(head, successor))
             self.translate_statement(body, node.body, dec, on_error)
-            self._loop_headers.pop()
-            self._loop_successors.pop()
+            self._blocks.pop()
             body.append_jump(body)
             return successor
         elif isinstance(node, Try):
 
             body = Chain()
             handler = Chain()
+            restoration = Chain()
+            finally_head = Chain()
             successor = Chain()
+            exception = self.get_local()
+            self._blocks.push(BlockStack.ExceptionBlock(exception, finally_head))
             self.translate_statement(body, node.body, dec, handler)
-            body.append_jump(successor)
+            body.append_jump(finally_head)
 
-            # TODO: There are the following cases for the execution of the body:
-            # Jump (break, continue, return)
-            # Exception
-            # Normal termination
-            # In all those cases, the finally clause is executed as the final part of the statement.
-            # However, the *latest* exception occuring before the finally is saved and then re-raised, *if* the finally
-            # terminates normally.
+            # TODO: Make sure that the following cases work:
+            # If an exception occurs during execution of the try clause, the exception may be handled by an except clause. If the exception is not handled by an except clause, the exception is re-raised after the finally clause has been executed.
+            # An exception could occur during execution of an except or else clause. Again, the exception is re-raised after the finally clause has been executed.
+            # If the finally clause executes a break, continue or return statement, exceptions are not re-raised.
+            # If the try statement reaches a break, continue or return statement, the finally clause will execute just prior to the break, continue or return statement’s execution.
+            # If a finally clause includes a return statement, the returned value will be the one from the finally clause’s return statement, not the value from the try clause’s return statement.
 
 
-            # TODO: When an exception is raised, it sits in the ExceptionReference() slots. We must clear this
-            # slot before any other procedures are called, because the exception will otherwise be interepreted as
-            # coming from those later calls!
-
-            halternatives = {}
+            # As the very first step, the exception variable of the task is cleared:
+            handler.append_update(exception, terms.Read(ExceptionReference()), on_error)
+            handler.append_update(ExceptionReference(), terms.CNone(), on_error)
 
             for h in node.handlers:
-                c = Chain()
+                sc = Chain()
+                hc = Chain()
+                handler, t = self.translate_expression(handler, h.type, dec, finally_head)
+                match = terms.IsInstance(exception, t)
+                handler.append_guard({match: hc, ~match: sc}, finally_head)
 
-                # TODO: We must have the condition "None of the previous handlers fired, while the exception does have the right type for this handler"
-                self.translate_expression(chain, terms.IsInstance(...))
+                self._decl2ref[h] = exception
+                hc = self.translate_statement(hc, h.body, dec, on_error)
+                hc.append_jump(finally_head)
 
-                # TODO: At this point we need to allocate memory for the exception variable!
-                self.translate_statement(c, h.body, dec, on_error)
-                c.append_jump(successor)
+                handler = sc
 
-                halternatives[condition] = c
+            # If none of the handlers apply, restore the exception variable and jump to the finally:
+            handler.append_jump(restoration)
 
-            handler.append_guard(halternatives, on_error)
+            restoration.append_update(ExceptionReference(), terms.Read(exception), on_error)
+            restoration.append_update(exception, terms.CNone(), on_error)
+            restoration.append_jump(finally_head)
+
+            self._blocks.pop()
+
+            if node.final is not None:
+                # The finally clause first stashes the current exception and return value away:
+                returnvalue = self.get_local()
+                finally_head.append_update(exception, terms.Read(ExceptionReference()), on_error)
+                finally_head.append_update(ExceptionReference(), terms.CNone(), on_error)
+                finally_head.append_update(returnvalue, terms.Read(ReturnValueReference()), on_error)
+                finally_head.append_update(ReturnValueReference(), terms.CNone(), on_error)
+                # Then it executes its body:
+                finally_foot = self.translate_statement(finally_head, node.final, dec, on_error)
+                # Then it restores the stashed exception and return value:
+                finally_foot.append_update(ReturnValueReference(), terms.Read(returnvalue), on_error)
+                finally_foot.append_update(ExceptionReference(), terms.Read(exception), on_error)
+                finally_foot.append_update(returnvalue, terms.CNone(), on_error)
+            else:
+                finally_foot = finally_head
+
+            # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
+            e = terms.Read(ExceptionReference())
+            condition_return = terms.IsInstance(e, types.ReturnException())
+            condition_break = terms.IsInstance(e, types.BreakException())
+            condition_continue = terms.IsInstance(e, types.ContinueException())
+
+            condition_exception = terms.IsInstance(e, types.Exception()) & ~condition_break & ~condition_continue & ~condition_return
+            condition_termination = terms.Is(e, terms.CNone)
+            finally_foot.append_guard({condition_termination: successor,
+                                       condition_return: self.emit_return(on_error),
+                                       condition_break: self.emit_break(on_error),
+                                       condition_continue: self.emit_continue(on_error),
+                                       condition_exception: on_error,
+                                       }, on_error)
 
             return successor
         elif isinstance(node, VariableDeclaration):
