@@ -521,14 +521,6 @@ class Spektakel2Stack(Translator):
             self.translate_statement(body, node.body, dec, handler)
             body.append_jump(finally_head)
 
-            # TODO: Make sure that the following cases work:
-            # If an exception occurs during execution of the try clause, the exception may be handled by an except clause. If the exception is not handled by an except clause, the exception is re-raised after the finally clause has been executed.
-            # An exception could occur during execution of an except or else clause. Again, the exception is re-raised after the finally clause has been executed.
-            # If the finally clause executes a break, continue or return statement, exceptions are not re-raised.
-            # If the try statement reaches a break, continue or return statement, the finally clause will execute just prior to the break, continue or return statement’s execution.
-            # If a finally clause includes a return statement, the returned value will be the one from the finally clause’s return statement, not the value from the try clause’s return statement.
-
-
             # As the very first step, the exception variable of the task is cleared:
             handler.append_update(exception, terms.Read(ExceptionReference()), on_error)
             handler.append_update(ExceptionReference(), terms.CNone(), on_error)
@@ -541,7 +533,7 @@ class Spektakel2Stack(Translator):
                 handler.append_guard({match: hc, ~match: sc}, finally_head)
 
                 self._decl2ref[h] = exception
-                hc = self.translate_statement(hc, h.body, dec, on_error)
+                hc = self.translate_statement(hc, h.body, dec, finally_head)
                 hc.append_jump(finally_head)
 
                 handler = sc
