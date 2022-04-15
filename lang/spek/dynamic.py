@@ -608,6 +608,9 @@ class Spektakel2Stack(Translator):
             # TODO: Note that these things work like procedures basically, but should probably be turned into "special"
             #       procedure objects, such that they can be treated properly when assigning to properties or reading
             #       from properties.
+            #       --> I guess these things should be considered part of the constructor. They must basically equip
+            #       the object with a pair of procedures (getter and setter)
+            #       --> Basically we need to use "descriptors" here: https://docs.python.org/3/glossary.html#term-descriptor
 
         elif isinstance(node, ClassDefinition):
 
