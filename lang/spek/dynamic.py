@@ -586,12 +586,22 @@ class Spektakel2Stack(Translator):
             return chain
         elif isinstance(node, ProcedureDefinition):
 
-            # TODO: Here, some Function object must be built, i.e. we need to translate the body of the function and
-            #       record its signature and stack frame layout. We then simply declare the name of the function as
-            #       a variable (see VariableDeclaration) and assign the function object to that variable.
+            body = Chain()
+            exit = Chain()
 
-            # TODO: This thing must, after the body has been translated, harvest self._decl2term , such that stack
-            #       frames of the right size can be allocated at call sites.
+            body = self.translate_statement(body, node.body, dec, exit)
+            body.append_pop()
+
+            # TODO: The push instruction is putting up a stack frame with the arguments. We must bind the declaration of the function
+            #       parameters to these stack variables somehow!
+            # TODO: We must somehow make sure that the function knows how many parameters to expect!
+            # TODO: At a call either the caller or the calle must ensure that the right number of parameters has been passed!
+
+            exit.append_pop()
+
+            name = self.get_local(node.name)
+
+            return chain.append_update(name, terms.Function(body.compile()), on_error)
 
         elif isinstance(node, PropertyDefinition):
 
