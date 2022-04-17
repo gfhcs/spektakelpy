@@ -151,6 +151,7 @@ class BlockStack:
 
     LoopBlock = namedtuple("LoopBlock", ("headChain", "successorChain"))
     ExceptionBlock = namedtuple("ExceptionBlock", ("exceptionReference", "finallyChain"))
+    FunctionBlock = namedtuple("FunctionBlock", ())
 
     def __init__(self):
         super().__init__()
@@ -203,7 +204,16 @@ class Spektakel2Stack(Translator):
         :return: A pair (t, c), where t is the term representing the return value of the call and c is the chain
                  in which execution is to be continued after the call.
         """
-        chain.append_push(callee, args, on_error)
+
+        # Make sure that the right number of arguments is being used:
+        call = Chain()
+        argc_error = Chain()
+        argc_error.append_update(ExceptionReference(), terms.CTypeError("Wrong number of arguments for call!"))
+        argc_error.append_jump(on_error)
+        match = terms.Equal(terms.NumArgs(callee), terms.CInt(len(args)))
+        chain.append_guard({match: call, ~match : argc_error})
+
+        call.append_push(callee, args, on_error)
 
         successor = Chain()
         noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
@@ -337,6 +347,8 @@ class Spektakel2Stack(Translator):
                 chain.append_update(ExceptionReference(), terms.ReturnException(), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
+            elif isinstance(entry, BlockStack.FunctionBlock):
+                break
 
         # We made it to the function level without hitting an exception block.
         chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
@@ -589,19 +601,37 @@ class Spektakel2Stack(Translator):
             body = Chain()
             exit = Chain()
 
+            num_args = len(node.argnames)
+
+            self._blocks.push(BlockStack.FunctionBlock())
+
+            # Declare the function arguments as local variables:
+            for aname in node.argnames:
+                self.declare_pattern(aname)
+
             body = self.translate_statement(body, node.body, dec, exit)
             body.append_pop()
 
-            # TODO: The push instruction is putting up a stack frame with the arguments. We must bind the declaration of the function
-            #       parameters to these stack variables somehow!
-            # TODO: We must somehow make sure that the function knows how many parameters to expect!
-            # TODO: At a call either the caller or the calle must ensure that the right number of parameters has been passed!
-
             exit.append_pop()
 
-            name = self.get_local(node.name)
+            name = self.declare_pattern(node.name)
 
-            return chain.append_update(name, terms.Function(body.compile()), on_error)
+            # TODO (later): The function definition might be nested in another one.
+            #               Since it might "escape" the enclosing function, the variables that are shared between
+            #               the function cannot be allocated on the stack.
+            #               Those variables that are shared must be allocated in a "Heap frame", the pointer to which
+            #               is part of the Function object that is constructed (IT CANNOT BE PASSED AS AN ARGUMENT!
+            #               REASON: The function object is not being called here, but later,
+            #               by some other code that receives the function object!)
+            #               The compilation of the inner function
+            #               must thus map the shared variables to offsets in the heap frame.
+            #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
+
+            chain = chain.append_update(name, terms.Function(num_args, body.compile()), on_error)
+
+            self._blocks.pop()
+
+            return chain
 
         elif isinstance(node, PropertyDefinition):
 
