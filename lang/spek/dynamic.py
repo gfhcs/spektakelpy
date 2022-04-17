@@ -406,6 +406,56 @@ class Spektakel2Stack(Translator):
         raise AssertionError("This code location must never be reached,"
                              " because break statements cannot be emitted outside loops!")
 
+    def _emit_procedure(self, chain, name, argnames, body, dec, on_error):
+        """
+        Emits code for a procedure declaration.
+        :param name: The AST node representing the name of the procedure.
+        :param argnames: A tuple of AST nodes representing the argument names of the procedure.
+        :param body: The AST node representing the body of the procedure.
+        :param dec:
+        :param on_error:
+        :return: A pair (v, c), where v is a Term representing the procedure object and c is the chain to which code
+                 following the procedure definition can be appended.
+        """
+
+        bodyBlock = Chain()
+        exitBlock = Chain()
+
+        num_args = len(argnames)
+
+        self._blocks.push(BlockStack.FunctionBlock())
+
+        # Declare the function arguments as local variables:
+        for aname in argnames:
+            self.declare_pattern(aname)
+
+        body = self.translate_statement(bodyBlock, body, dec, exitBlock)
+        body.append_pop()
+
+        exitBlock.append_pop()
+
+        # TODO (later): The function definition might be nested in another one.
+        #               Since it might "escape" the enclosing function, the variables that are shared between
+        #               the function cannot be allocated on the stack.
+        #               Those variables that are shared must be allocated in a "Heap frame", the pointer to which
+        #               is part of the Function object that is constructed (IT CANNOT BE PASSED AS AN ARGUMENT!
+        #               REASON: The function object is not being called here, but later,
+        #               by some other code that receives the function object!)
+        #               The compilation of the inner function
+        #               must thus map the shared variables to offsets in the heap frame.
+        #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
+
+        f = terms.Function(num_args, body.compile())
+
+        self._blocks.pop()
+
+        if name is None:
+            return f, chain
+        else:
+            name = self.declare_pattern(name)
+            chain = chain.append_update(name, f, on_error)
+            return name, chain
+
     def translate_statement(self, chain, node, dec, on_error):
         """
         Translates a statement into a StackProgram.
@@ -597,65 +647,40 @@ class Spektakel2Stack(Translator):
                 chain = self.emit_pattern_assignment(chain, node.pattern, dec, node.expression)
             return chain
         elif isinstance(node, ProcedureDefinition):
-
-            body = Chain()
-            exit = Chain()
-
-            num_args = len(node.argnames)
-
-            self._blocks.push(BlockStack.FunctionBlock())
-
-            # Declare the function arguments as local variables:
-            for aname in node.argnames:
-                self.declare_pattern(aname)
-
-            body = self.translate_statement(body, node.body, dec, exit)
-            body.append_pop()
-
-            exit.append_pop()
-
-            name = self.declare_pattern(node.name)
-
-            # TODO (later): The function definition might be nested in another one.
-            #               Since it might "escape" the enclosing function, the variables that are shared between
-            #               the function cannot be allocated on the stack.
-            #               Those variables that are shared must be allocated in a "Heap frame", the pointer to which
-            #               is part of the Function object that is constructed (IT CANNOT BE PASSED AS AN ARGUMENT!
-            #               REASON: The function object is not being called here, but later,
-            #               by some other code that receives the function object!)
-            #               The compilation of the inner function
-            #               must thus map the shared variables to offsets in the heap frame.
-            #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
-
-
-            # TODO: If we are inside a ClassBlock, we must not just declare the procedure name as a variable, but
-            #       emit code that adds the procedure to the class dictionary!
-
-            chain = chain.append_update(name, terms.Function(num_args, body.compile()), on_error)
-
-            self._blocks.pop()
-
+            _, chain = self._emit_procedure(chain, node.name, node.argnames, node.body, dec, on_error)
             return chain
 
         elif isinstance(node, PropertyDefinition):
 
-            # TODO: Basically we must compile the getter and the setter like proceure definitions and then
-            # emit code that packs them into a descriptor object (see https://docs.python.org/3/glossary.html#term-descriptor)
-            # and then emit code that adds this descriptor to the class dictionary.
+            getter, chain = self._emit_procedure(chain, None, ["self"], node.getter, dec, on_error)
+            setter, chain = self._emit_procedure(chain, None, ["self", node.vname], node.setter, dec, on_error)
+
+            # A property is a special kind of descriptor (see https://docs.python.org/3/glossary.html#term-descriptor).
+            # A property object does not have private data. It only holds the getter and the setter. Both those
+            # methods take an instance as argument and then read/write that.
+
+            name = self.declare_pattern(node.name)
+            chain = chain.append_update(name, terms.NewProperty(getter, setter), on_error)
+            return name, chain
 
         elif isinstance(node, ClassDefinition):
 
-            # TODO: Open a class block.
+            self._blocks.push(BlockStack.ClassBlock())
 
-            # TODO: Declare the class name as a variable. Assign it a new Type object, that is constructed by basing it on the super classes.
-            #       A class object is basically a dictionary.
+            name = self.declare_pattern(node.name)
 
-            # TODO: Translate the body. This must emit code that adds fields to the class dictionary.
-            #       Fields a procedure variables or data variables or property variables.
+            super_classes = []
+            for s_expression in node.bases:
+                s_term = self.translate_expression(chain, s_expression, dec, on_error)
+                super_classes.append(s_term)
 
-            # TODO: Pop the class block.
+            chain = chain.append_update(name, terms.NewClass(super_classes), on_error)
 
-            # TODO: Like for a procedure, assign the newly constructed class object to the declared name.
+            chain = self.translate_statement(chain, node.body, dec, on_error)
+
+            self._blocks.pop()
+
+            return chain
 
         elif isinstance(node, (ImportNames, ImportSource)):
 
