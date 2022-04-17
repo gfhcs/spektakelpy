@@ -627,6 +627,10 @@ class Spektakel2Stack(Translator):
             #               must thus map the shared variables to offsets in the heap frame.
             #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
 
+
+            # TODO: If we are inside a ClassBlock, we must not just declare the procedure name as a variable, but
+            #       emit code that adds the procedure to the class dictionary!
+
             chain = chain.append_update(name, terms.Function(num_args, body.compile()), on_error)
 
             self._blocks.pop()
@@ -635,17 +639,23 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, PropertyDefinition):
 
-            # TODO: Note that these things work like procedures basically, but should probably be turned into "special"
-            #       procedure objects, such that they can be treated properly when assigning to properties or reading
-            #       from properties.
-            #       --> I guess these things should be considered part of the constructor. They must basically equip
-            #       the object with a pair of procedures (getter and setter)
-            #       --> Basically we need to use "descriptors" here: https://docs.python.org/3/glossary.html#term-descriptor
+            # TODO: Basically we must compile the getter and the setter like proceure definitions and then
+            # emit code that packs them into a descriptor object (see https://docs.python.org/3/glossary.html#term-descriptor)
+            # and then emit code that adds this descriptor to the class dictionary.
 
         elif isinstance(node, ClassDefinition):
 
-            # TODO: Similar as with a Procedure definition we need to construct a type object here, declare the name
-            #       of the type as a variable and then assign the type object to that variable.
+            # TODO: Open a class block.
+
+            # TODO: Declare the class name as a variable. Assign it a new Type object, that is constructed by basing it on the super classes.
+            #       A class object is basically a dictionary.
+
+            # TODO: Translate the body. This must emit code that adds fields to the class dictionary.
+            #       Fields a procedure variables or data variables or property variables.
+
+            # TODO: Pop the class block.
+
+            # TODO: Like for a procedure, assign the newly constructed class object to the declared name.
 
         elif isinstance(node, (ImportNames, ImportSource)):
 
