@@ -684,11 +684,24 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, (ImportNames, ImportSource)):
 
-            # TODO: These things should basically call procedures that execute the imported modules, building Module
-            #       values. To match Python's behavior, the procedure building a module must be executed at most once,
-            #       i.e. repeated imports of the same module must use a cache!
-            #       Other than that, Python's behavior can be matched if we simply declare the import aliases
-            #       as local variables and assign the corresponding module members to them.
+            # TODO: There must be a preamble before anything is ever executed:
+            #       1. A "module collection variable" (MCV) is allocated. This should be a dictionary.
+            #       2. We declare an import procedure: It is given a code location as an argument. If this code location is contained in the
+            #          MCV, the value for it is returned. Otherwise a new, empty Module object (similar to a Type object)
+            #          is created and passed as an argument (via a call instruction) to the code location (essentially interpreting
+            #          the module as a procedure).
+
+            # TODO: There must be a procedure for translating an entire module:
+            #       A ModuleBlock is put on the stack.
+            #       The module code can assume that on the stack it gets a module object that it is supposed to populate.
+            #       This means that all allocations must be in the dict of that module object.
+            #       At the very end, the module variable is returned like in a procedure call, i.e. with a return value
+            #       and a pop statement.
+
+            # TODO: First simply call the import procedure, with the entry location of the module code. This will
+            #       given you a module object.
+
+            # TODO: For each alias assign the corresponding module attribute to that alias as a local variable.
 
         else:
             raise NotImplementedError()
