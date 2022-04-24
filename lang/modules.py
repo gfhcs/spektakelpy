@@ -41,7 +41,7 @@ class AdjoinedFinder(Finder):
             return self._f.find(name, validator=validator)
 
 
-class ModuleSpecificaion(abc.ABC):
+class ModuleSpecification(abc.ABC):
     """
     A module specification describes a module that is to be loaded (*before* it is loaded).
     """
