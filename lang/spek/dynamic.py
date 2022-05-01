@@ -6,7 +6,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, BooleanBinaryOperator, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition
+    PropertyDefinition, ClassDefinition, Statement
 from collections import namedtuple
 
 class Chain:
@@ -697,14 +697,6 @@ class Spektakel2Stack(Translator):
             #          MCV, the value for it is returned. Otherwise a new, empty Module object (similar to a Type object)
             #          is created and passed as an argument (via a call instruction) to the code location (essentially interpreting
             #          the module as a procedure).
-
-            # TODO: There must be a procedure for translating an entire module:
-            #       A ModuleBlock is put on the stack.
-            #       The module code can assume that on the stack it gets a module object that it is supposed to populate.
-            #       This means that all allocations must be in the dict of that module object.
-            #       At the very end, the module variable is returned like in a procedure call, i.e. with a return value
-            #       and a pop statement.
-
             module = dec[node.source.Identifiers[0]]
 
             assert isinstance(module, CompiledModule)
@@ -742,6 +734,36 @@ class Spektakel2Stack(Translator):
 
         else:
             raise NotImplementedError()
+
+
+    def translate_module(self, nodes, dec):
+        """
+        Generates code for an entire module.
+        :param nodes: An iterable of statements that represent the code of the module.
+        :param dec: A dict mapping AST nodes to decorations.
+        :return: A StackProgram object.
+        """
+
+        block = Chain()
+        exit = Chain()
+
+        # The code of a module assumes that there is 1 argument on the current stack frame, which is the module object
+        # that is to be populated. All allocations of local variables must actually be members of that module object.
+        self._blocks.push(BlockStack.ModuleBlock())
+
+        for node in nodes:
+            block = self.translate_statement(block, node, dec, exit)
+
+        # The module object we populated must be returned.
+        block.append_update(ReturnValueReference(), terms.Read(StackFrameReference(0)), exit)
+
+        block.append_pop()
+        exit.append_pop()
+
+        self._blocks.pop()
+
+        return block.compile()
+
 
     def translate(self, node, dec):
         pass
