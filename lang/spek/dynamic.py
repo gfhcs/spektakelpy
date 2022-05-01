@@ -691,12 +691,6 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, (ImportNames, ImportSource)):
 
-            # TODO: There must be a preamble before anything is ever executed:
-            #       1. A "module collection variable" (MCV) is allocated. This should be a dictionary.
-            #       2. We declare an import procedure: It is given a code location as an argument. If this code location is contained in the
-            #          MCV, the value for it is returned. Otherwise a new, empty Module object (similar to a Type object)
-            #          is created and passed as an argument (via a call instruction) to the code location (essentially interpreting
-            #          the module as a procedure).
             module = dec[node.source.Identifiers[0]]
 
             assert isinstance(module, CompiledModule)
@@ -735,6 +729,18 @@ class Spektakel2Stack(Translator):
         else:
             raise NotImplementedError()
 
+    def emit_preamble(self):
+
+        """ TODO: Generate code for this:
+            var mcv = {}
+            def ___import___(location):
+                try:
+                    return mcv[location]
+                except KeyError:
+                    m = ___call___(location, [Module()])
+                    mcv[location] = m
+                    return m
+        """
 
     def translate_module(self, nodes, dec):
         """
