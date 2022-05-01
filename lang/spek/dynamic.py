@@ -698,14 +698,43 @@ class Spektakel2Stack(Translator):
             #       At the very end, the module variable is returned like in a procedure call, i.e. with a return value
             #       and a pop statement.
 
-            # TODO: First simply call the import procedure, with the entry location of the module code. This will
-            #       given you a module object.
+            module = dec[node.source.Identifiers[0]]
 
-            # TODO: For each alias assign the corresponding module attribute to that alias as a local variable.
+            assert isinstance(module, CompiledModule)
+
+            m, chain = self.emit_call(chain, self._import_procedure, [module.entry], on_error)
+
+            for a in node.source.Identifiers[1:]:
+                m = terms.Lookup(m, a)
+
+            if isinstance(node, ImportSource):
+                if node.alias is None:
+                    if not (len(node.source.Identifiers) == 1):
+                        raise NotImplementedError("Code generation for a source import that contains dots has not been implemented!")
+                    name = self.declare_pattern(node.source.Identifiers[0])
+                    chain.append_update(name, m, on_error)
+                else:
+                    name = self.declare_pattern(node.alias)
+                    chain.append_update(name, m, on_error)
+            elif isinstance(node, ImportNames):
+                aliases = []
+                if node.wildcard:
+                    for name, _ in module:
+                        if isinstance(name, str):
+                            aliases.append((name, module[name]))
+                else:
+                    for name, alias in node.aliases.items():
+                        aliases.append((alias, module[name]))
+
+                for name, member in aliases:
+                    name = self.declare_pattern(name)
+                    chain.append_update(name, member, on_error)
+            else:
+                raise NotImplementedError("Code generation for nodes of type {}"
+                                          " has not been implemented!".format(type(node)))
 
         else:
             raise NotImplementedError()
-
 
     def translate(self, node, dec):
         pass
