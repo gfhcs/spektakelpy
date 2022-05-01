@@ -647,6 +647,10 @@ class Spektakel2Stack(Translator):
                 chain = self.emit_pattern_assignment(chain, node.pattern, dec, node.expression)
             return chain
         elif isinstance(node, ProcedureDefinition):
+            if not isinstance(self._blocks[-1], (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
+                raise NotImplementedError("Code generation for procedure definitions on levels other than module level "
+                                          "or class level has not been implemented yet!")
+
             _, chain = self._emit_procedure(chain, node.name, node.argnames, node.body, dec, on_error)
             return chain
 
@@ -664,6 +668,9 @@ class Spektakel2Stack(Translator):
             return name, chain
 
         elif isinstance(node, ClassDefinition):
+            if not isinstance(self._blocks[-1], BlockStack.ModuleBlock):
+                raise NotImplementedError("Code generation for class definitions on levels other than module level "
+                                          "has not been implemented yet!")
 
             self._blocks.push(BlockStack.ClassBlock())
 
