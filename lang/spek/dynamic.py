@@ -730,17 +730,88 @@ class Spektakel2Stack(Translator):
             raise NotImplementedError()
 
     def emit_preamble(self):
+        """
+        Emits code that is to run once at the beginning of execution.
+        :return: A Chain object.
+        """
 
-        """ TODO: Generate code for this:
+        """ We generate code for this:
+            
+            def ___load___(location):
+                return ___call___(location, [Module()])
+               
             var mcv = {}
+
             def ___import___(location):
                 try:
                     return mcv[location]
                 except KeyError:
-                    m = ___call___(location, [Module()])
+                    m = ___load___(location)
                     mcv[location] = m
                     return m
+                    
+            del mcv
         """
+
+        # Step 1: Define ___load___
+
+        bodyBlock = Chain()
+        exitBlock = Chain()
+
+        self._blocks.push(BlockStack.FunctionBlock())
+        location = self.get_local()
+
+        bodyBlock.append_push(location, [terms.NewModule()], exitBlock)
+
+        successor = Chain()
+        noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
+        bodyBlock.append_guard({~noerror: exitBlock, noerror: successor}, exitBlock)
+
+        rv = self.get_local()
+        rr = ReturnValueReference()
+        successor.append_update(rv, terms.Read(rr), exitBlock)
+        successor = self.emit_return(exitBlock, chain=successor)
+
+        successor.append_pop()
+        exitBlock.append_pop()
+
+        load = terms.Function(1, bodyBlock.compile())
+
+        self._blocks.pop()
+
+        # Step 2: Allocate 'mcv':
+
+        preamble = Chain()
+
+        # Step 3: Translate the AST for ___import___:
+
+        name_import = Identifier("___import___")
+        name_location = Identifier("location")
+        name_mcv = Identifier("mcv")
+        name_m = Identifier("m")
+
+        b = Return(Projection(name_mcv, name_location))
+
+        h = Block([
+            VariableDeclaration(name_m, expression=Call(load, name_location)),
+            Assignment(Projection(name_mcv, name_location), name_m),
+            Return(name_m)
+        ])
+
+        body = Block([Try(b, [h], None)])
+
+        preamble_error = Chain()
+
+        mcv = self.get_local()
+        preamble.append_update(mcv, terms.NewDict(), preamble_error)
+        dec = {name_mcv: mcv}
+
+        preamble = self.translate_statement(preamble,
+                                            ProcedureDefinition(name_import, [name_location], body),
+                                            dec,
+                                            preamble_error)
+
+        return preamble
 
     def translate_module(self, nodes, dec):
         """
