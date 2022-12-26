@@ -37,11 +37,14 @@ class CFalse(Term):
 class CNone(Term):
     pass
 
+class Adjunction(Term):
+    # TODO: This should call engine.tasks.dynamic.Namespace.adjoin
+    pass
 
 class Lookup(Term):
-    # TODO: This gets a term and a string in the constructor. To evaluate, one evaluates the term and then looks
-    # for the member with the given name.
+    # TODO: This should call engine.tasks.dynamic.Namespace.lookup
     pass
+
 
 # TODO: I want an expression that tells me an upper bound of the heap length.
 #       This can be used for allocating new memory.
