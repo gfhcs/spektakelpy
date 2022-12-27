@@ -669,6 +669,8 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, ClassDefinition):
             if not isinstance(self._blocks[-1], BlockStack.ModuleBlock):
+                # This would be probelamtic, because the type might incorporate local variables from the current function
+                # stack. This is difficult to implement for the same reason that nested function declarations are.
                 raise NotImplementedError("Code generation for class definitions on levels other than module level "
                                           "has not been implemented yet!")
 
@@ -681,10 +683,14 @@ class Spektakel2Stack(Translator):
                 s_term = self.translate_expression(chain, s_expression, dec, on_error)
                 super_classes.append(s_term)
 
-            chain = chain.append_update(name, terms.NewClass(super_classes), on_error)
+            # We create a new Namespace object and put it into the stack frame.
+            chain = chain.append_push()
+            chain = chain.append_update(StackFrameReference(0), terms.NewNamespace(), exit)
 
             chain = self.translate_statement(chain, node.body, dec, on_error)
 
+            chain = chain.append_update(name, terms.NewClass(super_classes, terms.Read(StackFrameReference(0))), on_error)
+            chain = chain.append_pop()
             self._blocks.pop()
 
             return chain
@@ -821,18 +827,24 @@ class Spektakel2Stack(Translator):
         :return: A StackProgram object.
         """
 
+        # We assume that somebody put a fresh frame on the stack.
+
         block = Chain()
         exit = Chain()
 
-        # The code of a module assumes that there is 1 argument on the current stack frame, which is the module object
-        # that is to be populated. All allocations of local variables must actually be members of that module object.
+        # We create a new Namespace object and put it into the stack frame.
+        block.append_update(StackFrameReference(0), terms.NewNamespace(), exit)
+
+        # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
+        # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
         self._blocks.push(BlockStack.ModuleBlock())
 
+        # We execute the module code completely, which populates that namespace.
         for node in nodes:
             block = self.translate_statement(block, node, dec, exit)
 
-        # The module object we populated must be returned.
-        block.append_update(ReturnValueReference(), terms.Read(StackFrameReference(0)), exit)
+        # Return a Module object. The preamble will store it somewhere.
+        block.append_update(ReturnValueReference(), terms.NewModule(terms.Read(StackFrameReference(0))), exit)
 
         block.append_pop()
         exit.append_pop()
