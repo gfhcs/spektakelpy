@@ -144,6 +144,7 @@ class Chain:
 
         return StackProgram(instructions)
 
+
 class BlockStack:
     """
     Models a stack to which information about syntactic blocks can be pushed during code generation.
@@ -151,9 +152,9 @@ class BlockStack:
 
     LoopBlock = namedtuple("LoopBlock", ("headChain", "successorChain"))
     ExceptionBlock = namedtuple("ExceptionBlock", ("exceptionReference", "finallyChain"))
-    FunctionBlock = namedtuple("FunctionBlock", ("offset"))
-    ClassBlock = namedtuple("ClassBlock", ())
-    ModuleBlock = namedtuple("ModuleBlock", ())
+    FunctionBlock = namedtuple("FunctionBlock", ("offset", ))
+    ClassBlock = namedtuple("ClassBlock", ("offset", ))
+    ModuleBlock = namedtuple("ModuleBlock", ("offset", ))
 
     def __init__(self):
         super().__init__()
@@ -204,7 +205,8 @@ class Spektakel2Stack(Translator):
         easily be retrieved later.
         :param chain: The Chain to which the instructions for allocating the new variable should be appended.
         :param on_error: The Chain to which control should be transferred if the allocation code fails.
-        :param node: The AST node for which to create a new variable.
+        :param node: The AST node for which to create a new variable. It may be None, in which case an anonymous local
+                     variable is allocated on the stack.
         :return: A Reference object that represents the newly allocated variable.
         """
 
@@ -215,7 +217,9 @@ class Spektakel2Stack(Translator):
         except StopIteration:
             raise Exception("Bug in create_local!")
 
-        if isinstance(node, Identifier):
+        if node is None:
+            name = None
+        elif isinstance(node, Identifier):
             name = node.name
         elif isinstance(node, ProcedureDefinition):
             name = node.name
@@ -227,12 +231,14 @@ class Spektakel2Stack(Translator):
             raise NotImplementedError("Declaring names for AST nodes of type {} has not been implemented yet!".format(type(node)))
 
         while True:
-            if isinstance(top, BlockStack.FunctionBlock):
-                # We are declaring a local variable in a function. This variable lives in a stack frame.
-                # The stack frame always has the same layout for all invocations of that function, so we just add one
-                # more variable to that layout.
+            if isinstance(top, BlockStack.FunctionBlock) \
+                    or (name is None and isinstance(top, (BlockStack.ClassBlock, BlockStack.ModuleBlock))):
+                # We are declaring a local variable in the stack frame (either for a function, or in a class/module
+                # definition, in which an anonymous variable is needed).
+                # The stack frame always has the same layout for all invocations of that function/declaration,
+                # so we just add one more variable to that layout.
                 offset = top.offset
-                self._blocks[idx] = BlockStack.FunctionBlock(offset + 1)
+                self._blocks[idx] = type(top)(offset + 1)
                 r = FrameReference(offset)
                 self._decl2ref[node] = r
                 return r
@@ -499,7 +505,7 @@ class Spektakel2Stack(Translator):
 
         num_args = len(argnames)
 
-        self._blocks.push(BlockStack.FunctionBlock())
+        self._blocks.push(BlockStack.FunctionBlock(0))
 
         # Declare the function arguments as local variables:
         for aname in argnames:
@@ -750,7 +756,7 @@ class Spektakel2Stack(Translator):
                 raise NotImplementedError("Code generation for class definitions on levels other than module level "
                                           "has not been implemented yet!")
 
-            self._blocks.push(BlockStack.ClassBlock())
+            self._blocks.push(BlockStack.ClassBlock(0))
 
             name = self.declare_pattern(node.name)
 
@@ -841,7 +847,7 @@ class Spektakel2Stack(Translator):
         bodyBlock = Chain()
         exitBlock = Chain()
 
-        self._blocks.push(BlockStack.FunctionBlock())
+        self._blocks.push(BlockStack.FunctionBlock(0))
         location = self.declare_name()
 
         bodyBlock.append_push(location, [], exitBlock)
@@ -914,7 +920,7 @@ class Spektakel2Stack(Translator):
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
-        self._blocks.push(BlockStack.ModuleBlock())
+        self._blocks.push(BlockStack.ModuleBlock(0))
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:
