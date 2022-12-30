@@ -151,7 +151,9 @@ class BlockStack:
 
     LoopBlock = namedtuple("LoopBlock", ("headChain", "successorChain"))
     ExceptionBlock = namedtuple("ExceptionBlock", ("exceptionReference", "finallyChain"))
-    FunctionBlock = namedtuple("FunctionBlock", ())
+    FunctionBlock = namedtuple("FunctionBlock", ("offset"))
+    ClassBlock = namedtuple("ClassBlock", ())
+    ModuleBlock = namedtuple("ModuleBlock", ())
 
     def __init__(self):
         super().__init__()
@@ -184,6 +186,7 @@ class BlockStack:
     def __len__(self):
         return len(self._entries)
 
+
 class Spektakel2Stack(Translator):
     """
     A translator that translates Spektakel AST nodes into stack programs.
@@ -193,6 +196,59 @@ class Spektakel2Stack(Translator):
         super().__init__()
         self._decl2ref = {} # Maps declaration nodes to references.
         self._blocks = BlockStack()
+
+    def declare_name(self, chain, node, on_error):
+        """
+        Statically declares a new variable name. Depending on the context the name will be declared as a stack frame
+        variable, or as a namespace entry. The new variable is recorded for the given declaration, such that it can
+        easily be retrieved later.
+        :param chain: The Chain to which the instructions for allocating the new variable should be appended.
+        :param on_error: The Chain to which control should be transferred if the allocation code fails.
+        :param node: The AST node for which to create a new variable.
+        :return: A Reference object that represents the newly allocated variable.
+        """
+
+        blocks_iter = iter(self._blocks)
+
+        try:
+            idx, top = 0, next(blocks_iter)
+        except StopIteration:
+            raise Exception("Bug in create_local!")
+
+        if isinstance(node, Identifier):
+            name = node.name
+        elif isinstance(node, ProcedureDefinition):
+            name = node.name
+        elif isinstance(node, PropertyDefinition):
+            name = node.name
+        elif isinstance(node, ClassDefinition):
+            name = node.name
+        else:
+            raise NotImplementedError("Declaring names for AST nodes of type {} has not been implemented yet!".format(type(node)))
+
+        while True:
+            if isinstance(top, BlockStack.FunctionBlock):
+                # We are declaring a local variable in a function. This variable lives in a stack frame.
+                # The stack frame always has the same layout for all invocations of that function, so we just add one
+                # more variable to that layout.
+                offset = top.offset
+                self._blocks[idx] = BlockStack.FunctionBlock(offset + 1)
+                r = FrameReference(offset)
+                self._decl2ref[node] = r
+                return r
+            elif isinstance(top, (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
+                # We are declaring a class/module member. We know that the class/module definition code is
+                # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
+                slot = FrameReference(0)
+                chain.append_update(slot, terms.Adjunction(terms.Read(slot), name, terms.CNone), on_error)
+                r = NameReference(slot, name)
+                self._decl2ref[node] = r
+                return r
+            else:
+                try:
+                    idx, top = idx + 1, next(blocks_iter)
+                except StopIteration:
+                    raise Exception("Bug in create_local!")
 
     def emit_call(self, chain, callee, args, on_error):
         """
@@ -219,7 +275,7 @@ class Spektakel2Stack(Translator):
         noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
         chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
-        rv = self.get_local()
+        rv = self.declare_name()
         rr = ReturnValueReference()
         successor.append_update(rv, terms.Read(rr), on_error)
         return rv, successor
@@ -269,7 +325,7 @@ class Spektakel2Stack(Translator):
                 args.append(v)
             callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             chain.append_launch(callee, args, on_error)
-            tid = self.get_local()
+            tid = self.declare_name()
             chain.append_update(tid, terms.Read(ReturnValueReference()), on_error)
             return tid, chain
         elif isinstance(node, Await):
@@ -282,7 +338,7 @@ class Spektakel2Stack(Translator):
             noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
             chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
-            rv = self.get_local()
+            rv = self.declare_name()
             rr = ReturnValueReference()
             successor.append_update(rv, terms.Read(rr), on_error)
             successor.append_update(rr, terms.CNone(), on_error)
@@ -305,7 +361,7 @@ class Spektakel2Stack(Translator):
             # Note: Like in Python, we want AND and OR to be short-circuited. This means that we require some control
             #       flow in order to possibly skip the evaluation of the right operand.
 
-            v = self.get_local()
+            v = self.declare_name()
             left, chain = self.translate_expression(chain, node.left, dec, on_error)
             chain.append_update(v, left, on_error)
 
@@ -578,7 +634,7 @@ class Spektakel2Stack(Translator):
             restoration = Chain()
             finally_head = Chain()
             successor = Chain()
-            exception = self.get_local()
+            exception = self.declare_name()
             self._blocks.push(BlockStack.ExceptionBlock(exception, finally_head))
             self.translate_statement(body, node.body, dec, handler)
             body.append_jump(finally_head)
@@ -611,7 +667,7 @@ class Spektakel2Stack(Translator):
 
             if node.final is not None:
                 # The finally clause first stashes the current exception and return value away:
-                returnvalue = self.get_local()
+                returnvalue = self.declare_name()
                 finally_head.append_update(exception, terms.Read(ExceptionReference()), on_error)
                 finally_head.append_update(ExceptionReference(), terms.CNone(), on_error)
                 finally_head.append_update(returnvalue, terms.Read(ReturnValueReference()), on_error)
@@ -691,6 +747,7 @@ class Spektakel2Stack(Translator):
 
             chain = chain.append_update(name, terms.NewClass(super_classes, terms.Read(StackFrameReference(0))), on_error)
             chain = chain.append_pop()
+
             self._blocks.pop()
 
             return chain
@@ -765,7 +822,7 @@ class Spektakel2Stack(Translator):
         exitBlock = Chain()
 
         self._blocks.push(BlockStack.FunctionBlock())
-        location = self.get_local()
+        location = self.declare_name()
 
         bodyBlock.append_push(location, [terms.NewModule()], exitBlock)
 
@@ -773,7 +830,7 @@ class Spektakel2Stack(Translator):
         noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
         bodyBlock.append_guard({~noerror: exitBlock, noerror: successor}, exitBlock)
 
-        rv = self.get_local()
+        rv = self.declare_name()
         rr = ReturnValueReference()
         successor.append_update(rv, terms.Read(rr), exitBlock)
         successor = self.emit_return(exitBlock, chain=successor)
@@ -808,7 +865,7 @@ class Spektakel2Stack(Translator):
 
         preamble_error = Chain()
 
-        mcv = self.get_local()
+        mcv = self.declare_name()
         preamble.append_update(mcv, terms.NewDict(), preamble_error)
         dec = {name_mcv: mcv}
 
