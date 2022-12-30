@@ -6,7 +6,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, BooleanBinaryOperator, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition, Statement
+    PropertyDefinition, ClassDefinition, Statement, AssignableExpression
 from collections import namedtuple
 
 class Chain:
@@ -249,6 +249,26 @@ class Spektakel2Stack(Translator):
                     idx, top = idx + 1, next(blocks_iter)
                 except StopIteration:
                     raise Exception("Bug in create_local!")
+
+    def declare_pattern(self, chain, pattern, on_error):
+        """
+        Statically declares new variable names for an entire pattern of names.
+        Depending on the context the names will be declared as stack frame
+        variables, or as a namespace entries. The new variables are recorded for the given pattern, such that they can
+        easily be retrieved later.
+        :param chain: The Chain to which the instructions for allocating the new variables should be appended.
+        :param on_error: The Chain to which control should be transferred if the allocation code fails.
+        :param pattern: The AssignableExpression node holding the pattern expression for which to allocate new variables.
+        """
+
+        if isinstance(pattern, Identifier):
+            self.declare_name(self, chain, pattern, on_error)
+        elif isinstance(pattern, AssignableExpression):
+            for c in pattern.children:
+                self.declare_pattern(chain, c, on_error)
+        else:
+            raise TypeError("Patterns to be declared must only contain AssignableExpression nodes,"
+                            " not nodes of type {}!".format(type(pattern)))
 
     def emit_call(self, chain, callee, args, on_error):
         """
