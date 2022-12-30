@@ -268,7 +268,7 @@ class Spektakel2Stack(Translator):
         """
 
         if isinstance(pattern, Identifier):
-            self.declare_name(self, chain, pattern, on_error)
+            self.declare_name(chain, pattern, on_error)
         elif isinstance(pattern, AssignableExpression):
             for c in pattern.children:
                 self.declare_pattern(chain, c, on_error)
@@ -301,7 +301,7 @@ class Spektakel2Stack(Translator):
         noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
         chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
-        rv = self.declare_name()
+        rv = self.declare_name(successor, None, on_error)
         rr = ReturnValueReference()
         successor.append_update(rv, terms.Read(rr), on_error)
         return rv, successor
@@ -351,7 +351,7 @@ class Spektakel2Stack(Translator):
                 args.append(v)
             callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             chain.append_launch(callee, args, on_error)
-            tid = self.declare_name()
+            tid = self.declare_name(chain, None, on_error)
             chain.append_update(tid, terms.Read(ReturnValueReference()), on_error)
             return tid, chain
         elif isinstance(node, Await):
@@ -364,7 +364,7 @@ class Spektakel2Stack(Translator):
             noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
             chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
-            rv = self.declare_name()
+            rv = self.declare_name(successor, None, on_error)
             rr = ReturnValueReference()
             successor.append_update(rv, terms.Read(rr), on_error)
             successor.append_update(rr, terms.CNone(), on_error)
@@ -387,7 +387,7 @@ class Spektakel2Stack(Translator):
             # Note: Like in Python, we want AND and OR to be short-circuited. This means that we require some control
             #       flow in order to possibly skip the evaluation of the right operand.
 
-            v = self.declare_name()
+            v = self.declare_name(chain, None, on_error)
             left, chain = self.translate_expression(chain, node.left, dec, on_error)
             chain.append_update(v, left, on_error)
 
@@ -509,7 +509,7 @@ class Spektakel2Stack(Translator):
 
         # Declare the function arguments as local variables:
         for aname in argnames:
-            self.declare_pattern(aname)
+            self.declare_pattern(bodyBlock, aname, on_error)
 
         body = self.translate_statement(bodyBlock, body, dec, exitBlock)
         body.append_pop()
@@ -534,7 +534,7 @@ class Spektakel2Stack(Translator):
         if name is None:
             return f, chain
         else:
-            name = self.declare_pattern(name)
+            name = self.declare_pattern(chain, name, on_error)
             chain = chain.append_update(name, f, on_error)
             return name, chain
 
@@ -636,7 +636,7 @@ class Spektakel2Stack(Translator):
             iterable, chain = self.translate_expression(chain, node.iterable, dec, on_error)
             iterator, chain = self.emit_call(chain, terms.Member(iterable, "__iter__"), [], on_error)
 
-            self.declare_pattern(node.pattern)
+            self.declare_pattern(chain, node.pattern, on_error)
 
             chain.append_jump(body)
 
@@ -660,7 +660,7 @@ class Spektakel2Stack(Translator):
             restoration = Chain()
             finally_head = Chain()
             successor = Chain()
-            exception = self.declare_name()
+            exception = self.declare_name(body, None, on_error)
             self._blocks.push(BlockStack.ExceptionBlock(exception, finally_head))
             self.translate_statement(body, node.body, dec, handler)
             body.append_jump(finally_head)
@@ -693,7 +693,7 @@ class Spektakel2Stack(Translator):
 
             if node.final is not None:
                 # The finally clause first stashes the current exception and return value away:
-                returnvalue = self.declare_name()
+                returnvalue = self.declare_name(finally_head, None, on_error)
                 finally_head.append_update(exception, terms.Read(ExceptionReference()), on_error)
                 finally_head.append_update(ExceptionReference(), terms.CNone(), on_error)
                 finally_head.append_update(returnvalue, terms.Read(ReturnValueReference()), on_error)
@@ -724,7 +724,7 @@ class Spektakel2Stack(Translator):
 
             return successor
         elif isinstance(node, VariableDeclaration):
-            self.declare_pattern(node.pattern)
+            self.declare_pattern(chain, node.pattern, on_error)
             if node.expression is not None:
                 chain = self.emit_pattern_assignment(chain, node.pattern, dec, node.expression)
             return chain
@@ -745,7 +745,7 @@ class Spektakel2Stack(Translator):
             # A property object does not have private data. It only holds the getter and the setter. Both those
             # methods take an instance as argument and then read/write that.
 
-            name = self.declare_pattern(node.name)
+            name = self.declare_pattern(chain, node.name, on_error)
             chain = chain.append_update(name, terms.NewProperty(getter, setter), on_error)
             return name, chain
 
@@ -758,7 +758,7 @@ class Spektakel2Stack(Translator):
 
             self._blocks.push(BlockStack.ClassBlock(0))
 
-            name = self.declare_pattern(node.name)
+            name = self.declare_pattern(chain, node.name, on_error)
 
             super_classes = []
             for s_expression in node.bases:
@@ -793,10 +793,10 @@ class Spektakel2Stack(Translator):
                 if node.alias is None:
                     if not (len(node.source.Identifiers) == 1):
                         raise NotImplementedError("Code generation for a source import that contains dots has not been implemented!")
-                    name = self.declare_pattern(node.source.Identifiers[0])
+                    name = self.declare_pattern(chain, node.source.Identifiers[0], on_error)
                     chain.append_update(name, m, on_error)
                 else:
-                    name = self.declare_pattern(node.alias)
+                    name = self.declare_pattern(chain, node.alias, on_error)
                     chain.append_update(name, m, on_error)
             elif isinstance(node, ImportNames):
                 aliases = []
@@ -809,7 +809,7 @@ class Spektakel2Stack(Translator):
                         aliases.append((alias, module[name]))
 
                 for name, member in aliases:
-                    name = self.declare_pattern(name)
+                    name = self.declare_pattern(chain, name, on_error)
                     chain.append_update(name, member, on_error)
             else:
                 raise NotImplementedError("Code generation for nodes of type {}"
@@ -848,7 +848,7 @@ class Spektakel2Stack(Translator):
         exitBlock = Chain()
 
         self._blocks.push(BlockStack.FunctionBlock(0))
-        location = self.declare_name()
+        location = self.declare_name(bodyBlock, None, exitBlock)
 
         bodyBlock.append_push(location, [], exitBlock)
 
@@ -856,7 +856,7 @@ class Spektakel2Stack(Translator):
         noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
         bodyBlock.append_guard({~noerror: exitBlock, noerror: successor}, exitBlock)
 
-        rv = self.declare_name()
+        rv = self.declare_name(successor, None, exitBlock)
         rr = ReturnValueReference()
         successor.append_update(rv, terms.Read(rr), exitBlock)
         successor = self.emit_return(exitBlock, chain=successor)
@@ -891,7 +891,7 @@ class Spektakel2Stack(Translator):
 
         preamble_error = Chain()
 
-        mcv = self.declare_name()
+        mcv = self.declare_name(preamble, None, preamble_error)
         preamble.append_update(mcv, terms.NewDict(), preamble_error)
         dec = {name_mcv: mcv}
 
