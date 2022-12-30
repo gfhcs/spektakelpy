@@ -824,7 +824,7 @@ class Spektakel2Stack(Translator):
         self._blocks.push(BlockStack.FunctionBlock())
         location = self.declare_name()
 
-        bodyBlock.append_push(location, [terms.NewModule()], exitBlock)
+        bodyBlock.append_push(location, [], exitBlock)
 
         successor = Chain()
         noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
