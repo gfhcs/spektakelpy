@@ -9,6 +9,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     PropertyDefinition, ClassDefinition, Statement, AssignableExpression
 from collections import namedtuple
 
+
 class Chain:
     """
     Represents a sequence of instructions. Control flow can enter this chain only at its start.
@@ -275,6 +276,44 @@ class Spektakel2Stack(Translator):
         else:
             raise TypeError("Patterns to be declared must only contain AssignableExpression nodes,"
                             " not nodes of type {}!".format(type(pattern)))
+
+    def emit_assignment(self, chain, pattern, dec, expression, on_error):
+        """
+        Emits VM code for a assigning the result of an expression evaluation to a pattern.
+        :param chain: The chain to which the assignment should be appended.
+        :param pattern: An AssignableExpression to which a value should be assigned.
+        :param dec: A dict mapping AST nodes to decorations.
+        :param expression: The expression the result of which is to be assigned.
+        :param on_error: The chain that execution should jump to in case of an error.
+        :return: The chain with which execution is to be continued after the call.
+        """
+
+        # First we evaluate the expression:
+        t, chain = self.translate_expression(chain, expression, dec, on_error)
+
+        def assign(chain, pattern, t, on_error):
+            if isinstance(pattern, Identifier):
+                # TODO: There are 2 possible cases here: Either the identifier refers to a StackReference, in which case
+                #       we should simply issue an update statement for the stack address, or it referes to a Namespace
+                #       slot, in which we adjoin that namespace.
+            elif isinstance(pattern, Tuple):
+                # TODO: What we are doing here will not work if t represents a general iterable! For that we would
+                #       need to call a procedure first that turns it into a list of sorts.
+                for idx, c in enumerate(pattern.children):
+                    chain = assign(chain, c, terms.Project(t, terms.CInt(idx)), on_error)
+            elif isinstance(pattern, Projection):
+                # TODO: In this case we need to evaluate the left hand side of the projection expression and then call
+                #       the __set__ procedure on that value.
+            elif isinstance(pattern, Attribute):
+                # TODO
+            elif isinstance(pattern, AssignableExpression):
+                raise NotImplementedError("Assignment to patterns of type {} "
+                                          "has not been implemented yet!".format(type(pattern)))
+            else:
+                raise TypeError("The pattern to which a value is assigned must be an "
+                                "AssignableExpression, not a {}!".format(type(pattern)))
+
+        return assign(chain, pattern, t, on_error)
 
     def emit_call(self, chain, callee, args, on_error):
         """
@@ -560,7 +599,7 @@ class Spektakel2Stack(Translator):
             return chain
         elif isinstance(node, Assignment):
             e, chain = self.translate_expression(chain, node.value, dec, on_error)
-            chain = self.emit_pattern_assignment(chain, node.target, dec, e, on_error)
+            chain = self.emit_assignment(chain, node.target, dec, e, on_error)
             return chain
         elif isinstance(node, Block):
             for s in node:
@@ -646,7 +685,7 @@ class Spektakel2Stack(Translator):
             stopper.append_guard({s: successor, ~s: on_error}, on_error)
             successor.append_update(ExceptionReference(), terms.CNone(), on_error)
 
-            head = self.emit_pattern_assignment(chain, node.pattern, dec, element, on_error)
+            head = self.emit_assignment(chain, node.pattern, dec, element, on_error)
 
             self._blocks.push(BlockStack.LoopBlock(head, successor))
             self.translate_statement(body, node.body, dec, on_error)
@@ -726,7 +765,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, VariableDeclaration):
             self.declare_pattern(chain, node.pattern, on_error)
             if node.expression is not None:
-                chain = self.emit_pattern_assignment(chain, node.pattern, dec, node.expression)
+                chain = self.emit_assignment(chain, node.pattern, dec, node.expression)
             return chain
         elif isinstance(node, ProcedureDefinition):
             if not isinstance(self._blocks[-1], (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
