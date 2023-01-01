@@ -332,6 +332,8 @@ class Spektakel2Stack(Translator):
                 # TODO: Evaluate the left hand side. Assume that is neither a type, nor a Super instance.
 
                 # TODO: Get the type of the left hand object. Search the MRO of that type for the name of the attribute.
+                #       --> I want to implement this and the following cases with as few terms/instructions as possible.
+                #           Therefor we should encapsulate as much of the decision-making as possible into
                 # TODO: If the name was found and it is a property, call the setter of the property and be done.
                 # TODO: If the object contains the name as an instance variable, set the value of that variable and be done.
                 # TODO: If the name was found and it is a method, fail.
