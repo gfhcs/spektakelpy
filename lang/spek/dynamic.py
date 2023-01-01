@@ -294,8 +294,8 @@ class Spektakel2Stack(Translator):
         def assign(chain, pattern, t, on_error):
             if isinstance(pattern, Identifier):
                 # TODO: There are 2 possible cases here: Either the identifier refers to a StackReference, in which case
-                #       we should simply issue an update statement for the stack address, or it referes to a Namespace
-                #       slot, in which we adjoin that namespace.
+                #       we should simply issue an update statement for the stack address, or it refers to a Namespace
+                #       slot, in which case we adjoin that namespace.
             elif isinstance(pattern, Tuple):
                 # TODO: What we are doing here will not work if t represents a general iterable! For that we would
                 #       need to call a procedure first that turns it into a list of sorts.
@@ -303,9 +303,45 @@ class Spektakel2Stack(Translator):
                     chain = assign(chain, c, terms.Project(t, terms.CInt(idx)), on_error)
             elif isinstance(pattern, Projection):
                 # TODO: In this case we need to evaluate the left hand side of the projection expression and then call
-                #       the __set__ procedure on that value.
+                #       the __setitem__ procedure on that value.
             elif isinstance(pattern, Attribute):
-                # TODO
+                # Python's "Descriptor How-To Guide"
+                # (https://docs.python.org/3/howto/descriptor.html#overview-of-descriptor-invocation)
+                # lists the following procedure for attribute lookup:
+                # def object_getattribute(obj, name):
+                #     "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+                #     null = object()
+                #     objtype = type(obj)
+                #     cls_var = find_name_in_mro(objtype, name, null)
+                #     descr_get = getattr(type(cls_var), '__get__', null)
+                #     if descr_get is not null:
+                #         if (hasattr(type(cls_var), '__set__')
+                #             or hasattr(type(cls_var), '__delete__')):
+                #             return descr_get(cls_var, obj, objtype)     # data descriptor
+                #     if hasattr(obj, '__dict__') and name in vars(obj):
+                #         return vars(obj)[name]                          # instance variable
+                #     if descr_get is not null:
+                #         return descr_get(cls_var, obj, objtype)         # non-data descriptor
+                #     if cls_var is not null:
+                #         return cls_var                                  # class variable
+                #     raise AttributeError(name)
+
+                # We do not have general descriptors, but we have properties (which are data descriptors) and we have
+                # methods (which are non-data descriptors). Hence for us the procedure above becomes this:
+
+                # TODO: Evaluate the left hand side. Assume that is neither a type, nor a Super instance.
+
+                # TODO: Get the type of the left hand object. Search the MRO of that type for the name of the attribute.
+                # TODO: If the name was found and it is a property, call the setter of the property and be done.
+                # TODO: If the object contains the name as an instance variable, set the value of that variable and be done.
+                # TODO: If the name was found and it is a method, fail.
+                # TODO: If the name was found, it must be a class variable at this point. Set that variable and be done.
+                # TODO: Raise an AttributeError.
+
+                # TODO: Implement this for left hand sides that denote Type objects, leaving out the instance-based parts.
+
+                # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
+                #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
             elif isinstance(pattern, AssignableExpression):
                 raise NotImplementedError("Assignment to patterns of type {} "
                                           "has not been implemented yet!".format(type(pattern)))
