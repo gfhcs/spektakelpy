@@ -293,17 +293,18 @@ class Spektakel2Stack(Translator):
 
         def assign(chain, pattern, t, on_error):
             if isinstance(pattern, Identifier):
-                # TODO: There are 2 possible cases here: Either the identifier refers to a StackReference, in which case
-                #       we should simply issue an update statement for the stack address, or it refers to a Namespace
-                #       slot, in which case we adjoin that namespace.
+                r = self._decl2ref[dec[pattern]]
+                chain.append_update(r, t, on_error)
+                return chain
             elif isinstance(pattern, Tuple):
-                # TODO: What we are doing here will not work if t represents a general iterable! For that we would
-                #       need to call a procedure first that turns it into a list of sorts.
+                # FIXME: What we are doing here will not work if t represents a general iterable! For that we would
+                #       need to call a procedure first that turns it into a sequence.
                 for idx, c in enumerate(pattern.children):
                     chain = assign(chain, c, terms.Project(t, terms.CInt(idx)), on_error)
             elif isinstance(pattern, Projection):
-                # TODO: In this case we need to evaluate the left hand side of the projection expression and then call
-                #       the __setitem__ procedure on that value.
+                callee, chain = self.translate_expression(chain, Attribute(pattern.value, "__set_item__"), dec, on_error)
+                index, chain = self.translate_expression(chain, pattern.index, dec, on_error)
+                return self.emit_call(chain, callee, [index, t], on_error)
             elif isinstance(pattern, Attribute):
                 # Python's "Descriptor How-To Guide"
                 # (https://docs.python.org/3/howto/descriptor.html#overview-of-descriptor-invocation)
@@ -412,6 +413,8 @@ class Spektakel2Stack(Translator):
             return (self._decl2term[dec[node]], chain)
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
+            #TODO: terms.Lookup is not what we thought it would be! Instead we need a term that implements attribute
+            #      lookup and subsequent retrieval of the attribute value!
             return terms.Lookup(v, node.name), chain
         elif isinstance(node, Call):
             args = []
