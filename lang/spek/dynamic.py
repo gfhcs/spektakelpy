@@ -330,18 +330,24 @@ class Spektakel2Stack(Translator):
                 # We do not have general descriptors, but we have properties (which are data descriptors) and we have
                 # methods (which are non-data descriptors). Hence for us the procedure above becomes this:
 
-                # TODO: Evaluate the left hand side. Assume that is neither a type, nor a Super instance.
+                a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
-                # TODO: Get the type of the left hand object. Search the MRO of that type for the name of the attribute.
-                #       --> I want to implement this and the following cases with as few terms/instructions as possible.
-                #           Therefor we should encapsulate as much of the decision-making as possible into
-                # TODO: If the name was found and it is a property, call the setter of the property and be done.
-                # TODO: If the object contains the name as an instance variable, set the value of that variable and be done.
-                # TODO: If the name was found and it is a method, fail.
-                # TODO: If the name was found, it must be a class variable at this point. Set that variable and be done.
-                # TODO: Raise an AttributeError.
+                # The term AttrCase first determines the type of a.
+                # If a is of type 'type', then the MRO of a is searched for the attribute.
+                # If a is not of type 'type', then the MRO of the type of a is searched for the attribute.
+                # The return value distinguishes the following cases:
+                # 0. The name was found and refers to a property. The setter of that property needs to be called.
+                # 1. The name was found and refers to an instance variable.
+                # 2. The name was found and refers to a method.
+                # 3. The name was found and refers to a class variable.
+                # 4. The name was not found.
 
-                # TODO: Implement this for left hand sides that denote Type objects, leaving out the instance-based parts.
+                terms.AttrCase(a, pattern.name)
+
+                # TODO: Case 0: Call the property setter.
+                # TODO: Cases 1 or 3: We should get a NameReference, that we update.
+                # TODO: Case 2: Raise a TypeError.
+                # TODO: Case 4: Raise an AttributeError.
 
                 # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
                 #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
