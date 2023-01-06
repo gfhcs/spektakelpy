@@ -336,15 +336,13 @@ class Spektakel2Stack(Translator):
                 # If a is of type 'type', then the MRO of a is searched for the attribute.
                 # If a is not of type 'type', then the MRO of the type of a is searched for the attribute.
                 # The return value distinguishes the following cases:
-                # 0. The name was found and refers to a property. The setter of that property needs to be called. The expression evaluates to that setter.
-                # 1. The name was found and refers to an instance variable. The expressione valuates to a NameReference.
-                # 2. The name was found and refers to a method. The expression evaluates to an exception to raise.
-                # 3. The name was found and refers to a class variable. The expression evaluates to a NameReference.
-                # 4. The name was not found. The expression evaluates to an exception to raise.
-
+                # 0. The name was found and refers to a property. The setter of that property needs to be called. The term evaluates to that setter.
+                # 1. The name was found and refers to an instance variable. The term valuates to a NameReference.
+                # 2. The name was found and refers to a method. The term evaluates to an exception to raise.
+                # 3. The name was found and refers to a class variable. The term evaluates to a NameReference.
+                # 4. The name was not found. The term evaluates to an exception to raise.
                 r = self.declare_name(chain, None, on_error)
-
-                chain.append_update(r, terms.AttrCase(a, pattern.name), on_error)
+                chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
 
                 csetter = terms.IsCallable(r)
                 cexception = terms.IsException(r)
@@ -437,8 +435,20 @@ class Spektakel2Stack(Translator):
             return (self._decl2term[dec[node]], chain)
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
-            #TODO: terms.Lookup is not what we thought it would be! Instead we need a term that implements attribute
-            #      lookup and subsequent retrieval of the attribute value!
+
+            # Cases:
+            # 0. The name was found and refers to a property. The term evaluates to its getter.
+            # 1. The name was found and refers to an instance variable. The term evaluates to a NameReference.
+            # 2. The name was found and refers to a method. The term evaluates to a NameReference.
+            # 3. The name was found and refers to a class variable. The term evaluates to a NameReference.
+            # 4. The name was not found. The term evaluates to an exception to raise.
+            r = self.declare_name(chain, None, on_error)
+            chain.append_update(r, terms.LoadAttrCase(a, pattern.name), on_error)
+
+            # TODO: If r is callable, it is a getter that needs to be called.
+            # TODO: If r is a name reference, read that reference and return the result.
+            # TODO: If r represents an exception, raise it.
+
             return terms.Lookup(v, node.name), chain
         elif isinstance(node, Call):
             args = []
