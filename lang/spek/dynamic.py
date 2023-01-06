@@ -336,18 +336,36 @@ class Spektakel2Stack(Translator):
                 # If a is of type 'type', then the MRO of a is searched for the attribute.
                 # If a is not of type 'type', then the MRO of the type of a is searched for the attribute.
                 # The return value distinguishes the following cases:
-                # 0. The name was found and refers to a property. The setter of that property needs to be called.
-                # 1. The name was found and refers to an instance variable.
-                # 2. The name was found and refers to a method.
-                # 3. The name was found and refers to a class variable.
-                # 4. The name was not found.
+                # 0. The name was found and refers to a property. The setter of that property needs to be called. The expression evaluates to that setter.
+                # 1. The name was found and refers to an instance variable. The expressione valuates to a NameReference.
+                # 2. The name was found and refers to a method. The expression evaluates to an exception to raise.
+                # 3. The name was found and refers to a class variable. The expression evaluates to a NameReference.
+                # 4. The name was not found. The expression evaluates to an exception to raise.
 
-                terms.AttrCase(a, pattern.name)
+                r = self.declare_name(chain, None, on_error)
 
-                # TODO: Case 0: Call the property setter.
-                # TODO: Cases 1 or 3: We should get a NameReference, that we update.
-                # TODO: Case 2: Raise a TypeError.
-                # TODO: Case 4: Raise an AttributeError.
+                chain.append_update(r, terms.AttrCase(a, pattern.name), on_error)
+
+                csetter = terms.IsCallable(r)
+                cexception = terms.IsException(r)
+                cupdate = ~(csetter | cexception)
+
+                setter = Chain()
+                update = Chain()
+                exception = Chain()
+                successor = Chain()
+                chain.append_guard({csetter: setter, cupdate: update, cexception: exception}, on_error)
+
+                self.emit_call(setter, r, [t], on_error)
+                setter.append_jump(successor)
+
+                update.append_update(r, t, on_error)
+                update.append_jump(successor)
+
+                exception.append_update(ExceptionReference(), r, on_error)
+                exception.append_jump(on_error)
+
+                return successor
 
                 # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
                 #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
