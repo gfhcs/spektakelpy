@@ -443,13 +443,32 @@ class Spektakel2Stack(Translator):
             # 3. The name was found and refers to a class variable. The term evaluates to a NameReference.
             # 4. The name was not found. The term evaluates to an exception to raise.
             r = self.declare_name(chain, None, on_error)
-            chain.append_update(r, terms.LoadAttrCase(a, pattern.name), on_error)
+            chain.append_update(r, terms.LoadAttrCase(v, node.name), on_error)
 
-            # TODO: If r is callable, it is a getter that needs to be called.
-            # TODO: If r is a name reference, read that reference and return the result.
-            # TODO: If r represents an exception, raise it.
+            cgetter = terms.IsCallable(r)
+            cexception = terms.IsException(r)
+            cupdate = ~(cgetter | cexception)
 
-            return terms.Lookup(v, node.name), chain
+            getter = Chain()
+            update = Chain()
+            exception = Chain()
+            successor = Chain()
+            chain.append_guard({cgetter: getter, cupdate: update, cexception: exception}, on_error)
+
+            v, getter = self.emit_call(getter, r, [], on_error)
+            getter.append_update(r, v, on_error)
+            getter.append_jump(successor)
+
+            update.append_update(r, terms.Read(r), on_error)
+            update.append_jump(successor)
+
+            exception.append_update(ExceptionReference(), r, on_error)
+            exception.append_jump(on_error)
+
+            return r, successor
+
+            # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
+            #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
         elif isinstance(node, Call):
             args = []
             for a in node.arguments:
