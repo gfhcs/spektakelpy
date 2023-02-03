@@ -1,10 +1,9 @@
 from util import check_type, check_types
-from util.immutable import Immutable, Sealable, check_sealed, check_unsealed
-from .instructions import StackProgram
+from util.immutable import Sealable, check_sealed, check_unsealed
 from .instructions import ProgramLocation
 from ..task import TaskState
 from ..task import TaskStatus
-from ..values import Value
+from engine.functional.values import Value
 
 
 class Frame(Sealable):

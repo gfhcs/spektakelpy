@@ -1,4 +1,4 @@
-from engine.tasks import terms
+from engine.functional import terms
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from engine.tasks.reference import ReturnValueReference, ExceptionReference
 from lang.translator import Translator
@@ -6,7 +6,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, BooleanBinaryOperator, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition, Statement, AssignableExpression
+    PropertyDefinition, ClassDefinition, AssignableExpression
 from collections import namedtuple
 
 
