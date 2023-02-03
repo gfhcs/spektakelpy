@@ -1,6 +1,5 @@
 import abc
 
-
 class Type(abc.ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
@@ -16,3 +15,4 @@ class Type(abc.ABC):
         """
         pass
 
+# Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict
