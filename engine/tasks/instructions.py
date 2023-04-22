@@ -1,8 +1,8 @@
 import abc
 
+from engine.functional.terms import EvaluationException, Term
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
-from engine.functional.terms import EvaluationException, Expression
 from .reference import Reference
 from .stack import Frame, StackState
 from ..task import TaskStatus
@@ -51,17 +51,17 @@ class Update(Instruction):
     An instruction that updates a part of the machine state.
     """
 
-    def __init__(self, ref, expression, destination, edestination):
+    def __init__(self, ref, term, destination, edestination):
         """
         Creates a new update instruction.
-        :param ref: An Expression specifying which part of the state is to be updated.
-        :param expression: The Expression object specifying how to compute the new value.
+        :param ref: An Term specifying which part of the state is to be updated.
+        :param term: The Term object specifying how to compute the new value.
         :param destination: The index of the instruction that is to be executed after this one.
         :param edestination: The index of the instruction to jump to if this instruction causes an error.
         """
         super().__init__()
-        self._ref = check_type(ref, Expression)
-        self._expression = check_type(expression, Expression)
+        self._ref = check_type(ref, Term)
+        self._term = check_type(term, Term)
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
@@ -69,12 +69,12 @@ class Update(Instruction):
         return True
 
     def hash(self):
-        return hash((self._ref, self._expression, self._destination, self._edestination))
+        return hash((self._ref, self._term, self._destination, self._edestination))
 
     def equals(self, other):
         return isinstance(other, Update) \
-               and (self._ref, self._expression, self._destination, self._edestination) \
-               == (other._ref, other._expression, other._destination, other._edestination)
+               and (self._ref, self._term, self._destination, self._edestination) \
+               == (other._ref, other._term, other._destination, other._edestination)
 
     @property
     def reference(self):
@@ -84,11 +84,11 @@ class Update(Instruction):
         return self._ref
 
     @property
-    def expression(self):
+    def term(self):
         """
         The expression object specifying how to compute the new value.
         """
-        return self._expression
+        return self._term
 
     @property
     def destination(self):
@@ -109,7 +109,7 @@ class Update(Instruction):
         top.instruction_index = self._destination
         try:
             ref = self._ref.evaluate(tstate, mstate)
-            value = self._expression.evaluate(tstate, mstate)
+            value = self._term.evaluate(tstate, mstate)
         except EvaluationException as ee:
             tstate.exception = ee
             top.instruction_index = self._edestination
