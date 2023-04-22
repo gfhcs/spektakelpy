@@ -1,6 +1,7 @@
 import abc
 from enum import Enum
 
+from engine.functional.terms import UnaryOperator, ComparisonOperator, BooleanBinaryOperator, ArithmeticBinaryOperator
 from lang.tokens import TokenPosition
 from util import check_type
 
@@ -265,14 +266,6 @@ class Await(Expression):
         return self.children[0]
 
 
-class UnaryOperator(Enum):
-    """
-    A unary operator.
-    """
-    MINUS = 0
-    NOT = 0
-
-
 class UnaryOperation(Expression, abc.ABC):
     """
     An operation with one operand.
@@ -282,11 +275,11 @@ class UnaryOperation(Expression, abc.ABC):
         """
         Creates a new unary operation.
         :param op: The operator for this operation.
-        :param left: The operand expression.
+        :param arg: The operand expression.
         :param kwargs: See Expression constructor.
         """
         super().__init__(check_type(arg, Expression), **kwargs)
-        self._op = check_type(op, Enum)
+        self._op = check_type(op, UnaryOperator)
 
     @property
     def operand(self):
@@ -341,22 +334,6 @@ class BinaryOperation(Expression):
         return self._op
 
 
-class ComparisonOperator(Enum):
-    """
-    Specifies a type of comparison.
-    """
-    EQ = 0
-    NEQ = 1
-    LESS = 2
-    LESSOREQUAL = 3
-    GREATER = 4
-    GREATEROREQUAL = 5
-    IN = 6
-    NOTIN = 7
-    IS = 8
-    ISNOT = 9
-
-
 class Comparison(BinaryOperation):
     """
     An expression comparing two values.
@@ -373,14 +350,6 @@ class Comparison(BinaryOperation):
         super().__init__(check_type(op, ComparisonOperator), left, right, **kwargs)
 
 
-class BooleanBinaryOperator(Enum):
-    """
-    A binary boolean operator.
-    """
-    AND = 0
-    OR = 1
-
-
 class BooleanBinaryOperation(BinaryOperation):
     """
     A binary boolean operation.
@@ -394,19 +363,6 @@ class BooleanBinaryOperation(BinaryOperation):
         :param kwargs: See BinaryOperation constructor.
         """
         super().__init__(check_type(op, BooleanBinaryOperator), left, right, **kwargs)
-
-
-class ArithmeticBinaryOperator(Enum):
-    """
-    An binary arithmetic operator.
-    """
-    PLUS = 0
-    MINUS = 1
-    TIMES = 2
-    OVER = 3
-    MODULO = 4
-    POWER = 5
-    INTOVER = 6
 
 
 class ArithmeticBinaryOperation(BinaryOperation):

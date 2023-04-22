@@ -2,6 +2,7 @@ import os.path
 import unittest
 from io import StringIO
 
+from engine.functional.terms import ArithmeticBinaryOperator, BooleanBinaryOperator, ComparisonOperator, UnaryOperator
 from examples import paths as example_paths
 from lang.lexer import LexError
 from lang.parser import ParserError
@@ -207,16 +208,16 @@ class TestSpektakelParser(unittest.TestCase):
         Tests that summation expressions are parsed correctly.
         """
 
-        samples = {"x + y": ast.ArithmeticBinaryOperator.PLUS,
-                   "1 + 1": ast.ArithmeticBinaryOperator.PLUS,
-                   "a - b": ast.ArithmeticBinaryOperator.MINUS,
-                   "a + b * b": ast.ArithmeticBinaryOperator.PLUS,
-                   "(a + b) * b": ast.ArithmeticBinaryOperator.TIMES,
-                   "(async f(x)) + 42": ast.ArithmeticBinaryOperator.PLUS,
-                   "(x + y) ** (kuno - 3)": ast.ArithmeticBinaryOperator.POWER,
-                   "a + b * a - b": ast.ArithmeticBinaryOperator.MINUS,
-                   "a + b * (a - b)": ast.ArithmeticBinaryOperator.PLUS,
-                   "(a + b) * (a - b)": ast.ArithmeticBinaryOperator.TIMES,
+        samples = {"x + y": ArithmeticBinaryOperator.PLUS,
+                   "1 + 1": ArithmeticBinaryOperator.PLUS,
+                   "a - b": ArithmeticBinaryOperator.MINUS,
+                   "a + b * b": ArithmeticBinaryOperator.PLUS,
+                   "(a + b) * b": ArithmeticBinaryOperator.TIMES,
+                   "(async f(x)) + 42": ArithmeticBinaryOperator.PLUS,
+                   "(x + y) ** (kuno - 3)": ArithmeticBinaryOperator.POWER,
+                   "a + b * a - b": ArithmeticBinaryOperator.MINUS,
+                   "a + b * (a - b)": ArithmeticBinaryOperator.PLUS,
+                   "(a + b) * (a - b)": ArithmeticBinaryOperator.TIMES,
                    }
 
         for idx, (s, t) in enumerate(samples.items()):
@@ -236,17 +237,17 @@ class TestSpektakelParser(unittest.TestCase):
         Tests that comparison expressions are parsed correctly.
         """
 
-        samples = {"x > y": ast.ComparisonOperator.GREATER,
-                   "14 < pi": ast.ComparisonOperator.LESS,
-                   "x + y <= x ** 2 + y ** 2": ast.ComparisonOperator.LESSOREQUAL,
-                   "f(x)  + g(x) >= z(x)": ast.ComparisonOperator.GREATEROREQUAL,
-                   "x in (x, y, z)": ast.ComparisonOperator.IN,
-                   "E == m * c ** 2": ast.ComparisonOperator.EQ,
-                   "1 + 2 + 3 != 4": ast.ComparisonOperator.NEQ,
-                   "x in (a, b, c)": ast.ComparisonOperator.IN,
-                   "y not in samples": ast.ComparisonOperator.NOTIN,
-                   "m is None": ast.ComparisonOperator.IS,
-                   "m is not None": ast.ComparisonOperator.ISNOT
+        samples = {"x > y": ComparisonOperator.GREATER,
+                   "14 < pi": ComparisonOperator.LESS,
+                   "x + y <= x ** 2 + y ** 2": ComparisonOperator.LESSOREQUAL,
+                   "f(x)  + g(x) >= z(x)": ComparisonOperator.GREATEROREQUAL,
+                   "x in (x, y, z)": ComparisonOperator.IN,
+                   "E == m * c ** 2": ComparisonOperator.EQ,
+                   "1 + 2 + 3 != 4": ComparisonOperator.NEQ,
+                   "x in (a, b, c)": ComparisonOperator.IN,
+                   "y not in samples": ComparisonOperator.NOTIN,
+                   "m is None": ComparisonOperator.IS,
+                   "m is not None": ComparisonOperator.ISNOT
                    }
 
         for idx, (s, t) in enumerate(samples.items()):
@@ -268,13 +269,13 @@ class TestSpektakelParser(unittest.TestCase):
 
         samples = {"True": None,
                    "False": None,
-                   "not x": ast.UnaryOperator.NOT,
-                   "not not not x": ast.UnaryOperator.NOT,
-                   "f(x) == g(x) and a > b": ast.BooleanBinaryOperator.AND,
-                   "not (x and y) == (not x or not y)": ast.UnaryOperator.NOT,
-                   "(not (x and y)) == (not x or not y)": ast.ComparisonOperator.EQ,
-                   "not x and y": ast.BooleanBinaryOperator.AND,
-                   "not (x and y)": ast.UnaryOperator.NOT,
+                   "not x": UnaryOperator.NOT,
+                   "not not not x": UnaryOperator.NOT,
+                   "f(x) == g(x) and a > b": BooleanBinaryOperator.AND,
+                   "not (x and y) == (not x or not y)": UnaryOperator.NOT,
+                   "(not (x and y)) == (not x or not y)": ComparisonOperator.EQ,
+                   "not x and y": BooleanBinaryOperator.AND,
+                   "not (x and y)": UnaryOperator.NOT,
                    }
 
         for idx, (s, t) in enumerate(samples.items()):

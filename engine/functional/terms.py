@@ -1,7 +1,10 @@
 import abc
+from abc import ABC
+from enum import Enum
 
 from util import check_type
 from .values import Value, VInt, VFloat, VBoolean, VNone
+from ..tasks.reference import Reference
 
 
 class Term(abc.ABC):
@@ -106,20 +109,233 @@ class CNone(CTerm):
         super().__init__(VNone.instance)
 
 
+class UnaryOperator(Enum):
+    """
+    A unary operator.
+    """
+    MINUS = 0
+    NOT = 0
+
+
 class UnaryOperation(Term):
-    pass
+    """
+    A term with one operand term.
+    """
 
-class ArithmeticBinaryOperation(Term):
-    pass
+    def __init__(self, op, arg):
+        """
+        Creates a new unary operation.
+        :param op: The operator for this operation.
+        :param arg: The operand term.
+        """
+        super().__init__(check_type(arg, Term))
+        self._op = check_type(op, UnaryOperator)
 
-class BooleanBinaryOperation(Term):
-    pass
+    @property
+    def operand(self):
+        """
+        The operand term.
+        """
+        return self.children[0]
 
-class Comparison(Term):
-    pass
+    @property
+    def operator(self):
+        """
+        The operator of this operation.
+        """
+        return self._op
 
-class Is(Term):
-    pass
+    def evaluate(self, tstate, mstate):
+        r = self.operand.evaluate(tstate, mstate)
+        if self._op == UnaryOperator.NOT:
+            return ~r
+        elif self._op == UnaryOperator.MINUS:
+            return -r
+        else:
+            raise NotImplementedError()
+
+
+class BinaryTerm(Term, ABC):
+    """
+    A term with two operands.
+    """
+
+    def __init__(self, op, left, right):
+        """
+        Creates a new binary operation.
+        :param op: The operator for this term.
+        :param left: The left operand term.
+        :param right: The right operand term.
+        """
+        super().__init__(check_type(left, Term), check_type(right, Term))
+        self._op = check_type(op, Enum)
+
+    @property
+    def left(self):
+        """
+        The left operand term.
+        """
+        return self.children[0]
+
+    @property
+    def right(self):
+        """
+        The right operand term.
+        """
+        return self.children[1]
+
+    @property
+    def operator(self):
+        """
+        The operator of this operation.
+        """
+        return self._op
+
+
+class ArithmeticBinaryOperator(Enum):
+    """
+    An binary arithmetic operator.
+    """
+    PLUS = 0
+    MINUS = 1
+    TIMES = 2
+    OVER = 3
+    MODULO = 4
+    POWER = 5
+    INTOVER = 6
+
+
+class ArithmeticBinaryOperation(BinaryTerm):
+    """
+    A binary arithmetic operation.
+    """
+
+    def __init__(self, op, left, right):
+        """
+        Creates a new binary arithmetic operation.
+        :param op: The binary arithmetic operator for this operation.
+        :param left: See BinaryOperation constructor.
+        :param right: See BinaryOperation constructor.
+        """
+        super().__init__(check_type(op, ArithmeticBinaryOperator), left, right)
+
+    def evaluate(self, tstate, mstate):
+        left = self.left.evaluate(tstate, mstate)
+        right = self.right.evaluate(tstate, mstate)
+
+        if self.operator == ArithmeticBinaryOperator.PLUS:
+            return left + right
+        elif self.operator == ArithmeticBinaryOperator.MINUS:
+            return left - right
+        elif self.operator == ArithmeticBinaryOperator.TIMES:
+            return left * right
+        elif self.operator == ArithmeticBinaryOperator.OVER:
+            return left / right
+        elif self.operator == ArithmeticBinaryOperator.INTOVER:
+            return left // right
+        elif self.operator == ArithmeticBinaryOperator.MODULO:
+            return left % right
+        elif self.operator == ArithmeticBinaryOperator.POWER:
+            return left ** right
+        else:
+            raise NotImplementedError()
+
+
+class BooleanBinaryOperator(Enum):
+    """
+    A binary boolean operator.
+    """
+    AND = 0
+    OR = 1
+
+
+class BooleanBinaryOperation(BinaryTerm):
+    """
+    A binary boolean operation.
+    """
+    def __init__(self, op, left, right):
+        """
+        Creates a new binary boolean operation.
+        :param op: The binary boolean operator for this operation.
+        :param left: See BinaryOperation constructor.
+        :param right: See BinaryOperation constructor.
+        """
+        super().__init__(check_type(op, BooleanBinaryOperator), left, right)
+
+    def evaluate(self, tstate, mstate):
+        left = self.left.evaluate(tstate, mstate)
+
+        if self.operator == BooleanBinaryOperator.AND:
+            return left and self.right.evaluate(tstate, mstate)
+        elif self.operator == BooleanBinaryOperator.OR:
+            return left or self.right.evaluate(tstate, mstate)
+        else:
+            raise NotImplementedError()
+
+
+class ComparisonOperator(Enum):
+    """
+    Specifies a type of comparison.
+    """
+    EQ = 0
+    NEQ = 1
+    LESS = 2
+    LESSOREQUAL = 3
+    GREATER = 4
+    GREATEROREQUAL = 5
+    IN = 6
+    NOTIN = 7
+    IS = 8
+    ISNOT = 9
+
+
+class Comparison(BinaryTerm):
+    """
+    A term comparing two values.
+    """
+
+    def __init__(self, op, left, right):
+        """
+        Creates a new comparison term.
+        :param op: The comparison operator for this comparison.
+        :param left: The left hand side of the comparison.
+        :param right: The right hand side of the comparison.
+        """
+        super().__init__(check_type(op, ComparisonOperator), left, right)
+
+    def evaluate(self, tstate, mstate):
+        left = self.left.evaluate(tstate, mstate)
+        right = self.right.evaluate(tstate, mstate)
+
+        if self.operator == ComparisonOperator.EQ:
+            return left == right
+        elif self.operator == ComparisonOperator.NEQ:
+            return left != right
+        elif self.operator == ComparisonOperator.LESS:
+            return left < right
+        elif self.operator == ComparisonOperator.LESSOREQUAL:
+            return left <= right
+        elif self.operator == ComparisonOperator.GREATER:
+            return left > right
+        elif self.operator == ComparisonOperator.GREATEROREQUAL:
+            return left >= right
+        elif self.operator == ComparisonOperator.IN:
+            return left in right
+        elif self.operator == ComparisonOperator.NOTIN:
+            return left not in right
+        elif self.operator == ComparisonOperator.IS:
+            # TODO: Apparently, references must be values! Also, all objects must be allocated on the heap! The stack
+            #       must contain only Reference objects, never actual values!
+            assert isinstance(left, Reference)
+            assert isinstance(right, Reference)
+            return left == right
+        elif self.operator == ComparisonOperator.ISNOT:
+            assert isinstance(left, Reference)
+            assert isinstance(right, Reference)
+            return left != right
+        else:
+            raise NotImplementedError()
+
 
 class IsInstance(Term):
     pass
@@ -196,6 +412,4 @@ class NewModule(Term):
 
 class NewClass(Term):
     pass
-
-
 

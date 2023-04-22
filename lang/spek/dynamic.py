@@ -3,10 +3,11 @@ from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackPro
 from engine.tasks.reference import ReturnValueReference, ExceptionReference
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
-    BooleanBinaryOperation, BooleanBinaryOperator, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
+    BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition, AssignableExpression, ComparisonOperator
+    PropertyDefinition, ClassDefinition, AssignableExpression
+from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator
 from collections import namedtuple
 
 
@@ -842,12 +843,12 @@ class Spektakel2Stack(Translator):
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(ExceptionReference())
-            condition_return = terms.IsInstance(e, types.NewReturnException())
-            condition_break = terms.IsInstance(e, types.NewBreakException())
-            condition_continue = terms.IsInstance(e, types.NewContinueException())
+            condition_return = terms.IsInstance(e, types.TReturnException())
+            condition_break = terms.IsInstance(e, types.TBreakException())
+            condition_continue = terms.IsInstance(e, types.TContinueException())
 
-            condition_exception = terms.IsInstance(e, types.Exception()) & ~condition_break & ~condition_continue & ~condition_return
-            condition_termination = terms.Is(e, terms.CNone)
+            condition_exception = terms.IsInstance(e, types.TException()) & ~condition_break & ~condition_continue & ~condition_return
+            condition_termination = terms.Comparison(ComparisonOperator.IS, e, terms.CNone)
             finally_foot.append_guard({condition_termination: successor,
                                        condition_return: self.emit_return(on_error),
                                        condition_break: self.emit_break(on_error),
