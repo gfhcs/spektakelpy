@@ -1,4 +1,6 @@
 import abc
+
+from util import check_type
 from util.immutable import Immutable
 
 
@@ -14,6 +16,12 @@ class Term(Immutable, abc.ABC):
     This means that evaluation is not observable and that evaluating a term can in no way change the machine state.
     """
 
+    def __init__(self, *children):
+        super().__init__()
+        for c in children:
+            check_type(c, Term)
+        self._children = children
+
     @abc.abstractmethod
     def evaluate(self, tstate, mstate):
         """
@@ -27,17 +35,38 @@ class Term(Immutable, abc.ABC):
         """
         pass
 
-class Read(Term):
-    pass
-
-class Project(Term):
-    pass
+    @property
+    def children(self):
+        """
+        The children of this term.
+        """
+        return self._children
 
 class CInt(Term):
     pass
 
 class CFloat(Term):
     pass
+
+class CTrue(Term):
+    pass
+
+class CFalse(Term):
+    pass
+
+class CNone(Term):
+    pass
+
+class CString(Term):
+    pass
+
+
+class Read(Term):
+    pass
+
+class Project(Term):
+    pass
+
 
 class StoreAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
@@ -56,17 +85,6 @@ class IsCallable(Term):
 class IsException(Term):
     pass
 
-class CTrue(Term):
-    pass
-
-class CFalse(Term):
-    pass
-
-class CNone(Term):
-    pass
-
-class CString(Term):
-    pass
 
 class Adjunction(Term):
     # TODO: This should call engine.tasks.dynamic.Namespace.adjoin
