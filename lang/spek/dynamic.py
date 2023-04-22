@@ -419,7 +419,7 @@ class Spektakel2Stack(Translator):
         if isinstance(node, Constant):
             value = dec[node]
             if isinstance(value, bool):
-                return (terms.CTrue() if value == True else terms.CFalse()), chain
+                return (terms.CBool(True) if value == True else terms.CBool(False)), chain
             elif isinstance(value, str):
                 return (terms.NewString(value), chain)
             elif value is None:
@@ -532,7 +532,7 @@ class Spektakel2Stack(Translator):
             elif node.operator == BooleanBinaryOperator.OR:
                 skip = terms.Read(v)
             else:
-                skip = terms.CFalse()
+                skip = terms.CBool(False)
 
             chain.append_guard({skip: successor, ~skip: rest})
 

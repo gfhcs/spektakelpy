@@ -1,10 +1,10 @@
 import abc
 
 from util import check_type
-from util.immutable import Immutable
+from .values import Value, VInt, VFloat, VBoolean, VNone
 
 
-class Term(Immutable, abc.ABC):
+class Term(abc.ABC):
     """
     Defines the types and semantics of expressions that the virtual machine can evaluate.
     A term is an expression the evaluation of which happens atomically and cannot cause any side effects.
@@ -37,20 +37,74 @@ class Term(Immutable, abc.ABC):
         """
         return self._children
 
-class CInt(Term):
-    pass
 
-class CFloat(Term):
-    pass
+class CTerm(Term):
+    """
+    A term that represents a constant value.
+    """
 
-class CTrue(Term):
-    pass
+    def __init__(self, value):
+        """
+        Instantiates a new constant term.
+        :param value: The Value object that this term should evaluate to.
+        """
+        super().__init__()
+        self._value = check_type(value, Value)
 
-class CFalse(Term):
-    pass
+    def evaluate(self, tstate, mstate):
+        return self._value
 
-class CNone(Term):
-    pass
+
+class CInt(CTerm):
+    """
+    A term that represents an integer constant.
+    """
+
+    def __init__(self, value):
+        """
+        Instantiates a new integer constant term.
+        :param value: The integer this term is supposed to represent.
+        """
+        super().__init__(VInt(value))
+
+
+class CFloat(CTerm):
+    """
+    A term that represents an float constant.
+    """
+
+    def __init__(self, value):
+        """
+        Instantiates a new float constant term.
+        :param value: The float this term is supposed to represent.
+        """
+        super().__init__(VFloat(value))
+
+
+class CBool(CTerm):
+    """
+    A term that represents a boolean constant.
+    """
+
+    def __init__(self, value):
+        """
+        Instantiates a new boolean constant term.
+        :param value: The boolean this term is supposed to represent.
+        """
+        super().__init__(VBoolean(value))
+
+
+class CNone(CTerm):
+    """
+    A term that represents the None constant.
+    """
+
+    def __init__(self):
+        """
+        Instantiates a new None term.
+        """
+        super().__init__(VNone.instance)
+
 
 class UnaryOperation(Term):
     pass
