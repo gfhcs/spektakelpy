@@ -131,6 +131,6 @@ class ContinueException(Term):
 class BreakException(Term):
     pass
 
-class ReturnException(Term):
+class NewReturnException(Term):
     pass
 

@@ -559,7 +559,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.ReturnException(), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewReturnException(), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.FunctionBlock):
@@ -842,7 +842,7 @@ class Spektakel2Stack(Translator):
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(ExceptionReference())
-            condition_return = terms.IsInstance(e, types.ReturnException())
+            condition_return = terms.IsInstance(e, types.NewReturnException())
             condition_break = terms.IsInstance(e, types.BreakException())
             condition_continue = terms.IsInstance(e, types.ContinueException())
 
