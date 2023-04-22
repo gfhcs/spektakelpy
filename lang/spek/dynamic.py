@@ -6,7 +6,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, BooleanBinaryOperator, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition, AssignableExpression
+    PropertyDefinition, ClassDefinition, AssignableExpression, ComparisonOperator
 from collections import namedtuple
 
 
@@ -57,7 +57,7 @@ class Chain:
         :param target: The chain to jump to.
         """
         # According to the semantics, there cannot be an error in evaluating Truth():
-        self.append_guard({terms.Truth(): target}, None)
+        self.append_guard({terms.CTruth(): target}, None)
 
     def append_push(self, entry, aexpressions, on_error):
         """
@@ -392,13 +392,13 @@ class Spektakel2Stack(Translator):
         argc_error = Chain()
         argc_error.append_update(ExceptionReference(), terms.CTypeError("Wrong number of arguments for call!"))
         argc_error.append_jump(on_error)
-        match = terms.Equal(terms.NumArgs(callee), terms.CInt(len(args)))
+        match = terms.Comparison(ComparisonOperator.EQ, terms.NumArgs(callee), terms.CInt(len(args)))
         chain.append_guard({match: call, ~match : argc_error})
 
         call.append_push(callee, args, on_error)
 
         successor = Chain()
-        noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
+        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(ExceptionReference()), terms.CNone())
         chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
         rv = self.declare_name(successor, None, on_error)
@@ -421,13 +421,13 @@ class Spektakel2Stack(Translator):
             if isinstance(value, bool):
                 return (terms.CTrue() if value == True else terms.CFalse()), chain
             elif isinstance(value, str):
-                return (terms.String(value), chain)
+                return (terms.CString(value), chain)
             elif value is None:
                 return (terms.CNone(), chain)
             elif isinstance(value, int):
-                return (terms.Int(value), chain)
+                return (terms.CInt(value), chain)
             elif isinstance(value, float):
-                return (terms.Float(value), chain)
+                return (terms.CFloat(value), chain)
             else:
                 raise NotImplementedError("Translation of constant expressions of type {}"
                                           " has not been implemented!".format(type(value)))
@@ -490,11 +490,11 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, Await):
             tid = self.translate_expression(chain, node.process, dec, on_error)
             successor = Chain()
-            complete = terms.Terminated(tid)
+            complete = terms.IsTerminated(tid)
             chain.append_guard({complete: successor}, on_error)
 
             successor = Chain()
-            noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
+            noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(ExceptionReference()), terms.CNone())
             chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
 
             rv = self.declare_name(successor, None, on_error)
@@ -986,7 +986,7 @@ class Spektakel2Stack(Translator):
         bodyBlock.append_push(location, [], exitBlock)
 
         successor = Chain()
-        noerror = terms.Equal(terms.Read(ExceptionReference()), terms.CNone())
+        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(ExceptionReference()), terms.CNone())
         bodyBlock.append_guard({~noerror: exitBlock, noerror: successor}, exitBlock)
 
         rv = self.declare_name(successor, None, exitBlock)

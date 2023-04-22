@@ -27,6 +27,32 @@ class Term(Immutable, abc.ABC):
         """
         pass
 
+class Read(Term):
+    pass
+
+class Project(Term):
+    pass
+
+class CInt(Term):
+    pass
+
+class CFloat(Term):
+    pass
+
+class StoreAttrCase(Term):
+    pass
+
+class LoadAttrCase(Term):
+    pass
+
+class IsTerminated(Term):
+    pass
+
+class IsCallable(Term):
+    pass
+
+class IsException(Term):
+    pass
 
 class CTrue(Term):
     pass
@@ -37,6 +63,9 @@ class CFalse(Term):
 class CNone(Term):
     pass
 
+class CString(Term):
+    pass
+
 class Adjunction(Term):
     # TODO: This should call engine.tasks.dynamic.Namespace.adjoin
     pass
@@ -45,6 +74,63 @@ class Lookup(Term):
     # TODO: This should call engine.tasks.dynamic.Namespace.lookup
     pass
 
+class Tuple(Term):
+    pass
+
+
+class UnaryOperation(Term):
+    pass
+
+class ArithmeticBinaryOperation(Term):
+    pass
+
+class BooleanBinaryOperation(Term):
+    pass
+
+class CTypeError(Term):
+    pass
+
+class NumArgs(Term):
+    pass
+
+class Comparison(Term):
+    pass
+
+class NewModule(Term):
+    pass
+
+class NewNamespace(Term):
+    pass
+
+class NewDict(Term):
+    pass
+
+class Function(Term):
+    pass
+
+class NewClass(Term):
+    pass
+
+class NewProperty(Term):
+    pass
+
+class Is(Term):
+    pass
+
+class IsInstance(Term):
+    pass
+
+class Member(Term):
+    pass
+
+class ContinueException(Term):
+    pass
+
+class BreakException(Term):
+    pass
+
+class ReturnException(Term):
+    pass
 
 # TODO: I want an expression that tells me an upper bound of the heap length.
 #       This can be used for allocating new memory.
