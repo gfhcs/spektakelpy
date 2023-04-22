@@ -1,6 +1,7 @@
 import abc
 
-from engine.functional.terms import EvaluationException, Term
+from engine.functional.terms import Term
+from ..functional.values import EvaluationException
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .reference import Reference

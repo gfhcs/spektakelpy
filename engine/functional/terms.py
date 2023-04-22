@@ -4,11 +4,6 @@ from util import check_type
 from util.immutable import Immutable
 
 
-class EvaluationException(Exception):
-    # TODO: This must be a value!
-    pass
-
-
 class Term(Immutable, abc.ABC):
     """
     Defines the types and semantics of expressions that the virtual machine can evaluate.
@@ -57,47 +52,6 @@ class CFalse(Term):
 class CNone(Term):
     pass
 
-class CString(Term):
-    pass
-
-
-class Read(Term):
-    pass
-
-class Project(Term):
-    pass
-
-
-class StoreAttrCase(Term):
-    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
-    pass
-
-class LoadAttrCase(Term):
-    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
-    pass
-
-class IsTerminated(Term):
-    pass
-
-class IsCallable(Term):
-    pass
-
-class IsException(Term):
-    pass
-
-
-class Adjunction(Term):
-    # TODO: This should call engine.tasks.dynamic.Namespace.adjoin
-    pass
-
-class Lookup(Term):
-    # TODO: This should call engine.tasks.dynamic.Namespace.lookup
-    pass
-
-class Tuple(Term):
-    pass
-
-
 class UnaryOperation(Term):
     pass
 
@@ -107,31 +61,7 @@ class ArithmeticBinaryOperation(Term):
 class BooleanBinaryOperation(Term):
     pass
 
-class CTypeError(Term):
-    pass
-
-class NumArgs(Term):
-    pass
-
 class Comparison(Term):
-    pass
-
-class NewModule(Term):
-    pass
-
-class NewNamespace(Term):
-    pass
-
-class NewDict(Term):
-    pass
-
-class Function(Term):
-    pass
-
-class NewClass(Term):
-    pass
-
-class NewProperty(Term):
     pass
 
 class Is(Term):
@@ -140,15 +70,78 @@ class Is(Term):
 class IsInstance(Term):
     pass
 
+class IsCallable(Term):
+    pass
+
+class IsException(Term):
+    pass
+
+class IsTerminated(Term):
+    pass
+
+class Read(Term):
+    pass
+
+class Project(Term):
+    pass
+
+class StoreAttrCase(Term):
+    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
+    pass
+
+class LoadAttrCase(Term):
+    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
+    pass
+
 class Member(Term):
     pass
 
-class ContinueException(Term):
+class Lookup(Term):
+    # TODO: This should call engine.tasks.dynamic.Namespace.lookup
     pass
 
-class BreakException(Term):
+class Adjunction(Term):
+    # TODO: This should call engine.tasks.dynamic.Namespace.adjoin
+    pass
+
+class NewString(Term):
+    pass
+
+class NewTuple(Term):
+    pass
+
+class NewDict(Term):
+    pass
+
+class NewTypeError(Term):
     pass
 
 class NewReturnException(Term):
     pass
+
+class NewContinueException(Term):
+    pass
+
+class NewBreakException(Term):
+    pass
+
+class NewFunction(Term):
+    pass
+
+class NumArgs(Term):
+    pass
+
+class NewProperty(Term):
+    pass
+
+class NewNamespace(Term):
+    pass
+
+class NewModule(Term):
+    pass
+
+class NewClass(Term):
+    pass
+
+
 

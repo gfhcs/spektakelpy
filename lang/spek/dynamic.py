@@ -390,7 +390,7 @@ class Spektakel2Stack(Translator):
         # Make sure that the right number of arguments is being used:
         call = Chain()
         argc_error = Chain()
-        argc_error.append_update(ExceptionReference(), terms.CTypeError("Wrong number of arguments for call!"))
+        argc_error.append_update(ExceptionReference(), terms.NewTypeError("Wrong number of arguments for call!"))
         argc_error.append_jump(on_error)
         match = terms.Comparison(ComparisonOperator.EQ, terms.NumArgs(callee), terms.CInt(len(args)))
         chain.append_guard({match: call, ~match : argc_error})
@@ -421,7 +421,7 @@ class Spektakel2Stack(Translator):
             if isinstance(value, bool):
                 return (terms.CTrue() if value == True else terms.CFalse()), chain
             elif isinstance(value, str):
-                return (terms.CString(value), chain)
+                return (terms.NewString(value), chain)
             elif value is None:
                 return (terms.CNone(), chain)
             elif isinstance(value, int):
@@ -541,7 +541,7 @@ class Spektakel2Stack(Translator):
             chain.append_jump(successor)
             return terms.Read(v), successor
         elif isinstance(node, Tuple):
-            return terms.Tuple(*(self.translate_expression(chain, c, dec, on_error) for c in node.children)), chain
+            return terms.NewTuple(*(self.translate_expression(chain, c, dec, on_error) for c in node.children)), chain
         else:
             raise NotImplementedError()
 
@@ -585,7 +585,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.BreakException(), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewBreakException(), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.LoopBlock):
@@ -610,7 +610,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.ContinueException(), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewContinueException(), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.LoopBlock):
@@ -660,7 +660,7 @@ class Spektakel2Stack(Translator):
         #               must thus map the shared variables to offsets in the heap frame.
         #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
 
-        f = terms.Function(num_args, body.compile())
+        f = terms.NewFunction(num_args, body.compile())
 
         self._blocks.pop()
 
@@ -843,8 +843,8 @@ class Spektakel2Stack(Translator):
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(ExceptionReference())
             condition_return = terms.IsInstance(e, types.NewReturnException())
-            condition_break = terms.IsInstance(e, types.BreakException())
-            condition_continue = terms.IsInstance(e, types.ContinueException())
+            condition_break = terms.IsInstance(e, types.NewBreakException())
+            condition_continue = terms.IsInstance(e, types.NewContinueException())
 
             condition_exception = terms.IsInstance(e, types.Exception()) & ~condition_break & ~condition_continue & ~condition_return
             condition_termination = terms.Is(e, terms.CNone)
@@ -997,7 +997,7 @@ class Spektakel2Stack(Translator):
         successor.append_pop()
         exitBlock.append_pop()
 
-        load = terms.Function(1, bodyBlock.compile())
+        load = terms.NewFunction(1, bodyBlock.compile())
 
         self._blocks.pop()
 
