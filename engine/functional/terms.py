@@ -40,9 +40,11 @@ class CFloat(Term):
     pass
 
 class StoreAttrCase(Term):
+    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
     pass
 
 class LoadAttrCase(Term):
+    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
     pass
 
 class IsTerminated(Term):
@@ -132,7 +134,3 @@ class BreakException(Term):
 class ReturnException(Term):
     pass
 
-# TODO: I want an expression that tells me an upper bound of the heap length.
-#       This can be used for allocating new memory.
-
-# TODO: Expression must not have side effects and must be executed atomically! This means that there cannot be expressions for Calls, Launches or Awaits!
