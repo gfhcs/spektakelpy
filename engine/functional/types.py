@@ -15,4 +15,4 @@ class Type(abc.ABC):
         """
         pass
 
-# Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict
+# Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
