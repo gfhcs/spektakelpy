@@ -345,8 +345,8 @@ class Spektakel2Stack(Translator):
                 r = self.declare_name(chain, None, on_error)
                 chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
 
-                csetter = terms.IsCallable(r)
-                cexception = terms.IsException(r)
+                csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
+                cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, r)
                 cupdate = ~(csetter | cexception)
 
                 setter = Chain()
@@ -446,8 +446,8 @@ class Spektakel2Stack(Translator):
             r = self.declare_name(chain, None, on_error)
             chain.append_update(r, terms.LoadAttrCase(v, node.name), on_error)
 
-            cgetter = terms.IsCallable(r)
-            cexception = terms.IsException(r)
+            cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
+            cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, r)
             cupdate = ~(cgetter | cexception)
 
             getter = Chain()
@@ -491,7 +491,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, Await):
             tid = self.translate_expression(chain, node.process, dec, on_error)
             successor = Chain()
-            complete = terms.IsTerminated(tid)
+            complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, tid)
             chain.append_guard({complete: successor}, on_error)
 
             successor = Chain()
@@ -508,7 +508,7 @@ class Spektakel2Stack(Translator):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
             return self.emit_call(chain, terms.Lookup(v, "__getitem__"), [idx], on_error)
         elif isinstance(node, UnaryOperation):
-            return terms.UnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
+            return terms.ArithmeticUnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
         elif isinstance(node, ArithmeticBinaryOperation):
             return terms.ArithmeticBinaryOperation(node.operator,
                                                    self.translate_expression(chain, node.left, dec, on_error),

@@ -270,7 +270,7 @@ class SpektakelParser(Parser):
         if positive:
             return e
         else:
-            return UnaryOperation(UnaryOperator.MINUS, e, start=e.start if start is None else start, end=e.end)
+            return UnaryOperation(ArithmeticUnaryOperator.MINUS, e, start=e.start if start is None else start, end=e.end)
 
     @classmethod
     def _parse_mult(cls, lexer):
@@ -381,7 +381,7 @@ class SpektakelParser(Parser):
         if positive:
             return e
         else:
-            return UnaryOperation(UnaryOperator.NOT, e, start=e.start if start is None else start, end=e.end)
+            return UnaryOperation(ArithmeticUnaryOperator.NOT, e, start=e.start if start is None else start, end=e.end)
 
     @classmethod
     def _parse_and(cls, lexer):

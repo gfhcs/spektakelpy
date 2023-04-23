@@ -2,7 +2,7 @@ import os.path
 import unittest
 from io import StringIO
 
-from engine.functional.terms import ArithmeticBinaryOperator, BooleanBinaryOperator, ComparisonOperator, UnaryOperator
+from engine.functional.terms import ArithmeticBinaryOperator, BooleanBinaryOperator, ComparisonOperator, ArithmeticUnaryOperator
 from examples import paths as example_paths
 from lang.lexer import LexError
 from lang.parser import ParserError
@@ -269,13 +269,13 @@ class TestSpektakelParser(unittest.TestCase):
 
         samples = {"True": None,
                    "False": None,
-                   "not x": UnaryOperator.NOT,
-                   "not not not x": UnaryOperator.NOT,
+                   "not x": ArithmeticUnaryOperator.NOT,
+                   "not not not x": ArithmeticUnaryOperator.NOT,
                    "f(x) == g(x) and a > b": BooleanBinaryOperator.AND,
-                   "not (x and y) == (not x or not y)": UnaryOperator.NOT,
+                   "not (x and y) == (not x or not y)": ArithmeticUnaryOperator.NOT,
                    "(not (x and y)) == (not x or not y)": ComparisonOperator.EQ,
                    "not x and y": BooleanBinaryOperator.AND,
-                   "not (x and y)": UnaryOperator.NOT,
+                   "not (x and y)": ArithmeticUnaryOperator.NOT,
                    }
 
         for idx, (s, t) in enumerate(samples.items()):

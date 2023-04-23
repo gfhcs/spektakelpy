@@ -1,11 +1,11 @@
 import abc
 
+
 class Type(abc.ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
     """
 
-    @abc.abstractmethod
     def resolve_member(self, name, instance):
         """
         Retrieves the type member of the given name.
@@ -15,4 +15,24 @@ class Type(abc.ABC):
         """
         pass
 
+    def subtypeof(self, other):
+        pass
+
+
+
 # Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
+
+
+class TException(Type):
+    pass
+
+
+TException.instance = TException()
+
+
+class TFunction(Type):
+    pass
+
+
+TFunction.instance = TFunction()
+
