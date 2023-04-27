@@ -4,7 +4,7 @@ from util.immutable import Immutable
 # contain a CFG as the representation of its body.
 
 
-class Namespace(Immutable):
+class Namespace(Sealable):
     """
     An immutable object that represents a mapping from names to values.
     """

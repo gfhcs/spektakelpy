@@ -440,5 +440,12 @@ class ProgramLocation(Sealable):
     def _seal(self):
         pass
 
-    def clone_unsealed(self):
-        return ProgramLocation(self._program, self._index)
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = ProgramLocation(self._program, self._index)
+            clones[id(self)] = c
+            return c

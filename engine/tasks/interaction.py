@@ -17,8 +17,15 @@ class InteractionState(TaskState):
         super().__init__(taskid, status)
         self._interaction = interaction
 
-    def clone_unsealed(self):
-        return InteractionState(self._interaction, self.taskid, self.status)
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = InteractionState(self._interaction, self.taskid, self.status)
+            clones[id(self)] = c
+            return c
 
     def _seal(self):
         pass

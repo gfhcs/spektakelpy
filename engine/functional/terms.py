@@ -326,15 +326,13 @@ class Comparison(BinaryTerm):
         elif self.operator == ComparisonOperator.NOTIN:
             return left not in right
         elif self.operator == ComparisonOperator.IS:
-            # TODO: Apparently, references must be values! Also, all objects must be allocated on the heap! The stack
-            #       must contain only Reference objects, never actual values!
             assert isinstance(left, Reference)
             assert isinstance(right, Reference)
-            return left == right
+            return left is right
         elif self.operator == ComparisonOperator.ISNOT:
             assert isinstance(left, Reference)
             assert isinstance(right, Reference)
-            return left != right
+            return left is not right
         else:
             raise NotImplementedError()
 

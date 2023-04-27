@@ -48,7 +48,7 @@ class FrameReference(Reference):
     def _seal(self):
         pass
 
-    def clone_unsealed(self):
+    def clone_unsealed(self, clones=None):
         return FrameReference(self._index)
 
     def hash(self):
@@ -66,40 +66,6 @@ class FrameReference(Reference):
         return tstate.stack[-1].local[self._index]
 
 
-class HeapReference(Reference):
-    """
-    A reference to a value stored in the heap memory of the machine.
-    """
-
-    def __init__(self, index):
-        """
-        Refers to a value in the machine's heap memory.
-        :param index: An index into the heap memory.
-        """
-        super().__init__()
-        self._index = index
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self):
-        return HeapReference(self._index)
-
-    def hash(self):
-        check_sealed(self)
-        return hash(self._index)
-
-    def equals(self, other):
-        return isinstance(other, HeapReference) and self._index == other._index
-
-    def write(self, tstate, mstate, value):
-        check_unsealed(self)
-        mstate.heap[self._index] = value
-
-    def read(self, tstate, mstate):
-        return mstate.heap[self._index]
-
-
 class ReturnValueReference(Reference):
     """
     A reference to the value currently being returned from the callee to the caller.
@@ -107,15 +73,14 @@ class ReturnValueReference(Reference):
 
     def __init__(self):
         """
-        Refers to a value in the machine's heap memory.
-        :param index: An index into the heap memory.
+        Refers to a value that is to be returned.
         """
         super().__init__()
 
     def _seal(self):
         pass
 
-    def clone_unsealed(self):
+    def clone_unsealed(self, clones=None):
         return ReturnValueReference()
 
     def hash(self):
@@ -140,15 +105,14 @@ class ExceptionReference(Reference):
 
     def __init__(self):
         """
-        Refers to a value in the machine's heap memory.
-        :param index: An index into the heap memory.
+        Refers to the exception currently being handeled in a task.
         """
         super().__init__()
 
     def _seal(self):
         pass
 
-    def clone_unsealed(self):
+    def clone_unsealed(self, clones=None):
         return ExceptionReference()
 
     def hash(self):

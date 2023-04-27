@@ -54,7 +54,7 @@ class DException(Value):
     def equals(self, other):
         pass
 
-    def clone_unsealed(self):
+    def clone_unsealed(self, clones=None):
         pass
 
 

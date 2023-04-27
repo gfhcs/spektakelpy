@@ -652,7 +652,7 @@ class Spektakel2Stack(Translator):
 
         # TODO (later): The function definition might be nested in another one.
         #               Since it might "escape" the enclosing function, the variables that are shared between
-        #               the function cannot be allocated on the stack.
+        #               the functions cannot be allocated on the stack.
         #               Those variables that are shared must be allocated in a "Heap frame", the pointer to which
         #               is part of the Function object that is constructed (IT CANNOT BE PASSED AS AN ARGUMENT!
         #               REASON: The function object is not being called here, but later,

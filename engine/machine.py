@@ -1,4 +1,4 @@
-from util import check_type, check_types
+from util import check_type
 from util.immutable import Sealable, check_sealed, check_unsealed
 from .task import TaskState
 
@@ -8,37 +8,37 @@ class MachineState(Sealable):
     Represents the state of a virtual machine that is executing tasks.
     """
 
-    def __init__(self, heap, task_states):
+    def __init__(self, task_states):
         """
         Describes the state of the machine.
-        :param heap: The heap memory of the machine, i.e. an array of values.
         :param task_states: The states of all the tasks running on the machine.
         """
         super().__init__()
         self._tstates = {check_type(s, TaskState).task_id: s for s in task_states}
-        self._heap = list(check_types(heap, Sealable))
 
     def _seal(self):
         for t in self._tstates.values():
             t.seal()
-        self._heap = tuple(self._heap)
-        for h in self._heap:
-            h.seal()
 
-    def clone_unsealed(self):
-        return MachineState((h.clone_unsealed() for h in self._heap),
-                            (t.clone_unsealed() for t in self._tstates.values()))
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = MachineState((t.clone_unsealed(clones=clones) for t in self._tstates.values()))
+            clones[id(self)] = c
+            return c
 
     def hash(self):
         check_sealed(self)
-        h = hash(self._heap)
+        h = 4711
         for s in self._tstates.values():
             h ^= hash(s)
         return h
 
     def equals(self, other):
         return isinstance(other, MachineState) \
-               and tuple(self._heap) == tuple(other._heap) \
                and frozenset(self._tstates.values()) == frozenset(other._tstates.values())
 
     @property
@@ -66,13 +66,6 @@ class MachineState(Sealable):
         """
         check_unsealed(self)
         del self._tstates[tid]
-
-    @property
-    def heap(self):
-        """
-        The heap memory of the machine.
-        """
-        return self._heap
 
     def get_task_state(self, tid):
         """

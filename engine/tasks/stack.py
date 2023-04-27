@@ -25,8 +25,15 @@ class Frame(Sealable):
         self._location._seal()
         self._local_values = tuple(v.seal() for v in self._local_values)
 
-    def clone_unsealed(self):
-        return Frame(self._location, (v.clone_unsealed() for v in self._local_values))
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = Frame(self._location, (v.clone_unsealed(clones=clones) for v in self._local_values))
+            clones[id(self)] = c
+            return c
 
     def hash(self):
         check_sealed(self)
@@ -88,10 +95,17 @@ class StackState(TaskState):
         for f in self._stack:
             f.seal()
 
-    def clone_unsealed(self):
-        return StackState(self.taskid, self.status, (f.clone_unsealed() for f in self.stack),
-                          exception=self.exception.clone_unsealed(),
-                          returned=self.returned.clone_unsealed())
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = StackState(self.taskid, self.status, (f.clone_unsealed(clones=clones) for f in self.stack),
+                           exception=self.exception.clone_unsealed(clones=clones),
+                           returned=self.returned.clone_unsealed(clones=clones))
+            clones[id(self)] = c
+            return c
 
     @property
     def stack(self):
