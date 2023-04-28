@@ -403,7 +403,7 @@ class IsInstance(Term):
 
     def __init__(self, value, types):
         """
-        Creates a new comparison term.
+        Creates a new IsInstance term.
         :param value: The term the type of which is to be inspected.
         :param types: A term evaluating to either a single type or a tuple of types.
         """
@@ -463,7 +463,37 @@ class Read(Term):
 
 
 class Project(Term):
-    pass
+    """
+    A term projecting a tuple to one of its components.
+    """
+
+    def __init__(self, tuple, index):
+        """
+        Creates a new projection term.
+        :param tuple: A term evaluating to a tuple.
+        :param index: A term evaluating to an integer.
+        """
+        super().__init__(check_type(tuple, Term), check_type(index, Term))
+
+    @property
+    def tuple(self):
+        """
+        A term evaluating to the tuple that is to be projected.
+        """
+        return self.children[0]
+
+    @property
+    def index(self):
+        """
+        A term evaluating to the index to which the tuple is to be projected.
+        """
+        return self.children[1]
+
+    def evaluate(self, tstate, mstate):
+        t = self.tuple.evaluate(tstate, mstate)
+        i = self.index.evaluate(tstate, mstate)
+        return t[i]
+
 
 class LoadAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
