@@ -441,7 +441,26 @@ class IsInstance(Term):
 
 
 class Read(Term):
-    pass
+    """
+    A term that resolves a Reference value.
+    """
+
+    def __init__(self, r):
+        """
+        Creates a new Read term.
+        :param r: A term specifying the reference to be read.
+        """
+        super().__init__(r)
+
+    @property
+    def reference(self):
+        return self.children[0]
+
+    def evaluate(self, tstate, mstate):
+        r = self.reference
+        assert isinstance(r, Reference)
+        return r.read(tstate, mstate)
+
 
 class Project(Term):
     pass
@@ -460,6 +479,8 @@ class Lookup(Term):
 class StoreAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
     pass
+
+
 
 
 class Adjunction(Term):

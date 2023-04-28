@@ -1,4 +1,7 @@
 import abc
+
+from engine.functional.values import Value
+from util import check_type
 from util.immutable import Sealable, check_sealed, check_unsealed
 
 
@@ -128,3 +131,39 @@ class ExceptionReference(Reference):
 
     def read(self, tstate, mstate):
         return tstate.exception
+
+
+class ObjectReference(Reference):
+    """
+    A reference to a heap object. Instead of holding offsets into an explicit heap, references of this
+    kind directly point at Python objects. This makes sure that no explicit garbage collection needs to be implemented
+    """
+
+    def __init__(self, pobject):
+        """
+        Refers to a value in the machine's heap memory.
+        :param pobject: The Python object this reference is pointing to. It must be a Value.
+        """
+        super().__init__()
+        self._pobject = check_type(pobject, Value)
+
+    def _seal(self):
+        self._pobject.seal()
+
+    def clone_unsealed(self, clones=None):
+        return ObjectReference(self._pobject.clone_unsealed(clones=clones))
+
+    def hash(self):
+        check_sealed(self)
+        return hash(self._pobject)
+
+    def equals(self, other):
+        return isinstance(other, ObjectReference) and self._pobject == other._pobject
+
+    def write(self, tstate, mstate, value):
+        raise Exception("Overriding an object via an ObjectReference is not possible!")
+
+    def read(self, tstate, mstate):
+        return self._pobject
+
+
