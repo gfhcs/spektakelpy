@@ -494,16 +494,13 @@ class Project(Term):
         i = self.index.evaluate(tstate, mstate)
         return t[i]
 
+class Lookup(Term):
+    # TODO: This should call engine.tasks.dynamic.Namespace.lookup
+    pass
 
 class LoadAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
-    pass
-
-class Member(Term):
-    pass
-
-class Lookup(Term):
-    # TODO: This should call engine.tasks.dynamic.Namespace.lookup
+    # TODO: Alle Referenzen auf Terme des Typs 'Member' müssen durch LoadAttrCase ersetzt werden!
     pass
 
 class StoreAttrCase(Term):

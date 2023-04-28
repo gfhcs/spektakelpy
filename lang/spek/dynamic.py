@@ -506,7 +506,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, Projection):
             idx, chain = self.translate_expression(chain, node.index, dec, on_error)
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
-            return self.emit_call(chain, terms.Lookup(v, "__getitem__"), [idx], on_error)
+            return self.emit_call(chain, terms.Member(v, "__getitem__"), [idx], on_error)
         elif isinstance(node, UnaryOperation):
             return terms.ArithmeticUnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
         elif isinstance(node, ArithmeticBinaryOperation):
