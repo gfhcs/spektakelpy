@@ -32,6 +32,10 @@ class VNone(Value):
     # TODO: Must provide 1 instance object.
     pass
 
+class VTuple(Value):
+    # TODO: Implement tuples.
+    pass
+
 # TODO: Every object has an identity, a type and a value. An object’s identity never changes once it has been created; you may think of it as the object’s address in memory.
 
 # TODO: We need these runtime objects: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
@@ -42,7 +46,7 @@ class Procedure(abc.ABC):
 class Struct(Value):
     pass
 
-class DException(Value):
+class VException(Value):
 
     def __init__(self, message):
         super().__init__()
@@ -58,7 +62,7 @@ class DException(Value):
         pass
 
 
-class MachineError(DException):
+class MachineError(VException):
     """
     An error that occurs as the semantic result of executing a machine program.
     """
@@ -68,6 +72,8 @@ class MachineError(DException):
         self._msg = msg
 
 
-class EvaluationException(Exception):
-    # TODO: This must be a value!
+class EvaluationException(VException):
+    pass
+
+class VTypeError(VException):
     pass

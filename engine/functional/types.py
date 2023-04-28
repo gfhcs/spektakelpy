@@ -1,7 +1,7 @@
 import abc
 
 
-class Type(abc.ABC):
+class Type(Value):
     """
     A Type describes a set of abilities and an interface that a value provides.
     """

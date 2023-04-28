@@ -4,7 +4,7 @@ from enum import Enum
 
 from util import check_type
 from .types import TException, TFunction, Type
-from .values import Value, VInt, VFloat, VBoolean, VNone
+from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError
 from ..task import TaskStatus
 from ..tasks.reference import Reference
 
@@ -395,8 +395,50 @@ class UnaryPredicateTerm(Term):
 
         return VBoolean(value)
 
+
 class IsInstance(Term):
-    pass
+    """
+    A term deciding if an object is an instance of a given type.
+    """
+
+    def __init__(self, value, types):
+        """
+        Creates a new comparison term.
+        :param value: The term the type of which is to be inspected.
+        :param types: A term evaluating to either a single type or a tuple of types.
+        """
+        super().__init__(check_type(value, Term), check_type(types, Term))
+
+    @property
+    def value(self):
+        """
+        The term the type of which is to be inspected.
+        """
+        return self.children[0]
+
+    @property
+    def types(self):
+        """
+        A term evaluating to either a single type or a tuple of types.
+        """
+        return self.children[1]
+
+    def evaluate(self, tstate, mstate):
+        v = self.value.evaluate(tstate, mstate)
+        t = self.types.evaluate(tstate, mstate)
+
+        if isinstance(t, Type):
+            return CBool(v.type.subtypeof(t))
+        elif isinstance(t, VTuple):
+            for tt in t:
+                if not isinstance(tt, Type):
+                    raise VTypeError("isinstance(() arg 2 must be a type or tuple of types.")
+                if v.type.subtypeof(tt):
+                    return CBool(True)
+            return CBool(False)
+        else:
+            raise TypeError()
+
 
 class Read(Term):
     pass
