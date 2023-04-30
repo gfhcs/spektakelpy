@@ -527,9 +527,54 @@ class Lookup(Term):
 
 
 class LoadAttrCase(Term):
-    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
-    # TODO: Alle Referenzen auf Terme des Typs 'Member' müssen durch LoadAttrCase ersetzt werden!
-    pass
+    """
+    A term that reads an attribute.
+    If the given object is of type 'type', then the MRO of the object is searched for the attribute of the given name.
+    If the given object is not of type 'type', then the MRO of the type of the object is searched for the attribute.
+    In both cases, the term evaluates as follows:
+    # 0. The name was found and refers to a property. The term evaluates to the getter of that property.
+    # 1. The name was found and refers to an instance variable. The term evaluates to the value of the instance variable.
+    # 2. The name was found and refers to a method. The term evaluates to the method.
+    # 3. The name was found and refers to a class variable. The term evaluates to the value of that variable.
+    # 4. The name was not found. The term evaluation raises an exception.
+    """
+
+    def __init__(self, value, name):
+        """
+        Creates a new namespace lookup.
+        :param value: A term evaluating to the value an attribute of which should be read.
+        :param name: A string specifying the name that is to be looked up.
+        """
+        super().__init__(check_type(value, Term))
+        self._name = check_type(name, str)
+
+    @property
+    def value(self):
+        """
+        A term evaluating to the value an attribute of which should be read.
+        """
+        return self.children[0]
+
+    @property
+    def name(self):
+        """
+        A string specifying the name that is to be looked up.
+        """
+        return self._name
+
+    def evaluate(self, tstate, mstate):
+        value = self.value.evaluate(tstate, mstate)
+        t = value.type
+
+        try:
+            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name, value)
+            if isinstance(attr, VProperty):
+                return attr.getter
+            else:
+                return attr
+        except KeyError:
+            return VAttributeError()
+
 
 class StoreAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.

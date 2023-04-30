@@ -437,34 +437,18 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
-            # Cases:
-            # 0. The name was found and refers to a property. The term evaluates to its getter.
-            # 1. The name was found and refers to an instance variable. The term evaluates to a NameReference.
-            # 2. The name was found and refers to a method. The term evaluates to a NameReference.
-            # 3. The name was found and refers to a class variable. The term evaluates to a NameReference.
-            # 4. The name was not found. The term evaluates to an exception to raise.
             r = self.declare_name(chain, None, on_error)
             chain.append_update(r, terms.LoadAttrCase(v, node.name), on_error)
 
-            cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
-            cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, r)
-            cupdate = ~(cgetter | cexception)
+            cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISGETTER, r)
 
             getter = Chain()
-            update = Chain()
-            exception = Chain()
             successor = Chain()
-            chain.append_guard({cgetter: getter, cupdate: update, cexception: exception}, on_error)
+            chain.append_guard({cgetter: getter, ~cgetter: successor}, on_error)
 
             v, getter = self.emit_call(getter, r, [], on_error)
             getter.append_update(r, v, on_error)
             getter.append_jump(successor)
-
-            update.append_update(r, terms.Read(r), on_error)
-            update.append_jump(successor)
-
-            exception.append_update(ExceptionReference(), r, on_error)
-            exception.append_jump(on_error)
 
             return r, successor
 
@@ -506,7 +490,8 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, Projection):
             idx, chain = self.translate_expression(chain, node.index, dec, on_error)
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
-            return self.emit_call(chain, terms.Member(v, "__getitem__"), [idx], on_error)
+            callee, chain = self.translate_expression(chain, Attribute(v, "__get_item__"), dec, on_error)
+            return self.emit_call(chain, callee, [idx], on_error)
         elif isinstance(node, UnaryOperation):
             return terms.ArithmeticUnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
         elif isinstance(node, ArithmeticBinaryOperation):
@@ -768,13 +753,15 @@ class Spektakel2Stack(Translator):
             successor = Chain()
 
             iterable, chain = self.translate_expression(chain, node.iterable, dec, on_error)
-            iterator, chain = self.emit_call(chain, terms.Member(iterable, "__iter__"), [], on_error)
+            callee, chain = self.translate_expression(chain, Attribute(iterable, "__iter__"), dec, on_error)
+            iterator, chain = self.emit_call(chain, callee, [], on_error)
 
             self.declare_pattern(chain, node.pattern, on_error)
 
             chain.append_jump(body)
 
-            element, body = self.emit_call(body, terms.Member(iterator, "__next__"), [], stopper)
+            callee, body = self.translate_expression(body, Attribute(iterator, "__next__"), dec, on_error)
+            element, body = self.emit_call(body, callee, [], stopper)
 
             s = terms.IsInstance(terms.Read(ExceptionReference()), types.builtin.StopIteration)
             stopper.append_guard({s: successor, ~s: on_error}, on_error)
