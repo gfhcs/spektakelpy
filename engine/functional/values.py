@@ -77,3 +77,33 @@ class EvaluationException(VException):
 
 class VTypeError(VException):
     pass
+
+
+class VNamespace(Value):
+    """
+    A mapping from names to objects.
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Creates a new namespace.
+        :param kwargs: A mapping form strings to Value objects that this namespace is to be initialized with.
+        """
+        pass
+
+    def adjoin(self, name, value):
+        """
+        Manipulates this namespace to map the given name to the given value.
+        :param name: A string.
+        :param value: A runtime object that the name is to be mapped to.
+        """
+        pass
+
+    def lookup(self, name):
+        """
+        Looks up the given name in this name space.
+        :param name: The name to look up.
+        :return: The runtime object that was retrieved.
+
+        """
+        pass

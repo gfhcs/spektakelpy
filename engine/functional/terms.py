@@ -494,9 +494,37 @@ class Project(Term):
         i = self.index.evaluate(tstate, mstate)
         return t[i]
 
+
 class Lookup(Term):
-    # TODO: This should call engine.tasks.dynamic.Namespace.lookup
-    pass
+    """
+    A term that queries a namespace.
+    """
+    def __init__(self, namespace, name):
+        """
+        Creates a new namespace lookup.
+        :param namespace: A term evaluating to a Namespace value.
+        :param name: A string specifying the name that is to be looked up.
+        """
+        super().__init__(check_type(namespace, Term))
+        self._name = check_type(name, str)
+
+    @property
+    def namespace(self):
+        """
+        A term evaluating to name space that is to be queried.
+        """
+        return self.children[0]
+
+    @property
+    def name(self):
+        """
+        A string specifying the name that is to be looked up.
+        """
+        return self._name
+
+    def evaluate(self, tstate, mstate):
+        return self.namespace.evaluate(tstate, mstate).lookup(self.name)
+
 
 class LoadAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
@@ -507,12 +535,6 @@ class StoreAttrCase(Term):
     # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
     pass
 
-
-
-
-class Adjunction(Term):
-    # TODO: This should call engine.tasks.dynamic.Namespace.adjoin
-    pass
 
 class NewString(Term):
     pass
