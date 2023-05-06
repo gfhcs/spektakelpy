@@ -785,7 +785,20 @@ class NewProcedure(Term):
 
 
 class NumArgs(Term):
-    pass
+    """
+    A term determining the number of arguments of a procedure.
+    """
+
+    def __init__(self, arg):
+        """
+        Creates a new NumArgs term.
+        :param arg: The term representing the procedure object the number of arguments of which is to be determined.
+        """
+        super().__init__(arg)
+
+    def evaluate(self, tstate, mstate):
+        p = self.children[0].evaluate(tstate, mstate)
+        return p.num_args
 
 
 class NewProperty(Term):
