@@ -36,3 +36,5 @@ class TFunction(Type):
 
 TFunction.instance = TFunction()
 
+class TClass(Type):
+    pass

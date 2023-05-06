@@ -3,7 +3,7 @@ from abc import ABC
 from enum import Enum
 
 from util import check_type
-from .types import TException, TFunction, Type
+from .types import TException, TFunction, Type, TClass
 from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure, \
     VProperty
 from ..task import TaskStatus
@@ -844,7 +844,38 @@ class NewProperty(Term):
 
 
 class NewClass(Term):
-    pass
+    """
+    A term that evaluates to a new Type object.
+    """
+
+    def __init__(self, superclasses, namespace):
+        """
+        Creates a new Class term.
+        :param superclasses: An iterable of terms that evaluate to super classes
+                             of the class to be created by this term.
+        :param namespace: A term evaluating to a namespace binding names to members
+                          of the class to be created by this term.
+        """
+        super().__init__(*superclasses, namespace)
+
+    @property
+    def superclasses(self):
+        """
+        An iterable of terms that evaluate to super classes of the class to be created by this term.
+        """
+        return self.children[:-1]
+
+    @property
+    def namespace(self):
+        """
+        A term evaluating to a namespace binding names to members of the class to be created by this term.
+        """
+        return self.children[-1]
+
+    def evaluate(self, tstate, mstate):
+        ss = tuple(s.evaluate(tstate, mstate) for s in self.superclasses)
+        ns = self.namespace.evaluate(tstate, mstate)
+        return TClass(ss, ns)
 
 
 class NewModule(Term):
