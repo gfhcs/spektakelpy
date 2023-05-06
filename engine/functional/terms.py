@@ -736,7 +736,18 @@ class NewTypeError(Term):
 
 
 class NewNamespace(Term):
-    pass
+    """
+    A term that evaluates to a new empty namespace.
+    """
+
+    def __init__(self):
+        """
+        Creates a new namespace term.
+        """
+        super().__init__()
+
+    def evaluate(self, tstate, mstate):
+        return VNamespace()
 
 
 class NewFunction(Term):
