@@ -637,7 +637,7 @@ class Spektakel2Stack(Translator):
         #               must thus map the shared variables to offsets in the heap frame.
         #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
 
-        f = terms.NewFunction(num_args, body.compile())
+        f = terms.NewProcedure(num_args, body.compile())
 
         self._blocks.pop()
 
@@ -976,7 +976,7 @@ class Spektakel2Stack(Translator):
         successor.append_pop()
         exitBlock.append_pop()
 
-        load = terms.NewFunction(1, bodyBlock.compile())
+        load = terms.NewProcedure(1, bodyBlock.compile())
 
         self._blocks.pop()
 

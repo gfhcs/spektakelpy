@@ -4,8 +4,9 @@ from enum import Enum
 
 from util import check_type
 from .types import TException, TFunction, Type
-from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict
+from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure
 from ..task import TaskStatus
+from ..tasks.instructions import StackProgram
 from ..tasks.reference import Reference, NameReference
 
 
@@ -750,8 +751,37 @@ class NewNamespace(Term):
         return VNamespace()
 
 
-class NewFunction(Term):
-    pass
+class NewProcedure(Term):
+    """
+    A term that evaluates to a new VProcedure object.
+    """
+
+    def __init__(self, num_args, code):
+        """
+        Creates a new procedure creation term.
+        :param num_args: The number of arguments of the procedure to be created by this term.
+        :param code: The StackProgram representing the code to be executed by the procedure created by this term.
+        """
+        super().__init__()
+        self._num_args = check_type(num_args, int)
+        self._code = check_type(code, StackProgram)
+
+    @property
+    def num_args(self):
+        """
+        The number of arguments of the procedure to be created by this term.
+        """
+        return self._num_args
+
+    @property
+    def code(self):
+        """
+        The StackProgram representing the code to be executed by the procedure created by this term.
+        """
+        return self._code
+
+    def evaluate(self, tstate, mstate):
+        return VProcedure(self._num_args, self._code)
 
 
 class NumArgs(Term):

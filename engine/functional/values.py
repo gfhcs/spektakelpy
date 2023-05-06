@@ -85,6 +85,8 @@ class EvaluationException(VException):
 class VTypeError(VException):
     pass
 
+class VProcedure(Value):
+    pass
 
 class VNamespace(Value):
     """
