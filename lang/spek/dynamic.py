@@ -1028,7 +1028,7 @@ class Spektakel2Stack(Translator):
         exit = Chain()
 
         # We create a new Namespace object and put it into the stack frame.
-        block.append_update(StackFrameReference(0), terms.NewNamespace(), exit)
+        block.append_update(FrameReference(0), terms.NewNamespace(), exit)
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
@@ -1039,7 +1039,7 @@ class Spektakel2Stack(Translator):
             block = self.translate_statement(block, node, dec, exit)
 
         # Return a Module object. The preamble will store it somewhere.
-        block.append_update(ReturnValueReference(), terms.NewModule(terms.Read(StackFrameReference(0))), exit)
+        block.append_update(ReturnValueReference(), terms.NewModule(terms.Read(FrameReference(0))), exit)
 
         block.append_pop()
         exit.append_pop()

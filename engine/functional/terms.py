@@ -5,7 +5,7 @@ from enum import Enum
 from util import check_type
 from .types import TException, TFunction, Type, TClass
 from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure, \
-    VProperty
+    VProperty, VModule
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
 from ..tasks.reference import Reference, NameReference
@@ -879,4 +879,25 @@ class NewClass(Term):
 
 
 class NewModule(Term):
-    pass
+    """
+    A term that evaluates to a new Module object.
+    """
+
+    def __init__(self, namespace):
+        """
+        Creates a new module term.
+        :param namespace: A term evaluating to a namespace binding names to members
+                          of the module to be created by this term.
+        """
+        super().__init__(namespace)
+
+    @property
+    def namespace(self):
+        """
+        A term evaluating to a namespace binding names to members of the module to be created by this term.
+        """
+        return self.children[0]
+
+    def evaluate(self, tstate, mstate):
+        ns = self.namespace.evaluate(tstate, mstate)
+        return VModule(ns)

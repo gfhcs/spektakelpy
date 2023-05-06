@@ -119,3 +119,7 @@ class VNamespace(Value):
 
         """
         pass
+
+
+class VModule(Value):
+    pass
