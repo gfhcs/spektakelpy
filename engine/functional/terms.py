@@ -712,7 +712,27 @@ class NewJumpException(Term):
 
 
 class NewTypeError(Term):
-    pass
+    """
+    A term that evaluates to a TypeError.
+    """
+
+    def __init__(self, message):
+        """
+        Creates a new tuple term.
+        :param message: The message for the type error created by this term.
+        """
+        super().__init__()
+        self._msg = check_type(message, str)
+
+    @property
+    def message(self):
+        """
+        The message for the type error created by this term.
+        """
+        return self._msg
+
+    def evaluate(self, tstate, mstate):
+        return VTypeError(self._msg)
 
 
 class NewNamespace(Term):
