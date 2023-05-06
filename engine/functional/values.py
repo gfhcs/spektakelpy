@@ -39,6 +39,10 @@ class VTuple(Value):
     # TODO: Implement tuples.
     pass
 
+class VDict(Value):
+    # TODO: Implement dicts.
+    pass
+
 # TODO: Every object has an identity, a type and a value. An object’s identity never changes once it has been created; you may think of it as the object’s address in memory.
 
 # TODO: We need these runtime objects: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module

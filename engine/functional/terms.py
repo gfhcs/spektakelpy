@@ -4,7 +4,7 @@ from enum import Enum
 
 from util import check_type
 from .types import TException, TFunction, Type
-from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString
+from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict
 from ..task import TaskStatus
 from ..tasks.reference import Reference, NameReference
 
@@ -671,11 +671,18 @@ class NewTuple(Term):
 
 
 class NewDict(Term):
-    pass
+    """
+    A term that evaluates toa new empty dictionary.
+    """
 
+    def __init__(self):
+        """
+        Creates a new dict term.
+        """
+        super().__init__()
 
-class NewTypeError(Term):
-    pass
+    def evaluate(self, tstate, mstate):
+        return VDict()
 
 
 class NewJumpException(Term):
@@ -704,6 +711,7 @@ class NewJumpException(Term):
         return self._etype()
 
 
+class NewTypeError(Term):
     pass
 
 
