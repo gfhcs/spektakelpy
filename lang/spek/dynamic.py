@@ -536,7 +536,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewReturnException(), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewJumpException(VReturnException), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.FunctionBlock):
@@ -562,7 +562,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewBreakException(), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewJumpException(VBreakException), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.LoopBlock):
@@ -587,7 +587,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewContinueException(), on_error=on_error)
+                chain.append_update(ExceptionReference(),terms.NewJumpException(VContinueException), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.LoopBlock):

@@ -678,15 +678,32 @@ class NewTypeError(Term):
     pass
 
 
-class NewReturnException(Term):
-    pass
+class NewJumpException(Term):
+    """
+    A term that evaluates to either a break, continue or return exception.
+    """
+
+    def __init__(self, etype):
+        """
+        Creates a new tuple term.
+        :param etype: The subclass of VJumpException that is to be instantiated by this term.
+        """
+        if not issubclass(etype, VJumpException):
+            raise TypeError("{} is not a subclass of VJumpException!".format(etype))
+        super().__init__()
+        self._etype = etype
+
+    @property
+    def etype(self):
+        """
+        The subclass of VJumpException that is to be instantiated by this term.
+        """
+        return self._etype
+
+    def evaluate(self, tstate, mstate):
+        return self._etype()
 
 
-class NewContinueException(Term):
-    pass
-
-
-class NewBreakException(Term):
     pass
 
 
