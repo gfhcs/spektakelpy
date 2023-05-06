@@ -5,7 +5,7 @@ from enum import Enum
 from util import check_type
 from .types import TException, TFunction, Type, TClass
 from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure, \
-    VProperty, VModule
+    VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
 from ..tasks.reference import Reference, NameReference
