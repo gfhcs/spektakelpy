@@ -1,6 +1,6 @@
 from engine.functional import terms
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
-from engine.tasks.reference import ReturnValueReference, ExceptionReference
+from engine.tasks.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
@@ -333,15 +333,6 @@ class Spektakel2Stack(Translator):
 
                 a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
-                # The term AttrCase first determines the type of a.
-                # If a is of type 'type', then the MRO of a is searched for the attribute.
-                # If a is not of type 'type', then the MRO of the type of a is searched for the attribute.
-                # The return value distinguishes the following cases:
-                # 0. The name was found and refers to a property. The setter of that property needs to be called. The term evaluates to that setter.
-                # 1. The name was found and refers to an instance variable. The term valuates to a NameReference.
-                # 2. The name was found and refers to a method. The term evaluates to an exception to raise.
-                # 3. The name was found and refers to a class variable. The term evaluates to a NameReference.
-                # 4. The name was not found. The term evaluates to an exception to raise.
                 r = self.declare_name(chain, None, on_error)
                 chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
 

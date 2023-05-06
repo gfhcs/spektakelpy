@@ -167,3 +167,37 @@ class ObjectReference(Reference):
         return self._pobject
 
 
+class NameReference(Reference):
+    """
+    A reference to a named field of an object.
+    """
+
+    def __init__(self, oref, name):
+        """
+        Refers to a named field of an object.
+        :param oref: A Reference to the object a field of which is to be referenced.
+        :param name: The name of the field to refer to.
+        """
+        super().__init__()
+        self._oref = oref
+        self._name = name
+
+    def _seal(self):
+        self._oref.seal()
+
+    def clone_unsealed(self, clones=None):
+        return NameReference(self._oref.clone_unsealed(), self._name)
+
+    def hash(self):
+        check_sealed(self)
+        return hash(self._oref) ^ hash(self._name)
+
+    def equals(self, other):
+        return isinstance(other, NameReference) and self._name == other._name and self._oref == other._oref
+
+    def write(self, tstate, mstate, value):
+        self._oref.read(tstate, mstate)[self._name] = value
+
+    def read(self, tstate, mstate):
+        return self._oref.read(tstate, mstate)[self._name]
+

@@ -6,7 +6,7 @@ from util import check_type
 from .types import TException, TFunction, Type
 from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError
 from ..task import TaskStatus
-from ..tasks.reference import Reference
+from ..tasks.reference import Reference, NameReference
 
 
 class Term(abc.ABC):
@@ -532,11 +532,11 @@ class LoadAttrCase(Term):
     If the given object is of type 'type', then the MRO of the object is searched for the attribute of the given name.
     If the given object is not of type 'type', then the MRO of the type of the object is searched for the attribute.
     In both cases, the term evaluates as follows:
-    # 0. The name was found and refers to a property. The term evaluates to the getter of that property.
-    # 1. The name was found and refers to an instance variable. The term evaluates to the value of the instance variable.
-    # 2. The name was found and refers to a method. The term evaluates to the method.
-    # 3. The name was found and refers to a class variable. The term evaluates to the value of that variable.
-    # 4. The name was not found. The term evaluation raises an exception.
+        0. The name was found and refers to a property. The term evaluates to the getter of that property.
+        1. The name was found and refers to an instance variable. The term evaluates to the value of the instance variable.
+        2. The name was found and refers to a method. The term evaluates to the method.
+        3. The name was found and refers to a class variable. The term evaluates to the value of that variable.
+        4. The name was not found. The term evaluation raises an exception.
     """
 
     def __init__(self, value, name):
@@ -570,16 +570,67 @@ class LoadAttrCase(Term):
             attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name, value)
             if isinstance(attr, VProperty):
                 return attr.getter
+            elif isinstance(attr, NameReference):
+                return attr.read(tstate, mstate)
             else:
-                return attr
+                raise TypeError(type(attr))
         except KeyError:
             return VAttributeError()
 
 
 class StoreAttrCase(Term):
-    # TODO: Für AttrCase sollten wir den Kommentar im Translation-Code als Dokumentation nutzen.
-    pass
+    """
+    A term that evaluates to a reference that can be written to.
+    If the given object is of type 'type', then the MRO of the object is searched for the attribute of the given name.
+    If the given object is not of type 'type', then the MRO of the type of the object is searched for the attribute.
+    The return value distinguishes the following cases:
+        0. The name was found and refers to a property. The term evaluates to the setter of that property.
+        1. The name was found and refers to an instance variable. The term valuates to a NameReference.
+        2. The name was found and refers to a method. The term evaluates to an exception to raise.
+        3. The name was found and refers to a class variable. The term evaluates to a NameReference.
+        4. The name was not found. The term evaluates to an exception to raise.
+    """
 
+    def __init__(self, value, name):
+        """
+        Creates a new namespace lookup.
+        :param value: A term evaluating to the value an attribute of which should be written.
+        :param name: A string specifying the name that is to be looked up.
+        """
+        super().__init__(check_type(value, Term))
+        self._name = check_type(name, str)
+
+    @property
+    def value(self):
+        """
+        A term evaluating to the value an attribute of which should be written.
+        """
+        return self.children[0]
+
+    @property
+    def name(self):
+        """
+        A string specifying the name that is to be looked up.
+        """
+        return self._name
+
+    def evaluate(self, tstate, mstate):
+        value = self.value.evaluate(tstate, mstate)
+        t = value.type
+
+        try:
+            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name, value)
+
+            if isinstance(attr, VProperty):
+                return attr.setter
+            elif isinstance(attr, VProcedure):
+                return VTypeError("Cannot assign values to method fields!")
+            elif isinstance(attr, NameReference):
+                return attr
+            else:
+                raise TypeError(type(attr))
+        except KeyError:
+            return VAttributeError()
 
 class NewString(Term):
     pass
@@ -602,6 +653,10 @@ class NewContinueException(Term):
 class NewBreakException(Term):
     pass
 
+
+class NewNamespace(Term):
+    pass
+
 class NewFunction(Term):
     pass
 
@@ -611,8 +666,6 @@ class NumArgs(Term):
 class NewProperty(Term):
     pass
 
-class NewNamespace(Term):
-    pass
 
 class NewModule(Term):
     pass
