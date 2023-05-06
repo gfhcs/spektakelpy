@@ -1,4 +1,9 @@
+from collections import namedtuple
+
 from engine.functional import terms
+from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator
+from engine.functional.types import TStopIteration
+from engine.functional.values import VReturnException, VBreakException, VContinueException
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from engine.tasks.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
 from lang.translator import Translator
@@ -7,8 +12,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition, AssignableExpression
-from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator
-from collections import namedtuple
+from .modules import CompiledModule
 
 
 class Chain:
@@ -54,7 +58,8 @@ class Chain:
 
     def append_jump(self, target):
         """
-        Appends a prototype of an unconditional jump instruction to this chain. The chain cannot be continued after this.
+        Appends a prototype of an unconditional jump instruction to this chain.
+        The chain cannot be continued after this.
         :param target: The chain to jump to.
         """
         # According to the semantics, there cannot be an error in evaluating Truth():
@@ -754,7 +759,7 @@ class Spektakel2Stack(Translator):
             callee, body = self.translate_expression(body, Attribute(iterator, "__next__"), dec, on_error)
             element, body = self.emit_call(body, callee, [], stopper)
 
-            s = terms.IsInstance(terms.Read(ExceptionReference()), types.builtin.StopIteration)
+            s = terms.IsInstance(terms.Read(ExceptionReference()), TStopIteration.instance)
             stopper.append_guard({s: successor, ~s: on_error}, on_error)
             successor.append_update(ExceptionReference(), terms.CNone(), on_error)
 
@@ -879,11 +884,11 @@ class Spektakel2Stack(Translator):
 
             # We create a new Namespace object and put it into the stack frame.
             chain = chain.append_push()
-            chain = chain.append_update(StackFrameReference(0), terms.NewNamespace(), exit)
+            chain = chain.append_update(FrameReference(0), terms.NewNamespace(), exit)
 
             chain = self.translate_statement(chain, node.body, dec, on_error)
 
-            chain = chain.append_update(name, terms.NewClass(super_classes, terms.Read(StackFrameReference(0))), on_error)
+            chain = chain.append_update(name, terms.NewClass(super_classes, terms.Read(FrameReference(0))), on_error)
             chain = chain.append_pop()
 
             self._blocks.pop()

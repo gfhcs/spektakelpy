@@ -36,5 +36,10 @@ class TFunction(Type):
 
 TFunction.instance = TFunction()
 
+class TStopIteration:
+    pass
+
+TStopIteration.instance = TStopIteration()
+
 class TClass(Type):
     pass

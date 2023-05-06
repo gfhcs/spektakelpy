@@ -16,28 +16,35 @@ class Value(Sealable, abc.ABC):
         """
         pass
 
+
 class VBoolean(Value):
     # TODO: Must implement boolean operators in Python!
     pass
+
 
 class VInt(Value):
     # TODO: Must implement numeric operators in Python!
     pass
 
+
 class VFloat(Value):
     # TODO: Must implement numeric operators in Python!
     pass
 
+
 class VString(Value):
     pass
+
 
 class VNone(Value):
     # TODO: Must provide 1 instance object.
     pass
 
+
 class VTuple(Value):
     # TODO: Implement tuples.
     pass
+
 
 class VDict(Value):
     # TODO: Implement dicts.
@@ -47,11 +54,14 @@ class VDict(Value):
 
 # TODO: We need these runtime objects: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
 
+
 class Procedure(abc.ABC):
     pass
 
+
 class Struct(Value):
     pass
+
 
 class VException(Value):
 
@@ -82,14 +92,38 @@ class MachineError(VException):
 class EvaluationException(VException):
     pass
 
+
+class VJumpException(VException):
+    pass
+
+
+class VReturnException(VJumpException):
+    pass
+
+
+class VBreakException(VJumpException):
+    pass
+
+
+class VContinueException(VJumpException):
+    pass
+
+
 class VTypeError(VException):
     pass
+
+
+class VAttributeError(VException):
+    pass
+
 
 class VProperty(Value):
     pass
 
+
 class VProcedure(Value):
     pass
+
 
 class VNamespace(Value):
     """
