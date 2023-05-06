@@ -638,17 +638,22 @@ class NewString(Term):
 class NewTuple(Term):
     pass
 
+
 class NewDict(Term):
     pass
+
 
 class NewTypeError(Term):
     pass
 
+
 class NewReturnException(Term):
     pass
 
+
 class NewContinueException(Term):
     pass
+
 
 class NewBreakException(Term):
     pass
@@ -657,11 +662,14 @@ class NewBreakException(Term):
 class NewNamespace(Term):
     pass
 
+
 class NewFunction(Term):
     pass
 
+
 class NumArgs(Term):
     pass
+
 
 class NewProperty(Term):
     pass
@@ -669,6 +677,7 @@ class NewProperty(Term):
 
 class NewModule(Term):
     pass
+
 
 class NewClass(Term):
     pass
