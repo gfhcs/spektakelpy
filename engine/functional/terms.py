@@ -646,10 +646,28 @@ class StoreAttrCase(Term):
             return VAttributeError()
 
 
-
-
 class NewTuple(Term):
-    pass
+    """
+    A term that evaluates to a tuple.
+    """
+
+    def __init__(self, *comps):
+        """
+        Creates a new tuple term.
+        :param comps: The terms that evaluate to the components of the tuple.
+        """
+        super().__init__(*comps)
+
+    @property
+    def components(self):
+        """
+        The terms that evaluate to the components of the tuple.
+        :return:
+        """
+        return self.children
+
+    def evaluate(self, tstate, mstate):
+        return VTuple(*(c.evaluate(tstate, mstate) for c in self.components))
 
 
 class NewDict(Term):
