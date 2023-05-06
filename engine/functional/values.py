@@ -85,6 +85,9 @@ class EvaluationException(VException):
 class VTypeError(VException):
     pass
 
+class VProperty(Value):
+    pass
+
 class VProcedure(Value):
     pass
 

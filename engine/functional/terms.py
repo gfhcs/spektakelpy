@@ -4,7 +4,8 @@ from enum import Enum
 
 from util import check_type
 from .types import TException, TFunction, Type
-from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure
+from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure, \
+    VProperty
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
 from ..tasks.reference import Reference, NameReference
@@ -802,13 +803,49 @@ class NumArgs(Term):
 
 
 class NewProperty(Term):
-    pass
+    """
+    A term that evaluates to a new VProperty object.
+    """
 
+    def __init__(self, getter, setter=None):
+        """
+        Creates a new procedure creation term.
+        :param getter: A term evaluating to a procedure that serves as the getter for the property.
+        :param setter: Either None (for a readonly property),
+                       or a term evaluating to a procedure that serves as the getter for the property.
+        """
+        if setter is None:
+            super().__init__(getter)
+        else:
+            super().__init__(getter, setter)
 
-class NewModule(Term):
-    pass
+    @property
+    def getter(self):
+        """
+        A term evaluating to a procedure that serves as the getter for the property.
+        """
+        return self.children[0]
+
+    @property
+    def setter(self):
+        """
+        Either None (for a readonly property),
+        or a term evaluating to a procedure that serves as the getter for the property.
+        """
+        try:
+            return self.children[1]
+        except IndexError:
+            return None
+
+    def evaluate(self, tstate, mstate):
+        g = self.getter.evaluate(tstate, mstate)
+        s = None if self.setter is None else self.setter.evaluate(tstate, mstate)
+        return VProperty(g, s)
 
 
 class NewClass(Term):
     pass
 
+
+class NewModule(Term):
+    pass
