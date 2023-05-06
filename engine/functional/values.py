@@ -28,6 +28,9 @@ class VFloat(Value):
     # TODO: Must implement numeric operators in Python!
     pass
 
+class VString(Value):
+    pass
+
 class VNone(Value):
     # TODO: Must provide 1 instance object.
     pass

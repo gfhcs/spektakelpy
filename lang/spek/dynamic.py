@@ -413,7 +413,7 @@ class Spektakel2Stack(Translator):
             if isinstance(value, bool):
                 return (terms.CBool(True) if value == True else terms.CBool(False)), chain
             elif isinstance(value, str):
-                return (terms.NewString(value), chain)
+                return (terms.CString(value), chain)
             elif value is None:
                 return (terms.CNone(), chain)
             elif isinstance(value, int):

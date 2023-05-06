@@ -4,7 +4,7 @@ from enum import Enum
 
 from util import check_type
 from .types import TException, TFunction, Type
-from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError
+from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString
 from ..task import TaskStatus
 from ..tasks.reference import Reference, NameReference
 
@@ -109,6 +109,19 @@ class CNone(CTerm):
         Instantiates a new None term.
         """
         super().__init__(VNone.instance)
+
+
+class CString(CTerm):
+    """
+    A term that represents a character string.
+    """
+
+    def __init__(self, value):
+        """
+        Instantiates a new string constant term.
+        :param value: The string this term is supposed to represent.
+        """
+        super().__init__(VString(value))
 
 
 class ArithmeticUnaryOperator(Enum):
@@ -632,8 +645,8 @@ class StoreAttrCase(Term):
         except KeyError:
             return VAttributeError()
 
-class NewString(Term):
-    pass
+
+
 
 class NewTuple(Term):
     pass
