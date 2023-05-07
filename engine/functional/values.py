@@ -598,47 +598,130 @@ class VDict(Value):
 
 
 class VException(Value):
+    """
+    The base type for all exceptions.
+    """
 
-    def __init__(self, message):
+    def __init__(self, message, *args):
+        """
+        Creates a new exception
+        :param message: The message for this exception.
+        :param args: Additional constructor arguments that annotate the exception.
+        """
         super().__init__()
-        self._msg = message
+        self._msg = check_type(message, VString)
+        self._args = tuple(check_type(a, Value) for a in args)
+
+    def __str__(self):
+        return str("{}: {}".format(type(self), self._msg))
+
+    def __repr__(self):
+        return "VException({})".format(", ".join((repr(self._msg), *map(repr, self._args))))
+
+    @property
+    def type(self):
+        return TBuiltin.exception
+
+    @property
+    def message(self):
+        """
+        The message for this exception.
+        """
+        return self._msg
+
+    @property
+    def args(self):
+        """
+        Additional constructor arguments that annotate the exception.
+        """
+        return self._args
+
+    def _seal(self):
+        pass
 
     def hash(self):
-        return hash(self._msg)
+        return hash(id(self))
 
     def equals(self, other):
-        pass
+        return id(self) == id(other)
+
+    def _seal(self):
+        self._msg.seal()
+        for a in self._args:
+            a.seal()
 
     def clone_unsealed(self, clones=None):
-        pass
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VTuple(self._msg.clone_unsealed(clones=clones), *(c.clone_unsealed(clones=clones) for c in self._args))
+            clones[id(self)] = c
+            return c
 
 
 class EvaluationException(VException):
-    pass
+    """
+    Raised when the evaluation of a term fails.
+    """
+    @property
+    def type(self):
+        return TBuiltin.evaluation_exception
 
 
 class VTypeError(VException):
-    pass
+    """
+    Raised when an inappropriate type is encountered.
+    """
+    @property
+    def type(self):
+        return TBuiltin.type_error
 
 
 class VJumpException(VException):
-    pass
+    """
+    Raised a control flow jump is executed.
+    """
+    @property
+    def type(self):
+        return TBuiltin.jump_exception
 
 
 class VReturnException(VJumpException):
-    pass
+    """
+    Raised a return statement is executed.
+    """
+    @property
+    def type(self):
+        return TBuiltin.return_exception
 
 
 class VBreakException(VJumpException):
-    pass
+    """
+    Raised a break statement is executed.
+    """
+    @property
+    def type(self):
+        return TBuiltin.break_exception
 
 
 class VContinueException(VJumpException):
-    pass
+    """
+    Raised a continue statement is executed.
+    """
+    @property
+    def type(self):
+        return TBuiltin.continue_exception
 
 
 class VAttributeError(VException):
-    pass
+    """
+    Raised when an attribute cannot be resolved.
+    """
+    @property
+    def type(self):
+        return TBuiltin.attribute_error
 
 
 class VNamespace(Value):
