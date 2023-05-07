@@ -441,8 +441,8 @@ class VTuple(Value):
     def __iter__(self):
         return iter(self._comps)
 
-    def __getitem__(self, item):
-        return self._comps[item]
+    def __getitem__(self, key):
+        return self._comps[int(check_type(key, Value))]
 
     def __lt__(self, other):
         return VBoolean.from_bool(self._comps < other._comps)
@@ -492,7 +492,7 @@ class VList(Value):
         return TBuiltin.list
 
     def hash(self):
-        return hash(self._items)
+        return hash(tuple(self._items))
 
     def equals(self, other):
         return isinstance(other, VList) and self._items == other._items
@@ -518,11 +518,11 @@ class VList(Value):
     def __iter__(self):
         return iter(self._items)
 
-    def __getitem__(self, item):
-        return self._items[item]
+    def __getitem__(self, key):
+        return self._items[int(check_type(key, Value))]
 
     def __setitem__(self, key, value):
-        self._items[key] = check_type(value)
+        self._items[int(check_type(key, Value))] = check_type(value)
 
     def __lt__(self, other):
         return VBoolean.from_bool(self._items < other._items)
@@ -538,8 +538,63 @@ class VList(Value):
 
 
 class VDict(Value):
-    # TODO: Implement dicts.
-    pass
+    """
+    Equivalent to Python's dicts.
+    """
+
+    def __init__(self, items):
+        super().__init__()
+        self._items = {check_type(k, Value): check_type(v, Value) for k, v in items.items()}
+
+    def __str__(self):
+        return str(self._items)
+
+    def __repr__(self):
+        return "VDict({})".format(repr(list(self._items)))
+
+    @property
+    def type(self):
+        return TBuiltin.dict
+
+    def hash(self):
+        return hash(len(self))
+
+    def equals(self, other):
+        if not isinstance(other, VDict) or len(self) != len(other):
+            return False
+        for k, v in self._items.items():
+            if other._items[k] != v:
+                return False
+        return True
+
+    def _seal(self):
+        for k, v in self._items.items():
+            k.seal()
+            v.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VDict({k.clone_unsealed(clones=clones): v.clone_unsealed(clones=clones) for k, v in self._items.items()})
+            clones[id(self)] = c
+            return c
+
+    def __len__(self):
+        return len(self._items)
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __getitem__(self, item):
+        return self._items[item]
+
+    def __setitem__(self, key, value):
+        if self.sealed:
+            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        self._items[check_type(key, Value)] = check_type(value)
 
 
 class VException(Value):
