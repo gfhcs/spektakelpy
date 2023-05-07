@@ -16,6 +16,10 @@ class Value(Sealable, abc.ABC):
         """
         pass
 
+class VNone(Value):
+    # TODO: Must provide 1 instance object.
+    pass
+
 
 class VBoolean(Value):
     # TODO: Must implement boolean operators in Python!
@@ -36,30 +40,16 @@ class VString(Value):
     pass
 
 
-class VNone(Value):
-    # TODO: Must provide 1 instance object.
-    pass
-
-
 class VTuple(Value):
     # TODO: Implement tuples.
     pass
 
+class VList(Value):
+    # TODO: Implement lists.
+    pass
 
 class VDict(Value):
     # TODO: Implement dicts.
-    pass
-
-# TODO: Every object has an identity, a type and a value. An object’s identity never changes once it has been created; you may think of it as the object’s address in memory.
-
-# TODO: We need these runtime objects: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
-
-
-class Procedure(abc.ABC):
-    pass
-
-
-class Struct(Value):
     pass
 
 
@@ -79,17 +69,11 @@ class VException(Value):
         pass
 
 
-class MachineError(VException):
-    """
-    An error that occurs as the semantic result of executing a machine program.
-    """
-
-    def __init__(self, msg):
-        super().__init__()
-        self._msg = msg
-
-
 class EvaluationException(VException):
+    pass
+
+
+class VTypeError(VException):
     pass
 
 
@@ -109,19 +93,7 @@ class VContinueException(VJumpException):
     pass
 
 
-class VTypeError(VException):
-    pass
-
-
 class VAttributeError(VException):
-    pass
-
-
-class VProperty(Value):
-    pass
-
-
-class VProcedure(Value):
     pass
 
 
@@ -153,6 +125,14 @@ class VNamespace(Value):
 
         """
         pass
+
+
+class VProcedure(abc.ABC):
+    pass
+
+
+class VProperty(Value):
+    pass
 
 
 class VModule(Value):
