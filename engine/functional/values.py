@@ -1,5 +1,8 @@
 import abc
+
+from util import check_type
 from util.immutable import Sealable
+from .types import TBuiltin
 
 
 class Value(Sealable, abc.ABC):
@@ -16,24 +19,338 @@ class Value(Sealable, abc.ABC):
         """
         pass
 
+
 class VNone(Value):
-    # TODO: Must provide 1 instance object.
-    pass
+    """
+    Equivalent of Python's 'None'.
+    """
+
+    @property
+    def type(self):
+        return TBuiltin.none
+
+    def hash(self):
+        return 0
+
+    def equals(self, other):
+        return isinstance(other, VNone)
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
+
+    def __str__(self):
+        return "None"
+
+    def __repr__(self):
+        return "VNone.instance"
+
+
+VNone.instance = VNone()
 
 
 class VBoolean(Value):
-    # TODO: Must implement boolean operators in Python!
-    pass
+    """
+    Equivalent to Python's bool.
+    """
+
+    def __init__(self, value):
+        super().__init__()
+        self._value = check_type(value, bool)
+
+    @staticmethod
+    def from_bool(b):
+        """
+        Converts a bool to a VBoolean object, in a way that saves memory.
+        :param b: The bool to convert.
+        :return: A VBoolean object.
+        """
+        return VBoolean.true if b else VBoolean.false
+
+    def __str__(self):
+        return "True" if self._value else "False"
+
+    def __repr__(self):
+        return "VBool.true" if self._value else "VBool.false"
+
+    @property
+    def type(self):
+        return TBuiltin.bool
+
+    def hash(self):
+        return hash(self._value)
+
+    def equals(self, other):
+        return isinstance(other, VBoolean) and self._value == other._value
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
+
+    def __lt__(self, other):
+        return VBoolean.from_bool(self._value < other._value)
+
+    def __le__(self, other):
+        return VBoolean.from_bool(self._value <= other._value)
+
+    def __gt__(self, other):
+        return VBoolean.from_bool(self._value > other._value)
+
+    def __ge__(self, other):
+        return VBoolean.from_bool(self._value >= other._value)
+
+    def __bool__(self, other):
+        return self._value
+
+    def __int__(self):
+        return int(self._value)
+
+    def __float__(self):
+        return float(self._value)
+
+    def __neg__(self):
+        return VInt(-self._value)
+
+    def __pos__(self):
+        return VInt(+self._value)
+
+    def __abs__(self):
+        return VInt(abs(self._value))
+
+    def __invert__(self):
+        return VInt(~self._value)
+
+    def __and__(self, other):
+        return VBoolean.from_bool(self._value & other._value)
+
+    def __xor__(self, other):
+        return VBoolean.from_bool(self._value ^ other._value)
+
+    def __or__(self, other):
+        return VBoolean.from_bool(self._value | other._value)
+
+    def __lshift__(self, other):
+        return VInt(self._value << int(other))
+
+    def __rshift__(self, other):
+        return VInt(self._value >> int(other))
+
+    def __add__(self, other):
+        return VInt(self._value + other._value)
+
+    def __sub__(self, other):
+        return VInt(self._value - other._value)
+
+    def __mul__(self, other):
+        return VInt(self._value * other._value)
+
+    def __truediv__(self, other):
+        return VFloat(self._value / other._value)
+
+    def __floordiv__(self, other):
+        return VInt(self._value // other._value)
+
+    def __mod__(self, other):
+        return VInt(self._value % other._value)
+
+    def __pow__(self, other):
+        return VInt(self._value ** other._value)
+
+
+VBoolean.true = VBoolean(True)
+VBoolean.false = VBoolean(False)
 
 
 class VInt(Value):
-    # TODO: Must implement numeric operators in Python!
-    pass
+    """
+    Equivalent to Python's int.
+    """
+
+    def __init__(self, value):
+        super().__init__()
+        self._value = check_type(value, int)
+
+    def __str__(self):
+        return str(self._value)
+
+    def __repr__(self):
+        return "VInt({})".format(self._value)
+
+    @property
+    def type(self):
+        return TBuiltin.int
+
+    def hash(self):
+        return hash(self._value)
+
+    def equals(self, other):
+        return isinstance(other, VInt) and self._value == other._value
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
+
+    def __lt__(self, other):
+        return VBoolean.from_bool(self._value < other._value)
+
+    def __le__(self, other):
+        return VBoolean.from_bool(self._value <= other._value)
+
+    def __gt__(self, other):
+        return VBoolean.from_bool(self._value > other._value)
+
+    def __ge__(self, other):
+        return VBoolean.from_bool(self._value >= other._value)
+
+    def __bool__(self, other):
+        return bool(self._value)
+
+    def __int__(self):
+        return self._value
+
+    def __float__(self):
+        return float(self._value)
+
+    def __neg__(self):
+        return VInt(-self._value)
+
+    def __pos__(self):
+        return VInt(+self._value)
+
+    def __abs__(self):
+        return VInt(abs(self._value))
+
+    def __invert__(self):
+        return VInt(~self._value)
+
+    def __and__(self, other):
+        return VInt(self._value & other._value)
+
+    def __xor__(self, other):
+        return VInt(self._value ^ other._value)
+
+    def __or__(self, other):
+        return VInt(self._value | other._value)
+
+    def __lshift__(self, other):
+        return VInt(self._value << int(other))
+
+    def __rshift__(self, other):
+        return VInt(self._value >> int(other))
+
+    def __add__(self, other):
+        return VInt(self._value + other._value)
+
+    def __sub__(self, other):
+        return VInt(self._value - other._value)
+
+    def __mul__(self, other):
+        return VInt(self._value * other._value)
+
+    def __truediv__(self, other):
+        return VFloat(self._value / other._value)
+
+    def __floordiv__(self, other):
+        return VInt(self._value // other._value)
+
+    def __mod__(self, other):
+        return VInt(self._value % other._value)
+
+    def __pow__(self, other):
+        return VInt(self._value ** other._value)
 
 
 class VFloat(Value):
-    # TODO: Must implement numeric operators in Python!
-    pass
+    """
+    Equivalent to Python's float.
+    """
+
+    def __init__(self, value):
+        super().__init__()
+        self._value = check_type(value, float)
+
+    def __str__(self):
+        return str(self._value)
+
+    def __repr__(self):
+        return "VFloat({})".format(self._value)
+
+    @property
+    def type(self):
+        return TBuiltin.float
+
+    def hash(self):
+        return hash(self._value)
+
+    def equals(self, other):
+        return isinstance(other, VFloat) and self._value == other._value
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
+
+    def __lt__(self, other):
+        return VBoolean.from_bool(self._value < other._value)
+
+    def __le__(self, other):
+        return VBoolean.from_bool(self._value <= other._value)
+
+    def __gt__(self, other):
+        return VBoolean.from_bool(self._value > other._value)
+
+    def __ge__(self, other):
+        return VBoolean.from_bool(self._value >= other._value)
+
+    def __bool__(self, other):
+        return bool(self._value)
+
+    def __int__(self):
+        return int(self._value)
+
+    def __float__(self):
+        return self._value
+
+    def __neg__(self):
+        return VFloat(-self._value)
+
+    def __pos__(self):
+        return VFloat(+self._value)
+
+    def __abs__(self):
+        return VFloat(abs(self._value))
+
+    def __invert__(self):
+        return VFloat(~self._value)
+
+    def __add__(self, other):
+        return VFloat(self._value + other._value)
+
+    def __sub__(self, other):
+        return VFloat(self._value - other._value)
+
+    def __mul__(self, other):
+        return VFloat(self._value * other._value)
+
+    def __truediv__(self, other):
+        return VFloat(self._value / other._value)
+
+    def __floordiv__(self, other):
+        return VFloat(self._value // other._value)
+
+    def __mod__(self, other):
+        return VFloat(self._value % other._value)
+
+    def __pow__(self, other):
+        return VFloat(self._value ** other._value)
+
 
 
 class VString(Value):

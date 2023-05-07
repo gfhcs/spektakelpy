@@ -18,10 +18,10 @@ class Type(Value):
     def subtypeof(self, other):
         pass
 
-
-
-# Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
-
+class TBuiltin(Type):
+    # TODO: All builtin types should be instances of this type.
+    # Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
+    pass
 
 class TException(Type):
     pass
