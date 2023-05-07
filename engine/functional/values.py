@@ -352,9 +352,48 @@ class VFloat(Value):
         return VFloat(self._value ** other._value)
 
 
-
 class VString(Value):
-    pass
+    """
+    Equivalent to Python's str.
+    """
+
+    def __init__(self, value):
+        super().__init__()
+        self._value = check_type(value, str)
+
+    def __str__(self):
+        return str(self._value)
+
+    def __repr__(self):
+        return "VString(\"{}\")".format(self._value)
+
+    @property
+    def type(self):
+        return TBuiltin.str
+
+    def hash(self):
+        return hash(self._value)
+
+    def equals(self, other):
+        return isinstance(other, VString) and self._value == other._value
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
+
+    def __lt__(self, other):
+        return VBoolean.from_bool(self._value < other._value)
+
+    def __le__(self, other):
+        return VBoolean.from_bool(self._value <= other._value)
+
+    def __gt__(self, other):
+        return VBoolean.from_bool(self._value > other._value)
+
+    def __ge__(self, other):
+        return VBoolean.from_bool(self._value >= other._value)
 
 
 class VTuple(Value):
