@@ -397,8 +397,65 @@ class VString(Value):
 
 
 class VTuple(Value):
-    # TODO: Implement tuples.
-    pass
+    """
+    Equivalent to Python's tuples.
+    """
+
+    def __init__(self, *components):
+        super().__init__()
+        self._comps = tuple(check_type(c, Value) for c in components)
+
+    def __str__(self):
+        return "({})".format(", ".join(self._comps))
+
+    def __repr__(self):
+        return "VTuple({})".format(", ".join(self._comps))
+
+    @property
+    def type(self):
+        return TBuiltin.tuple
+
+    def hash(self):
+        return hash(self._comps)
+
+    def equals(self, other):
+        return isinstance(other, VTuple) and self._comps == other._comps
+
+    def _seal(self):
+        for c in self._comps:
+            c.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VTuple(*(c.clone_unsealed(clones=clones) for c in self._comps))
+            clones[id(self)] = c
+            return c
+
+    def __len__(self):
+        return len(self._comps)
+
+    def __iter__(self):
+        return iter(self._comps)
+
+    def __getitem__(self, item):
+        return self._comps[item]
+
+    def __lt__(self, other):
+        return VBoolean.from_bool(self._comps < other._comps)
+
+    def __le__(self, other):
+        return VBoolean.from_bool(self._comps <= other._comps)
+
+    def __gt__(self, other):
+        return VBoolean.from_bool(self._comps > other._comps)
+
+    def __ge__(self, other):
+        return VBoolean.from_bool(self._comps >= other._comps)
+
 
 class VList(Value):
     # TODO: Implement lists.
