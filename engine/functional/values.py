@@ -458,8 +458,84 @@ class VTuple(Value):
 
 
 class VList(Value):
-    # TODO: Implement lists.
-    pass
+    """
+    Equivalent to Python's lists.
+    """
+
+    def __init__(self, items):
+        super().__init__()
+        self._items = [check_type(x, Value) for x in items]
+
+    def append(self, item):
+        """
+        Appends an item to this list.
+        :param item: The item to append.
+        """
+        return self._items.append(check_type(item, Value))
+
+    def pop(self, index):
+        """
+        Pops an item from this list.
+        :param index: The index of the item to pop.
+        :return: The popped item.
+        """
+        return self._items.pop(index)
+
+    def __str__(self):
+        return str(self._items)
+
+    def __repr__(self):
+        return "VList({})".format(repr(list(self._items)))
+
+    @property
+    def type(self):
+        return TBuiltin.list
+
+    def hash(self):
+        return hash(self._items)
+
+    def equals(self, other):
+        return isinstance(other, VList) and self._items == other._items
+
+    def _seal(self):
+        for c in self._items:
+            c.seal()
+        self._items = tuple(self._items)
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VList((c.clone_unsealed(clones=clones) for c in self._items))
+            clones[id(self)] = c
+            return c
+
+    def __len__(self):
+        return len(self._items)
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __getitem__(self, item):
+        return self._items[item]
+
+    def __setitem__(self, key, value):
+        self._items[key] = check_type(value)
+
+    def __lt__(self, other):
+        return VBoolean.from_bool(self._items < other._items)
+
+    def __le__(self, other):
+        return VBoolean.from_bool(self._items <= other._items)
+
+    def __gt__(self, other):
+        return VBoolean.from_bool(self._items > other._items)
+
+    def __ge__(self, other):
+        return VBoolean.from_bool(self._items >= other._items)
+
 
 class VDict(Value):
     # TODO: Implement dicts.
