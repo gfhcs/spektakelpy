@@ -828,7 +828,49 @@ class VProcedure(Value):
 
 
 class VProperty(Value):
-    pass
+    """
+    Represents an instance property.
+    """
+
+    def __init__(self, getter, setter=None):
+        """
+        Creates a new procedure.
+        :param getter: The getter procedure for this property.
+        :param setter: Either None (in case of a readonly property), or the setter procedure for this property.
+        """
+        super().__init__()
+        self._getter = check_type(getter, VProcedure)
+        self._setter = None if setter is None else check_type(setter, VProcedure)
+
+    @property
+    def type(self):
+        return TBuiltin.property
+
+    @property
+    def getter(self):
+        """
+        The getter procedure for this property.
+        """
+        return self._getter
+
+    @property
+    def setter(self):
+        """
+        Either None (in case of a readonly property), or the setter procedure for this property.
+        """
+        return self._setter
+
+    def hash(self):
+        return hash((self._getter, self._setter))
+
+    def equals(self, other):
+        return id(self) == id(other)
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
 
 
 class VModule(Value):
