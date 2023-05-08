@@ -522,7 +522,7 @@ class VList(Value):
         return self._items[int(check_type(key, Value))]
 
     def __setitem__(self, key, value):
-        self._items[int(check_type(key, Value))] = check_type(value)
+        self._items[int(check_type(key, Value))] = check_type(value, Value)
 
     def __lt__(self, other):
         return VBoolean.from_bool(self._items < other._items)
@@ -594,7 +594,7 @@ class VDict(Value):
     def __setitem__(self, key, value):
         if self.sealed:
             raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
-        self._items[check_type(key, Value)] = check_type(value)
+        self._items[check_type(key, Value)] = check_type(value, Value)
 
 
 class VException(Value):
