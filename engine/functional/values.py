@@ -867,7 +867,8 @@ class VProperty(Value):
         return id(self) == id(other)
 
     def _seal(self):
-        pass
+        self._getter.seal()
+        self._setter.seal()
 
     def clone_unsealed(self, cloned=None):
         return self
