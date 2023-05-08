@@ -875,4 +875,37 @@ class VProperty(Value):
 
 
 class VModule(Value):
-    pass
+    """
+    Represents a module at runtime.
+    """
+
+    def __init__(self, namespace):
+        """
+        Creates a new module.
+        :param namespace: The namespace defining this module.
+        """
+        super().__init__()
+        self._ns = namespace
+
+    @property
+    def type(self):
+        return TBuiltin.module
+
+    def hash(self):
+        return hash(self._ns)
+
+    def equals(self, other):
+        return id(self) == id(other)
+
+    def _seal(self):
+        self._ns.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VModule(self._ns.clone_unsealed(cloned=clones))
+            clones[id(self)] = c
+            return c
