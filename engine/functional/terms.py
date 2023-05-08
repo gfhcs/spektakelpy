@@ -538,7 +538,7 @@ class Lookup(Term):
         return self._name
 
     def evaluate(self, tstate, mstate):
-        return self.namespace.evaluate(tstate, mstate).lookup(self.name)
+        return self.namespace.evaluate(tstate, mstate)[self.name]
 
 
 class LoadAttrCase(Term):

@@ -729,29 +729,55 @@ class VNamespace(Value):
     A mapping from names to objects.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
-        Creates a new namespace.
-        :param kwargs: A mapping form strings to Value objects that this namespace is to be initialized with.
+        Creates a new empty namespace.
         """
-        pass
+        super().__init__()
+        self._m = {}
 
-    def adjoin(self, name, value):
-        """
-        Manipulates this namespace to map the given name to the given value.
-        :param name: A string.
-        :param value: A runtime object that the name is to be mapped to.
-        """
-        pass
+    @property
+    def type(self):
+        return TBuiltin.namespace
 
-    def lookup(self, name):
-        """
-        Looks up the given name in this name space.
-        :param name: The name to look up.
-        :return: The runtime object that was retrieved.
+    def hash(self):
+        return hash(len(self))
 
-        """
-        pass
+    def equals(self, other):
+        if not isinstance(other, VNamespace) or len(self) != len(other):
+            return False
+        for k, v in self._m.items():
+            if other._m[k] != v:
+                return False
+        return True
+
+    def _seal(self):
+        for v in self._m.values():
+            v.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VDict({k: v.clone_unsealed(clones=clones) for k, v in self._m.items()})
+            clones[id(self)] = c
+            return c
+
+    def __len__(self):
+        return len(self._m)
+
+    def __iter__(self):
+        return iter(self._m)
+
+    def __getitem__(self, item):
+        return self._m[item]
+
+    def __setitem__(self, key, value):
+        if self.sealed:
+            raise RuntimeError("This Namespace instance has been sealed and can thus not be modified anymore!")
+        self._m[check_type(key, str)] = check_type(value, Value)
 
 
 class VProcedure(abc.ABC):
