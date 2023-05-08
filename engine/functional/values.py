@@ -3,6 +3,7 @@ import abc
 from util import check_type
 from util.immutable import Sealable
 from .types import TBuiltin
+from ..tasks.instructions import StackProgram
 
 
 class Value(Sealable, abc.ABC):
@@ -780,8 +781,50 @@ class VNamespace(Value):
         self._m[check_type(key, str)] = check_type(value, Value)
 
 
-class VProcedure(abc.ABC):
-    pass
+class VProcedure(Value):
+    """
+    Represents an executable procedure.
+    """
+
+    def __init__(self, num_args, code):
+        """
+        Creates a new procedure.
+        :param num_args: The number of arguments of this procedure.
+        :param code: The StackProgram that forms the body of this procedure.
+        """
+        super().__init__()
+        self._num_args = check_type(num_args, int)
+        self._code = check_type(code, StackProgram)
+
+    @property
+    def type(self):
+        return TBuiltin.procedure
+
+    @property
+    def num_args(self):
+        """
+        The number of arguments of this procedure.
+        """
+        return self._num_args
+
+    @property
+    def code(self):
+        """
+        The StackProgram that forms the body of this procedure.
+        """
+        return self._code
+
+    def hash(self):
+        return hash(self._code)
+
+    def equals(self, other):
+        return id(self) == id(other)
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, cloned=None):
+        return self
 
 
 class VProperty(Value):
