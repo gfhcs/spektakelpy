@@ -8,7 +8,7 @@ from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VS
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
-from ..tasks.reference import Reference, NameReference
+from ..tasks.reference import Reference, NameReference, FieldReference
 
 
 class Term(abc.ABC):
@@ -396,7 +396,7 @@ class UnaryPredicateTerm(Term):
             # Check if it is a function object, a class object, or if the type of the object has a __call__ method.
             try:
                 value = t.subtypeof(TFunction.instance) or t.subtypeof(Type.instance) \
-                        or t.resolve_member("__call__", r).subtypeof(TFunction.instance)
+                        or t.resolve_member("__call__").type.subtypeof(TFunction.instance)
             except KeyError:
                 value = False
         elif self._p == UnaryPredicate.ISEXCEPTION:
@@ -582,11 +582,11 @@ class LoadAttrCase(Term):
         t = value.type
 
         try:
-            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name, value)
-            if isinstance(attr, VProperty):
+            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name)
+            if isinstance(attr, int):
+                return value[attr]
+            elif isinstance(attr, VProperty):
                 return attr.getter
-            elif isinstance(attr, NameReference):
-                return attr.read(tstate, mstate)
             else:
                 raise TypeError(type(attr))
         except KeyError:
@@ -634,14 +634,14 @@ class StoreAttrCase(Term):
         t = value.type
 
         try:
-            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name, value)
+            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name)
 
+            if isinstance(attr, int):
+                return FieldReference(value, attr)
             if isinstance(attr, VProperty):
                 return attr.setter
             elif isinstance(attr, VProcedure):
                 return VTypeError("Cannot assign values to method fields!")
-            elif isinstance(attr, NameReference):
-                return attr
             else:
                 raise TypeError(type(attr))
         except KeyError:

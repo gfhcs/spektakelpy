@@ -133,38 +133,39 @@ class ExceptionReference(Reference):
         return tstate.exception
 
 
-class ObjectReference(Reference):
+class FieldReference(Reference):
     """
-    A reference to a heap object. Instead of holding offsets into an explicit heap, references of this
-    kind directly point at Python objects. This makes sure that no explicit garbage collection needs to be implemented
+    A reference to the field of a runtime object.
     """
 
-    def __init__(self, pobject):
+    def __init__(self, value, fidx):
         """
-        Refers to a value in the machine's heap memory.
-        :param pobject: The Python object this reference is pointing to. It must be a Value.
+        Refers to a data field in a runtime object.
+        :param value: The Value this reference is pointing into.
+        :param fidx: The index of the field of the object that this reference is pointing to.
         """
         super().__init__()
-        self._pobject = check_type(pobject, Value)
+        self._v = check_type(value, Value)
+        self._fidx = check_type(fidx, int)
 
     def _seal(self):
-        self._pobject.seal()
+        self._v.seal()
 
     def clone_unsealed(self, clones=None):
-        return ObjectReference(self._pobject.clone_unsealed(clones=clones))
+        return FieldReference(self._v.clone_unsealed(clones=clones))
 
     def hash(self):
         check_sealed(self)
-        return hash(self._pobject)
+        return hash((self._v, self._fidx))
 
     def equals(self, other):
-        return isinstance(other, ObjectReference) and self._pobject == other._pobject
+        return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v == other._v
 
     def write(self, tstate, mstate, value):
-        raise Exception("Overriding an object via an ObjectReference is not possible!")
+        self._v[self._fidx] = check_type(value, Value)
 
     def read(self, tstate, mstate):
-        return self._pobject
+        return self._v[self._fidx]
 
 
 class NameReference(Reference):
