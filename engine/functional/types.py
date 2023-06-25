@@ -1,6 +1,6 @@
 import abc
 
-from engine.functional.values import Value
+from engine.functional.values import Value, VNone, VInstance
 from util import check_type
 
 
@@ -43,16 +43,25 @@ class Type(Value):
     A Type describes a set of abilities and an interface that a value provides.
     """
 
-    def __init__(self, name, *super_types):
+    def __init__(self, name, *super_types, field_names, members):
         """
         Creates a new type.
         :param name: A name for this type.
         :param super_types: The super types this type inherits from.
+        :param field_names: An iterable of str objects specifying the instance field names of this type.
+        :param members: A dict mapping str names to instance procedures and properties of this type.
+
         """
         super().__init__()
         self._name = check_type(name, str)
         self._super_types = tuple(check_type(t, Type) for t in super_types)
+        self._field_names = field_names
+        self._members = members
         self._mro = linearization(self)
+        self._nfields = len(field_names)
+
+        for t in self.mro:
+            self._nfields += t._nfields
 
     @property
     def type(self):
@@ -95,48 +104,40 @@ class Type(Value):
         """
         return self._mro
 
-    @abc.abstracmethod
-    def resolve_direct_member(self, name, instance):
-        """
-        Looks up a *direct* type member, ignoring any base classes.
-        :param name: The name of the member to retrieve.
-        :param instance: The Value object for which to retrieve the member.
-        :return: Either a Reference object, or a Procedure object.
-        """
-        pass
-
-    def resolve_member(self, name, instance, direct):
+    def resolve_member(self, name):
         """
         Retrieves the type member of the given name, by searching the entire method resolution order of this type.
         :param name: The name of the member to retrieve.
-        :param instance: The Value object for which to retrieve the member.
-        :return: Either a Reference object, or a Procedure object.
+        :return: Either an integer representing an instance field, or a VProcedure object, or a VProperty object.
         """
-        if not instance.type.subtypeof(self):
-            raise ValueError("The given instance is not a member of this type!")
-        for t in self.mro:
-            try:
-                return t.resolve_direct_member(name, instance, True)
-            except ValueError:
-                continue
-        raise ValueError("No type in the MRO of {} could resolve a member named '{}'!".format(self, name))
 
-    @abc.abstractmethod
+        foffset = 0
+        for t in self.mro:
+            fidx = t._field_names.find(name)
+            if fidx >= 0:
+                return foffset + fidx
+            try:
+                return t._members[name]
+            except KeyError:
+                pass
+
+            foffset += len(t._field_names)
+
     def create_instance(self):
         """
         Creates an instance of this type.
         :return: An instance of this type. The __init__ method must be called immediately after creation of the object.
         """
-        pass
-
-
-
+        return VInstance(self, self._nfields)
 
 
 class TBuiltin(Type):
-    # TODO: All builtin types should be instances of this type.
-    # Built-in data types should be the same as for python: bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
+    """
+    Represents a builtin type, i.e. one the user did not define via a class declaration.
+    """
+    # TODO: object, bool, int, float, str, tuple, list, dict, object, type, exception, task, function, module
     pass
+
 
 class TException(Type):
     pass
@@ -156,5 +157,3 @@ class TStopIteration:
 
 TStopIteration.instance = TStopIteration()
 
-class TClass(Type):
-    pass

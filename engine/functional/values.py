@@ -909,3 +909,53 @@ class VModule(Value):
             c = VModule(self._ns.clone_unsealed(cloned=clones))
             clones[id(self)] = c
             return c
+
+
+class VInstance(Value):
+    """
+    An instance of a user-defined class.
+    """
+
+    def __init__(self, c, num_fields):
+        """
+        Creates a new class instance.
+        :param c: The TClass instance that this object is considered an instance of.
+        :param num_fields: The number of fields this instance has.
+        """
+        super().__init__()
+        self._c = c
+        self._fields = [VNone] * num_fields
+
+    @property
+    def type(self):
+        return self._c
+
+    def hash(self):
+        return hash((self._c, *self._fields))
+
+    def equals(self, other):
+        return isinstance(other, VInstance) and self._c == other._c and self._fields == other._fields
+
+    def _seal(self):
+        for f in self._fields:
+            f.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VInstance(self._c.clone_unsealed(clones=clones), len(self._fields))
+            clones[id(self)] = c
+            c._fields = tuple(f.clone_unsealed(cloned=clones) for f in self._fields)
+            return c
+
+    def __getitem__(self, item):
+        return self._fields[check_type(item, int)]
+
+    def __setitem__(self, key, value):
+        if self.sealed:
+            raise RuntimeError("This VInstance has been sealed and can thus not be modified anymore!")
+        self._fields[check_type(key, int)] = check_type(value, Value)
+
