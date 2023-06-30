@@ -217,7 +217,7 @@ class Guard(Instruction):
                     enabled = True
 
 
-class IntrinsicProcedure(abc.ABC):
+class IntrinsicProcedure(Immutable):
     """
     Represents a procedure the execution of which is opaque to the state machine, but that can manipulate the entire
     state of the machine.

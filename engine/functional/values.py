@@ -3,7 +3,7 @@ import abc
 from util import check_type
 from util.immutable import Sealable
 from .types import TBuiltin
-from ..tasks.instructions import StackProgram
+from ..tasks.instructions import StackProgram, IntrinsicProcedure
 
 
 class Value(Sealable, abc.ABC):
@@ -790,11 +790,14 @@ class VProcedure(Value):
         """
         Creates a new procedure.
         :param num_args: The number of arguments of this procedure.
-        :param code: The StackProgram that forms the body of this procedure.
+        :param code: Either a StackProgram that forms the body of this procedure, or an IntrinsicProcedure.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
-        self._code = check_type(code, StackProgram)
+        if isinstance(code, (StackProgram, IntrinsicProcedure)):
+            self._code = code
+        else:
+            raise TypeError("The given code object is neither a StackProgram nor an IntrinsicProcedure!")
 
     @property
     def type(self):
@@ -810,7 +813,7 @@ class VProcedure(Value):
     @property
     def code(self):
         """
-        The StackProgram that forms the body of this procedure.
+        Either a StackProgram that forms the body of this procedure, or an IntrinsicProcedure object.
         """
         return self._code
 
