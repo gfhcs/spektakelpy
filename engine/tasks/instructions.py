@@ -217,6 +217,30 @@ class Guard(Instruction):
                     enabled = True
 
 
+class IntrinsicProcedure(abc.ABC):
+    """
+    Represents a procedure the execution of which is opaque to the state machine, but that can manipulate the entire
+    state of the machine.
+    """
+
+    @abc.abstractmethod
+    def execute(self, tstate, mstate, *args):
+        """
+        Executes this intrinsic procedure on the given state, leading to a new state.
+        This procedure may modify the given TaskState and MachineState objects.
+        :param tstate: The unsealed TaskState object that this instruction is to be executed in.
+        It must be part of the given machine state.
+        Any references to task-local variables will be interpreted with respect to this task state.
+        :param mstate: The unsealed MachineState object that this instruction is to be executed in.
+        It must contain the given task state.
+        :param args: The argument Values that this intrinsic procedure is being called for.
+        """
+        pass
+
+    def __call__(self, tstate, mstate):
+        return self.execute(tstate, mstate)
+
+
 class Push(Instruction):
     """
     An instruction that pushes a new frame on the stack of the executing task.
@@ -225,8 +249,8 @@ class Push(Instruction):
     def __init__(self, entry, expressions, destination, edestination):
         """
         Creates a new push instructions.
-        :param entry: An Expression that evaluates to a ProgramLocation.
-        :param expressions: An iterable of Expression objects that determine the values for the local variables that
+        :param entry: An Expression that evaluates to either a ProgramLocation or an IntrinsicProcedure.
+        :param expressions: An iterable of Terms that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
                             this instruction, as soon as the newly pushed stack frame has been popped again.
@@ -236,8 +260,8 @@ class Push(Instruction):
                              code reached via 'destination' must explicitly treat them.
         """
         super().__init__()
-        self._entry = check_type(entry, Expression)
-        self._expressions = tuple(check_types(expressions, Expression))
+        self._entry = check_type(entry, Term)
+        self._expressions = tuple(check_types(expressions, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
@@ -264,17 +288,16 @@ class Push(Instruction):
             old_top.instruction_index = self._edestination
             return
 
-        try:
-            check_type(location, ProgramLocation)
-        except AssertionError:
+        if location is ProgramLocation:
+            frame = Frame(location, args)
+            tstate.stack.append(frame)
+            old_top.instruction_index = self._destination
+        elif location is IntrinsicFunction:
+            location(tstate, mstate, *args)
+        else:
             tstate.exception = InstructionException("The expression determining the initial program location for the"
-                                                    " new stack frame is not a proper program location!")
+                                                    " new stack frame is neither a ProgramLocation nor an Intrinsic function!")
             old_top.instruction_index = self._edestination
-            return
-
-        frame = Frame(location, args)
-        tstate.stack.append(frame)
-        old_top.instruction_index = self._destination
 
 
 class Pop(Instruction):
