@@ -4,7 +4,7 @@ from enum import Enum
 
 from util import check_type
 from .types import TException, TFunction, Type, TClass
-from .values import Value, VInt, VFloat, VBoolean, VNone, VTuple, VTypeError, VString, VDict, VNamespace, VProcedure, \
+from .values import Value, VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
@@ -98,7 +98,7 @@ class CBool(CTerm):
         Instantiates a new boolean constant term.
         :param value: The boolean this term is supposed to represent.
         """
-        super().__init__(VBoolean(value))
+        super().__init__(VBool(value))
 
 
 class CNone(CTerm):
@@ -123,7 +123,7 @@ class CString(CTerm):
         Instantiates a new string constant term.
         :param value: The string this term is supposed to represent.
         """
-        super().__init__(VString(value))
+        super().__init__(VStr(value))
 
 
 class ArithmeticUnaryOperator(Enum):
@@ -408,7 +408,7 @@ class UnaryPredicateTerm(Term):
         else:
             raise NotImplementedError()
 
-        return VBoolean(value)
+        return VBool(value)
 
 
 class IsInstance(Term):

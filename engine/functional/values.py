@@ -52,7 +52,7 @@ class VNone(Value):
 VNone.instance = VNone()
 
 
-class VBoolean(Value):
+class VBool(Value):
     """
     Equivalent to Python's bool.
     """
@@ -68,7 +68,7 @@ class VBoolean(Value):
         :param b: The bool to convert.
         :return: A VBoolean object.
         """
-        return VBoolean.true if b else VBoolean.false
+        return VBool.true if b else VBool.false
 
     def __str__(self):
         return "True" if self._value else "False"
@@ -84,7 +84,7 @@ class VBoolean(Value):
         return hash(self._value)
 
     def equals(self, other):
-        return isinstance(other, VBoolean) and self._value == other._value
+        return isinstance(other, VBool) and self._value == other._value
 
     def _seal(self):
         pass
@@ -93,16 +93,16 @@ class VBoolean(Value):
         return self
 
     def __lt__(self, other):
-        return VBoolean.from_bool(self._value < other._value)
+        return VBool.from_bool(self._value < other._value)
 
     def __le__(self, other):
-        return VBoolean.from_bool(self._value <= other._value)
+        return VBool.from_bool(self._value <= other._value)
 
     def __gt__(self, other):
-        return VBoolean.from_bool(self._value > other._value)
+        return VBool.from_bool(self._value > other._value)
 
     def __ge__(self, other):
-        return VBoolean.from_bool(self._value >= other._value)
+        return VBool.from_bool(self._value >= other._value)
 
     def __bool__(self, other):
         return self._value
@@ -126,13 +126,13 @@ class VBoolean(Value):
         return VInt(~self._value)
 
     def __and__(self, other):
-        return VBoolean.from_bool(self._value & other._value)
+        return VBool.from_bool(self._value & other._value)
 
     def __xor__(self, other):
-        return VBoolean.from_bool(self._value ^ other._value)
+        return VBool.from_bool(self._value ^ other._value)
 
     def __or__(self, other):
-        return VBoolean.from_bool(self._value | other._value)
+        return VBool.from_bool(self._value | other._value)
 
     def __lshift__(self, other):
         return VInt(self._value << int(other))
@@ -162,8 +162,8 @@ class VBoolean(Value):
         return VInt(self._value ** other._value)
 
 
-VBoolean.true = VBoolean(True)
-VBoolean.false = VBoolean(False)
+VBool.true = VBool(True)
+VBool.false = VBool(False)
 
 
 class VInt(Value):
@@ -198,16 +198,16 @@ class VInt(Value):
         return self
 
     def __lt__(self, other):
-        return VBoolean.from_bool(self._value < other._value)
+        return VBool.from_bool(self._value < other._value)
 
     def __le__(self, other):
-        return VBoolean.from_bool(self._value <= other._value)
+        return VBool.from_bool(self._value <= other._value)
 
     def __gt__(self, other):
-        return VBoolean.from_bool(self._value > other._value)
+        return VBool.from_bool(self._value > other._value)
 
     def __ge__(self, other):
-        return VBoolean.from_bool(self._value >= other._value)
+        return VBool.from_bool(self._value >= other._value)
 
     def __bool__(self, other):
         return bool(self._value)
@@ -299,16 +299,16 @@ class VFloat(Value):
         return self
 
     def __lt__(self, other):
-        return VBoolean.from_bool(self._value < other._value)
+        return VBool.from_bool(self._value < other._value)
 
     def __le__(self, other):
-        return VBoolean.from_bool(self._value <= other._value)
+        return VBool.from_bool(self._value <= other._value)
 
     def __gt__(self, other):
-        return VBoolean.from_bool(self._value > other._value)
+        return VBool.from_bool(self._value > other._value)
 
     def __ge__(self, other):
-        return VBoolean.from_bool(self._value >= other._value)
+        return VBool.from_bool(self._value >= other._value)
 
     def __bool__(self, other):
         return bool(self._value)
@@ -353,7 +353,7 @@ class VFloat(Value):
         return VFloat(self._value ** other._value)
 
 
-class VString(Value):
+class VStr(Value):
     """
     Equivalent to Python's str.
     """
@@ -376,7 +376,7 @@ class VString(Value):
         return hash(self._value)
 
     def equals(self, other):
-        return isinstance(other, VString) and self._value == other._value
+        return isinstance(other, VStr) and self._value == other._value
 
     def _seal(self):
         pass
@@ -385,16 +385,16 @@ class VString(Value):
         return self
 
     def __lt__(self, other):
-        return VBoolean.from_bool(self._value < other._value)
+        return VBool.from_bool(self._value < other._value)
 
     def __le__(self, other):
-        return VBoolean.from_bool(self._value <= other._value)
+        return VBool.from_bool(self._value <= other._value)
 
     def __gt__(self, other):
-        return VBoolean.from_bool(self._value > other._value)
+        return VBool.from_bool(self._value > other._value)
 
     def __ge__(self, other):
-        return VBoolean.from_bool(self._value >= other._value)
+        return VBool.from_bool(self._value >= other._value)
 
 
 class VTuple(Value):
@@ -446,16 +446,16 @@ class VTuple(Value):
         return self._comps[int(check_type(key, Value))]
 
     def __lt__(self, other):
-        return VBoolean.from_bool(self._comps < other._comps)
+        return VBool.from_bool(self._comps < other._comps)
 
     def __le__(self, other):
-        return VBoolean.from_bool(self._comps <= other._comps)
+        return VBool.from_bool(self._comps <= other._comps)
 
     def __gt__(self, other):
-        return VBoolean.from_bool(self._comps > other._comps)
+        return VBool.from_bool(self._comps > other._comps)
 
     def __ge__(self, other):
-        return VBoolean.from_bool(self._comps >= other._comps)
+        return VBool.from_bool(self._comps >= other._comps)
 
 
 class VList(Value):
@@ -526,16 +526,16 @@ class VList(Value):
         self._items[int(check_type(key, Value))] = check_type(value, Value)
 
     def __lt__(self, other):
-        return VBoolean.from_bool(self._items < other._items)
+        return VBool.from_bool(self._items < other._items)
 
     def __le__(self, other):
-        return VBoolean.from_bool(self._items <= other._items)
+        return VBool.from_bool(self._items <= other._items)
 
     def __gt__(self, other):
-        return VBoolean.from_bool(self._items > other._items)
+        return VBool.from_bool(self._items > other._items)
 
     def __ge__(self, other):
-        return VBoolean.from_bool(self._items >= other._items)
+        return VBool.from_bool(self._items >= other._items)
 
 
 class VDict(Value):
