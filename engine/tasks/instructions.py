@@ -1,6 +1,8 @@
 import abc
 
 from engine.functional.terms import Term
+from lang.spek.modules import BuiltinAction
+from .interaction import InteractionState
 from ..functional.values import EvaluationException
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
@@ -336,8 +338,8 @@ class Launch(Instruction):
                              an error.
         """
         super().__init__()
-        self._entry = check_type(entry, Expression)
-        self._expressions = tuple(check_types(expressions, Expression))
+        self._entry = check_type(entry, Term)
+        self._expressions = tuple(check_types(expressions, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
@@ -364,24 +366,24 @@ class Launch(Instruction):
             mytop.instruction_index = self._edestination
             return
 
-        try:
-            check_type(location, ProgramLocation)
-        except AssertionError:
-            tstate.exception = InstructionException("The expression determining the initial program location for the"
-                                                    " new stack frame is not a proper program location!")
-            mytop.instruction_index = self._edestination
-            return
-
-        frame = Frame(location, args)
-
         tids = set(t.tid for t in mstate.task_states)
         tid = None
         for tid in range(len(tids) + 1):
             if tid not in tids:
                 break
-
         assert tid is not None and tid not in tids
-        mstate.add_task(StackState(tid, TaskStatus.WAITING, [frame]))
+
+        if isinstance(location, ProgramLocation):
+            frame = Frame(location, args)
+            mstate.add_task(StackState(tid, TaskStatus.WAITING, [frame]))
+        elif isinstance(location, BuiltinAction):
+            mstate.add_task(InteractionState(location, tid, status=TaskStatus.WAITING))
+        else:
+            tstate.exception = InstructionException("The expression determining the initial program location for the"
+                                                    " new stack frame is not a proper program location!")
+            mytop.instruction_index = self._edestination
+            return
+
         tstate.returned = tid
         mytop.instruction_index = self._destination
 

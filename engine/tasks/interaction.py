@@ -41,8 +41,6 @@ class InteractionState(TaskState):
         return True
 
     def run(self, mstate):
-
-
         task_states = list(mstate.task_states)
         task_states.remove(self)
         task_states.append(InteractionState(self.interaction, self.taskid, status=TaskStatus.COMPLETED))
