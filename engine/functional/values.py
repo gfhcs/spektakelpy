@@ -4,7 +4,7 @@ from util import check_type
 from util.immutable import Sealable
 from .types import TBuiltin
 from ..tasks.instructions import StackProgram, IntrinsicProcedure
-
+from .intrinsic import IntrinsicInstanceMethod
 
 class Value(Sealable, abc.ABC):
     """
@@ -57,7 +57,7 @@ class VBool(Value):
     Equivalent to Python's bool.
     """
 
-    def __init__(self, value):
+    def __init__(self, value=False):
         super().__init__()
         self._value = check_type(value, bool)
 
@@ -171,7 +171,7 @@ class VInt(Value):
     Equivalent to Python's int.
     """
 
-    def __init__(self, value):
+    def __init__(self, value=0):
         super().__init__()
         self._value = check_type(value, int)
 
@@ -272,7 +272,7 @@ class VFloat(Value):
     Equivalent to Python's float.
     """
 
-    def __init__(self, value):
+    def __init__(self, value=0.0):
         super().__init__()
         self._value = check_type(value, float)
 
@@ -358,7 +358,7 @@ class VStr(Value):
     Equivalent to Python's str.
     """
 
-    def __init__(self, value):
+    def __init__(self, value=""):
         super().__init__()
         self._value = check_type(value, str)
 
@@ -463,24 +463,60 @@ class VList(Value):
     Equivalent to Python's lists.
     """
 
-    def __init__(self, items):
+    def __init__(self, items=None):
         super().__init__()
-        self._items = [check_type(x, Value) for x in items]
+        self._items = [] if items is None else [check_type(x, Value) for x in items]
 
+    @IntrinsicInstanceMethod
     def append(self, item):
         """
         Appends an item to this list.
         :param item: The item to append.
         """
+        if self.sealed:
+            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
         return self._items.append(check_type(item, Value))
 
+    @IntrinsicInstanceMethod
     def pop(self, index):
         """
         Pops an item from this list.
         :param index: The index of the item to pop.
         :return: The popped item.
         """
-        return self._items.pop(index)
+        if self.sealed:
+            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        return self._items.pop(int(index))
+
+    @IntrinsicInstanceMethod
+    def insert(self, index, item):
+        """
+        Inserts an item into this list.
+        :param index: The index the inserted item will have in the list after insertion.
+        :param item: The Value to insert.
+        """
+        if self.sealed:
+            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        return self._items.insert(int(index), check_type(item, Value))
+
+    @IntrinsicInstanceMethod
+    def remove(self, x):
+        """
+        Remove the first item from the list whose value is equal to x. It raises a ValueError if there is no such item.
+        :param x: The Value to remove from this list.
+        """
+        if self.sealed:
+            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        return self._items.remove(check_type(x, Value))
+
+    @IntrinsicInstanceMethod
+    def clear(self):
+        """
+        Empties this list, i.e. removes all items.
+        """
+        if self.sealed:
+            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        return self._items.clear()
 
     def __str__(self):
         return str(self._items)
@@ -543,9 +579,51 @@ class VDict(Value):
     Equivalent to Python's dicts.
     """
 
-    def __init__(self, items):
+    def __init__(self, items=None):
         super().__init__()
-        self._items = {check_type(k, Value): check_type(v, Value) for k, v in items.items()}
+        self._items = {} if items is None else {check_type(k, Value): check_type(v, Value) for k, v in items.items()}
+
+    @IntrinsicInstanceMethod
+    def clear(self):
+        """
+        Empties this dictionary, i.e. removes all its entries.
+        """
+        if self.sealed:
+            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        self._items.clear()
+
+    @IntrinsicInstanceMethod
+    def get(self, key):
+        """
+        Return the value for the given key if that key is in the dictionary
+        :param key: The key for which a value is to be retrieved.
+        :return: The value that was retrieved.
+        """
+        if self.sealed:
+            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        return self._items[check_type(key, Value)]
+
+    @IntrinsicInstanceMethod
+    def pop(self, key):
+        """
+        Return the value for the given key if that key is in the dictionary, and remove it from the dictionary.
+        :param key: The key for which a value is to be retrieved and removed.
+        :return: The value that was retrieved and removed.
+        """
+        if self.sealed:
+            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        return self._items.pop(check_type(key, Value))
+
+    @IntrinsicInstanceMethod
+    def set(self, key, value):
+        """
+        Sets the value for the given key.
+        :param key: The key for which a value is to be set.
+        :param value: The value to set for the given key.
+        """
+        if self.sealed:
+            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        self._items[check_type(key, Value)] = check_type(value, Value)
 
     def __str__(self):
         return str(self._items)
@@ -589,28 +667,25 @@ class VDict(Value):
     def __iter__(self):
         return iter(self._items)
 
-    def __getitem__(self, item):
-        return self._items[item]
+    def __getitem__(self, key):
+        return self.get(key)
 
     def __setitem__(self, key, value):
-        if self.sealed:
-            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
-        self._items[check_type(key, Value)] = check_type(value, Value)
-
+        self.set(key, value)
 
 class VException(Value):
     """
     The base type for all exceptions.
     """
 
-    def __init__(self, message, *args):
+    def __init__(self, message=None, *args):
         """
         Creates a new exception
         :param message: The message for this exception.
         :param args: Additional constructor arguments that annotate the exception.
         """
         super().__init__()
-        self._msg = check_type(message, VString)
+        self._msg = VStr() if message is None else check_type(message, VStr)
         self._args = tuple(check_type(a, Value) for a in args)
 
     def __str__(self):
@@ -919,12 +994,14 @@ class VInstance(Value):
     An instance of a user-defined class.
     """
 
-    def __init__(self, c, num_fields):
+    def __init__(self, c=None, num_fields=0):
         """
         Creates a new class instance.
         :param c: The TClass instance that this object is considered an instance of.
         :param num_fields: The number of fields this instance has.
         """
+        if c is None:
+            c = TBuiltin.object
         super().__init__()
         self._c = c
         self._fields = [VNone] * num_fields

@@ -237,9 +237,6 @@ class IntrinsicProcedure(Immutable):
         """
         pass
 
-    def __call__(self, tstate, mstate):
-        return self.execute(tstate, mstate)
-
 
 class Push(Instruction):
     """
@@ -292,8 +289,8 @@ class Push(Instruction):
             frame = Frame(location, args)
             tstate.stack.append(frame)
             old_top.instruction_index = self._destination
-        elif location is IntrinsicFunction:
-            location(tstate, mstate, *args)
+        elif location is IntrinsicProcedure:
+            location.execute(tstate, mstate, *args)
         else:
             tstate.exception = InstructionException("The expression determining the initial program location for the"
                                                     " new stack frame is neither a ProgramLocation nor an Intrinsic function!")
