@@ -1,5 +1,6 @@
 from util import check_type
 
+
 class State:
     """
     A state in a labelled transition system.

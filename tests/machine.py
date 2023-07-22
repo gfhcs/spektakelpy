@@ -1,0 +1,79 @@
+import unittest
+
+from engine.exploration import explore, state_space
+from engine.machine import MachineState
+from engine.task import TaskStatus
+from engine.tasks.instructions import StackProgram, ProgramLocation
+from engine.tasks.interaction import InteractionState
+from engine.tasks.stack import StackState, Frame
+from lang.spek.modules import BuiltinAction
+
+
+class TestSpektakelMachine(unittest.TestCase):
+    """
+    This class is for testing Spektakelpy's virtual machine.
+    """
+
+    def initialize_machine(self, p):
+        """
+        Constructs the default initial state of the virtual machine.
+        :param p: The StackProgram that should be executed by the machine.
+        :return: A MachineState object.
+        """
+
+        frames = [Frame(ProgramLocation(p, 0), [])]
+
+        m = StackState(0, TaskStatus.RUNNING, frames)
+
+        isymbols = [BuiltinAction.NEXT, BuiltinAction.PREV, BuiltinAction.TICK]
+        istates = (InteractionState(i, iidx + 1) for iidx, i in enumerate(isymbols))
+
+        return MachineState([m, *istates])
+
+    def explore(self, p):
+        """
+        Computes the state space of the default machine for the given StackProgram.
+        :param p: The StackProgram for which to explore the state space.
+        :return: An LTS.
+        """
+
+        s0 = self.initialize_machine(p)
+
+        lts = state_space(explore(s0))
+        states = []
+        transitions = []
+        visited = set()
+        agenda = [s0]
+        while len(agenda) > 0:
+            s = agenda.pop()
+            if id(s) not in visited:
+                visited.append(id(s))
+                states.append(s)
+                for t in s.transitions:
+                    transitions.append(t)
+                    agenda.append(t.target)
+
+        return lts, states, transitions
+
+    def test_empty(self):
+        """
+        Tests the execution of an empty stack program.
+        """
+        p = StackProgram([])
+        _, states, transitions = self.explore(p)
+
+        self.assertEqual(len(states), 1)
+        self.assertEqual(len(transitions), 0)
+
+    # TODO: Test Update instruction
+    # TODO: Test InteractionState!
+    # TODO: Test Guard instruction
+    # TODO: Test IntrinsicProcedure
+    # TODO: Test Push instruction
+    # TODO: Test Pop instruction
+    # TODO: Test Launch instruction
+    # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
+
+
+
+
