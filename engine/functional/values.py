@@ -6,6 +6,7 @@ from .types import TBuiltin
 from ..tasks.instructions import StackProgram, IntrinsicProcedure
 from .intrinsic import IntrinsicInstanceMethod
 
+
 class Value(Sealable, abc.ABC):
     """
     Represents a runtime value.
