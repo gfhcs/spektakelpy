@@ -674,6 +674,7 @@ class VDict(Value):
     def __setitem__(self, key, value):
         self.set(key, value)
 
+
 class VException(Value):
     """
     The base type for all exceptions.
@@ -1040,3 +1041,38 @@ class VInstance(Value):
             raise RuntimeError("This VInstance has been sealed and can thus not be modified anymore!")
         self._fields[check_type(key, int)] = check_type(value, Value)
 
+
+class VTask(Value):
+    """
+    Represents a cooperative task.
+    """
+
+    def __init__(self, tid):
+        """
+        Creates a new Task object.
+        :param tid: The TID of the task that is represented by this value.
+        """
+        super().__init__()
+        self._tid = check_type(tid, int)
+
+    def __str__(self):
+        return str(self._tid)
+
+    def __repr__(self):
+        return "VTask({})".format(repr(self._tid))
+
+    @property
+    def type(self):
+        return TBuiltin.task
+
+    def hash(self):
+        return self._tid
+
+    def equals(self, other):
+        return isinstance(other, VTask) and self._tid == other._tid
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, clones=None):
+        return self
