@@ -2,12 +2,12 @@ import abc
 import os.path
 from enum import Enum
 
-from lang.modules import Module, ModuleSpecificaion, Finder, AdjoinedFinder
+from lang.modules import Module, ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 from lang.validator import ValidationError
 
 
-class BuiltinModuleSpecification(ModuleSpecificaion):
+class BuiltinModuleSpecification(ModuleSpecification):
     """
     Specifies that a module made up of builtin symbols is to be loaded.
     """
@@ -54,7 +54,7 @@ class BuiltinModule(Module):
         return self._symbols[name]
 
 
-class ASTSpecification(ModuleSpecificaion, abc.ABC):
+class ASTSpecification(ModuleSpecification, abc.ABC):
     """
     Specifies that an ASTModule is to be loaded.
     """
