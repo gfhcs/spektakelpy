@@ -65,12 +65,12 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(transitions), 0)
 
     # TODO: Test Update instruction
-    # TODO: Test InteractionState!
     # TODO: Test Guard instruction
-    # TODO: Test IntrinsicProcedure
     # TODO: Test Push instruction
     # TODO: Test Pop instruction
     # TODO: Test Launch instruction
+    # TODO: Test InteractionState!
+    # TODO: Test IntrinsicProcedure
     # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
