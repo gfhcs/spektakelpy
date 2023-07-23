@@ -1,9 +1,43 @@
 from util import check_type
 from .machine import MachineState
 from util.lts import LTS, State, Transition
+from .tasks.interaction import InteractionState
 
 
-def explore(mstate, scheduler=None):
+def schedule_all(s):
+    """
+    A scheduler function allowing *any* enabled transitions. This is the most simple scheduler.
+    :param s: A MachineState object.
+    :return: An iterable of task ID's, specifying which Tasks are eligible for being scheduled in the given state.
+    """
+    return tuple(ss.taskid for ss in s.task_states)
+
+
+def schedule_nonzeno(s):
+    """
+    A scheduler function that partially resolves nondeterminism, by the following rules:
+    1. If an internal action is scheduled, only one action is scheduled.
+    2. Interaction tasks will only be scheduled in states that do not enable any internal actions.
+    :param s: A MachineState object.
+    :return: An iterable of task ID's, specifying which Tasks are eligible for being scheduled in the given state.
+    """
+
+    tid_internal = None
+    tid_interaction = []
+
+    for ss in s.task_states:
+        if isinstance(ss, InteractionState):
+            tid_interaction.append(ss.taskid)
+        elif tid_internal is None or ss.taskid < tid_internal:
+            tid_internal = ss.taskid
+
+    if tid_internal is None:
+        return tid_interaction
+    else:
+        return [tid_internal]
+
+
+def explore(mstate, scheduler=schedule_all):
     """
     Enumerates the entire state space of a task machine.
     :param mstate: The MachineState object forming the root of the exploration.
@@ -16,10 +50,6 @@ def explore(mstate, scheduler=None):
     """
 
     check_type(mstate, MachineState)
-
-    if scheduler is None:
-        def scheduler(s):
-            return [ss.taskid for ss in s.task_states]
 
     if not mstate.sealed:
         mstate = mstate.clone_unsealed()

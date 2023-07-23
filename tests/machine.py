@@ -1,6 +1,6 @@
 import unittest
 
-from engine.exploration import explore, state_space
+from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation
@@ -38,7 +38,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         s0 = self.initialize_machine(p)
 
-        lts = state_space(explore(s0))
+        lts = state_space(explore(s0, scheduler=schedule_nonzeno))
         states = []
         transitions = []
         visited = set()
