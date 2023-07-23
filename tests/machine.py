@@ -33,14 +33,16 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Computes the state space of the default machine for the given StackProgram.
         :param p: The StackProgram for which to explore the state space.
-        :return: An LTS.
+        :return: A tuple (lts, states, internal, external), where lts is an LTS, and states contains all the states
+                 of this LTS, whereas 'internal' and 'external' contain all the internal transitions and interaction
+                 transitions respectively.
         """
 
         s0 = self.initialize_machine(p)
 
         lts = state_space(explore(s0, scheduler=schedule_nonzeno))
         states = []
-        transitions = []
+        internal, external = [], []
         visited = set()
         agenda = [lts.initial]
         while len(agenda) > 0:
@@ -49,20 +51,24 @@ class TestSpektakelMachine(unittest.TestCase):
                 visited.add(id(s))
                 states.append(s)
                 for t in s.transitions:
-                    transitions.append(t)
+                    if isinstance(s.content.get_task_state(t.label), InteractionState):
+                        external.append(t)
+                    else:
+                        internal.append(t)
+
                     agenda.append(t.target)
 
-        return lts, states, transitions
+        return lts, states, internal, external
 
     def test_empty(self):
         """
         Tests the execution of an empty stack program.
         """
         p = StackProgram([])
-        _, states, transitions = self.explore(p)
+        _, states, internal, external = self.explore(p)
 
         self.assertEqual(len(states), 1)
-        self.assertEqual(len(transitions), 0)
+        self.assertEqual(len(internal), 0)
 
     # TODO: Test Update instruction
     # TODO: Test Guard instruction

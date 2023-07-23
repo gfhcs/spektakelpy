@@ -62,7 +62,7 @@ class InteractionState(TaskState):
         task_states = list(mstate.task_states)
         task_states.remove(self)
         task_states.append(InteractionState(self.interaction, self.taskid, status=TaskStatus.COMPLETED))
-        return MachineState(mstate.valuation, task_states)
+        return MachineState(task_states)
 
     def hash(self):
         check_sealed(self)

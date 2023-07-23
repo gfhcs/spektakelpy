@@ -30,6 +30,13 @@ class State:
         self._transitions = tuple(self._transitions)
 
     @property
+    def content(self):
+        """
+        The content that this state is decorated with.
+        """
+        return self._content
+
+    @property
     def transitions(self):
         """
         The transitions originating from this state.
