@@ -4,9 +4,8 @@ from engine.exploration import explore, state_space
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation
-from engine.tasks.interaction import InteractionState
+from engine.tasks.interaction import InteractionState, Interaction
 from engine.tasks.stack import StackState, Frame
-from lang.spek.modules import BuiltinAction
 
 
 class TestSpektakelMachine(unittest.TestCase):
@@ -25,7 +24,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         m = StackState(0, TaskStatus.RUNNING, frames)
 
-        isymbols = [BuiltinAction.NEXT, BuiltinAction.PREV, BuiltinAction.TICK]
+        isymbols = [Interaction.NEXT, Interaction.PREV, Interaction.TICK]
         istates = (InteractionState(i, iidx + 1) for iidx, i in enumerate(isymbols))
 
         return MachineState([m, *istates])

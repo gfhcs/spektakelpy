@@ -1,7 +1,25 @@
+from enum import Enum
 
+from util import check_type
 from util.immutable import check_sealed
 from ..machine import MachineState
 from ..task import TaskState, TaskStatus
+
+
+class Interaction(Enum):
+    """
+    An enumeration of all the interaction labels that notify a spek program of outside events.
+    """
+    TICK = 0
+    NEXT = 1
+    PREV = 2
+
+
+class BuiltinVariable(Enum):
+    """
+    Builtin variables.
+    """
+    TIME = 0
 
 
 class InteractionState(TaskState):
@@ -15,7 +33,7 @@ class InteractionState(TaskState):
         :param interaction: An object that represents the type of interaction this task is waiting for.
         """
         super().__init__(taskid, status)
-        self._interaction = interaction
+        self._interaction = check_type(interaction, Interaction)
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -53,3 +71,4 @@ class InteractionState(TaskState):
     def equals(self, other):
         return isinstance(other, InteractionState) \
                and (self.taskid, self._interaction, self.status) == (other.taskid, other._interaction, other.status)
+

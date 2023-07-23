@@ -1,13 +1,12 @@
 import abc
 
-from engine.functional.terms import Term
-from lang.spek.modules import BuiltinAction
-from .interaction import InteractionState
-from ..functional.values import EvaluationException
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
+from .interaction import InteractionState, Interaction
 from .reference import Reference
 from .stack import Frame, StackState
+from ..functional.values import EvaluationException
+from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
 
@@ -219,27 +218,6 @@ class Guard(Instruction):
                     enabled = True
 
 
-class IntrinsicProcedure(Immutable):
-    """
-    Represents a procedure the execution of which is opaque to the state machine, but that can manipulate the entire
-    state of the machine.
-    """
-
-    @abc.abstractmethod
-    def execute(self, tstate, mstate, *args):
-        """
-        Executes this intrinsic procedure on the given state, leading to a new state.
-        This procedure may modify the given TaskState and MachineState objects.
-        :param tstate: The unsealed TaskState object that this instruction is to be executed in.
-        It must be part of the given machine state.
-        Any references to task-local variables will be interpreted with respect to this task state.
-        :param mstate: The unsealed MachineState object that this instruction is to be executed in.
-        It must contain the given task state.
-        :param args: The argument Values that this intrinsic procedure is being called for.
-        """
-        pass
-
-
 class Push(Instruction):
     """
     An instruction that pushes a new frame on the stack of the executing task.
@@ -376,7 +354,7 @@ class Launch(Instruction):
         if isinstance(location, ProgramLocation):
             frame = Frame(location, args)
             mstate.add_task(StackState(tid, TaskStatus.WAITING, [frame]))
-        elif isinstance(location, BuiltinAction):
+        elif isinstance(location, Interaction):
             mstate.add_task(InteractionState(location, tid, status=TaskStatus.WAITING))
         else:
             tstate.exception = InstructionException("The expression determining the initial program location for the"
@@ -471,3 +449,5 @@ class ProgramLocation(Sealable):
             c = ProgramLocation(self._program, self._index)
             clones[id(self)] = c
             return c
+
+from engine.functional.terms import Term

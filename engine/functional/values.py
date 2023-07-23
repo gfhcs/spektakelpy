@@ -2,9 +2,7 @@ import abc
 
 from util import check_type
 from util.immutable import Sealable
-from .types import TBuiltin
-from ..tasks.instructions import StackProgram, IntrinsicProcedure
-from .intrinsic import IntrinsicInstanceMethod
+from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicProcedure
 
 
 class Value(Sealable, abc.ABC):
@@ -1076,3 +1074,6 @@ class VTask(Value):
 
     def clone_unsealed(self, clones=None):
         return self
+
+from .types import TBuiltin
+from ..tasks.instructions import StackProgram

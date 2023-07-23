@@ -1,7 +1,5 @@
-import abc
-
-from engine.functional.intrinsic import IntrinsicInstanceMethod
-from engine.functional.values import Value, VNone, VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
+from engine.intrinsic import IntrinsicInstanceMethod
+from engine.functional.values import Value, VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
     VException
 from util import check_type
 

@@ -3,12 +3,11 @@ from abc import ABC
 from enum import Enum
 
 from util import check_type
-from .types import TException, TFunction, Type, TClass
 from .values import Value, VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
-from ..tasks.reference import Reference, NameReference, FieldReference
+from ..tasks.reference import Reference, FieldReference
 
 
 class Term(abc.ABC):
@@ -901,3 +900,5 @@ class NewModule(Term):
     def evaluate(self, tstate, mstate):
         ns = self.namespace.evaluate(tstate, mstate)
         return VModule(ns)
+
+from .types import Type

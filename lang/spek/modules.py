@@ -1,7 +1,7 @@
 import abc
 import os.path
-from enum import Enum
 
+from engine.tasks.interaction import Interaction, BuiltinVariable
 from lang.modules import Module, ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 from lang.validator import ValidationError
@@ -258,27 +258,11 @@ class BuiltinModuleFinder(Finder):
         return self._m[name[0]]
 
 
-class BuiltinAction(Enum):
-    """
-    Built-in action labels.
-    """
-    TICK = 0
-    NEXT = 1
-    PREV = 2
-
-
-class BuiltinVariable(Enum):
-    """
-    Builtin variables.
-    """
-    TIME = 0
-
-
 def build_default_finder(roots):
     ffinder = FileFinder(roots)
-    m = [BuiltinModuleSpecification("interaction", {"next": BuiltinAction.NEXT,
-                                                    "tick": BuiltinAction.TICK,
-                                                    "prev": BuiltinAction.PREV}),
+    m = [BuiltinModuleSpecification("interaction", {"next": Interaction.NEXT,
+                                                    "tick": Interaction.TICK,
+                                                    "prev": Interaction.PREV}),
          BuiltinModuleSpecification("environment", {"time": BuiltinVariable.TIME})]
     bfinder = BuiltinModuleFinder({mspec.name: mspec for mspec in m})
 
