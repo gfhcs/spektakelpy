@@ -10,7 +10,7 @@ def schedule_all(s):
     :param s: A MachineState object.
     :return: An iterable of task ID's, specifying which Tasks are eligible for being scheduled in the given state.
     """
-    return tuple(ss.taskid for ss in s.task_states)
+    return tuple(ss.taskid for ss in s.task_states if ss.enabled(s))
 
 
 def schedule_nonzeno(s):
@@ -26,6 +26,8 @@ def schedule_nonzeno(s):
     tid_interaction = []
 
     for ss in s.task_states:
+        if not ss.enabled(s):
+            continue
         if isinstance(ss, InteractionState):
             tid_interaction.append(ss.taskid)
         elif tid_internal is None or ss.taskid < tid_internal:
