@@ -6,7 +6,6 @@ from util import check_type
 from .values import Value, VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
-from ..tasks.instructions import StackProgram
 from ..tasks.reference import Reference, FieldReference
 
 
@@ -764,6 +763,7 @@ class NewProcedure(Term):
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
+        from ..tasks.instructions import StackProgram
         self._code = check_type(code, StackProgram)
 
     @property
