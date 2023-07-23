@@ -64,6 +64,14 @@ class Type(Value):
             self._nfields += t._nfields
 
     @property
+    def bases(self):
+        """
+        The base types inherited by this type.
+        :return: A tuple of Type objects.
+        """
+        return self._super_types
+
+    @property
     def type(self):
         return TBuiltin.type
 

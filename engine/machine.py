@@ -14,7 +14,7 @@ class MachineState(Sealable):
         :param task_states: The states of all the tasks running on the machine.
         """
         super().__init__()
-        self._tstates = {check_type(s, TaskState).task_id: s for s in task_states}
+        self._tstates = {check_type(s, TaskState).taskid: s for s in task_states}
 
     def _seal(self):
         for t in self._tstates.values():

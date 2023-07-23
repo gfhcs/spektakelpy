@@ -1,6 +1,5 @@
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
-from .instructions import ProgramLocation
 from ..task import TaskState
 from ..task import TaskStatus
 from engine.functional.values import Value
@@ -18,6 +17,8 @@ class Frame(Sealable):
         :param local_values: The array of values of the local variables stored in this stack frame.
         """
         super().__init__()
+        from .instructions import ProgramLocation
+
         self._location = check_type(location, ProgramLocation)
         self._local_values = list(check_types(local_values, Value))
 
@@ -87,8 +88,8 @@ class StackState(TaskState):
         super().__init__(taskid, status)
 
         self._stack = list(check_types(stack, Frame))
-        self._exception = check_type(exception, Value)
-        self._returned = check_type(returned, Value)
+        self._exception = check_type(exception, Value, allow_none=True)
+        self._returned = check_type(returned, Value, allow_none=True)
 
     def _seal(self):
         self._stack = tuple(self._stack)
@@ -102,8 +103,8 @@ class StackState(TaskState):
             return clones[id(self)]
         except KeyError:
             c = StackState(self.taskid, self.status, (f.clone_unsealed(clones=clones) for f in self.stack),
-                           exception=self.exception.clone_unsealed(clones=clones),
-                           returned=self.returned.clone_unsealed(clones=clones))
+                           exception=None if self.exception is None else self.exception.clone_unsealed(clones=clones),
+                           returned=None if self.exception is None else self.returned.clone_unsealed(clones=clones))
             clones[id(self)] = c
             return c
 
@@ -180,3 +181,4 @@ class StackState(TaskState):
                     raise RuntimeError("This task was not enabled and thus should not have been run!")
                 tstate.status = TaskStatus.WAITING
                 break
+

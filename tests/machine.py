@@ -42,11 +42,11 @@ class TestSpektakelMachine(unittest.TestCase):
         states = []
         transitions = []
         visited = set()
-        agenda = [s0]
+        agenda = [lts.initial]
         while len(agenda) > 0:
             s = agenda.pop()
             if id(s) not in visited:
-                visited.append(id(s))
+                visited.add(id(s))
                 states.append(s)
                 for t in s.transitions:
                     transitions.append(t)

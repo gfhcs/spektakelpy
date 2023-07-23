@@ -869,6 +869,9 @@ class VProcedure(Value):
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
+
+        from ..tasks.instructions import StackProgram
+
         if isinstance(code, (StackProgram, IntrinsicProcedure)):
             self._code = code
         else:
@@ -1076,4 +1079,3 @@ class VTask(Value):
         return self
 
 from .types import TBuiltin
-from ..tasks.instructions import StackProgram

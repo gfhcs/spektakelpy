@@ -3,8 +3,6 @@ import abc
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .interaction import InteractionState, Interaction
-from .reference import Reference
-from .stack import Frame, StackState
 from ..functional.values import EvaluationException
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
@@ -451,3 +449,5 @@ class ProgramLocation(Sealable):
             return c
 
 from engine.functional.terms import Term
+from .reference import Reference
+from .stack import Frame, StackState
