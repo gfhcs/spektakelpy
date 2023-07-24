@@ -23,8 +23,10 @@ class Frame(Sealable):
         self._local_values = list(check_types(local_values, Value))
 
     def _seal(self):
-        self._location._seal()
-        self._local_values = tuple(v.seal() for v in self._local_values)
+        self._location.seal()
+        for v in self._local_values:
+            v.seal()
+        self._local_values = tuple(self._local_values)
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -32,7 +34,7 @@ class Frame(Sealable):
         try:
             return clones[id(self)]
         except KeyError:
-            c = Frame(self._location, (v.clone_unsealed(clones=clones) for v in self._local_values))
+            c = Frame(self._location.clone_unsealed(clones), (v.clone_unsealed(clones=clones) for v in self._local_values))
             clones[id(self)] = c
             return c
 
@@ -68,7 +70,23 @@ class Frame(Sealable):
         """
         The array of values of the local variables stored in this stack frame.
         """
-        return self._local_values
+        return tuple(self._local_values)
+
+    def set_local(self, index, value):
+        """
+        Updates a local variable recorded in this frame.
+        :param index: The index of the local variable to update.
+        :param value: The new value for the local variable.
+        """
+        check_unsealed(self)
+        self._local_values[index] = value
+
+    def __getitem__(self, index):
+        return self.local[index]
+
+    def __setitem__(self, index, value):
+        self.set_local(index, value)
+
 
 
 class StackState(TaskState):
@@ -102,9 +120,9 @@ class StackState(TaskState):
         try:
             return clones[id(self)]
         except KeyError:
-            c = StackState(self.taskid, self.status, (f.clone_unsealed(clones=clones) for f in self.stack),
+            c = StackState(self.taskid, self.status, [f.clone_unsealed(clones=clones) for f in self.stack],
                            exception=None if self.exception is None else self.exception.clone_unsealed(clones=clones),
-                           returned=None if self.exception is None else self.returned.clone_unsealed(clones=clones))
+                           returned=None if self.returned is None else self.returned.clone_unsealed(clones=clones))
             clones[id(self)] = c
             return c
 
@@ -151,14 +169,17 @@ class StackState(TaskState):
         if len(self.stack) == 0:
             return False
         top = self.stack[-1]
-        i = top.program[top.instruction_index]
+        try:
+            i = top.program[top.instruction_index]
+        except IndexError:
+            return False
         return i.enabled(self, mstate)
 
     def run(self, mstate):
         check_unsealed(self)
         tstate = self
 
-        mstate.status = TaskStatus.RUNNING
+        tstate.status = TaskStatus.RUNNING
         progress = False
 
         # A task is not supposed to yield control unless it really has to.

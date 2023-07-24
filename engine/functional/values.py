@@ -38,7 +38,7 @@ class VNone(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
     def __str__(self):
@@ -88,7 +88,7 @@ class VBool(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
     def __lt__(self, other):
@@ -103,7 +103,7 @@ class VBool(Value):
     def __ge__(self, other):
         return VBool.from_bool(self._value >= other._value)
 
-    def __bool__(self, other):
+    def __bool__(self):
         return self._value
 
     def __int__(self):
@@ -193,7 +193,7 @@ class VInt(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
     def __lt__(self, other):
@@ -294,7 +294,7 @@ class VFloat(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
     def __lt__(self, other):
@@ -380,7 +380,7 @@ class VStr(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
     def __lt__(self, other):
@@ -678,15 +678,17 @@ class VException(Value):
     The base type for all exceptions.
     """
 
-    def __init__(self, message=None, *args):
+    def __init__(self, message=None, *args, pexception=None):
         """
         Creates a new exception
         :param message: The message for this exception.
         :param args: Additional constructor arguments that annotate the exception.
+        :param pexception: An underlying Python exception, if it caused the exception to be created.
         """
         super().__init__()
-        self._msg = VStr() if message is None else check_type(message, VStr)
+        self._msg = check_type(message, str, allow_none=True)
         self._args = tuple(check_type(a, Value) for a in args)
+        self._pexception = check_type(pexception, Exception, allow_none=True)
 
     def __str__(self):
         return str("{}: {}".format(type(self), self._msg))
@@ -713,18 +715,14 @@ class VException(Value):
         return self._args
 
     def _seal(self):
-        pass
-
-    def hash(self):
-        return hash(id(self))
-
-    def equals(self, other):
-        return id(self) == id(other)
-
-    def _seal(self):
-        self._msg.seal()
         for a in self._args:
             a.seal()
+
+    def hash(self):
+        return hash((self._msg, *self._args))
+
+    def equals(self, other):
+        return isinstance(other, type(self)) and (self._msg, *self._args) == (other._msg, *other._args) and self._pexception is other._pexception
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -732,7 +730,7 @@ class VException(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VTuple(self._msg.clone_unsealed(clones=clones), *(c.clone_unsealed(clones=clones) for c in self._args))
+            c = type(self)(self._msg, *(c.clone_unsealed(clones=clones) for c in self._args), pexception=self._pexception)
             clones[id(self)] = c
             return c
 
@@ -744,6 +742,15 @@ class EvaluationException(VException):
     @property
     def type(self):
         return TBuiltin.evaluation_exception
+
+
+class InstructionException(VException):
+    """
+    Raised when the execution of an instruction fails.
+    """
+    @property
+    def type(self):
+        return TBuiltin.instruction_exception
 
 
 class VTypeError(VException):
@@ -904,7 +911,7 @@ class VProcedure(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
 
@@ -951,7 +958,7 @@ class VProperty(Value):
         self._getter.seal()
         self._setter.seal()
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
 

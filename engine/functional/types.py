@@ -84,7 +84,7 @@ class Type(Value):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
 
     def subtypeof(self, other):

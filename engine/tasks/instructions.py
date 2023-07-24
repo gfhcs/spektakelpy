@@ -3,14 +3,9 @@ import abc
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .interaction import InteractionState, Interaction
-from ..functional.values import EvaluationException
+from ..functional.values import EvaluationException, InstructionException
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
-
-
-class InstructionException(Exception):
-    # TODO: This must be a value!
-    pass
 
 
 class Instruction(Immutable, abc.ABC):
@@ -60,10 +55,11 @@ class Update(Instruction):
         :param edestination: The index of the instruction to jump to if this instruction causes an error.
         """
         super().__init__()
-        self._ref = check_type(ref, Term)
+        self._ref = check_type(ref, Reference)
         self._term = check_type(term, Term)
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
+        self._ref.seal()
 
     def enabled(self, tstate, mstate):
         return True
@@ -108,19 +104,17 @@ class Update(Instruction):
         top = tstate.stack[-1]
         top.instruction_index = self._destination
         try:
-            ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
-        except EvaluationException as ee:
-            tstate.exception = ee
+        except Exception as ex:
+            tstate.exception = EvaluationException("Evaluation of the value to be assigned failed.", pexception=ex)
             top.instruction_index = self._edestination
             return
 
-        if not isinstance(ref, Reference):
-            tstate.exception = InstructionException("The expression determining what part of the state to update did "
-                                                    "not evaluate to a proper reference!")
+        try:
+            self._ref.write(tstate, mstate, value)
+        except Exception as ex:
+            tstate.exception = InstructionException("Writing the reference failed.", pexception=ex)
             top.instruction_index = self._edestination
-            return
-        ref.write(tstate, mstate, value)
 
 
 class Guard(Instruction):
@@ -138,7 +132,7 @@ class Guard(Instruction):
         :param edestination: The destination to jump to in case this instruction causes an error.
         """
         super().__init__()
-        self._alternatives = {check_type(e, Expression): check_type(d, int) for e, d in alternatives.items()}
+        self._alternatives = {check_type(e, Term): check_type(d, int) for e, d in alternatives.items()}
         self._edestination = check_type(edestination, int)
 
     @property
@@ -183,10 +177,7 @@ class Guard(Instruction):
         return True
 
     def enabled(self, tstate, mstate):
-        try:
-            return any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys())
-        except EvaluationException:
-            return True
+        return any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys())
 
     def execute(self, tstate, mstate):
 

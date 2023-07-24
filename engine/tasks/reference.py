@@ -62,11 +62,10 @@ class FrameReference(Reference):
         return isinstance(other, FrameReference) and self._index == other._index
 
     def write(self, tstate, mstate, value):
-        check_unsealed(self)
-        tstate.stack[-1].local[self._index] = value
+        tstate.stack[-1][self._index] = value
 
     def read(self, tstate, mstate):
-        return tstate.stack[-1].local[self._index]
+        return tstate.stack[-1][self._index]
 
 
 class ReturnValueReference(Reference):

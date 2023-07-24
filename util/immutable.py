@@ -101,10 +101,10 @@ class Sealable:
         return self._sealed
 
     @abc.abstractmethod
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         """
         Creates a deep copy of this object, that is unsealed and equal to this object.
-        :param cloned: A dict-like object that maps object id's to clones. If id(self) is a key in this mapping,
+        :param clones: A dict-like object that maps object id's to clones. If id(self) is a key in this mapping,
                        the value for this key is returned by this method. Otherwise a fresh clone object is created
                        and returned.
         """
@@ -123,5 +123,5 @@ class Immutable(Sealable, abc.ABC):
     def _seal(self):
         pass
 
-    def clone_unsealed(self, cloned=None):
+    def clone_unsealed(self, clones=None):
         return self
