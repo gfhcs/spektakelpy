@@ -105,8 +105,8 @@ class Update(Instruction):
         top.instruction_index = self._destination
         try:
             value = self._term.evaluate(tstate, mstate)
-        except Exception as ex:
-            tstate.exception = EvaluationException("Evaluation of the value to be assigned failed.", pexception=ex)
+        except EvaluationException as ee:
+            tstate.exception = ee
             top.instruction_index = self._edestination
             return
 
