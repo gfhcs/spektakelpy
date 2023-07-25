@@ -136,8 +136,32 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertIsNot(states[1].content.get_task_state(0).exception, None)
 
+    def test_pop_success(self):
+        """
+        Tests the execution of Update instructions.
+        """
+
+        p = StackProgram([Pop()])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertEqual(len(states[0].content.get_task_state(0).stack), 1)
+        self.assertEqual(len(states[1].content.get_task_state(0).stack), 0)
+
+    def test_pop_failure(self):
+        p = StackProgram([Pop(), Pop()])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p))
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+
+        self.assertEqual(len(states[0].content.get_task_state(0).stack), 1)
+        self.assertEqual(len(states[1].content.get_task_state(0).stack), 0)
+
     # TODO: Test Push instruction
-    # TODO: Test Pop instruction
     # TODO: Test Launch instruction
     # TODO: Test InteractionState!
     # TODO: Test IntrinsicProcedure
