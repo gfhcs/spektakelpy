@@ -136,7 +136,7 @@ class Guard(Instruction):
         self._edestination = check_type(edestination, int)
 
     @property
-    def expressions(self):
+    def conditions(self):
         """
         The expressions that this guard expression is evaluating.
         """

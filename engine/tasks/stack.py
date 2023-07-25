@@ -2,7 +2,7 @@ from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
 from ..task import TaskState
 from ..task import TaskStatus
-from engine.functional.values import Value
+from engine.functional.values import Value, InstructionException
 
 
 class Frame(Sealable):
@@ -192,7 +192,12 @@ class StackState(TaskState):
 
             top = tstate.stack[-1]
 
-            i = top.program[top.instruction_index]
+            try:
+                i = top.program[top.instruction_index]
+            except IndexError:
+                self.exception = InstructionException("Instruction index invalid, don't know how to continue.")
+                tstate.status = TaskStatus.FAILED
+                break
 
             if i.enabled(tstate, mstate):
                 i.execute(tstate, mstate)

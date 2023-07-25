@@ -103,8 +103,39 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(states[1].content.get_task_state(0).stack[0][0], VNone.instance)
         self.assertIsNot(states[1].content.get_task_state(0).exception, None)
 
+    def test_guard_success(self):
+        """
+        Tests the execution of Guard instructions.
+        """
 
-    # TODO: Test Guard instruction
+        false = CBool(False)
+        true = CBool(True)
+
+        p = StackProgram([Guard({false: 1, true: 2}, 1),
+                          Guard({}, 2),
+                          Guard({true: 3}, 1),
+                          Guard({false: 4}, 1),
+                          Guard({true: 5}, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p))
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+    def test_guard_failure(self):
+        false = CBool(False)
+        true = CBool(True)
+
+        p = StackProgram([Guard({false: 1, true: 34634}, 1),
+                          Guard({}, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p))
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+
     # TODO: Test Push instruction
     # TODO: Test Pop instruction
     # TODO: Test Launch instruction
