@@ -1,13 +1,13 @@
 import unittest
 
 from engine.exploration import explore, state_space, schedule_nonzeno
-from engine.functional.terms import CInt, CBool
-from engine.functional.values import VNone
+from engine.functional.reference import FrameReference, ReturnValueReference
+from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef
+from engine.functional.values import VNone, VProcedure
 from engine.machine import MachineState
 from engine.task import TaskStatus
-from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard
+from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push
 from engine.tasks.interaction import InteractionState, Interaction
-from engine.tasks.reference import FrameReference
 from engine.tasks.stack import StackState, Frame
 
 
@@ -161,7 +161,57 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(states[0].content.get_task_state(0).stack), 1)
         self.assertEqual(len(states[1].content.get_task_state(0).stack), 0)
 
-    # TODO: Test Push instruction
+    def test_push_success(self):
+        """
+        Tests the execution of Update instructions.
+        """
+
+        q = StackProgram([Update(ReturnValueReference(),
+                                               ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
+                                                                         Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
+                                        Pop()])
+
+        q = VProcedure(1, ProgramLocation(q, 0))
+
+        p = StackProgram([Push(Read(CRef(FrameReference(0))), [CInt(42)], 1, 1),
+                          Guard({}, 1)])
+
+        state0 = self.initialize_machine(p, 1)
+        list(state0.task_states)[0].stack[0][0] = q
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertEqual(int(states[1].content.get_task_state(0).returned), 43)
+        self.assertIs(states[1].content.get_task_state(0).exception, None)
+
+    def test_push_failure(self):
+
+        q = StackProgram([Update(ReturnValueReference(),
+                                               ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
+                                                                         Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
+                                        Pop()])
+
+        q = VProcedure(1, ProgramLocation(q, 0))
+
+        p = StackProgram([Push(Read(CRef(FrameReference(17))), [CInt(42)], 1, 1),
+                          Guard({}, 1)])
+
+        state0 = self.initialize_machine(p, 1)
+        list(state0.task_states)[0].stack[0][0] = q
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+
+
     # TODO: Test Launch instruction
     # TODO: Test InteractionState!
     # TODO: Test IntrinsicProcedure
