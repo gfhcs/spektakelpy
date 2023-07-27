@@ -63,6 +63,9 @@ class CTerm(Term):
         super().__init__()
         self._value = check_type(value, Value)
 
+    def __str__(self):
+        return str(self._value)
+
     def evaluate(self, tstate, mstate):
         return self._value
 

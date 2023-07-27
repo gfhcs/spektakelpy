@@ -1,4 +1,5 @@
 import abc
+from io import StringIO
 
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
@@ -67,6 +68,9 @@ class Update(Instruction):
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
         self._ref.seal()
+
+    def __str__(self):
+        return "{} := {}".format(self._ref, self._term)
 
     def enabled(self, tstate, mstate):
         return True
@@ -141,6 +145,16 @@ class Guard(Instruction):
         super().__init__()
         self._alternatives = {check_type(e, Term): check_type(d, int) for e, d in alternatives.items()}
         self._edestination = check_type(edestination, int)
+
+    def __str__(self):
+        with StringIO() as s:
+            s.write(("{"))
+            prefix = ""
+            for t, d in self._alternatives.items():
+                s.write(f"{prefix}{t}: {d}")
+                prefix = ", "
+            s.write("}")
+            return s.getvalue()
 
     @property
     def conditions(self):
@@ -238,6 +252,9 @@ class Push(Instruction):
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
+    def __str__(self):
+        return "push({}, [{}])".format(self._entry, ", ".join(self._expressions))
+
     def hash(self):
         return hash((self._entry, self._expressions, self._destination, self._edestination))
 
@@ -280,6 +297,9 @@ class Pop(Instruction):
 
     def __init__(self):
         super().__init__()
+
+    def __str__(self):
+        return "pop"
 
     def hash(self):
         return 0
@@ -375,6 +395,9 @@ class StackProgram(Immutable):
         """
         super().__init__()
         self._instructions = tuple(check_type(i, Instruction) for i in instructions)
+
+    def __str__(self):
+        return "\n".join(map(str, self._instructions))
 
     def hash(self):
         return hash(self._instructions)
