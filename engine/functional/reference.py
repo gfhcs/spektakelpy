@@ -2,13 +2,17 @@ import abc
 
 from engine.functional.values import Value
 from util import check_type
-from util.immutable import Sealable, check_sealed, check_unsealed
+from util.immutable import check_sealed, check_unsealed
 
 
-class Reference(Sealable, abc.ABC):
+class Reference(Value, abc.ABC):
     """
     A reference is a part of a machine state that can point to another part of a machine state.
     """
+
+    def type(self):
+        from engine.functional.types import TBuiltin
+        return TBuiltin.ref
 
     @abc.abstractmethod
     def write(self, tstate, mstate, value):
@@ -93,7 +97,6 @@ class ReturnValueReference(Reference):
         return isinstance(other, ReturnValueReference)
 
     def write(self, tstate, mstate, value):
-        check_unsealed(self)
         tstate.returned = value
 
     def read(self, tstate, mstate):

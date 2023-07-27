@@ -440,5 +440,5 @@ class ProgramLocation(Sealable):
             return c
 
 from engine.functional.terms import Term
-from .reference import Reference
+from engine.functional.reference import Reference
 from .stack import Frame, StackState

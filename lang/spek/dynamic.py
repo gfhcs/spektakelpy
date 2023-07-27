@@ -5,7 +5,7 @@ from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator
 from engine.functional.types import TStopIteration
 from engine.functional.values import VReturnException, VBreakException, VContinueException
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
-from engine.tasks.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
+from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \

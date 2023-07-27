@@ -6,7 +6,7 @@ from util import check_type
 from .values import Value, VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
-from ..tasks.reference import Reference, FieldReference
+from engine.functional.reference import Reference, FieldReference
 
 
 class Term(abc.ABC):
