@@ -735,24 +735,6 @@ class VException(Value):
             return c
 
 
-class EvaluationException(VException):
-    """
-    Raised when the evaluation of a term fails.
-    """
-    @property
-    def type(self):
-        return TBuiltin.evaluation_exception
-
-
-class InstructionException(VException):
-    """
-    Raised when the execution of an instruction fails.
-    """
-    @property
-    def type(self):
-        return TBuiltin.instruction_exception
-
-
 class VTypeError(VException):
     """
     Raised when an inappropriate type is encountered.

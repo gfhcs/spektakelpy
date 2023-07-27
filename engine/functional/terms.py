@@ -9,6 +9,13 @@ from ..task import TaskStatus
 from engine.functional.reference import Reference, FieldReference
 
 
+class EvaluationException(Exception):
+    """
+    Raised when the evaluation of a term fails.
+    """
+    pass
+
+
 class Term(abc.ABC):
     """
     Defines the types and semantics of expressions that the virtual machine can evaluate.

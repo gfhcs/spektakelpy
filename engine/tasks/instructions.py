@@ -3,9 +3,16 @@ import abc
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .interaction import InteractionState, Interaction
-from ..functional.values import EvaluationException, InstructionException
+from ..functional.values import VException, VProcedure
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
+
+
+class InstructionException(Exception):
+    """
+    Raised when the execution of an instruction fails.
+    """
+    pass
 
 
 class Instruction(Immutable, abc.ABC):
@@ -106,14 +113,14 @@ class Update(Instruction):
         try:
             value = self._term.evaluate(tstate, mstate)
         except EvaluationException as ee:
-            tstate.exception = ee
+            tstate.exception = VException(pexception=ee)
             top.instruction_index = self._edestination
             return
 
         try:
             self._ref.write(tstate, mstate, value)
         except Exception as ex:
-            tstate.exception = InstructionException("Writing the reference failed.", pexception=ex)
+            tstate.exception = VException(pexception=ex)
             top.instruction_index = self._edestination
 
 
@@ -190,15 +197,15 @@ class Guard(Instruction):
             try:
                 r = bool(e.evaluate(tstate, mstate))
             except EvaluationException as ee:
-                tstate.exception = ee
+                tstate.exception = VException(pexception=ee)
                 top.instruction_index = self._edestination
                 return
 
             if r:
                 if enabled:
-                    tstate.exception = InstructionException("More than one of the expressions of this guard expression"
+                    tstate.exception = VException(pexception=InstructionException("More than one of the expressions of this guard expression"
                                                             " are true. This is not allowed, because tasks must be"
-                                                            " fully determenistic!")
+                                                            " fully determenistic!"))
                     top.instruction_index = self._edestination
                     return
 
@@ -250,7 +257,7 @@ class Push(Instruction):
             location = self._entry.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._expressions)
         except EvaluationException as ee:
-            tstate.exception = ee
+            tstate.exception = VException(pexception=ee)
             old_top.instruction_index = self._edestination
             return
 
@@ -261,8 +268,8 @@ class Push(Instruction):
         elif location is IntrinsicProcedure:
             location.execute(tstate, mstate, *args)
         else:
-            tstate.exception = InstructionException("The expression determining the initial program location for the"
-                                                    " new stack frame is neither a ProgramLocation nor an Intrinsic function!")
+            tstate.exception = VException(pexception=InstructionException("The expression determining the initial program location for the"
+                                                    " new stack frame is neither a ProgramLocation nor an Intrinsic function!"))
             old_top.instruction_index = self._edestination
 
 
@@ -329,7 +336,7 @@ class Launch(Instruction):
             location = self._entry.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._expressions)
         except EvaluationException as ee:
-            tstate.exception = ee
+            tstate.exception = VException(pexception=ee)
             mytop.instruction_index = self._edestination
             return
 
@@ -346,8 +353,8 @@ class Launch(Instruction):
         elif isinstance(location, Interaction):
             mstate.add_task(InteractionState(location, tid, status=TaskStatus.WAITING))
         else:
-            tstate.exception = InstructionException("The expression determining the initial program location for the"
-                                                    " new stack frame is not a proper program location!")
+            tstate.exception = VException(pexception=InstructionException("The expression determining the initial program location for the"
+                                                    " new stack frame is not a proper program location!"))
             mytop.instruction_index = self._edestination
             return
 
@@ -439,6 +446,6 @@ class ProgramLocation(Sealable):
             clones[id(self)] = c
             return c
 
-from engine.functional.terms import Term
+from engine.functional.terms import Term, EvaluationException
 from engine.functional.reference import Reference
 from .stack import Frame, StackState
