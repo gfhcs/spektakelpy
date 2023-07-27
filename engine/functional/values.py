@@ -850,21 +850,21 @@ class VProcedure(Value):
     Represents an executable procedure.
     """
 
-    def __init__(self, num_args, code):
+    def __init__(self, num_args, entry):
         """
         Creates a new procedure.
         :param num_args: The number of arguments of this procedure.
-        :param code: Either a StackProgram that forms the body of this procedure, or an IntrinsicProcedure.
+        :param entry: Either a ProgramLocation that points to the entry point for this procedure, or an IntrinsicProcedure.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
 
-        from ..tasks.instructions import StackProgram
+        from ..tasks.instructions import ProgramLocation
 
-        if isinstance(code, (StackProgram, IntrinsicProcedure)):
-            self._code = code
+        if isinstance(entry, (ProgramLocation, IntrinsicProcedure)):
+            self._entry = entry
         else:
-            raise TypeError("The given code object is neither a StackProgram nor an IntrinsicProcedure!")
+            raise TypeError("The given entry object is neither a ProgramLocation nor an IntrinsicProcedure!")
 
     @property
     def type(self):
@@ -878,20 +878,20 @@ class VProcedure(Value):
         return self._num_args
 
     @property
-    def code(self):
+    def entry(self):
         """
-        Either a StackProgram that forms the body of this procedure, or an IntrinsicProcedure object.
+        Either a ProgramLocation or an IntrinsicProcedure object.
         """
-        return self._code
+        return self._entry
 
     def hash(self):
-        return hash(self._code)
+        return hash(self._entry)
 
     def equals(self, other):
         return id(self) == id(other)
 
     def _seal(self):
-        pass
+        self._entry.seal()
 
     def clone_unsealed(self, clones=None):
         return self

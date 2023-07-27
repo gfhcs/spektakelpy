@@ -70,6 +70,19 @@ class CTerm(Term):
         return self._value
 
 
+class CRef(CTerm):
+    """
+    A term that represents a reference.
+    """
+
+    def __init__(self, r):
+        """
+        Instantiates a constant reference.
+        :param r: The reference to be represented by this term.
+        """
+        super().__init__(r)
+
+
 class CInt(CTerm):
     """
     A term that represents an integer constant.
@@ -480,9 +493,12 @@ class Read(Term):
         return self.children[0]
 
     def evaluate(self, tstate, mstate):
-        r = self.reference
+        r = self.reference.evaluate(tstate, mstate)
         assert isinstance(r, Reference)
-        return r.read(tstate, mstate)
+        try:
+            return r.read(tstate, mstate)
+        except Exception as ex:
+            raise EvaluationException("Failed to read from reference!") from ex
 
 
 class Project(Term):

@@ -63,6 +63,7 @@ class Frame(Sealable):
 
     @instruction_index.setter
     def instruction_index(self, value):
+        check_unsealed(self)
         self._location.index = value
 
     @property
@@ -86,7 +87,6 @@ class Frame(Sealable):
 
     def __setitem__(self, index, value):
         self.set_local(index, value)
-
 
 
 class StackState(TaskState):
@@ -131,7 +131,21 @@ class StackState(TaskState):
         """
         The sequence of Frame objects, that, from top to bottom, represent the stack of this task state.
         """
-        return self._stack
+        return tuple(self._stack)
+
+    def push(self, frame):
+        """
+        Pushes a frame onto the stack of this StackState.
+        :param frame: The Frame object to push onto the stack.
+        """
+        self._stack.append(check_type(frame, Frame))
+
+    def pop(self):
+        """
+        Pops a frame from the top of the stack.
+        :return: The Frame that was popped.
+        """
+        return self._stack.pop(-1)
 
     @property
     def exception(self):

@@ -236,7 +236,7 @@ class Push(Instruction):
     def __init__(self, entry, expressions, destination, edestination):
         """
         Creates a new push instructions.
-        :param entry: An Expression that evaluates to either a ProgramLocation or an IntrinsicProcedure.
+        :param entry: An Expression that evaluates to either a ProgramLocation, a VProcedure, or an IntrinsicProcedure.
         :param expressions: An iterable of Terms that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
@@ -278,9 +278,11 @@ class Push(Instruction):
             old_top.instruction_index = self._edestination
             return
 
-        if location is ProgramLocation:
-            frame = Frame(location, args)
-            tstate.stack.append(frame)
+        if isinstance(location, VProcedure):
+            location = location.entry
+        if isinstance(location, ProgramLocation):
+            frame = Frame(location.clone_unsealed(), args)
+            tstate.push(frame)
             old_top.instruction_index = self._destination
         elif location is IntrinsicProcedure:
             location.execute(tstate, mstate, *args)
@@ -311,7 +313,7 @@ class Pop(Instruction):
         return True
 
     def execute(self, tstate, mstate):
-        tstate.stack.pop()
+        tstate.pop()
 
 
 class Launch(Instruction):
