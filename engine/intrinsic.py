@@ -1,13 +1,24 @@
 import abc
 
-from util.immutable import Immutable
+from engine.functional.values import Value
 
 
-class IntrinsicProcedure(Immutable):
+class IntrinsicProcedure(Value):
     """
     Represents a procedure the execution of which is opaque to the state machine, but that can manipulate the entire
     state of the machine.
     """
+
+    @property
+    def type(self):
+        from engine.functional.types import TBuiltin
+        return TBuiltin.procedure
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, clones=None):
+        return self
 
     @abc.abstractmethod
     def execute(self, tstate, mstate, *args):
