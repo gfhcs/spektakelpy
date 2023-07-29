@@ -6,7 +6,7 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
 from engine.functional.values import VNone, VProcedure
 from engine.machine import MachineState
 from engine.task import TaskStatus
-from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push
+from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
 from engine.tasks.interaction import InteractionState, Interaction
 from engine.tasks.stack import StackState, Frame
 
@@ -211,8 +211,58 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertIsNot(states[1].content.get_task_state(0).exception, None)
 
+    def test_launch_success(self):
+        """
+        Tests the execution of Update instructions.
+        """
 
-    # TODO: Test Launch instruction
+        q = StackProgram([Update(ReturnValueReference(),
+                                               ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
+                                                                         Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
+                                        Pop()])
+
+        q = VProcedure(1, ProgramLocation(q, 0))
+
+        p = StackProgram([Launch(Read(CRef(FrameReference(0))), [CInt(42)], 1, 1),
+                          Guard({}, 1)])
+
+        state0 = self.initialize_machine(p, 1)
+        list(state0.task_states)[0].stack[0][0] = q
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 3)
+        self.assertEqual(len(internal), 2)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsNot(states[1].content.get_task_state(0).returned, None)
+        tid = int(states[1].content.get_task_state(0).returned)
+        self.assertEqual(int(states[2].content.get_task_state(tid).returned), 43)
+
+    def test_launch_failure(self):
+
+        q = StackProgram([Update(ReturnValueReference(),
+                                               ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
+                                                                         Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
+                                        Pop()])
+
+        q = VProcedure(1, ProgramLocation(q, 0))
+
+        p = StackProgram([Launch(Read(CRef(FrameReference(17))), [CInt(42)], 1, 1),
+                          Guard({}, 1)])
+
+        state0 = self.initialize_machine(p, 1)
+        list(state0.task_states)[0].stack[0][0] = q
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+
+
     # TODO: Test InteractionState!
     # TODO: Test IntrinsicProcedure
     # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule

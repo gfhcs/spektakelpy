@@ -4,7 +4,7 @@ from io import StringIO
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .interaction import InteractionState, Interaction
-from ..functional.values import VException, VProcedure
+from ..functional.values import VException, VProcedure, VInt
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
@@ -325,7 +325,7 @@ class Launch(Instruction):
     def __init__(self, entry, expressions, destination, edestination):
         """
         Creates a new push instructions.
-        :param entry: An Expression that evaluates to a ProgramLocation.
+        :param entry: An Expression that evaluates to either a ProgramLocation or a VProcedure.
         :param expressions: An iterable of Expression objects that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
@@ -362,15 +362,14 @@ class Launch(Instruction):
             mytop.instruction_index = self._edestination
             return
 
-        tids = set(t.tid for t in mstate.task_states)
-        tid = None
-        for tid in range(len(tids) + 1):
-            if tid not in tids:
-                break
-        assert tid is not None and tid not in tids
+        tids_inuse = set(t.taskid for t in mstate.task_states)
+        tids_possible = set(range(len(tids_inuse) + 1))
+        tid = min(tids_possible - tids_inuse)
 
+        if isinstance(location, VProcedure):
+            location = location.entry
         if isinstance(location, ProgramLocation):
-            frame = Frame(location, args)
+            frame = Frame(location.clone_unsealed(), args)
             mstate.add_task(StackState(tid, TaskStatus.WAITING, [frame]))
         elif isinstance(location, Interaction):
             mstate.add_task(InteractionState(location, tid, status=TaskStatus.WAITING))
@@ -380,7 +379,7 @@ class Launch(Instruction):
             mytop.instruction_index = self._edestination
             return
 
-        tstate.returned = tid
+        tstate.returned = VInt(tid)
         mytop.instruction_index = self._destination
 
 
