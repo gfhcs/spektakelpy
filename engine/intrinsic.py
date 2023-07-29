@@ -1,6 +1,6 @@
 import abc
 
-from engine.functional.values import Value
+from engine.functional import Value
 
 
 class IntrinsicProcedure(Value):

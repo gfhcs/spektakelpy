@@ -1,8 +1,8 @@
+from engine.functional.values import VException
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
-from ..task import TaskState
-from ..task import TaskStatus
-from engine.functional.values import Value, VException
+from ..functional import Value
+from ..task import TaskState, TaskStatus
 
 
 class Frame(Sealable):

@@ -1,23 +1,6 @@
-import abc
-
-from util import check_type
-from util.immutable import Sealable
 from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicProcedure
-
-
-class Value(Sealable, abc.ABC):
-    """
-    Represents a runtime value.
-    """
-
-    @property
-    @abc.abstractmethod
-    def type(self):
-        """
-        The type that this value belongs to.
-        :return: A Type object.
-        """
-        pass
+from util import check_type
+from . import Value
 
 
 class VNone(Value):
@@ -859,8 +842,6 @@ class VProcedure(Value):
         super().__init__()
         self._num_args = check_type(num_args, int)
 
-        from ..tasks.instructions import ProgramLocation
-
         if isinstance(entry, (ProgramLocation, IntrinsicProcedure)):
             self._entry = entry
         else:
@@ -1068,3 +1049,4 @@ class VTask(Value):
         return self
 
 from .types import TBuiltin
+from ..tasks.instructions import ProgramLocation

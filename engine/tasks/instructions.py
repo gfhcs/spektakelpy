@@ -4,6 +4,8 @@ from io import StringIO
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .interaction import InteractionState, Interaction
+from .stack import Frame, StackState
+from ..functional import Reference, EvaluationException, Term
 from ..functional.values import VException, VProcedure, VInt
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
@@ -470,6 +472,4 @@ class ProgramLocation(Sealable):
             clones[id(self)] = c
             return c
 
-from engine.functional.terms import Term, EvaluationException
-from engine.functional.reference import Reference
-from .stack import Frame, StackState
+
