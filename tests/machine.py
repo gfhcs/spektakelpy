@@ -3,7 +3,8 @@ import unittest
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef
-from engine.functional.values import VNone, VProcedure
+from engine.functional.values import VNone, VProcedure, VList, VInt
+from engine.intrinsic import IntrinsicProcedure
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
@@ -277,9 +278,49 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertIsNot(states[1].content.get_task_state(0).exception, None)
 
+    def test_intrinsic_success(self):
+        """
+        Tests the succesful execution of Intrinsic procedures.
+        """
 
-    # TODO: Test InteractionState!
-    # TODO: Test IntrinsicProcedure
+        p = StackProgram([Push(Read(CRef(FrameReference(1))), [Read(CRef(FrameReference(0)))], 1, 1),
+                          Guard({}, 1)])
+
+        state0 = self.initialize_machine(p, 1)
+        state0.get_task_state(0).stack[0][0] = VList(items=[VInt(42)])
+        state0.get_task_state(0).stack[0][0] = VList.pop
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertEqual(int(states[1].content.get_task_state(0).returned), 42)
+        self.assertIs(states[1].content.get_task_state(0).exception, None)
+
+    def test_intrinsic_failure(self):
+        """
+        Tests the errors raised by an IntrinsicProcedure.
+        """
+
+        p = StackProgram([Push(Read(CRef(FrameReference(1))), [Read(CRef(FrameReference(0)))], 1, 1),
+                          Guard({}, 1)])
+
+        state0 = self.initialize_machine(p, 1)
+        state0.get_task_state(0).stack[0][0] = VList(items=[])
+        state0.get_task_state(0).stack[0][0] = VList.pop
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+
+
+    # TODO: Test InteractionState, by consuming a sequence of interactions.
     # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
