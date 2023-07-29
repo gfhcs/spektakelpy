@@ -78,7 +78,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
     def test_update_success(self):
         """
-        Tests the execution of Update instructions.
+        Tests the successful execution of Update instructions.
         """
 
         p = StackProgram([Update(FrameReference(0), CInt(42), 1, 1),
@@ -93,6 +93,9 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertIs(states[1].content.get_task_state(0).exception, None)
 
     def test_update_failure(self):
+        """
+        Tests the errors raised by failing execution of the Update instruction.
+        """
         p = StackProgram([Update(FrameReference(1), CInt(42), 1, 1),
                           Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
@@ -105,7 +108,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
     def test_guard_success(self):
         """
-        Tests the execution of Guard instructions.
+        Tests the successful execution of Guard instructions.
         """
 
         false = CBool(False)
@@ -123,6 +126,9 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), 3)
 
     def test_guard_failure(self):
+        """
+        Tests the errors raised by failing execution of the Guard instruction.
+        """
         false = CBool(False)
         true = CBool(True)
 
@@ -138,7 +144,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
     def test_pop_success(self):
         """
-        Tests the execution of Update instructions.
+        Tests the execution of Pop instructions.
         """
 
         p = StackProgram([Pop()])
@@ -152,6 +158,9 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(states[1].content.get_task_state(0).stack), 0)
 
     def test_pop_failure(self):
+        """
+        Tests the errors raised by failing execution of the Update instruction.
+        """
         p = StackProgram([Pop(), Pop()])
         _, states, internal, external = self.explore(p, self.initialize_machine(p))
 
@@ -163,7 +172,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
     def test_push_success(self):
         """
-        Tests the execution of Update instructions.
+        Tests the successful execution of Push instructions.
         """
 
         q = StackProgram([Update(ReturnValueReference(),
@@ -189,6 +198,9 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertIs(states[1].content.get_task_state(0).exception, None)
 
     def test_push_failure(self):
+        """
+        Tests the errors raised by failing execution of the Push instruction.
+        """
 
         q = StackProgram([Update(ReturnValueReference(),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
@@ -213,7 +225,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
     def test_launch_success(self):
         """
-        Tests the execution of Update instructions.
+        Tests the successful execution of Launch instructions.
         """
 
         q = StackProgram([Update(ReturnValueReference(),
@@ -240,6 +252,9 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(int(states[2].content.get_task_state(tid).returned), 43)
 
     def test_launch_failure(self):
+        """
+        Tests the errors raised by failing execution of the Launch instruction.
+        """
 
         q = StackProgram([Update(ReturnValueReference(),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
