@@ -3,6 +3,13 @@ import abc
 from engine.functional import Value
 
 
+class IntrinsicException(Exception):
+    """
+    Raised when the execution of an intrinsic procedure fails.
+    """
+    pass
+
+
 class IntrinsicProcedure(Value):
     """
     Represents a procedure the execution of which is opaque to the state machine, but that can manipulate the entire
@@ -48,7 +55,7 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         try:
             tstate.returned = self._m(instance, *args)
         except Exception as ex:
-            tstate.exception = IntrinsicException(ex)
+            raise IntrinsicException("The intrinsic procedure raised an exception!") from ex
 
     def hash(self):
         return hash(self._m)

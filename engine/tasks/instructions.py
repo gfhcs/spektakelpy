@@ -286,8 +286,9 @@ class Push(Instruction):
             frame = Frame(location.clone_unsealed(), args)
             tstate.push(frame)
             old_top.instruction_index = self._destination
-        elif location is IntrinsicProcedure:
+        elif isinstance(location, IntrinsicProcedure):
             location.execute(tstate, mstate, *args)
+            old_top.instruction_index = self._destination
         else:
             tstate.exception = VException(pexception=InstructionException("The expression determining the initial program location for the"
                                                     " new stack frame is neither a ProgramLocation nor an Intrinsic function!"))

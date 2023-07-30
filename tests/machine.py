@@ -283,12 +283,12 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the succesful execution of Intrinsic procedures.
         """
 
-        p = StackProgram([Push(Read(CRef(FrameReference(1))), [Read(CRef(FrameReference(0)))], 1, 1),
+        p = StackProgram([Push(Read(CRef(FrameReference(1))), [Read(CRef(FrameReference(0))), CInt(0)], 1, 1),
                           Guard({}, 1)])
 
-        state0 = self.initialize_machine(p, 1)
+        state0 = self.initialize_machine(p, 2)
         state0.get_task_state(0).stack[0][0] = VList(items=[VInt(42)])
-        state0.get_task_state(0).stack[0][0] = VList.pop
+        state0.get_task_state(0).stack[0][1] = VList.pop
 
         _, states, internal, external = self.explore(p, state0)
 
