@@ -94,16 +94,15 @@ class StackState(TaskState):
     Models the state of a task that executes a control flow graph that may contain function calls.
     """
 
-    def __init__(self, taskid, status, stack, exception=None, returned=None):
+    def __init__(self, status, stack, exception=None, returned=None):
         """
         Allocates a new stack state.
-        :param taskid: The identity of the task that this object represents a state of.
         :param status: The status of the task, i.e. a TaskStatus object.
         :param stack: A sequence of Frame objects, that, from top to bottom, represent the stack of this task state.
         :param exception: A value that has been raised as an exception and is currently being handled.
         :param returned: A value that is currently being returned from the callee to the caller.
         """
-        super().__init__(taskid, status)
+        super().__init__(status)
 
         self._stack = list(check_types(stack, Frame))
         self._exception = check_type(exception, Value, allow_none=True)
@@ -113,6 +112,10 @@ class StackState(TaskState):
         self._stack = tuple(self._stack)
         for f in self._stack:
             f.seal()
+        if self._exception is not None:
+            self._exception.seal()
+        if self._returned is not None:
+            self._returned.seal()
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -120,7 +123,7 @@ class StackState(TaskState):
         try:
             return clones[id(self)]
         except KeyError:
-            c = StackState(self.taskid, self.status, [f.clone_unsealed(clones=clones) for f in self.stack],
+            c = StackState(self.status, [f.clone_unsealed(clones=clones) for f in self.stack],
                            exception=None if self.exception is None else self.exception.clone_unsealed(clones=clones),
                            returned=None if self.returned is None else self.returned.clone_unsealed(clones=clones))
             clones[id(self)] = c

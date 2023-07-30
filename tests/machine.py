@@ -27,10 +27,10 @@ class TestSpektakelMachine(unittest.TestCase):
 
         frames = [Frame(ProgramLocation(p, 0), [VNone.instance] * num_fvars)]
 
-        m = StackState(0, TaskStatus.RUNNING, frames)
+        m = StackState(TaskStatus.RUNNING, frames)
 
         isymbols = [Interaction.NEXT, Interaction.PREV, Interaction.TICK]
-        istates = (InteractionState(i, iidx + 1) for iidx, i in enumerate(isymbols))
+        istates = (InteractionState(i) for i in isymbols)
 
         return MachineState([m, *istates])
 
@@ -58,7 +58,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 visited.add(id(s))
                 states.append(s)
                 for t in s.transitions:
-                    if isinstance(s.content.get_task_state(t.label), InteractionState):
+                    if isinstance(s.content.task_states[t.label], InteractionState):
                         external.append(t)
                     else:
                         internal.append(t)
@@ -90,8 +90,8 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertEqual(int(states[1].content.get_task_state(0).stack[0][0]), 42)
-        self.assertIs(states[1].content.get_task_state(0).exception, None)
+        self.assertEqual(int(states[1].content.task_states[0].stack[0][0]), 42)
+        self.assertIs(states[1].content.task_states[0].exception, None)
 
     def test_update_failure(self):
         """
@@ -104,8 +104,8 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
 
-        self.assertEqual(states[1].content.get_task_state(0).stack[0][0], VNone.instance)
-        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+        self.assertEqual(states[1].content.task_states[0].stack[0][0], VNone.instance)
+        self.assertIsNot(states[1].content.task_states[0].exception, None)
 
     def test_guard_success(self):
         """
@@ -141,7 +141,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+        self.assertIsNot(states[1].content.task_states[0].exception, None)
 
     def test_pop_success(self):
         """
@@ -155,8 +155,8 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertEqual(len(states[0].content.get_task_state(0).stack), 1)
-        self.assertEqual(len(states[1].content.get_task_state(0).stack), 0)
+        self.assertEqual(len(states[0].content.task_states[0].stack), 1)
+        self.assertEqual(len(states[1].content.task_states[0].stack), 0)
 
     def test_pop_failure(self):
         """
@@ -168,8 +168,8 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
 
-        self.assertEqual(len(states[0].content.get_task_state(0).stack), 1)
-        self.assertEqual(len(states[1].content.get_task_state(0).stack), 0)
+        self.assertEqual(len(states[0].content.task_states[0].stack), 1)
+        self.assertEqual(len(states[1].content.task_states[0].stack), 0)
 
     def test_push_success(self):
         """
@@ -195,8 +195,8 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertEqual(int(states[1].content.get_task_state(0).returned), 43)
-        self.assertIs(states[1].content.get_task_state(0).exception, None)
+        self.assertEqual(int(states[1].content.task_states[0].returned), 43)
+        self.assertIs(states[1].content.task_states[0].exception, None)
 
     def test_push_failure(self):
         """
@@ -222,7 +222,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+        self.assertIsNot(states[1].content.task_states[0].exception, None)
 
     def test_launch_success(self):
         """
@@ -248,9 +248,14 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 2)
         self.assertEqual(len(external), 3)
 
-        self.assertIsNot(states[1].content.get_task_state(0).returned, None)
-        tid = int(states[1].content.get_task_state(0).returned)
-        self.assertEqual(int(states[2].content.get_task_state(tid).returned), 43)
+        self.assertIsNot(states[1].content.task_states[0].returned, None)
+        t = states[1].content.task_states[0].returned
+        idx = None
+        for idx, tt in enumerate(states[1].content.task_states):
+            if tt is t:
+                break
+        t = states[-1].content.task_states[idx]
+        self.assertEqual(int(t.returned), 43)
 
     def test_launch_failure(self):
         """
@@ -276,7 +281,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+        self.assertIsNot(states[1].content.task_states[0].exception, None)
 
     def test_intrinsic_success(self):
         """
@@ -287,8 +292,8 @@ class TestSpektakelMachine(unittest.TestCase):
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 2)
-        state0.get_task_state(0).stack[0][0] = VList(items=[VInt(42)])
-        state0.get_task_state(0).stack[0][1] = VList.pop
+        state0.task_states[0].stack[0][0] = VList(items=[VInt(42)])
+        state0.task_states[0].stack[0][1] = VList.pop
 
         _, states, internal, external = self.explore(p, state0)
 
@@ -296,8 +301,8 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertEqual(int(states[1].content.get_task_state(0).returned), 42)
-        self.assertIs(states[1].content.get_task_state(0).exception, None)
+        self.assertEqual(int(states[1].content.task_states[0].returned), 42)
+        self.assertIs(states[1].content.task_states[0].exception, None)
 
     def test_intrinsic_failure(self):
         """
@@ -308,8 +313,8 @@ class TestSpektakelMachine(unittest.TestCase):
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
-        state0.get_task_state(0).stack[0][0] = VList(items=[])
-        state0.get_task_state(0).stack[0][0] = VList.pop
+        state0.task_states[0].stack[0][0] = VList(items=[])
+        state0.task_states[0].stack[0][0] = VList.pop
 
         _, states, internal, external = self.explore(p, state0)
 
@@ -317,7 +322,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
 
-        self.assertIsNot(states[1].content.get_task_state(0).exception, None)
+        self.assertIsNot(states[1].content.task_states[0].exception, None)
 
 
     # TODO: Test InteractionState, by consuming a sequence of interactions.

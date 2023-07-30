@@ -8,9 +8,9 @@ def schedule_all(s):
     """
     A scheduler function allowing *any* enabled transitions. This is the most simple scheduler.
     :param s: A MachineState object.
-    :return: An iterable of task ID's, specifying which Tasks are eligible for being scheduled in the given state.
+    :return: An iterable of indices, specifying which Task objects in s.task_states are eligible for being scheduled.
     """
-    return tuple(ss.taskid for ss in s.task_states if ss.enabled(s))
+    return tuple(idx for idx, ss in enumerate(s.task_states) if ss.enabled(s))
 
 
 def schedule_nonzeno(s):
@@ -19,24 +19,24 @@ def schedule_nonzeno(s):
     1. If an internal action is scheduled, only one action is scheduled.
     2. Interaction tasks will only be scheduled in states that do not enable any internal actions.
     :param s: A MachineState object.
-    :return: An iterable of task ID's, specifying which Tasks are eligible for being scheduled in the given state.
+    :return: An iterable of indices, specifying which Task objects in s.task_states are eligible for being scheduled.
     """
 
-    tid_internal = None
-    tid_interaction = []
+    idx_internal = None
+    idx_interaction = []
 
-    for ss in s.task_states:
+    for idx, ss in enumerate(s.task_states):
         if not ss.enabled(s):
             continue
         if isinstance(ss, InteractionState):
-            tid_interaction.append(ss.taskid)
-        elif tid_internal is None or ss.taskid < tid_internal:
-            tid_internal = ss.taskid
+            idx_interaction.append(idx)
+        elif idx_internal is None or idx < idx_internal:
+            idx_internal = idx
 
-    if tid_internal is None:
-        return tid_interaction
+    if idx_internal is None:
+        return idx_interaction
     else:
-        return [tid_internal]
+        return [idx_internal]
 
 
 def explore(mstate, scheduler=schedule_all):
@@ -45,8 +45,8 @@ def explore(mstate, scheduler=schedule_all):
     :param mstate: The MachineState object forming the root of the exploration.
     :param scheduler: A callable (s) -> ts, mapping MachineState s to an iterable ts of task ID objects, specifying
     which Tasks are eligible for being scheduled in state s. By default, *all* tasks are eligible in all states.
-    :return: An iterable of tuples (s, es), where es is an iterable of pairs (tid, s'), where tid is a task ID object
-    specifying a task execution of which transforms MachineState s into MachineState s'. s and s' are sealed.
+    :return: An iterable of tuples (s, es), where es is an iterable of pairs (idx, s'), where idx is the index of the
+    task in s the execution of which transforms MachineState s into MachineState s'. s and s' are sealed.
     es comprises *all* pairs with this property.
     The very first s enumerated by this method will be the initial state. es may be empty.
     """
@@ -65,11 +65,11 @@ def explore(mstate, scheduler=schedule_all):
         if s in visited:
             continue
         es = []
-        for tid in scheduler(s):
+        for idx in scheduler(s):
             ss = s.clone_unsealed()
-            ss.get_task_state(tid).run(ss)
+            ss.task_states[idx].run(ss)
             ss.seal()
-            es.append((tid, ss))
+            es.append((idx, ss))
             agenda.append(ss)
 
         yield s, es
@@ -79,8 +79,8 @@ def explore(mstate, scheduler=schedule_all):
 def state_space(transitions):
     """
     Assembles a set of transitions into a labelled-transition-system.
-    :param transitions: An iterable of tuples (s, es), where es is an iterable of pairs (tid, s'), where tid is a task
-    ID object specifying a task execution of which transforms s into s'. es comprises *all* pairs with this property.
+    :param transitions: An iterable of tuples (s, es), where es is an iterable of pairs (idx, s'), where idx is the index
+     of the task in s the execution of which transforms s into s'. es comprises *all* pairs with this property.
     :return: An LTS object. The initial state of this LTS will be the origin of the very first transition enumerated
     in 'transitions'.
     """
@@ -97,14 +97,14 @@ def state_space(transitions):
             if s0 is None:
                 s0 = origin
 
-        for tid, t in es:
+        for idx, t in es:
             try:
                 destination = states[t]
             except KeyError:
                 destination = State(t)
                 states[t] = destination
 
-            origin.add_transition(Transition(tid, destination))
+            origin.add_transition(Transition(idx, destination))
 
     # We're doing it here because not all states might be enumerated as origins (i.e. if they don't have outgoing
     # transitions).

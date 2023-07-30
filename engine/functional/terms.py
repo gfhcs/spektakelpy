@@ -384,8 +384,8 @@ class UnaryPredicateTerm(Term):
             # Check if the type of the object is a descendant of TException:
             value = t.subtypeof(TException.instance)
         elif self._p == UnaryPredicate.ISTERMINATED:
-            # Check if the argument TID refers to a terminated task.
-            value = mstate.get_task_state(r.value).status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+            # Check if the argument is a terminated task
+            value = r.value.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
         else:
             raise NotImplementedError()
 

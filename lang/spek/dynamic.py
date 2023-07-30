@@ -465,13 +465,13 @@ class Spektakel2Stack(Translator):
                 args.append(v)
             callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             chain.append_launch(callee, args, on_error)
-            tid = self.declare_name(chain, None, on_error)
-            chain.append_update(tid, terms.Read(ReturnValueReference()), on_error)
-            return tid, chain
+            t = self.declare_name(chain, None, on_error)
+            chain.append_update(t, terms.Read(ReturnValueReference()), on_error)
+            return t, chain
         elif isinstance(node, Await):
-            tid = self.translate_expression(chain, node.process, dec, on_error)
+            t = self.translate_expression(chain, node.process, dec, on_error)
             successor = Chain()
-            complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, tid)
+            complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, t)
             chain.append_guard({complete: successor}, on_error)
 
             successor = Chain()

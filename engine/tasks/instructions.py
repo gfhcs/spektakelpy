@@ -365,24 +365,19 @@ class Launch(Instruction):
             mytop.instruction_index = self._edestination
             return
 
-        tids_inuse = set(t.taskid for t in mstate.task_states)
-        tids_possible = set(range(len(tids_inuse) + 1))
-        tid = min(tids_possible - tids_inuse)
-
         if isinstance(location, VProcedure):
             location = location.entry
         if isinstance(location, ProgramLocation):
             frame = Frame(location.clone_unsealed(), args)
-            mstate.add_task(StackState(tid, TaskStatus.WAITING, [frame]))
-        elif isinstance(location, Interaction):
-            mstate.add_task(InteractionState(location, tid, status=TaskStatus.WAITING))
+            task = StackState(TaskStatus.WAITING, [frame])
+            mstate.add_task(task)
+            tstate.returned = task
         else:
             tstate.exception = VException(pexception=InstructionException("The expression determining the initial program location for the"
                                                     " new stack frame is not a proper program location!"))
             mytop.instruction_index = self._edestination
             return
 
-        tstate.returned = VInt(tid)
         mytop.instruction_index = self._destination
 
 

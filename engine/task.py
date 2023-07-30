@@ -2,8 +2,9 @@
 import abc
 from enum import Enum
 
+from engine.functional import Value
 from util import check_type
-from util.immutable import Sealable, check_unsealed
+from util.immutable import check_unsealed
 
 
 class TaskStatus(Enum):
@@ -16,28 +17,23 @@ class TaskStatus(Enum):
     FAILED = 3     # Task has failed.
 
 
-class TaskState(Sealable, abc.ABC):
+class TaskState(Value, abc.ABC):
     """
     Represents the current state of a computation.
     """
 
-    def __init__(self, taskid, status):
+    @property
+    def type(self):
+        from engine.functional.types import TBuiltin
+        return TBuiltin.task
+
+    def __init__(self, status):
         """
         Creates a new task state.
-        :param taskid: The identity of the task that this object represents a state of.
         :param status: The status of the task, i.e. a TaskStatus object.
         """
         super().__init__()
-        self._taskid = taskid
         self._status = check_type(status, TaskStatus)
-
-    @property
-    def taskid(self):
-        """
-        The identity of the task that this object represents a state of.
-        :return: An object.
-        """
-        return self._taskid
 
     @property
     def status(self):
