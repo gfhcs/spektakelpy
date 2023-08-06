@@ -473,10 +473,31 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
+    def test_ArithmeticBinaryOperation(self):
+
+        """
+        Tests the successful evaluation of ArithmeticBinaryOperation terms.
+        """
+
+        cases = [(ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS, CInt(42), CInt(11)), VInt(53)),
+                 (ArithmeticBinaryOperation(ArithmeticBinaryOperator.MINUS, CInt(42), CInt(11)), VInt(31)),
+                 (ArithmeticBinaryOperation(ArithmeticBinaryOperator.TIMES, CInt(42), CInt(11)), VInt(462)),
+                 (ArithmeticBinaryOperation(ArithmeticBinaryOperator.OVER, CInt(42), CInt(11)), VFloat(42 / 11)),
+                 (ArithmeticBinaryOperation(ArithmeticBinaryOperator.MODULO, CInt(42), CInt(11)), VInt(9)),
+                 (ArithmeticBinaryOperation(ArithmeticBinaryOperator.POWER, CInt(42), CInt(11)), VInt(42 ** 11)),
+                 (ArithmeticBinaryOperation(ArithmeticBinaryOperator.INTOVER, CInt(42), CInt(11)), VInt(3)),
+                 ]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
 
 
 
-    # TODO: Test ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
+    # TODO: Test BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
 
