@@ -5,7 +5,6 @@ from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask
 from engine.functional.values import VNone, VProcedure, VList, VInt
-from engine.intrinsic import IntrinsicProcedure
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
@@ -336,7 +335,7 @@ class TestSpektakelMachine(unittest.TestCase):
             nonlocal ip
             t = FrameReference(0)
             instructions = [Update(t, ITask(s), ip + 1, ip),
-                            Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, t): ip + 2}, ip + 1)]
+                            Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t))): ip + 2}, ip + 1)]
             try:
                 return instructions
             finally:
@@ -353,9 +352,9 @@ class TestSpektakelMachine(unittest.TestCase):
         s0 = self.initialize_machine(p, 1)
         _, states, internal, external = self.explore(p, s0)
 
-        self.assertEqual(len(states), 15)
-        self.assertEqual(len(internal), 7)
-        self.assertEqual(len(external), 7)
+        self.assertEqual(24, len(external))
+        self.assertEqual(8, len(internal))
+        self.assertEqual(16, len(states))
 
 
     # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule

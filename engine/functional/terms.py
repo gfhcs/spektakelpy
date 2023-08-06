@@ -8,7 +8,7 @@ from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict,
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
-from ..tasks.interaction import Interaction
+from ..tasks.interaction import Interaction, InteractionState
 
 
 class CTerm(Term):
@@ -386,7 +386,7 @@ class UnaryPredicateTerm(Term):
             value = t.subtypeof(TException.instance)
         elif self._p == UnaryPredicate.ISTERMINATED:
             # Check if the argument is a terminated task
-            value = r.value.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+            value = r.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
         else:
             raise NotImplementedError()
 
@@ -415,7 +415,7 @@ class ITask(Term):
 
     def evaluate(self, tstate, mstate):
         t = None
-        for task_state in mstate:
+        for task_state in mstate.task_states:
             if isinstance(task_state, InteractionState) and task_state.interaction == self._s:
                 if t is not None:
                     raise RuntimeError("There is more than one interaction state for the interaction symbol {}!".format(self._s))

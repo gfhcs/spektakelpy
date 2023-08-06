@@ -65,8 +65,8 @@ class InteractionState(TaskState):
         for idx, t in enumerate(mstate.task_states):
             if t is self:
                 mstate.remove_task(idx)
+                mstate.add_task(InteractionState(self.interaction, status=TaskStatus.WAITING), index=idx)
                 break
-        mstate.add_task(InteractionState(self.interaction, status=TaskStatus.WAITING))
 
     def hash(self):
         check_sealed(self)

@@ -49,13 +49,18 @@ class MachineState(Sealable):
         """
         return tuple(self._tstates)
 
-    def add_task(self, t):
+    def add_task(self, t, index=None):
         """
         Adds a new task to this machine state.
         :param t: The TaskState object to add.
+        :param index: The index at which the new stask is to be added.
         """
         check_unsealed(self)
-        self._tstates.append(check_type(t, TaskState))
+        t = check_type(t, TaskState)
+        if index is None:
+            self._tstates.append(t)
+        else:
+            self._tstates.insert(index, t)
 
     def remove_task(self, idx):
         """
