@@ -3,13 +3,14 @@ import unittest
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
-    UnaryPredicateTerm, UnaryPredicate, ITask
+    UnaryPredicateTerm, UnaryPredicate, ITask, CNone
 from engine.functional.values import VNone, VProcedure, VList, VInt
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
 from engine.tasks.interaction import InteractionState, Interaction
 from engine.tasks.stack import StackState, Frame
+from util.lts import lts2str
 
 
 class TestSpektakelMachine(unittest.TestCase):
@@ -324,7 +325,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
-    def test_interaction(self):
+    def test_interaction1(self):
         """
         Tests the successful synchronization with interaction tasks.
         """
@@ -355,6 +356,46 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(24, len(external))
         self.assertEqual(8, len(internal))
         self.assertEqual(16, len(states))
+
+
+    def test_interaction2(self):
+        """
+        Tests the successful synchronization with interaction tasks.
+        """
+
+        ip = 0
+        t1 = FrameReference(0)
+        t2 = FrameReference(1)
+
+        def program_sync(s):
+            nonlocal ip
+            t = FrameReference(0)
+            instructions = [Update(t, ITask(s), ip + 1, ip),
+                            Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t))): ip + 2}, ip + 1)]
+            try:
+                return instructions
+            finally:
+                ip += len(instructions)
+
+        p = StackProgram([*program_sync(Interaction.NEXT),
+                          Update(t1, ITask(Interaction.NEXT), ip + 1, ip),
+                          Update(t2, ITask(Interaction.PREV), ip + 2, ip + 1),
+                          Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t1))): ip + 3,
+                                 UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t2))): ip}, ip + 3),
+                          Update(t1, CNone(), ip + 4, ip),
+                          Update(t2, CNone(), ip + 5, ip),
+                         ])
+
+        s0 = self.initialize_machine(p, 2)
+        s0.task_states[0].stack[0][0] = VNone.instance
+        s0.task_states[0].stack[0][1] = VNone.instance
+        lts, states, internal, external = self.explore(p, s0)
+
+        print(lts2str(lts))
+
+        self.assertEqual(7, len(states))
+        self.assertEqual(9, len(external))
+        self.assertEqual(4, len(internal))
 
 
     # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
