@@ -3,8 +3,8 @@ import unittest
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
-    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString
-from engine.functional.values import VNone, VProcedure, VList, VInt
+    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, ArithmeticUnaryOperator
+from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
@@ -456,7 +456,27 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual("Hello World", str(result))
 
-    # TODO: Test ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
+    def test_ArithmeticUnaryOperation(self):
+
+        """
+        Tests the successful evaluation of ArithmeticUnaryOperation terms.
+        """
+
+        cases = [(ArithmeticUnaryOperation(ArithmeticUnaryOperator.MINUS, CInt(42)), VInt(-42)),
+                 (ArithmeticUnaryOperation(ArithmeticUnaryOperator.NOT, CInt(42)), VInt(~42)),
+                 (ArithmeticUnaryOperation(ArithmeticUnaryOperator.MINUS, CFloat(42.0)), VFloat(-42.0))]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+
+
+
+    # TODO: Test ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
 
