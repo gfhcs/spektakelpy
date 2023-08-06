@@ -94,3 +94,51 @@ class LTS:
         The initial state of this LTS.
         """
         return self._s0
+
+
+def lts2str(lts):
+    """
+    Denotes an LTS by a string. This is mostly for debugging purposes.
+    :param lts: The LTS to summarize in a string.
+    :return: A string.
+    """
+    import io
+
+    prefix = ""
+    sidx = 0
+    with io.StringIO() as output:
+        agenda = [lts.initial]
+        visited = {}
+        while True:
+            try:
+                s = agenda.pop()
+            except IndexError:
+                return output.getvalue()
+
+            try:
+                v, sname = visited[id(s)]
+                if v:
+                    continue
+            except KeyError:
+                sname = f"state{sidx}"
+                sidx += 1
+
+            visited[id(s)] = (True, sname)
+
+            for t in s.transitions:
+                output.write(prefix)
+                prefix = "\n"
+                output.write(sname)
+                output.write(" --")
+                output.write(str(t.label))
+                output.write("--> ")
+
+                try:
+                    _, tname = visited[id(t.target)]
+                except KeyError:
+                    tname = f"state{sidx}"
+                    visited[id(t.target)] = (False, tname)
+                    sidx += 1
+
+                output.write(tname)
+                agenda.append(t.target)
