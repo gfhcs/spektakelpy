@@ -3,7 +3,7 @@ import unittest
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
-    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat
+    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString
 from engine.functional.values import VNone, VProcedure, VList, VInt
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -420,8 +420,43 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(3.1415926, float(result))
 
+    def test_CBool(self):
+        """
+        Tests the successful evaluation of CFloat terms.
+        """
 
-    # TODO: Test CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
+        p = StackProgram([Update(FrameReference(0), CBool(False), 1, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+        result = states[-1].content.task_states[0].stack[0][0]
+
+        self.assertEqual(False, float(result))
+
+    def test_CNone(self):
+        """
+        Tests the successful evaluation of CFloat terms.
+        """
+
+        p = StackProgram([Update(FrameReference(0), CNone(), 1, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+        result = states[-1].content.task_states[0].stack[0][0]
+
+        self.assertIs(VNone.instance, result)
+
+    def test_CString(self):
+        """
+        Tests the successful evaluation of CFloat terms.
+        """
+
+        p = StackProgram([Update(FrameReference(0), CString("Hello World"), 1, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+        result = states[-1].content.task_states[0].stack[0][0]
+
+        self.assertEqual("Hello World", str(result))
+
+    # TODO: Test ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
 
