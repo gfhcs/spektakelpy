@@ -3,7 +3,7 @@ import unittest
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
-    UnaryPredicateTerm, UnaryPredicate, ITask, CNone
+    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat
 from engine.functional.values import VNone, VProcedure, VList, VInt
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -408,8 +408,20 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(42, int(result))
 
+    def test_CFloat(self):
+        """
+        Tests the successful evaluation of CFloat terms.
+        """
 
-    # TODO: Test CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
+        p = StackProgram([Update(FrameReference(0), CFloat(3.1415926), 1, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+        result = states[-1].content.task_states[0].stack[0][0]
+
+        self.assertEqual(3.1415926, float(result))
+
+
+    # TODO: Test CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
 
