@@ -8,6 +8,7 @@ from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict,
     VProperty, VModule, VAttributeError, VJumpException
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
+from ..tasks.interaction import Interaction
 
 
 class CTerm(Term):
@@ -390,6 +391,40 @@ class UnaryPredicateTerm(Term):
             raise NotImplementedError()
 
         return VBool(value)
+
+
+class ITask(Term):
+    """
+    A term that retrieves an InteractionStask for a given interaction symbol.
+    """
+
+    def __init__(self, s):
+        """
+        Creates a new interaction task retrieval term.
+        :param s: The Interaction symbol to retrieve a task for.
+        """
+        super().__init__()
+        self._s = check_type(s, Interaction)
+
+    @property
+    def predicate(self):
+        """
+        The interaction symbol to retrieve a task for.
+        """
+        return self._s
+
+    def evaluate(self, tstate, mstate):
+        t = None
+        for task_state in mstate:
+            if isinstance(task_state, InteractionState) and task_state.interaction == self._s:
+                if t is not None:
+                    raise RuntimeError("There is more than one interaction state for the interaction symbol {}!".format(self._s))
+                t = task_state
+
+        if t is None:
+            raise RuntimeError("No interaction state could be retrieved for interaction symbol {}!".format(self._s))
+
+        return t
 
 
 class IsInstance(Term):
