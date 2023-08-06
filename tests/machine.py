@@ -357,7 +357,6 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(8, len(internal))
         self.assertEqual(16, len(states))
 
-
     def test_interaction2(self):
         """
         Tests the successful synchronization with interaction tasks.
@@ -397,8 +396,20 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(9, len(external))
         self.assertEqual(4, len(internal))
 
+    def test_CInt(self):
+        """
+        Tests the successful evaluation of CInt terms.
+        """
 
-    # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
+        p = StackProgram([Update(FrameReference(0), CInt(42), 1, 1)])
+        _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+        result = states[-1].content.task_states[0].stack[0][0]
+
+        self.assertEqual(42, int(result))
+
+
+    # TODO: Test CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
 
