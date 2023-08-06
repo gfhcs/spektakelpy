@@ -2,7 +2,8 @@ import unittest
 
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
-from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef
+from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
+    UnaryPredicateTerm, UnaryPredicate, ITask
 from engine.functional.values import VNone, VProcedure, VList, VInt
 from engine.intrinsic import IntrinsicProcedure
 from engine.machine import MachineState
@@ -324,8 +325,39 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
+    def test_interaction(self):
+        """
+        Tests the successful synchronization with interaction tasks.
+        """
 
-    # TODO: Test InteractionState, by consuming a sequence of interactions.
+        ip = 0
+
+        def program_sync(s):
+            nonlocal ip
+            t = FrameReference(0)
+            instructions = [Update(t, ITask(s), ip + 1, ip),
+                            Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, t): ip + 2}, ip + 1)]
+            try:
+                return instructions
+            finally:
+                ip += len(instructions)
+
+        p = StackProgram([*program_sync(Interaction.NEXT),
+                          *program_sync(Interaction.NEXT),
+                          *program_sync(Interaction.PREV),
+                          *program_sync(Interaction.TICK),
+                          *program_sync(Interaction.NEXT),
+                          *program_sync(Interaction.TICK),
+                          *program_sync(Interaction.PREV)])
+
+        s0 = self.initialize_machine(p, 1)
+        _, states, internal, external = self.explore(p, s0)
+
+        self.assertEqual(len(states), 15)
+        self.assertEqual(len(internal), 7)
+        self.assertEqual(len(external), 7)
+
+
     # TODO: Test CInt, CFloat, CBool, CNone, CString, ArithmeticUnaryOperation, ArithmeticBinaryOperation, BooleanBinaryOperation, Comparison, UnaryPredicateTerm, IsInstance, Read, Project, Lookup, LoadAttrCase, StoreAttrCase, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, NewProcedure, NumArgs, NewProperty, NewClass, NewModule
 
 
