@@ -130,6 +130,11 @@ class ArithmeticUnaryOperation(Term):
         super().__init__(check_type(arg, Term))
         self._op = check_type(op, ArithmeticUnaryOperator)
 
+    def __str__(self):
+        op = {ArithmeticUnaryOperator.NOT: "~", ArithmeticUnaryOperator.MINUS: "-"}[self._op]
+        arg = self.operand
+        return f"{op}{arg}"
+
     @property
     def operand(self):
         """
