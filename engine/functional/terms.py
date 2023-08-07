@@ -312,29 +312,29 @@ class Comparison(BinaryTerm):
         right = self.right.evaluate(tstate, mstate)
 
         if self.operator == ComparisonOperator.EQ:
-            return left == right
+            return VBool.from_bool(left == right)
         elif self.operator == ComparisonOperator.NEQ:
-            return left != right
+            return VBool.from_bool(left != right)
         elif self.operator == ComparisonOperator.LESS:
-            return left < right
+            return VBool.from_bool(left < right)
         elif self.operator == ComparisonOperator.LESSOREQUAL:
-            return left <= right
+            return VBool.from_bool(left <= right)
         elif self.operator == ComparisonOperator.GREATER:
-            return left > right
+            return VBool.from_bool(left > right)
         elif self.operator == ComparisonOperator.GREATEROREQUAL:
-            return left >= right
+            return VBool.from_bool(left >= right)
         elif self.operator == ComparisonOperator.IN:
-            return left in right
+            return VBool.from_bool(left in right)
         elif self.operator == ComparisonOperator.NOTIN:
-            return left not in right
+            return VBool.from_bool(left not in right)
         elif self.operator == ComparisonOperator.IS:
             assert isinstance(left, Reference)
             assert isinstance(right, Reference)
-            return left is right
+            return VBool.from_bool(left is right)
         elif self.operator == ComparisonOperator.ISNOT:
             assert isinstance(left, Reference)
             assert isinstance(right, Reference)
-            return left is not right
+            return VBool.from_bool(left is not right)
         else:
             raise NotImplementedError()
 

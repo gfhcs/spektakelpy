@@ -80,7 +80,7 @@ class Frame(Sealable):
         :param value: The new value for the local variable.
         """
         check_unsealed(self)
-        self._local_values[index] = value
+        self._local_values[index] = check_type(value, Value)
 
     def __getitem__(self, index):
         return self.local[index]
