@@ -4,7 +4,7 @@ from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
-    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator
+    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -519,8 +519,43 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
+    def test_Comparison(self):
 
-    # TODO: Test Comparison, UnaryPredicateTerm, IsInstance, Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
+        """
+        Tests the successful evaluation of BooleanBinaryOperation terms.
+        """
+
+        cases = [(Comparison(ComparisonOperator.EQ, CInt(42), CFloat(42.0)), VBool.true),
+                 (Comparison(ComparisonOperator.EQ, CInt(42), CFloat(43.0)), VBool.false),
+                 (Comparison(ComparisonOperator.NEQ, CInt(42), CFloat(42.0)), VBool.false),
+                 (Comparison(ComparisonOperator.NEQ, CInt(42), CFloat(43.0)), VBool.true),
+                 (Comparison(ComparisonOperator.LESS, CInt(42), CFloat(374895.0)), VBool.true),
+                 (Comparison(ComparisonOperator.LESS, CInt(42), CFloat(-43.0)), VBool.false),
+                 (Comparison(ComparisonOperator.LESSOREQUAL, CInt(42), CInt(42)), VBool.true),
+                 (Comparison(ComparisonOperator.LESSOREQUAL, CInt(42), CFloat(-43.0)), VBool.false),
+                 (Comparison(ComparisonOperator.GREATER, CInt(42), CFloat(374895.0)), VBool.false),
+                 (Comparison(ComparisonOperator.GREATER, CInt(42), CFloat(-43.0)), VBool.true),
+                 (Comparison(ComparisonOperator.GREATEROREQUAL, CInt(42), CInt(42)), VBool.true),
+                 (Comparison(ComparisonOperator.GREATEROREQUAL, CFloat(-43.0), CInt(42)), VBool.false),
+                 (Comparison(ComparisonOperator.IS, CNone(), CNone()), VBool.true),
+                 (Comparison(ComparisonOperator.IS, CInt(42), CNone()), VBool.false),
+                 (Comparison(ComparisonOperator.ISNOT, CNone(), CNone()), VBool.false),
+                 (Comparison(ComparisonOperator.ISNOT, CInt(42), CNone()), VBool.true),
+                 (Comparison(ComparisonOperator.IN, CString("a"), CString("Hallo")), VBool.true),
+                 (Comparison(ComparisonOperator.IN, CString("a"), CString("Hello")), VBool.false),
+                 (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hallo")), VBool.false),
+                 (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hello")), VBool.true)
+                 ]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+
+    # TODO: Test UnaryPredicateTerm, IsInstance, Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
 
 
 
