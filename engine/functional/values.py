@@ -66,7 +66,7 @@ class VBool(Value):
         return hash(self._value)
 
     def equals(self, other):
-        return isinstance(other, VBool) and self._value == other._value
+        return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
 
     def _seal(self):
         pass
@@ -171,7 +171,7 @@ class VInt(Value):
         return hash(self._value)
 
     def equals(self, other):
-        return isinstance(other, VInt) and self._value == other._value
+        return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
 
     def _seal(self):
         pass
@@ -272,7 +272,7 @@ class VFloat(Value):
         return hash(self._value)
 
     def equals(self, other):
-        return isinstance(other, VFloat) and self._value == other._value
+        return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
 
     def _seal(self):
         pass
