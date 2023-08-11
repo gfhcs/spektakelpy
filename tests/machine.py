@@ -4,7 +4,9 @@ from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
-    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, NewTypeError
+    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
+    NewTypeError, IsInstance, NewTuple, CType
+from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -576,8 +578,23 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
+    def test_IsInstance(self):
+        """
+        Tests the successful evaluation of IsInstance terms.
+        """
 
-    # TODO: Test IsInstance, Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
+        cases = [(IsInstance(CInt(42), NewTuple(CType(TBuiltin.float), CType(TBuiltin.int))), VBool.true),
+                 (IsInstance(CInt(42), CType(TBuiltin.float)), VBool.false)
+                 ]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+    # TODO: Test Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
 
 
 

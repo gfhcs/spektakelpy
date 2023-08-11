@@ -108,6 +108,19 @@ class CString(CTerm):
         super().__init__(VStr(value))
 
 
+class CType(CTerm):
+    """
+    A term that represents a fixed type.
+    """
+
+    def __init__(self, t):
+        """
+        Instantiates a new constant type term.
+        :param t: The type this term is supposed to represent.
+        """
+        super().__init__(t)
+
+
 class ArithmeticUnaryOperator(Enum):
     """
     A unary operator.
@@ -460,14 +473,14 @@ class IsInstance(Term):
         t = self.types.evaluate(tstate, mstate)
 
         if isinstance(t, Type):
-            return CBool(v.type.subtypeof(t))
+            return VBool(v.type.subtypeof(t))
         elif isinstance(t, VTuple):
             for tt in t:
                 if not isinstance(tt, Type):
                     raise VTypeError("isinstance(() arg 2 must be a type or tuple of types.")
                 if v.type.subtypeof(tt):
-                    return CBool(True)
-            return CBool(False)
+                    return VBool(True)
+            return VBool(False)
         else:
             raise TypeError()
 
