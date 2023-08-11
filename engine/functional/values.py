@@ -366,6 +366,9 @@ class VStr(Value):
     def clone_unsealed(self, clones=None):
         return self
 
+    def __contains__(self, item):
+        return str(item) in self._value
+
     def __lt__(self, other):
         return VBool.from_bool(self._value < other._value)
 

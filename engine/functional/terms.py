@@ -328,12 +328,8 @@ class Comparison(BinaryTerm):
         elif self.operator == ComparisonOperator.NOTIN:
             return VBool.from_bool(left not in right)
         elif self.operator == ComparisonOperator.IS:
-            assert isinstance(left, Reference)
-            assert isinstance(right, Reference)
             return VBool.from_bool(left is right)
         elif self.operator == ComparisonOperator.ISNOT:
-            assert isinstance(left, Reference)
-            assert isinstance(right, Reference)
             return VBool.from_bool(left is not right)
         else:
             raise NotImplementedError()
