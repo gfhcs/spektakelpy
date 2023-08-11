@@ -373,18 +373,18 @@ class UnaryPredicateTerm(Term):
         return self._p
 
     def evaluate(self, tstate, mstate):
+        from .types import TBuiltin
         r = self.operand.evaluate(tstate, mstate)
         t = r.type
         if self._p == UnaryPredicate.ISCALLABLE:
             # Check if it is a function object, a class object, or if the type of the object has a __call__ method.
             try:
-                value = t.subtypeof(TFunction.instance) or t.subtypeof(Type.instance) \
-                        or t.resolve_member("__call__").type.subtypeof(TFunction.instance)
+                value = t.subtypeof(TBuiltin.procedure) or isinstance(t.resolve_member("__call__"), VProcedure)
             except KeyError:
                 value = False
         elif self._p == UnaryPredicate.ISEXCEPTION:
             # Check if the type of the object is a descendant of TException:
-            value = t.subtypeof(TException.instance)
+            value = t.subtypeof(TBuiltin.exception)
         elif self._p == UnaryPredicate.ISTERMINATED:
             # Check if the argument is a terminated task
             value = r.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)

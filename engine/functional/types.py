@@ -1,6 +1,6 @@
 from engine.functional import Type
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
-    VException
+    VException, VTypeError
 from engine.intrinsic import IntrinsicInstanceMethod
 
 
@@ -47,6 +47,7 @@ TBuiltin.tuple = TBuiltin("tuple", [TBuiltin.object], VTuple)
 TBuiltin.list = TBuiltin("list", [TBuiltin.object], VList)
 TBuiltin.dict = TBuiltin("dict", [TBuiltin.object], VDict,)
 TBuiltin.exception = TBuiltin("exception", [TBuiltin.object], VException)
+TBuiltin.type_error = TBuiltin("TypeError", [TBuiltin.exception], VTypeError)
 TBuiltin.procedure = TBuiltin("procedure", [TBuiltin.object], None)
 TBuiltin.module = TBuiltin("module", [TBuiltin.object], None)
 TBuiltin.task = TBuiltin("task", [TBuiltin.object], None)

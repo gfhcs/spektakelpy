@@ -4,7 +4,7 @@ from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
-    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator
+    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, NewTypeError
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -522,7 +522,7 @@ class TestSpektakelMachine(unittest.TestCase):
     def test_Comparison(self):
 
         """
-        Tests the successful evaluation of BooleanBinaryOperation terms.
+        Tests the successful evaluation of Comparison terms.
         """
 
         cases = [(Comparison(ComparisonOperator.EQ, CInt(42), CFloat(42.0)), VBool.true),
@@ -554,8 +554,30 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
+    def test_UnaryPredicateTerm(self):
 
-    # TODO: Test UnaryPredicateTerm, IsInstance, Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
+        """
+        Tests the successful evaluation of UnaryPredicateTerm terms.
+        """
+
+        cases = [(UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, ITask(Interaction.NEXT)), VBool.false),
+                 (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, CInt(42)), VBool.false),
+                 (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, Read(CRef(FrameReference(0)))), VBool.true),
+                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CInt(42)), VBool.false),
+                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, NewTypeError("Just for testing.")), VBool.true)
+                 ]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                s0 = self.initialize_machine(p, 1)
+                s0.task_states[0].stack[0][0] = VList.append
+                _, states, _, _ = self.explore(p, s0)
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+
+    # TODO: Test IsInstance, Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
 
 
 
