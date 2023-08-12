@@ -627,9 +627,7 @@ class TestSpektakelMachine(unittest.TestCase):
         for term, value in cases:
             with self.subTest(term=term):
                 p = StackProgram([Update(FrameReference(0), term, 1, 1)])
-                s0 = self.initialize_machine(p, 1)
-                s0.task_states[0].stack[0][0] = VInt(42)
-                _, states, _, _ = self.explore(p, s0)
+                _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
