@@ -41,7 +41,7 @@ class CRef(CTerm):
         Instantiates a constant reference.
         :param r: The reference to be represented by this term.
         """
-        super().__init__(r)
+        super().__init__(check_type(r, Reference))
 
 
 class CInt(CTerm):

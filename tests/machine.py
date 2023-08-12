@@ -594,7 +594,24 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
-    # TODO: Test Read, NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
+    def test_Read(self):
+        """
+        Tests the successful evaluation of Read terms.
+        """
+
+        cases = [(Read(CRef(FrameReference(0))), VInt(42))]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                s0 = self.initialize_machine(p, 1)
+                s0.task_states[0].stack[0][0] = VInt(42)
+                _, states, _, _ = self.explore(p, s0)
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+
+    # TODO: Test NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
 
 
 
