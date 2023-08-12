@@ -3,7 +3,7 @@ from collections import namedtuple
 from engine.functional import terms
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator
 from engine.functional.types import TStopIteration
-from engine.functional.values import VReturnException, VBreakException, VContinueException
+from engine.functional.values import VReturnError, VBreakError, VContinueError
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
 from lang.translator import Translator
@@ -541,7 +541,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewJumpException(VReturnException), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewJumpError(VReturnError), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.FunctionBlock):
@@ -567,7 +567,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewJumpException(VBreakException), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewJumpError(VBreakError), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.LoopBlock):
@@ -592,7 +592,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(),terms.NewJumpException(VContinueException), on_error=on_error)
+                chain.append_update(ExceptionReference(), terms.NewJumpError(VContinueError), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
                 return chain
             elif isinstance(entry, BlockStack.LoopBlock):

@@ -730,7 +730,7 @@ class VTypeError(VException):
         return TBuiltin.type_error
 
 
-class VJumpException(VException):
+class VJumpError(VException):
     """
     Raised a control flow jump is executed.
     """
@@ -739,25 +739,25 @@ class VJumpException(VException):
         return TBuiltin.jump_exception
 
 
-class VReturnException(VJumpException):
+class VReturnError(VJumpError):
     """
     Raised a return statement is executed.
     """
     @property
     def type(self):
-        return TBuiltin.return_exception
+        return TBuiltin.return_error
 
 
-class VBreakException(VJumpException):
+class VBreakError(VJumpError):
     """
     Raised a break statement is executed.
     """
     @property
     def type(self):
-        return TBuiltin.break_exception
+        return TBuiltin.break_error
 
 
-class VContinueException(VJumpException):
+class VContinueError(VJumpError):
     """
     Raised a continue statement is executed.
     """

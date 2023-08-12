@@ -5,7 +5,7 @@ from engine.functional.reference import FieldReference
 from util import check_type
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VModule, VAttributeError, VJumpException
+    VProperty, VModule, VAttributeError, VJumpError, VList
 from ..task import TaskStatus
 from ..tasks.instructions import StackProgram
 from ..tasks.interaction import Interaction, InteractionState
@@ -705,9 +705,24 @@ class NewTuple(Term):
         return VTuple(*(c.evaluate(tstate, mstate) for c in self.components))
 
 
+class NewList(Term):
+    """
+    A term that evaluates to a new empty list.
+    """
+
+    def __init__(self):
+        """
+        Creates a new list term.
+        """
+        super().__init__()
+
+    def evaluate(self, tstate, mstate):
+        return VList()
+
+
 class NewDict(Term):
     """
-    A term that evaluates toa new empty dictionary.
+    A term that evaluates to a new empty dictionary.
     """
 
     def __init__(self):
@@ -720,7 +735,7 @@ class NewDict(Term):
         return VDict()
 
 
-class NewJumpException(Term):
+class NewJumpError(Term):
     """
     A term that evaluates to either a break, continue or return exception.
     """
@@ -730,7 +745,7 @@ class NewJumpException(Term):
         Creates a new tuple term.
         :param etype: The subclass of VJumpException that is to be instantiated by this term.
         """
-        if not issubclass(etype, VJumpException):
+        if not issubclass(etype, VJumpError):
             raise TypeError("{} is not a subclass of VJumpException!".format(etype))
         super().__init__()
         self._etype = etype

@@ -5,9 +5,10 @@ from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
     ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
-    NewTypeError, IsInstance, NewTuple, CType
+    NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError
 from engine.functional.types import TBuiltin
-from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool
+from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VDict, VReturnError, \
+    VTypeError, VBreakError
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
@@ -610,8 +611,29 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
+    def test_new(self):
+        """
+        Tests the successful evaluation of terms that create new objects.
+        """
 
-    # TODO: Test NewTuple, NewDict, NewJumpException, NewTypeError, NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
+        cases = [(NewTuple(CInt(42), CInt(4711)), VTuple(VInt(42), VInt(4711))),
+                 (IsInstance(NewList(), CType(TBuiltin.list)), VBool.true),
+                 (IsInstance(NewDict(), CType(TBuiltin.dict)), VBool.true),
+                 (IsInstance(NewJumpError(VReturnError), CType(TBuiltin.return_error)), VBool.true),
+                 (IsInstance(NewJumpError(VBreakError), CType(TBuiltin.break_error)), VBool.true),
+                 (IsInstance(NewTypeError("Just a test."), CType(TBuiltin.type_error)), VBool.true)
+                 ]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                s0 = self.initialize_machine(p, 1)
+                s0.task_states[0].stack[0][0] = VInt(42)
+                _, states, _, _ = self.explore(p, s0)
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+    # TODO: Test NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
 
 
 
