@@ -7,7 +7,7 @@ from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VModule, VAttributeError, VJumpError, VList
 from ..task import TaskStatus
-from ..tasks.instructions import StackProgram
+from ..tasks.instructions import StackProgram, ProgramLocation
 from ..tasks.interaction import Interaction, InteractionState
 
 
@@ -806,15 +806,15 @@ class NewProcedure(Term):
     A term that evaluates to a new VProcedure object.
     """
 
-    def __init__(self, num_args, code):
+    def __init__(self, num_args, entry):
         """
         Creates a new procedure creation term.
         :param num_args: The number of arguments of the procedure to be created by this term.
-        :param code: The StackProgram representing the code to be executed by the procedure created by this term.
+        :param entry: The StackProgram or the ProgramLocation representing the code to be executed by the procedure created by this term.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
-        self._code = check_type(code, StackProgram)
+        self._entry = check_type(entry, (ProgramLocation, StackProgram))
 
     @property
     def num_args(self):
@@ -824,14 +824,17 @@ class NewProcedure(Term):
         return self._num_args
 
     @property
-    def code(self):
+    def entry(self):
         """
-        The StackProgram representing the code to be executed by the procedure created by this term.
+        The StackProgram or the ProgramLocation representing the code to be executed by the procedure created by this term.
         """
-        return self._code
+        return self._entry
 
     def evaluate(self, tstate, mstate):
-        return VProcedure(self._num_args, self._code)
+        e = self._entry
+        if isinstance(e, StackProgram):
+            e = ProgramLocation(e, 0)
+        return VProcedure(self._num_args, e)
 
 
 class NumArgs(Term):
@@ -848,7 +851,7 @@ class NumArgs(Term):
 
     def evaluate(self, tstate, mstate):
         p = self.children[0].evaluate(tstate, mstate)
-        return p.num_args
+        return VInt(p.num_args)
 
 
 class NewProperty(Term):

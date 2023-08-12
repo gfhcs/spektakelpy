@@ -5,7 +5,8 @@ from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
     ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
-    NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup
+    NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
+    NumArgs
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VDict, VReturnError, \
     VTypeError, VBreakError, VNamespace, VStr
@@ -652,12 +653,30 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
-    def test_procedures(self):
+    def test_procedure(self):
         """
         Tests the successful evaluation of procedure-related terms.
         """
 
-        # TODO: NewProcedure, NumArgs
+        q = StackProgram([Update(ReturnValueReference(),
+                                               ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
+                                                                         Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
+                                        Pop()])
+
+        p = StackProgram([Update(FrameReference(0), NewProcedure(1, q), 1, 3),
+                          Push(Read(CRef(FrameReference(0))), [CInt(42)], 2, 3),
+                          Update(FrameReference(0), NumArgs(Read(CRef(FrameReference(0)))), 3, 3)])
+
+        state0 = self.initialize_machine(p, 1)
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertEqual(int(states[-1].content.task_states[0].returned), 43)
+        self.assertEqual(int(states[-1].content.task_states[0].stack[0][0]), 1)
 
     def test_class(self):
         """
