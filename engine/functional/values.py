@@ -812,7 +812,8 @@ class VNamespace(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VDict({k: v.clone_unsealed(clones=clones) for k, v in self._m.items()})
+            c = VNamespace()
+            c._m = {k: v.clone_unsealed(clones=clones) for k, v in self._m.items()}
             clones[id(self)] = c
             return c
 
@@ -823,12 +824,12 @@ class VNamespace(Value):
         return iter(self._m)
 
     def __getitem__(self, item):
-        return self._m[item]
+        return self._m[str(check_type(item, (str, VStr)))]
 
     def __setitem__(self, key, value):
         if self.sealed:
             raise RuntimeError("This Namespace instance has been sealed and can thus not be modified anymore!")
-        self._m[check_type(key, str)] = check_type(value, Value)
+        self._m[str(check_type(key, (str, VStr)))] = check_type(value, Value)
 
 
 class VProcedure(Value):

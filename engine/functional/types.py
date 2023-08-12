@@ -52,5 +52,6 @@ TBuiltin.return_error = TBuiltin("ReturnError", [TBuiltin.jump_error], VReturnEr
 TBuiltin.break_error = TBuiltin("BreakError", [TBuiltin.jump_error], VBreakError)
 TBuiltin.type_error = TBuiltin("TypeError", [TBuiltin.exception], VTypeError)
 TBuiltin.procedure = TBuiltin("procedure", [TBuiltin.object], None)
+TBuiltin.namespace = TBuiltin("namespace", [TBuiltin.object], None)
 TBuiltin.module = TBuiltin("module", [TBuiltin.object], None)
 TBuiltin.task = TBuiltin("task", [TBuiltin.object], None)

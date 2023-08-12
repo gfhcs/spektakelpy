@@ -551,10 +551,9 @@ class Lookup(Term):
         """
         Creates a new namespace lookup.
         :param namespace: A term evaluating to a Namespace value.
-        :param name: A string specifying the name that is to be looked up.
+        :param name: A term specifying the string name that is to be looked up.
         """
-        super().__init__(check_type(namespace, Term))
-        self._name = check_type(name, str)
+        super().__init__(check_type(namespace, Term), check_type(name, Term))
 
     @property
     def namespace(self):
@@ -566,12 +565,14 @@ class Lookup(Term):
     @property
     def name(self):
         """
-        A string specifying the name that is to be looked up.
+        A term evaluating to the string name that is to be looked up.
         """
-        return self._name
+        return self.children[1]
 
     def evaluate(self, tstate, mstate):
-        return self.namespace.evaluate(tstate, mstate)[self.name]
+        namespace = self.namespace.evaluate(tstate, mstate)
+        name = self.name.evaluate(tstate, mstate)
+        return namespace[name]
 
 
 class LoadAttrCase(Term):
