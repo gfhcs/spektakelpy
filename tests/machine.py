@@ -8,8 +8,8 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
     NumArgs
 from engine.functional.types import TBuiltin
-from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VDict, VReturnError, \
-    VTypeError, VBreakError, VNamespace, VStr
+from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
+    VBreakError, VNamespace, VStr
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
