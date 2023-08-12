@@ -633,7 +633,62 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
-    # TODO: Test NewNameSpace, Lookup, NewProcedure, NumArgs, NewProperty, NewClassProject, LoadAttrCase, StoreAttrCase, NewModule
+    def test_namespace(self):
+        """
+        Tests the successful evaluation of namespace-related terms.
+        """
+
+        # TODO: New namespace, Lookup.
+
+        cases = [(NewTuple(CInt(42), CInt(4711)), VTuple(VInt(42), VInt(4711))),
+                 (IsInstance(NewList(), CType(TBuiltin.list)), VBool.true),
+                 (IsInstance(NewDict(), CType(TBuiltin.dict)), VBool.true),
+                 (IsInstance(NewJumpError(VReturnError), CType(TBuiltin.return_error)), VBool.true),
+                 (IsInstance(NewJumpError(VBreakError), CType(TBuiltin.break_error)), VBool.true),
+                 (IsInstance(NewTypeError("Just a test."), CType(TBuiltin.type_error)), VBool.true)
+                 ]
+
+        for term, value in cases:
+            with self.subTest(term=term):
+                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                s0 = self.initialize_machine(p, 1)
+                s0.task_states[0].stack[0][0] = VInt(42)
+                _, states, _, _ = self.explore(p, s0)
+                result = states[-1].content.task_states[0].stack[0][0]
+                self.assertEqual(value, result)
+
+    def test_procedures(self):
+        """
+        Tests the successful evaluation of procedure-related terms.
+        """
+
+        # TODO: NewProcedure, NumArgs
+
+    def test_class(self):
+        """
+        Tests the successful evaluation of class-related terms.
+        """
+
+        # TODO: NewProperty, NewClass
+
+    def test_LoadAttrCase(self):
+        """
+        Tests the successful evaluation of LoadAttrCase terms.
+        """
+        # TODO: LoadAttrCase
+
+    def test_StoreAttrCase(self):
+        """
+        Tests the successful evaluation of StoreAttrCase terms.
+        """
+        # TODO: StoreAttrCase
+
+    def test_module(self):
+        """
+        Tests the successful evaluation of module-related terms.
+        """
+
+        # TODO: Newmodule
 
 
 
