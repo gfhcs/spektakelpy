@@ -953,7 +953,7 @@ class VModule(Value):
         return hash(self._ns)
 
     def equals(self, other):
-        return id(self) == id(other)
+        return self._ns == other._ns
 
     def _seal(self):
         self._ns.seal()
