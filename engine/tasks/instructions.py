@@ -414,7 +414,7 @@ class StackProgram(Immutable):
         return self._instructions[item]
 
 
-class ProgramLocation(Sealable):
+class ProgramLocation(Immutable):
     """
     A pair of StackProgram and instruction index.
     """
@@ -425,6 +425,9 @@ class ProgramLocation(Sealable):
         :param program: The StackProgram this object is pointing into.
         :param index: The index of the instruction in the given stack program that this location is pointing to.
         """
+        if not program.sealed:
+            raise ValueError("The given program must be sealed!")
+
         super().__init__()
         self._program = check_type(program, StackProgram)
         self._index = check_type(index, int)
@@ -443,29 +446,9 @@ class ProgramLocation(Sealable):
         """
         return self._index
 
-    @index.setter
-    def index(self, value):
-        check_unsealed(self)
-        self._index = check_type(value, int)
-
     def hash(self):
         check_sealed(self)
         return hash((self._program, self._index))
 
     def equals(self, other):
         return isinstance(other, ProgramLocation) and (self._program, self._index) == (other._program, other._index)
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = ProgramLocation(self._program, self._index)
-            clones[id(self)] = c
-            return c
-
-

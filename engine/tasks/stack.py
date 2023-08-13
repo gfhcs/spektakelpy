@@ -34,8 +34,10 @@ class Frame(Sealable):
         try:
             return clones[id(self)]
         except KeyError:
-            c = Frame(self._location.clone_unsealed(clones), (v.clone_unsealed(clones=clones) for v in self._local_values))
+            c = Frame(self._location, self._local_values)
             clones[id(self)] = c
+            c._location = c._location.clone_unsealed(clones)
+            c._local_values = [v.clone_unsealed(clones=clones) for v in c._local_values]
             return c
 
     def hash(self):
@@ -63,8 +65,9 @@ class Frame(Sealable):
 
     @instruction_index.setter
     def instruction_index(self, value):
+        from .instructions import ProgramLocation
         check_unsealed(self)
-        self._location.index = value
+        self._location = ProgramLocation(self._location.program, value)
 
     @property
     def local(self):
@@ -123,10 +126,13 @@ class StackState(TaskState):
         try:
             return clones[id(self)]
         except KeyError:
-            c = StackState(self.status, [f.clone_unsealed(clones=clones) for f in self.stack],
-                           exception=None if self.exception is None else self.exception.clone_unsealed(clones=clones),
-                           returned=None if self.returned is None else self.returned.clone_unsealed(clones=clones))
+            c = StackState(self.status, self._stack, self._exception, self._returned)
             clones[id(self)] = c
+            c._stack = [f.clone_unsealed(clones=clones) for f in c._stack]
+            if c._exception is not None:
+                c._exception = c._exception.clone_unsealed(clones=clones)
+            if c._returned is not None:
+                c._returned = c._returned.clone_unsealed(clones=clones)
             return c
 
     @property

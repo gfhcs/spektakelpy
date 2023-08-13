@@ -21,7 +21,7 @@ class FrameReference(Reference):
         pass
 
     def clone_unsealed(self, clones=None):
-        return FrameReference(self._index)
+        return self
 
     def hash(self):
         check_sealed(self)
@@ -52,7 +52,7 @@ class ReturnValueReference(Reference):
         pass
 
     def clone_unsealed(self, clones=None):
-        return ReturnValueReference()
+        return self
 
     def hash(self):
         check_sealed(self)
@@ -83,7 +83,7 @@ class ExceptionReference(Reference):
         pass
 
     def clone_unsealed(self, clones=None):
-        return ExceptionReference()
+        return self
 
     def hash(self):
         check_sealed(self)
@@ -119,7 +119,15 @@ class FieldReference(Reference):
         self._v.seal()
 
     def clone_unsealed(self, clones=None):
-        return FieldReference(self._v.clone_unsealed(clones=clones))
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = FieldReference(self._v, self._fidx)
+            clones[id(self)] = c
+            c._v = c._v.clone_unsealed(clones=clones)
+            return c
 
     def hash(self):
         check_sealed(self)
@@ -154,7 +162,15 @@ class NameReference(Reference):
         self._ns.seal()
 
     def clone_unsealed(self, clones=None):
-        return NameReference(self._ns.clone_unsealed(), self._n)
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = NameReference(self._ns, self._n)
+            clones[id(self)] = c
+            c._ns = c._ns.clone_unsealed(clones=clones)
+            return c
 
     def hash(self):
         check_sealed(self)

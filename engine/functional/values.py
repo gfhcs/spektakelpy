@@ -417,8 +417,9 @@ class VTuple(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VTuple(*(c.clone_unsealed(clones=clones) for c in self._comps))
+            c = VTuple(*self._comps)
             clones[id(self)] = c
+            c._comps = tuple(c.clone_unsealed(clones=clones) for c in self._comps)
             return c
 
     def __len__(self):
@@ -530,8 +531,9 @@ class VList(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VList((c.clone_unsealed(clones=clones) for c in self._items))
+            c = VList(self._items)
             clones[id(self)] = c
+            c._items = [c.clone_unsealed(clones=clones) for c in c._items]
             return c
 
     def __len__(self):
@@ -642,8 +644,9 @@ class VDict(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VDict({k.clone_unsealed(clones=clones): v.clone_unsealed(clones=clones) for k, v in self._items.items()})
+            c = VDict(self._items)
             clones[id(self)] = c
+            c._items = {k.clone_unsealed(clones=clones): v.clone_unsealed(clones=clones) for k, v in c._items.items()}
             return c
 
     def __len__(self):
@@ -716,10 +719,10 @@ class VException(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = type(self)(self._msg, *(c.clone_unsealed(clones=clones) for c in self._args), pexception=self._pexception)
+            c = type(self)(self._msg, *self._args, pexception=self._pexception)
             clones[id(self)] = c
+            c._args = tuple(c.clone_unsealed(clones=clones) for c in c._args)
             return c
-
 
 class VTypeError(VException):
     """
@@ -813,8 +816,8 @@ class VNamespace(Value):
             return clones[id(self)]
         except KeyError:
             c = VNamespace()
-            c._m = {k: v.clone_unsealed(clones=clones) for k, v in self._m.items()}
             clones[id(self)] = c
+            c._m = {k: v.clone_unsealed(clones=clones) for k, v in self._m.items()}
             return c
 
     def __len__(self):
@@ -961,8 +964,9 @@ class VModule(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VModule(self._ns.clone_unsealed(clones=clones))
+            c = VModule(self._ns)
             clones[id(self)] = c
+            c._ns = c._ns.clone_unsealed(clones=clones)
             return c
 
 
@@ -1003,9 +1007,10 @@ class VInstance(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VInstance(self._c.clone_unsealed(clones=clones), len(self._fields))
+            c = VInstance(self._c, len(self._fields))
             clones[id(self)] = c
-            c._fields = tuple(f.clone_unsealed(cloned=clones) for f in self._fields)
+            c._c = c._c.clone_unsealed(clones=clones)
+            c._fields = tuple(f.clone_unsealed(clones=clones) for f in self._fields)
             return c
 
     def __getitem__(self, item):
