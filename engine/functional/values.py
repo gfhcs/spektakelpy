@@ -961,7 +961,7 @@ class VModule(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VModule(self._ns.clone_unsealed(cloned=clones))
+            c = VModule(self._ns.clone_unsealed(clones=clones))
             clones[id(self)] = c
             return c
 

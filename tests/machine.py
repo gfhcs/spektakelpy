@@ -7,10 +7,10 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
     ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NumArgs, NewProperty, NewClass
+    NumArgs, NewProperty, NewClass, NewModule
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
-    VBreakError, VNamespace, VStr
+    VBreakError, VNamespace, VStr, VModule
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
@@ -718,7 +718,20 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of module-related terms.
         """
 
-        # TODO: NewModule
+        p = StackProgram([Update(CRef(FrameReference(0)), NewNamespace(), 1, 42),
+                          Update(Lookup(Read(CRef(FrameReference(0))), CString("x")), CInt(42), 2, 42),
+                          Update(Lookup(Read(CRef(FrameReference(0))), CString("y")), CInt(4711), 3, 42),
+                          Update(CRef(FrameReference(0)), NewModule(Read(CRef(FrameReference(0)))), 4, 42)])
+
+        state0 = self.initialize_machine(p, 1)
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], VModule)
 
 
 
