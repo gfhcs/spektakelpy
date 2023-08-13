@@ -163,6 +163,7 @@ class Type(Value):
 
     @property
     def type(self):
+        from engine.functional.types import TBuiltin
         return TBuiltin.type
 
     def hash(self):

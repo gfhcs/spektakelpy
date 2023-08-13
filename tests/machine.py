@@ -1,12 +1,13 @@
 import unittest
 
 from engine.exploration import explore, state_space, schedule_nonzeno
+from engine.functional import Type
 from engine.functional.reference import FrameReference, ReturnValueReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
     ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NumArgs
+    NumArgs, NewProperty, NewClass
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
     VBreakError, VNamespace, VStr
@@ -88,7 +89,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful execution of Update instructions.
         """
 
-        p = StackProgram([Update(FrameReference(0), CInt(42), 1, 1),
+        p = StackProgram([Update(CRef(FrameReference(0)), CInt(42), 1, 1),
                           Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
@@ -103,7 +104,7 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the errors raised by failing execution of the Update instruction.
         """
-        p = StackProgram([Update(FrameReference(1), CInt(42), 1, 1),
+        p = StackProgram([Update(CRef(FrameReference(1)), CInt(42), 1, 1),
                           Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
@@ -182,7 +183,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful execution of Push instructions.
         """
 
-        q = StackProgram([Update(ReturnValueReference(),
+        q = StackProgram([Update(CRef(ReturnValueReference()),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                                          Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
@@ -209,7 +210,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the errors raised by failing execution of the Push instruction.
         """
 
-        q = StackProgram([Update(ReturnValueReference(),
+        q = StackProgram([Update(CRef(ReturnValueReference()),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                                          Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
@@ -235,7 +236,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful execution of Launch instructions.
         """
 
-        q = StackProgram([Update(ReturnValueReference(),
+        q = StackProgram([Update(CRef(ReturnValueReference()),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                                          Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
@@ -268,7 +269,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the errors raised by failing execution of the Launch instruction.
         """
 
-        q = StackProgram([Update(ReturnValueReference(),
+        q = StackProgram([Update(CRef(ReturnValueReference()),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                                          Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
@@ -340,7 +341,7 @@ class TestSpektakelMachine(unittest.TestCase):
         def program_sync(s):
             nonlocal ip
             t = FrameReference(0)
-            instructions = [Update(t, ITask(s), ip + 1, ip),
+            instructions = [Update(CRef(t), ITask(s), ip + 1, ip),
                             Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t))): ip + 2}, ip + 1)]
             try:
                 return instructions
@@ -374,7 +375,7 @@ class TestSpektakelMachine(unittest.TestCase):
         def program_sync(s):
             nonlocal ip
             t = FrameReference(0)
-            instructions = [Update(t, ITask(s), ip + 1, ip),
+            instructions = [Update(CRef(t), ITask(s), ip + 1, ip),
                             Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t))): ip + 2}, ip + 1)]
             try:
                 return instructions
@@ -382,12 +383,12 @@ class TestSpektakelMachine(unittest.TestCase):
                 ip += len(instructions)
 
         p = StackProgram([*program_sync(Interaction.NEXT),
-                          Update(t1, ITask(Interaction.NEXT), ip + 1, ip),
-                          Update(t2, ITask(Interaction.PREV), ip + 2, ip + 1),
+                          Update(CRef(t1), ITask(Interaction.NEXT), ip + 1, ip),
+                          Update(CRef(t2), ITask(Interaction.PREV), ip + 2, ip + 1),
                           Guard({UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t1))): ip + 3,
                                  UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, Read(CRef(t2))): ip}, ip + 3),
-                          Update(t1, CNone(), ip + 4, ip),
-                          Update(t2, CNone(), ip + 5, ip),
+                          Update(CRef(t1), CNone(), ip + 4, ip),
+                          Update(CRef(t2), CNone(), ip + 5, ip),
                          ])
 
         s0 = self.initialize_machine(p, 2)
@@ -406,7 +407,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CInt terms.
         """
 
-        p = StackProgram([Update(FrameReference(0), CInt(42), 1, 1)])
+        p = StackProgram([Update(CRef(FrameReference(0)), CInt(42), 1, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         result = states[-1].content.task_states[0].stack[0][0]
@@ -418,7 +419,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CFloat terms.
         """
 
-        p = StackProgram([Update(FrameReference(0), CFloat(3.1415926), 1, 1)])
+        p = StackProgram([Update(CRef(FrameReference(0)), CFloat(3.1415926), 1, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         result = states[-1].content.task_states[0].stack[0][0]
@@ -430,7 +431,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CFloat terms.
         """
 
-        p = StackProgram([Update(FrameReference(0), CBool(False), 1, 1)])
+        p = StackProgram([Update(CRef(FrameReference(0)), CBool(False), 1, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         result = states[-1].content.task_states[0].stack[0][0]
@@ -442,7 +443,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CFloat terms.
         """
 
-        p = StackProgram([Update(FrameReference(0), CNone(), 1, 1)])
+        p = StackProgram([Update(CRef(FrameReference(0)), CNone(), 1, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         result = states[-1].content.task_states[0].stack[0][0]
@@ -454,7 +455,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CFloat terms.
         """
 
-        p = StackProgram([Update(FrameReference(0), CString("Hello World"), 1, 1)])
+        p = StackProgram([Update(CRef(FrameReference(0)), CString("Hello World"), 1, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         result = states[-1].content.task_states[0].stack[0][0]
@@ -473,7 +474,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -495,7 +496,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -518,7 +519,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -553,7 +554,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -573,7 +574,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 s0 = self.initialize_machine(p, 1)
                 s0.task_states[0].stack[0][0] = VList.append
                 _, states, _, _ = self.explore(p, s0)
@@ -591,7 +592,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -605,7 +606,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 s0 = self.initialize_machine(p, 1)
                 s0.task_states[0].stack[0][0] = VInt(42)
                 _, states, _, _ = self.explore(p, s0)
@@ -627,7 +628,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -638,11 +639,11 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         cases = [(IsInstance(NewNamespace(), CType(TBuiltin.namespace)), VBool.true),
-                 (Lookup(Read(CRef(FrameReference(0))), CString("hello")), VInt(42))]
+                 (Read(Lookup(Read(CRef(FrameReference(0))), CString("hello"))), VInt(42))]
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(FrameReference(0), term, 1, 1)])
+                p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1)])
                 s0 = self.initialize_machine(p, 1)
 
                 ns = VNamespace()
@@ -658,14 +659,14 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of procedure-related terms.
         """
 
-        q = StackProgram([Update(ReturnValueReference(),
+        q = StackProgram([Update(CRef(ReturnValueReference()),
                                                ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                                          Read(CRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
 
-        p = StackProgram([Update(FrameReference(0), NewProcedure(1, q), 1, 3),
+        p = StackProgram([Update(CRef(FrameReference(0)), NewProcedure(1, q), 1, 3),
                           Push(Read(CRef(FrameReference(0))), [CInt(42)], 2, 3),
-                          Update(FrameReference(0), NumArgs(Read(CRef(FrameReference(0)))), 3, 3)])
+                          Update(CRef(FrameReference(0)), NumArgs(Read(CRef(FrameReference(0)))), 3, 3)])
 
         state0 = self.initialize_machine(p, 1)
 
@@ -683,7 +684,22 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of class-related terms.
         """
 
-        # TODO: NewProperty, NewClass
+        g = StackProgram([Update(CRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
+        s = StackProgram([Pop()])
+
+        p = StackProgram([Update(CRef(FrameReference(0)), NewNamespace(), 1, 42),
+                          Update(Lookup(Read(CRef(FrameReference(0))), CString("test")), NewProperty(NewProcedure(1, g), NewProcedure(2, s)), 2, 42),
+                          Update(CRef(FrameReference(0)), NewClass("C", [CType(TBuiltin.object)], Read(CRef(FrameReference(0)))), 3, 42)])
+
+        state0 = self.initialize_machine(p, 1)
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], Type)
 
     def test_LoadAttrCase(self):
         """
@@ -702,7 +718,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of module-related terms.
         """
 
-        # TODO: Newmodule
+        # TODO: NewModule
 
 
 

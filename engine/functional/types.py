@@ -4,7 +4,6 @@ from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTupl
 from engine.intrinsic import IntrinsicInstanceMethod
 
 
-
 class TBuiltin(Type):
     """
     Represents a builtin type, i.e. one the user did not define via a class declaration.

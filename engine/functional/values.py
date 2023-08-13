@@ -821,7 +821,7 @@ class VNamespace(Value):
         return len(self._m)
 
     def __iter__(self):
-        return iter(self._m)
+        return iter(self._m.items())
 
     def __getitem__(self, item):
         return self._m[str(check_type(item, (str, VStr)))]

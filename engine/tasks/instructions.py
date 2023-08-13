@@ -59,17 +59,16 @@ class Update(Instruction):
     def __init__(self, ref, term, destination, edestination):
         """
         Creates a new update instruction.
-        :param ref: An Term specifying which part of the state is to be updated.
+        :param ref: A Term evaluating to a Reference object, specifying which part of the state is to be updated.
         :param term: The Term object specifying how to compute the new value.
         :param destination: The index of the instruction that is to be executed after this one.
         :param edestination: The index of the instruction to jump to if this instruction causes an error.
         """
         super().__init__()
-        self._ref = check_type(ref, Reference)
+        self._ref = check_type(ref, Term)
         self._term = check_type(term, Term)
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
-        self._ref.seal()
 
     def __str__(self):
         return "{} := {}".format(self._ref, self._term)
@@ -88,14 +87,14 @@ class Update(Instruction):
     @property
     def reference(self):
         """
-        The Expression object specifying which part of the state is to be updated.
+        The Term specifying which part of the state is to be updated.
         """
         return self._ref
 
     @property
     def term(self):
         """
-        The expression object specifying how to compute the new value.
+        The Term specifying how to compute the new value.
         """
         return self._term
 
@@ -117,6 +116,7 @@ class Update(Instruction):
         top = tstate.stack[-1]
         top.instruction_index = self._destination
         try:
+            ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
@@ -124,7 +124,7 @@ class Update(Instruction):
             return
 
         try:
-            self._ref.write(tstate, mstate, value)
+            ref.write(tstate, mstate, value)
         except Exception as ex:
             tstate.exception = VException(pexception=ex)
             top.instruction_index = self._edestination

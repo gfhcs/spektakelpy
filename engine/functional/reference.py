@@ -1,4 +1,5 @@
 from engine.functional import Reference, Value
+from engine.functional.values import VNamespace
 from util import check_type
 from util.immutable import check_sealed, check_unsealed
 
@@ -136,35 +137,35 @@ class FieldReference(Reference):
 
 class NameReference(Reference):
     """
-    A reference to a named field of an object.
+    A reference to a namespace entry.
     """
 
-    def __init__(self, oref, name):
+    def __init__(self, namespace, name):
         """
         Refers to a named field of an object.
-        :param oref: A Reference to the object a field of which is to be referenced.
-        :param name: The name of the field to refer to.
+        :param namespace: The namespace object this reference is referring to.
+        :param name: The string name of the namespace entry to refer to.
         """
         super().__init__()
-        self._oref = oref
-        self._name = name
+        self._ns = check_type(namespace, VNamespace)
+        self._n = check_type(name, str)
 
     def _seal(self):
-        self._oref.seal()
+        self._ns.seal()
 
     def clone_unsealed(self, clones=None):
-        return NameReference(self._oref.clone_unsealed(), self._name)
+        return NameReference(self._ns.clone_unsealed(), self._n)
 
     def hash(self):
         check_sealed(self)
-        return hash(self._oref) ^ hash(self._name)
+        return hash(self._ns) ^ hash(self._n)
 
     def equals(self, other):
-        return isinstance(other, NameReference) and self._name == other._name and self._oref == other._oref
+        return isinstance(other, NameReference) and self._n == other._n and self._ns == other._ns
 
     def write(self, tstate, mstate, value):
-        self._oref.read(tstate, mstate)[self._name] = value
+        self._ns[self._n] = value
 
     def read(self, tstate, mstate):
-        return self._oref.read(tstate, mstate)[self._name]
+        return self._ns[self._n]
 

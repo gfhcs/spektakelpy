@@ -1,7 +1,7 @@
 from abc import ABC
 from enum import Enum
 
-from engine.functional.reference import FieldReference
+from engine.functional.reference import FieldReference, NameReference
 from util import check_type
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
@@ -545,7 +545,7 @@ class Project(Term):
 
 class Lookup(Term):
     """
-    A term that queries a namespace.
+    A term that constructs a NameReference.
     """
     def __init__(self, namespace, name):
         """
@@ -572,7 +572,7 @@ class Lookup(Term):
     def evaluate(self, tstate, mstate):
         namespace = self.namespace.evaluate(tstate, mstate)
         name = self.name.evaluate(tstate, mstate)
-        return namespace[name]
+        return NameReference(namespace, str(name))
 
 
 class LoadAttrCase(Term):
@@ -634,7 +634,7 @@ class StoreAttrCase(Term):
     If the given object is not of type 'type', then the MRO of the type of the object is searched for the attribute.
     The return value distinguishes the following cases:
         0. The name was found and refers to a property. The term evaluates to the setter of that property.
-        1. The name was found and refers to an instance variable. The term valuates to a NameReference.
+        1. The name was found and refers to an instance variable. The term valuates to a FieldReference.
         2. The name was found and refers to a method. The term evaluates to an exception to raise.
         3. The name was found and refers to a class variable. The term evaluates to a NameReference.
         4. The name was not found. The term evaluates to an exception to raise.
@@ -900,15 +900,24 @@ class NewClass(Term):
     A term that evaluates to a new Type object.
     """
 
-    def __init__(self, superclasses, namespace):
+    def __init__(self, name, superclasses, namespace):
         """
         Creates a new Class term.
+        :param name: The string name of the class to be created.
         :param superclasses: An iterable of terms that evaluate to super classes
                              of the class to be created by this term.
         :param namespace: A term evaluating to a namespace binding names to members
                           of the class to be created by this term.
         """
         super().__init__(*superclasses, namespace)
+        self._name = check_type(name, str)
+
+    @property
+    def name(self):
+        """
+        The string name of the class to be created.
+        """
+        return self._name
 
     @property
     def superclasses(self):
@@ -926,8 +935,18 @@ class NewClass(Term):
 
     def evaluate(self, tstate, mstate):
         ss = tuple(s.evaluate(tstate, mstate) for s in self.superclasses)
-        ns = self.namespace.evaluate(tstate, mstate)
-        return TClass(ss, ns)
+
+        field_names = []
+        members = {}
+        for name, member in self.namespace.evaluate(tstate, mstate):
+            if isinstance(member, (VProcedure, VProperty)):
+                members[name] = member
+            elif isinstance(member, VNone):
+                field_names.append(name)
+            else:
+                raise EvaluationException("Encountered an unexpected entry in a namespace to be used for class creation!")
+
+        return Type(self._name, ss, field_names, members)
 
 
 class NewModule(Term):
