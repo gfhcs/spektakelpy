@@ -986,7 +986,7 @@ class VInstance(Value):
             c = TBuiltin.object
         super().__init__()
         self._c = c
-        self._fields = [VNone] * num_fields
+        self._fields = [VNone.instance] * num_fields
 
     @property
     def type(self):
@@ -996,7 +996,7 @@ class VInstance(Value):
         return hash((self._c, *self._fields))
 
     def equals(self, other):
-        return isinstance(other, VInstance) and self._c == other._c and self._fields == other._fields
+        return isinstance(other, VInstance) and self._c == other._c and tuple(self._fields) == tuple(other._fields)
 
     def _seal(self):
         for f in self._fields:

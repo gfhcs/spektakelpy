@@ -670,8 +670,7 @@ class StoreAttrCase(Term):
         t = value.type
 
         try:
-            attr = (value if t.subtypeof(Type.instance) else t).resolve_member(self.name)
-
+            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
             if isinstance(attr, int):
                 return FieldReference(value, attr)
             if isinstance(attr, VProperty):
