@@ -844,12 +844,13 @@ class VProcedure(Value):
         """
         Creates a new procedure.
         :param num_args: The number of arguments of this procedure.
-        :param entry: Either a ProgramLocation that points to the entry point for this procedure, or an IntrinsicProcedure.
+        :param entry: Either a ProgramLocation that points to the entry point for this procedure, or an IntrinsicProcedure,
+                      or a StackProgram.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
 
-        if isinstance(entry, (ProgramLocation, IntrinsicProcedure)):
+        if isinstance(entry, (ProgramLocation, IntrinsicProcedure, StackProgram)):
             self._entry = entry
         else:
             raise TypeError("The given entry object is neither a ProgramLocation nor an IntrinsicProcedure!")
@@ -868,7 +869,7 @@ class VProcedure(Value):
     @property
     def entry(self):
         """
-        Either a ProgramLocation or an IntrinsicProcedure object.
+        Either a ProgramLocation or an IntrinsicProcedure, or a StackProgram object.
         """
         return self._entry
 
@@ -1022,4 +1023,4 @@ class VInstance(Value):
         self._fields[check_type(key, int)] = check_type(value, Value)
 
 from .types import TBuiltin
-from ..tasks.instructions import ProgramLocation
+from ..tasks.instructions import ProgramLocation, StackProgram

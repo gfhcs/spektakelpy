@@ -7,10 +7,10 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
     ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NumArgs, NewProperty, NewClass, NewModule
+    NumArgs, NewProperty, NewClass, NewModule, CTerm, LoadAttrCase
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
-    VBreakError, VNamespace, VStr, VModule
+    VBreakError, VNamespace, VStr, VModule, VProperty
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
@@ -705,7 +705,34 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of LoadAttrCase terms.
         """
-        # TODO: LoadAttrCase
+
+        method = StackProgram([Update(CRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
+        method = VProcedure(1, ProgramLocation(method, 0))
+
+        g = VProcedure(1, StackProgram([Update(CRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]))
+        s = VProcedure(2, StackProgram([Pop()]))
+        property = VProperty(g, s)
+
+        members = {"method": method, "property": property}
+        c = Type("C", [TBuiltin.object], ["x"], members)
+
+        i = c.create_instance()
+
+        cases = (("x", VNone.instance),
+                 ("method", method),
+                 ("property", g))
+
+        for identifier, value in cases:
+            with self.subTest(identifier=identifier):
+                p = StackProgram([Update(CRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 42, 42)])
+
+                _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
+
+                self.assertEqual(len(states), 2)
+                self.assertEqual(len(internal), 1)
+                self.assertEqual(len(external), 3)
+
+                self.assertIs(states[-1].content.task_states[0].stack[0][0], value)
 
     def test_StoreAttrCase(self):
         """

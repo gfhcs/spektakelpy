@@ -23,10 +23,10 @@ class TBuiltin(Type):
         if members is None:
             members = {}
 
-        for name in dir(ptype):
-            member = getattr(ptype, name)
+        for n in dir(ptype):
+            member = getattr(ptype, n)
             if isinstance(member, IntrinsicInstanceMethod):
-                members[name] = member
+                members[n] = member
 
         super().__init__(name, super_types, [], members)
         self._ptype = ptype

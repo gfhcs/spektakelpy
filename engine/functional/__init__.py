@@ -140,18 +140,23 @@ class Type(Value):
         :param super_types: The super types this type inherits from.
         :param field_names: An iterable of str objects specifying the instance field names of this type.
         :param members: A dict mapping str names to instance procedures and properties of this type.
-
         """
+        from engine.functional.values import VProperty, VProcedure
+        from engine.intrinsic import IntrinsicProcedure
+
         super().__init__()
         self._name = check_type(name, str)
         self._super_types = tuple(check_type(t, Type) for t in super_types)
         self._field_names = field_names
-        self._members = members
-        self._mro = linearization(self)
+        self._members = {check_type(k, str): check_type(v, (VProperty, VProcedure, IntrinsicProcedure)) for k, v in members.items()}
+        self._mro = list(linearization(self))
         self._nfields = len(field_names)
 
         for t in self.mro:
             self._nfields += t._nfields
+
+    def __str__(self):
+        return self._name
 
     @property
     def bases(self):
@@ -212,13 +217,14 @@ class Type(Value):
 
         foffset = 0
         for t in self.mro:
-            fidx = t._field_names.find(name)
-            if fidx >= 0:
-                return foffset + fidx
             try:
-                return t._members[name]
-            except KeyError:
-                pass
+                fidx = t._field_names.index(name)
+                return foffset + fidx
+            except ValueError:
+                try:
+                    return t._members[name]
+                except KeyError:
+                    pass
 
             foffset += len(t._field_names)
 
