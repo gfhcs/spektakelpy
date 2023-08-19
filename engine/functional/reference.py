@@ -17,6 +17,10 @@ class FrameReference(Reference):
         super().__init__()
         self._index = index
 
+    def __str__(self):
+        index = self._index
+        return f"@{index}"
+
     def _seal(self):
         pass
 
@@ -48,6 +52,9 @@ class ReturnValueReference(Reference):
         """
         super().__init__()
 
+    def __str__(self):
+        return f"@return"
+
     def _seal(self):
         pass
 
@@ -78,6 +85,9 @@ class ExceptionReference(Reference):
         Refers to the exception currently being handeled in a task.
         """
         super().__init__()
+
+    def __str__(self):
+        return f"@exception"
 
     def _seal(self):
         pass
@@ -114,6 +124,11 @@ class FieldReference(Reference):
         super().__init__()
         self._v = check_type(value, Value)
         self._fidx = check_type(fidx, int)
+
+    def __str__(self):
+        v = self._v
+        idx = self._fidx
+        return f"{v}.{idx}"
 
     def _seal(self):
         self._v.seal()
@@ -157,6 +172,11 @@ class NameReference(Reference):
         super().__init__()
         self._ns = check_type(namespace, VNamespace)
         self._n = check_type(name, str)
+
+    def __str__(self):
+        ns = self._ns
+        n = self._n
+        return f"{ns}[\"{n}\"]"
 
     def _seal(self):
         self._ns.seal()

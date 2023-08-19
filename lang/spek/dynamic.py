@@ -1,3 +1,4 @@
+import io
 from collections import namedtuple
 
 from engine.functional import terms
@@ -27,6 +28,21 @@ class Chain:
         self._proto = []
         self._targets = set()
         self._can_continue = True
+
+    def __str__(self):
+        t2s = {Update: "Update", Guard: "Guard", Push: "Push", Pop: "Pop", Launch: "Launch"}
+        newline = ""
+        with io.StringIO() as s:
+            for t, *args in self._proto:
+                s.write(newline)
+                newline = "\n"
+                s.write(t2s[t])
+                prefix = ": "
+                for a in args:
+                    s.write(prefix)
+                    s.write(str(a))
+                    prefix = ", "
+            return s.getvalue()
 
     def __len__(self):
         return len(self._proto)

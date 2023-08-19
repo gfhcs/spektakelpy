@@ -236,6 +236,18 @@ class ArithmeticBinaryOperation(BinaryTerm):
         """
         super().__init__(check_type(op, ArithmeticBinaryOperator), left, right)
 
+    def __str__(self):
+        op = {ArithmeticBinaryOperator.PLUS: "+",
+              ArithmeticBinaryOperator.MINUS: "-",
+              ArithmeticBinaryOperator.TIMES: "*",
+              ArithmeticBinaryOperator.OVER: "/",
+              ArithmeticBinaryOperator.INTOVER: "//",
+              ArithmeticBinaryOperator.MODULO: "%",
+              ArithmeticBinaryOperator.POWER: "**"}[self._op]
+        left = self.left
+        right = self.right
+        return f"{left} {op} {right}"
+
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
         right = self.right.evaluate(tstate, mstate)
@@ -279,6 +291,13 @@ class BooleanBinaryOperation(BinaryTerm):
         """
         super().__init__(check_type(op, BooleanBinaryOperator), left, right)
 
+    def __str__(self):
+        op = {ArithmeticBinaryOperator.AND: "and",
+              ArithmeticBinaryOperator.OR: "or"}[self._op]
+        left = self.left
+        right = self.right
+        return f"{left} {op} {right}"
+
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
 
@@ -319,6 +338,21 @@ class Comparison(BinaryTerm):
         :param right: The right hand side of the comparison.
         """
         super().__init__(check_type(op, ComparisonOperator), left, right)
+
+    def __str__(self):
+        op = {ArithmeticBinaryOperator.EQ: "==",
+              ArithmeticBinaryOperator.NEQ: "!=",
+              ArithmeticBinaryOperator.LESS: "<",
+              ArithmeticBinaryOperator.LESSOREQUAL: "<=",
+              ArithmeticBinaryOperator.GREATER: ">",
+              ArithmeticBinaryOperator.GREATEROREQUAL: ">=",
+              ArithmeticBinaryOperator.IN: "in",
+              ArithmeticBinaryOperator.NOTIN: "not in",
+              ArithmeticBinaryOperator.IS: "is",
+              ArithmeticBinaryOperator.ISNOT: "is not"}[self._op]
+        left = self.left
+        right = self.right
+        return f"{left} {op} {right}"
 
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
@@ -371,6 +405,13 @@ class UnaryPredicateTerm(Term):
         super().__init__(check_type(arg, Term))
         self._p = check_type(p, UnaryPredicate)
 
+    def __str__(self):
+        op = {UnaryPredicate.ISCALLABLE: "is_callable",
+              UnaryPredicate.ISEXCEPTION: "is_exception",
+              UnaryPredicate.ISTERMINATED: "is_terminated"}[self._op]
+        arg = self.operand
+        return f"{op}({arg})"
+
     @property
     def operand(self):
         """
@@ -420,6 +461,10 @@ class ITask(Term):
         super().__init__()
         self._s = check_type(s, Interaction)
 
+    def __str__(self):
+        s = self._s
+        return f"itask({s})"
+
     @property
     def predicate(self):
         """
@@ -453,6 +498,10 @@ class IsInstance(Term):
         :param types: A term evaluating to either a single type or a tuple of types.
         """
         super().__init__(check_type(value, Term), check_type(types, Term))
+
+    def __str__(self):
+        value, types = self.children
+        return f"is_instance({value}, {types})"
 
     @property
     def value(self):
@@ -497,6 +546,10 @@ class Read(Term):
         """
         super().__init__(r)
 
+    def __str__(self):
+        r = self.reference
+        return f"read({r})"
+
     @property
     def reference(self):
         return self.children[0]
@@ -522,6 +575,10 @@ class Project(Term):
         :param index: A term evaluating to an integer.
         """
         super().__init__(check_type(tuple, Term), check_type(index, Term))
+
+    def __str__(self):
+        t, idx = self.children
+        return f"{t}[{idx}]"
 
     @property
     def tuple(self):
@@ -554,6 +611,10 @@ class Lookup(Term):
         :param name: A term specifying the string name that is to be looked up.
         """
         super().__init__(check_type(namespace, Term), check_type(name, Term))
+
+    def __str__(self):
+        ns, n = self.children
+        return f"{ns}[{n}]"
 
     @property
     def namespace(self):
@@ -596,6 +657,10 @@ class LoadAttrCase(Term):
         """
         super().__init__(check_type(value, Term))
         self._name = check_type(name, str)
+
+    def __str__(self):
+        v, a = self.value, self._name
+        return f"{v}.{a}"
 
     @property
     def value(self):
@@ -651,6 +716,10 @@ class StoreAttrCase(Term):
         super().__init__(check_type(value, Term))
         self._name = check_type(name, str)
 
+    def __str__(self):
+        v, a = self.value, self._name
+        return f"{v}.{a}"
+
     @property
     def value(self):
         """
@@ -695,6 +764,9 @@ class NewTuple(Term):
         """
         super().__init__(*comps)
 
+    def __str__(self):
+        return "({})".format(", ".join(self.children))
+
     @property
     def components(self):
         """
@@ -718,6 +790,9 @@ class NewList(Term):
         """
         super().__init__()
 
+    def __str__(self):
+        return "[]"
+
     def evaluate(self, tstate, mstate):
         return VList()
 
@@ -732,6 +807,9 @@ class NewDict(Term):
         Creates a new dict term.
         """
         super().__init__()
+
+    def __str__(self):
+        return "{}"
 
     def evaluate(self, tstate, mstate):
         return VDict()
@@ -751,6 +829,10 @@ class NewJumpError(Term):
             raise TypeError("{} is not a subclass of VJumpException!".format(etype))
         super().__init__()
         self._etype = etype
+
+    def __str__(self):
+        t = str(self._etype)
+        return f"{t}()"
 
     @property
     def etype(self):
@@ -776,6 +858,10 @@ class NewTypeError(Term):
         super().__init__()
         self._msg = check_type(message, str)
 
+    def __str__(self):
+        msg = self._msg
+        return f"TypeError({msg})"
+
     @property
     def message(self):
         """
@@ -798,6 +884,9 @@ class NewNamespace(Term):
         """
         super().__init__()
 
+    def __str__(self):
+        return "Namespace()"
+
     def evaluate(self, tstate, mstate):
         return VNamespace()
 
@@ -816,6 +905,11 @@ class NewProcedure(Term):
         super().__init__()
         self._num_args = check_type(num_args, int)
         self._entry = check_type(entry, (ProgramLocation, StackProgram))
+
+    def __str__(self):
+        na = self._num_args
+        entry = self._entry
+        return f"Procedure({na}, {entry})"
 
     @property
     def num_args(self):
@@ -850,6 +944,10 @@ class NumArgs(Term):
         """
         super().__init__(arg)
 
+    def __str__(self):
+        p, = self.children
+        return f"num_args({p})"
+
     def evaluate(self, tstate, mstate):
         p = self.children[0].evaluate(tstate, mstate)
         return VInt(p.num_args)
@@ -871,6 +969,10 @@ class NewProperty(Term):
             super().__init__(getter)
         else:
             super().__init__(getter, setter)
+
+    def __str__(self):
+        g, s = self.children
+        return f"Property({g}, {s})"
 
     @property
     def getter(self):
@@ -912,6 +1014,12 @@ class NewClass(Term):
         """
         super().__init__(*superclasses, namespace)
         self._name = check_type(name, str)
+
+    def __str__(self):
+        name = self._name
+        *superclasses, ns = self.children
+        superclasses = ", ".join(superclasses)
+        return f"class(\"{name}\"{name}, [{superclasses}], {ns})"
 
     @property
     def name(self):
