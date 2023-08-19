@@ -121,7 +121,7 @@ class CType(CTerm):
         super().__init__(t)
 
 
-class ArithmeticUnaryOperator(Enum):
+class UnaryOperator(Enum):
     """
     A unary operator.
     """
@@ -129,7 +129,7 @@ class ArithmeticUnaryOperator(Enum):
     NOT = 1
 
 
-class ArithmeticUnaryOperation(Term):
+class UnaryOperation(Term):
     """
     A term with one operand term.
     """
@@ -141,10 +141,10 @@ class ArithmeticUnaryOperation(Term):
         :param arg: The operand term.
         """
         super().__init__(check_type(arg, Term))
-        self._op = check_type(op, ArithmeticUnaryOperator)
+        self._op = check_type(op, UnaryOperator)
 
     def __str__(self):
-        op = {ArithmeticUnaryOperator.NOT: "~", ArithmeticUnaryOperator.MINUS: "-"}[self._op]
+        op = {UnaryOperator.NOT: "~", UnaryOperator.MINUS: "-"}[self._op]
         arg = self.operand
         return f"{op}{arg}"
 
@@ -164,9 +164,9 @@ class ArithmeticUnaryOperation(Term):
 
     def evaluate(self, tstate, mstate):
         r = self.operand.evaluate(tstate, mstate)
-        if self._op == ArithmeticUnaryOperator.NOT:
+        if self._op == UnaryOperator.NOT:
             return ~r
-        elif self._op == ArithmeticUnaryOperator.MINUS:
+        elif self._op == UnaryOperator.MINUS:
             return -r
         else:
             raise NotImplementedError()

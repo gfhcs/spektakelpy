@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 
-from engine.functional.terms import ArithmeticUnaryOperator, ComparisonOperator, BooleanBinaryOperator, ArithmeticBinaryOperator
+from engine.functional.terms import UnaryOperator, ComparisonOperator, BooleanBinaryOperator, ArithmeticBinaryOperator
 from lang.tokens import TokenPosition
 from util import check_type
 
@@ -279,7 +279,7 @@ class UnaryOperation(Expression, abc.ABC):
         :param kwargs: See Expression constructor.
         """
         super().__init__(check_type(arg, Expression), **kwargs)
-        self._op = check_type(op, ArithmeticUnaryOperator)
+        self._op = check_type(op, UnaryOperator)
 
     @property
     def operand(self):

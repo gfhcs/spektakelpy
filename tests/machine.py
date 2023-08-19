@@ -4,8 +4,8 @@ from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional import Type
 from engine.functional.reference import FrameReference, ReturnValueReference, FieldReference
 from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
-    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, ArithmeticUnaryOperation, \
-    ArithmeticUnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
+    UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
+    UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
     NumArgs, NewProperty, NewClass, NewModule, CTerm, LoadAttrCase, StoreAttrCase
 from engine.functional.types import TBuiltin
@@ -468,9 +468,9 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of ArithmeticUnaryOperation terms.
         """
 
-        cases = [(ArithmeticUnaryOperation(ArithmeticUnaryOperator.MINUS, CInt(42)), VInt(-42)),
-                 (ArithmeticUnaryOperation(ArithmeticUnaryOperator.NOT, CInt(42)), VInt(~42)),
-                 (ArithmeticUnaryOperation(ArithmeticUnaryOperator.MINUS, CFloat(42.0)), VFloat(-42.0))]
+        cases = [(UnaryOperation(UnaryOperator.MINUS, CInt(42)), VInt(-42)),
+                 (UnaryOperation(UnaryOperator.NOT, CInt(42)), VInt(~42)),
+                 (UnaryOperation(UnaryOperator.MINUS, CFloat(42.0)), VFloat(-42.0))]
 
         for term, value in cases:
             with self.subTest(term=term):

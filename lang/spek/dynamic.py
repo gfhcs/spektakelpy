@@ -1,11 +1,11 @@
 from collections import namedtuple
 
 from engine.functional import terms
-from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator
-from engine.functional.types import TStopIteration
+from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
+from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator
+from engine.functional import terms
 from engine.functional.values import VReturnError, VBreakError, VContinueError
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
-from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
@@ -13,6 +13,10 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition, AssignableExpression
 from .modules import CompiledModule
+
+
+def negate(bexp):
+    return terms.UnaryOperation(UnaryOperator.NOT, bexp)
 
 
 class Chain:
@@ -23,6 +27,9 @@ class Chain:
         self._proto = []
         self._targets = set()
         self._can_continue = True
+
+    def __len__(self):
+        return len(self._proto)
 
     def _assert_continuable(self):
         if self._proto is None:
@@ -187,6 +194,12 @@ class BlockStack:
         The entry on the top of the stack.
         """
         return self._entries[-1]
+
+    def __getitem__(self, idx):
+        return self._entries[idx]
+
+    def __setitem__(self, key, value):
+        self._entries[key] = value
 
     def __iter__(self):
         return reversed(self._entries)
@@ -489,7 +502,7 @@ class Spektakel2Stack(Translator):
             callee, chain = self.translate_expression(chain, Attribute(v, "__get_item__"), dec, on_error)
             return self.emit_call(chain, callee, [idx], on_error)
         elif isinstance(node, UnaryOperation):
-            return terms.ArithmeticUnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
+            return terms.UnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
         elif isinstance(node, ArithmeticBinaryOperation):
             return terms.ArithmeticBinaryOperation(node.operator,
                                                    self.translate_expression(chain, node.left, dec, on_error),
@@ -548,7 +561,7 @@ class Spektakel2Stack(Translator):
                 break
 
         # We made it to the function level without hitting an exception block.
-        chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
+        chain.append_update(CRef(ExceptionReference()), terms.CNone(), on_error=on_error)
         chain.append_pop()
 
         return chain
@@ -970,15 +983,14 @@ class Spektakel2Stack(Translator):
         bodyBlock.append_push(location, [], exitBlock)
 
         successor = Chain()
-        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(ExceptionReference()), terms.CNone())
-        bodyBlock.append_guard({~noerror: exitBlock, noerror: successor}, exitBlock)
+        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(CRef(ExceptionReference())), terms.CNone())
+        bodyBlock.append_guard({negate(noerror): exitBlock, noerror: successor}, exitBlock)
 
         rv = self.declare_name(successor, None, exitBlock)
         rr = ReturnValueReference()
-        successor.append_update(rv, terms.Read(rr), exitBlock)
-        successor = self.emit_return(exitBlock, chain=successor)
+        successor.append_update(rv, terms.Read(CRef(rr)), exitBlock)
+        self.emit_return(exitBlock, chain=successor)
 
-        successor.append_pop()
         exitBlock.append_pop()
 
         load = terms.NewProcedure(1, bodyBlock.compile())
@@ -1024,7 +1036,7 @@ class Spektakel2Stack(Translator):
         Generates code for an entire module.
         :param nodes: An iterable of statements that represent the code of the module.
         :param dec: A dict mapping AST nodes to decorations.
-        :return: A StackProgram object.
+        :return: A Chain object.
         """
 
         # We assume that somebody put a fresh frame on the stack.
@@ -1051,9 +1063,14 @@ class Spektakel2Stack(Translator):
 
         self._blocks.pop()
 
-        return block.compile()
+        return block
 
+    def translate(self, nodes, dec):
+        """
+        Translate a standalone program.
+        :param nodes: An iterable of statements that represent the code of the main module.
+        :param dec: A dict mapping AST nodes to decorations.
+        :return: A Chain object.
+        """
 
-    def translate(self, node, dec):
-        pass
-
+        return self.emit_preamble() + self.translate_module(nodes, dec)
