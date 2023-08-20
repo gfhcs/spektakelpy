@@ -340,16 +340,16 @@ class Comparison(BinaryTerm):
         super().__init__(check_type(op, ComparisonOperator), left, right)
 
     def __str__(self):
-        op = {ArithmeticBinaryOperator.EQ: "==",
-              ArithmeticBinaryOperator.NEQ: "!=",
-              ArithmeticBinaryOperator.LESS: "<",
-              ArithmeticBinaryOperator.LESSOREQUAL: "<=",
-              ArithmeticBinaryOperator.GREATER: ">",
-              ArithmeticBinaryOperator.GREATEROREQUAL: ">=",
-              ArithmeticBinaryOperator.IN: "in",
-              ArithmeticBinaryOperator.NOTIN: "not in",
-              ArithmeticBinaryOperator.IS: "is",
-              ArithmeticBinaryOperator.ISNOT: "is not"}[self._op]
+        op = {ComparisonOperator.EQ: "==",
+              ComparisonOperator.NEQ: "!=",
+              ComparisonOperator.LESS: "<",
+              ComparisonOperator.LESSOREQUAL: "<=",
+              ComparisonOperator.GREATER: ">",
+              ComparisonOperator.GREATEROREQUAL: ">=",
+              ComparisonOperator.IN: "in",
+              ComparisonOperator.NOTIN: "not in",
+              ComparisonOperator.IS: "is",
+              ComparisonOperator.ISNOT: "is not"}[self._op]
         left = self.left
         right = self.right
         return f"{left} {op} {right}"

@@ -73,6 +73,15 @@ class Term(abc.ABC):
             check_type(c, Term)
         self._children = children
 
+    def __hash__(self):
+        return hash(len(self._children))
+
+    def __eq__(self, other):
+        return type(self) is type(other) and tuple(self._children) == tuple(other._children)
+
+    def __ne(self, other):
+        return not self.__eq__(other)
+
     @abc.abstractmethod
     def evaluate(self, tstate, mstate):
         """

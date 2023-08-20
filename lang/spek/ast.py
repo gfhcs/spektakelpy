@@ -18,8 +18,8 @@ class Node:
             check_type(c, Node)
 
         self._children = children
-        self._start = check_type(start, TokenPosition)
-        self._end = check_type(end, TokenPosition)
+        self._start = check_type(start, TokenPosition, allow_none=True)
+        self._end = check_type(end, TokenPosition, allow_none=True)
 
     @property
     def start(self):

@@ -90,8 +90,9 @@ class TestSpektakelTranslation(unittest.TestCase):
         translator = Spektakel2Stack()
 
         program = translator.translate([node], dec)
+        program = program.compile()
 
-        _, states, internal, external = self.explore(program, self.initialize_machine(program, 0))
+        _, states, internal, external = self.explore(program, self.initialize_machine(program, 2))
 
         return states, internal, external
 
@@ -103,7 +104,13 @@ class TestSpektakelTranslation(unittest.TestCase):
         env_in = static.SpektakelValidator.environment_default()
         states, internal, external = self.translate_explore("# Just some empty program.", env=env_in)
 
-        self.assertEqual(len(states), 1)
-        self.assertEqual(len(internal), 0)
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), 3)
+
+        for s in states:
+            for t in s.content.task_states:
+                if isinstance(t, StackState):
+                    self.assertIs(t.exception, None)
+
 

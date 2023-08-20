@@ -3,9 +3,9 @@ from collections import namedtuple
 
 from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
-from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator
-from engine.functional import terms
-from engine.functional.values import VReturnError, VBreakError, VContinueError
+from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator, Read, NewDict, \
+    NewProcedure, Project, CTerm
+from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from lang.translator import Translator
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
@@ -28,6 +28,60 @@ class Chain:
         self._proto = []
         self._targets = set()
         self._can_continue = True
+
+    def __hash__(self):
+        return hash(tuple(t for t, *_ in self._proto))
+
+    def _equals(self, other, bijection=None):
+        if bijection is None:
+            bijection = {}
+        if not (self._can_continue == other._can_continue and len(self._proto) == len(other._proto)):
+            return False
+        try:
+            return bijection[self] is other
+        except KeyError:
+            bijection[self] = other
+            for (t1, *args1), (t2, *args2) in zip(self._proto, other._proto):
+                if t1 is not t2:
+                    return False
+                for a1, a2 in zip(args1, args2):
+                    if isinstance(a1, Chain):
+                        if not a1._equals(a2, bijection=bijection):
+                            return False
+                    elif isinstance(a1, list):
+                        assert t1 is Update
+                        if tuple(a1) != tuple(a2):
+                            return False
+                    elif isinstance(a1, dict):
+                        assert t1 is Guard
+                        if len(a1) != len(a2):
+                            return False
+                        for k, v in a1.items():
+                            try:
+                                if v != a2[k]:
+                                    return False
+                            except KeyError:
+                                return False
+                    else:
+                        if not a1 == a2:
+                            return False
+            return False
+
+    def __eq__(self, other):
+        return isinstance(other, Chain) and self._equals(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __add__(self, other):
+        if not isinstance(other, Chain):
+            raise TypeError("Chains can only be extended by other chains!")
+        self._assert_continuable()
+        s = Chain()
+        s._proto = self._proto + other._proto
+        s._targets = self._targets | other._targets
+        s._can_continue = other._can_continue
+        return s
 
     def __str__(self):
         t2s = {Update: "Update", Guard: "Guard", Push: "Push", Pop: "Pop", Launch: "Launch"}
@@ -86,7 +140,7 @@ class Chain:
         :param target: The chain to jump to.
         """
         # According to the semantics, there cannot be an error in evaluating Truth():
-        self.append_guard({terms.CTruth(): target}, None)
+        self.append_guard({terms.CBool(True): target}, None)
 
     def append_push(self, entry, aexpressions, on_error):
         """
@@ -141,11 +195,9 @@ class Chain:
             c = chains.pop()
             if c in entries:
                 continue
-            if c._can_continue:
-                raise RuntimeError("Cannot compile chains that do not end with either a guard or a pop instruction!")
             entries[c] = offset
             offset += len(c)
-            chains.extend(c._targets)
+            chains.extend((t for t in c._targets if t is not None))
 
         instructions = []
         offset = 0
@@ -153,23 +205,36 @@ class Chain:
         for c in entries.keys(): # Enumerates the chains in the order they were inserted, guaranteeing that they start
                                  # exactly at the recorded offsets.
             for t, *args in c._proto:
-                if t is Update:
-                    ref, expression, on_error = args
-                    instructions.append(Update(ref, expression, offset + 1, entries[on_error]))
-                elif t is Guard:
-                    alternatives, on_error = args
-                    instructions.append(Guard({condition: entries[chain] for condition, chain in alternatives.items()}, entries[on_error]))
-                elif t is Push:
-                    entry, expressions, on_error = args
-                    instructions.append(Push(entry, expressions, offset + 1, entries[on_error]))
-                elif t is Pop:
+
+                if t is Pop:
                     instructions.append(Pop())
-                elif t is Launch:
-                    entry, expressions, on_error = args
-                    instructions.append(Launch(entry, expressions, offset + 1, entries[on_error]))
+
                 else:
-                    raise NotImplementedError("Bug in Chain.compile: The instruction type {} "
-                                              "has not been taken into account for compilation yet!".format(t))
+                    *args, on_error = args
+                    if on_error is None:
+                        on_error = -1
+                    else:
+                        on_error = entries[on_error]
+
+                    if t is Update:
+                        ref, expression = args
+                        instructions.append(Update(ref, expression, offset + 1, on_error))
+                    elif t is Guard:
+                        alternatives, = args
+                        instructions.append(Guard({condition: entries[chain] for condition, chain in alternatives.items()}, on_error))
+                    elif t is Push:
+                        entry, expressions = args
+                        instructions.append(Push(entry, expressions, offset + 1, on_error))
+                    elif t is Launch:
+                        entry, expressions = args
+                        instructions.append(Launch(entry, expressions, offset + 1, on_error))
+                    else:
+                        raise NotImplementedError("Bug in Chain.compile: The instruction type {} "
+                                                  "has not been taken into account for compilation yet!".format(t))
+                offset += 1
+
+            if c._can_continue:
+                instructions.append(Guard({}, offset))
                 offset += 1
 
         return StackProgram(instructions)
@@ -707,7 +772,7 @@ class Spektakel2Stack(Translator):
             chain = self.emit_assignment(chain, node.target, dec, e, on_error)
             return chain
         elif isinstance(node, Block):
-            for s in node:
+            for s in node.children:
                 chain = self.translate_statement(chain, s, dec, on_error)
             return chain
         elif isinstance(node, Return):
@@ -972,78 +1037,43 @@ class Spektakel2Stack(Translator):
 
         """ We generate code for this:
             
-            def ___load___(location):
-                return ___call___(location, [Module()])
-               
             var mcv = {}
 
             def ___import___(location):
                 try:
                     return mcv[location]
                 except KeyError:
-                    m = ___load___(location)
+                    m = ___call___(location, [Module()])
                     mcv[location] = m
                     return m
                     
             del mcv
         """
 
-        # Step 1: Define ___load___
+        preamble = Chain()
+        panic = Chain()
 
-        bodyBlock = Chain()
-        exitBlock = Chain()
+        d = self.declare_name(preamble, None, panic)
+        preamble.append_update(CRef(d), NewDict(), panic)
 
         self._blocks.push(BlockStack.FunctionBlock(0))
-        location = self.declare_name(bodyBlock, None, exitBlock)
-
-        bodyBlock.append_push(location, [], exitBlock)
-
-        successor = Chain()
-        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(CRef(ExceptionReference())), terms.CNone())
-        bodyBlock.append_guard({negate(noerror): exitBlock, noerror: successor}, exitBlock)
-
-        rv = self.declare_name(successor, None, exitBlock)
-        rr = ReturnValueReference()
-        successor.append_update(rv, terms.Read(CRef(rr)), exitBlock)
-        self.emit_return(exitBlock, chain=successor)
-
-        exitBlock.append_pop()
-
-        load = terms.NewProcedure(1, bodyBlock.compile())
-
+        imp_code = Chain()
+        load1 = Chain()
+        load2 = Chain()
+        exit = Chain()
+        l = self.declare_name(imp_code, None, panic)
+        imp_code.append_push(CTerm(VDict.get), [Read(CRef(d)), Read(CRef(l))], load1)
+        imp_code.append_pop()
+        load1.append_push(Read(CRef(l)), [], exit)
+        error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(CRef(ExceptionReference())), terms.CNone())
+        load1.append_guard({error: exit, negate(error): load2}, panic)
+        load2.append_push(CTerm(VDict.set), [Read(CRef(d)), Read(CRef(l)), Read(CRef(ReturnValueReference()))], panic)
+        load2.append_jump(exit)
+        exit.append_pop()
         self._blocks.pop()
 
-        # Step 2: Allocate 'mcv':
-
-        preamble = Chain()
-
-        # Step 3: Translate the AST for ___import___:
-
-        name_import = Identifier("___import___")
-        name_location = Identifier("location")
-        name_mcv = Identifier("mcv")
-        name_m = Identifier("m")
-
-        b = Return(Projection(name_mcv, name_location))
-
-        h = Block([
-            VariableDeclaration(name_m, expression=Call(load, name_location)),
-            Assignment(Projection(name_mcv, name_location), name_m),
-            Return(name_m)
-        ])
-
-        body = Block([Try(b, [h], None)])
-
-        preamble_error = Chain()
-
-        mcv = self.declare_name(preamble, None, preamble_error)
-        preamble.append_update(mcv, terms.NewDict(), preamble_error)
-        dec = {name_mcv: mcv}
-
-        preamble = self.translate_statement(preamble,
-                                            ProcedureDefinition(name_import, [name_location], body),
-                                            dec,
-                                            preamble_error)
+        imp = self.declare_name(preamble, None, panic)
+        preamble.append_update(CRef(imp), NewProcedure(1, imp_code.compile()), panic)
 
         return preamble
 
@@ -1061,7 +1091,7 @@ class Spektakel2Stack(Translator):
         exit = Chain()
 
         # We create a new Namespace object and put it into the stack frame.
-        block.append_update(FrameReference(0), terms.NewNamespace(), exit)
+        block.append_update(CRef(FrameReference(0)), terms.NewNamespace(), exit)
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
@@ -1072,7 +1102,7 @@ class Spektakel2Stack(Translator):
             block = self.translate_statement(block, node, dec, exit)
 
         # Return a Module object. The preamble will store it somewhere.
-        block.append_update(ReturnValueReference(), terms.NewModule(terms.Read(FrameReference(0))), exit)
+        block.append_update(CRef(ReturnValueReference()), terms.NewModule(terms.Read(CRef(FrameReference(0)))), exit)
 
         block.append_pop()
         exit.append_pop()
@@ -1088,5 +1118,7 @@ class Spektakel2Stack(Translator):
         :param dec: A dict mapping AST nodes to decorations.
         :return: A Chain object.
         """
-
-        return self.emit_preamble() + self.translate_module(nodes, dec)
+        self._blocks.push(BlockStack.ModuleBlock(0))
+        code = self.emit_preamble() + self.translate_module(nodes, dec)
+        self._blocks.pop()
+        return code

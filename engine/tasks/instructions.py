@@ -1,11 +1,13 @@
 import abc
+import io
 from io import StringIO
 
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
 from .interaction import InteractionState, Interaction
 from .stack import Frame, StackState
-from ..functional import Reference, EvaluationException, Term
+from ..functional import Reference, EvaluationException, Term, Value
+from ..functional.types import TBuiltin
 from ..functional.values import VException, VProcedure, VInt
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
@@ -150,7 +152,7 @@ class Guard(Instruction):
 
     def __str__(self):
         with StringIO() as s:
-            s.write(("{"))
+            s.write("{")
             prefix = ""
             for t, d in self._alternatives.items():
                 s.write(f"{prefix}{t}: {d}")
@@ -238,7 +240,7 @@ class Push(Instruction):
     def __init__(self, entry, expressions, destination, edestination):
         """
         Creates a new push instructions.
-        :param entry: An Expression that evaluates to either a ProgramLocation, a VProcedure, or an IntrinsicProcedure.
+        :param entry: A Term that evaluates to either a ProgramLocation, a VProcedure, or an IntrinsicProcedure.
         :param expressions: An iterable of Terms that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
@@ -396,7 +398,12 @@ class StackProgram(Immutable):
         self._instructions = tuple(check_type(i, Instruction) for i in instructions)
 
     def __str__(self):
-        return "\n".join(map(str, self._instructions))
+        with io.StringIO() as s:
+            prefix = "0: "
+            for idx, i in enumerate(self._instructions):
+                s.write(f"{prefix}{i}")
+                prefix = "\n{}: ".format(idx + 1)
+            return s.getvalue()
 
     def hash(self):
         return hash(self._instructions)
@@ -414,10 +421,14 @@ class StackProgram(Immutable):
         return self._instructions[item]
 
 
-class ProgramLocation(Immutable):
+class ProgramLocation(Immutable, Value):
     """
     A pair of StackProgram and instruction index.
     """
+
+    @property
+    def type(self):
+        return TBuiltin.location
 
     def __init__(self, program, index):
         """
