@@ -113,4 +113,26 @@ class TestSpektakelTranslation(unittest.TestCase):
                 if isinstance(t, StackState):
                     self.assertIs(t.exception, None)
 
+    def test_assignment_simple(self):
+        """
+        Tests the translation of simple assignment statements. This is useful for all future test cases.
+        """
+        env_in = static.SpektakelValidator.environment_default()
+        program = """
+        var x = 42
+        var y = 4711
+        x = x + 1
+        y = x + y
+        """
+        states, internal, external = self.translate_explore(program, env=env_in)
 
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        for s in states:
+            for t in s.content.task_states:
+                if isinstance(t, StackState):
+                    self.assertIs(t.exception, None)
+
+        self.assertEqual(int(states[-1].content.task_states[0].stack[-1][-1]), 4754)
