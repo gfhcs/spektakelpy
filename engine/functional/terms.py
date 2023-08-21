@@ -24,6 +24,12 @@ class CTerm(Term):
         super().__init__()
         self._value = check_type(value, Value)
 
+    def hash(self):
+        return hash(self._value)
+
+    def equals(self, other):
+        return isinstance(other, CTerm) and self._value == other._value
+
     def __str__(self):
         return str(self._value)
 
@@ -59,7 +65,7 @@ class CInt(CTerm):
 
 class CFloat(CTerm):
     """
-    A term that represents an float constant.
+    A term that represents a float constant.
     """
 
     def __init__(self, value):
@@ -143,6 +149,12 @@ class UnaryOperation(Term):
         super().__init__(check_type(arg, Term))
         self._op = check_type(op, UnaryOperator)
 
+    def hash(self):
+        return hash(self._op) ^ hash(self.operand)
+
+    def equals(self, other):
+        return isinstance(other, UnaryOperation) and self._op == other._op and self.operand == other.operand
+
     def __str__(self):
         op = {UnaryOperator.NOT: "~", UnaryOperator.MINUS: "-"}[self._op]
         arg = self.operand
@@ -186,6 +198,12 @@ class BinaryTerm(Term, ABC):
         """
         super().__init__(check_type(left, Term), check_type(right, Term))
         self._op = check_type(op, Enum)
+
+    def hash(self):
+        return hash(self._op) ^ hash(tuple(self.children))
+
+    def equals(self, other):
+        return isinstance(other, BinaryTerm) and self._op == other._op and tuple(self.children) == tuple(other.children)
 
     @property
     def left(self):
@@ -405,6 +423,12 @@ class UnaryPredicateTerm(Term):
         super().__init__(check_type(arg, Term))
         self._p = check_type(p, UnaryPredicate)
 
+    def hash(self):
+        return hash(self._p) ^ hash(self.operand)
+
+    def equals(self, other):
+        return isinstance(other, UnaryPredicateTerm) and self._p == other._p and self.operand == other.operand
+
     def __str__(self):
         op = {UnaryPredicate.ISCALLABLE: "is_callable",
               UnaryPredicate.ISEXCEPTION: "is_exception",
@@ -461,6 +485,12 @@ class ITask(Term):
         super().__init__()
         self._s = check_type(s, Interaction)
 
+    def hash(self):
+        return hash(self._s)
+
+    def equals(self, other):
+        return isinstance(other, ITask) and self._s == other._s
+
     def __str__(self):
         s = self._s
         return f"itask({s})"
@@ -498,6 +528,12 @@ class IsInstance(Term):
         :param types: A term evaluating to either a single type or a tuple of types.
         """
         super().__init__(check_type(value, Term), check_type(types, Term))
+
+    def hash(self):
+        return hash(tuple(self.children))
+
+    def equals(self, other):
+        return isinstance(other, IsInstance) and tuple(self.children) == tuple(other.children)
 
     def __str__(self):
         value, types = self.children
@@ -546,6 +582,12 @@ class Read(Term):
         """
         super().__init__(r)
 
+    def hash(self):
+        return hash(self.reference)
+
+    def equals(self, other):
+        return isinstance(other, Read) and tuple(self.children) == tuple(other.children)
+
     def __str__(self):
         r = self.reference
         return f"read({r})"
@@ -575,6 +617,12 @@ class Project(Term):
         :param index: A term evaluating to an integer.
         """
         super().__init__(check_type(tuple, Term), check_type(index, Term))
+
+    def hash(self):
+        return hash(tuple(self.children))
+
+    def equals(self, other):
+        return isinstance(other, Project) and tuple(self.children) == tuple(other.children)
 
     def __str__(self):
         t, idx = self.children
@@ -611,6 +659,12 @@ class Lookup(Term):
         :param name: A term specifying the string name that is to be looked up.
         """
         super().__init__(check_type(namespace, Term), check_type(name, Term))
+
+    def hash(self):
+        return hash(tuple(self.children))
+
+    def equals(self, other):
+        return isinstance(other, Lookup) and tuple(self.children) == tuple(other.children)
 
     def __str__(self):
         ns, n = self.children
@@ -657,6 +711,12 @@ class LoadAttrCase(Term):
         """
         super().__init__(check_type(value, Term))
         self._name = check_type(name, str)
+
+    def hash(self):
+        return hash(self._name)
+
+    def equals(self, other):
+        return isinstance(other, LoadAttrCase) and self._name == other._name and self.value == other.value
 
     def __str__(self):
         v, a = self.value, self._name
@@ -716,6 +776,12 @@ class StoreAttrCase(Term):
         super().__init__(check_type(value, Term))
         self._name = check_type(name, str)
 
+    def hash(self):
+        return hash(self._name)
+
+    def equals(self, other):
+        return isinstance(other, StoreAttrCase) and self._name == other._name and self.value == other.value
+
     def __str__(self):
         v, a = self.value, self._name
         return f"{v}.{a}"
@@ -764,6 +830,12 @@ class NewTuple(Term):
         """
         super().__init__(*comps)
 
+    def hash(self):
+        return hash(tuple(self.children))
+
+    def equals(self, other):
+        return isinstance(other, NewTuple) and tuple(self.children) == tuple(other.children)
+
     def __str__(self):
         return "({})".format(", ".join(self.children))
 
@@ -790,6 +862,12 @@ class NewList(Term):
         """
         super().__init__()
 
+    def hash(self):
+        return 42
+
+    def equals(self, other):
+        return isinstance(other, NewList)
+
     def __str__(self):
         return "[]"
 
@@ -807,6 +885,12 @@ class NewDict(Term):
         Creates a new dict term.
         """
         super().__init__()
+
+    def hash(self):
+        return 4711
+
+    def equals(self, other):
+        return isinstance(other, NewDict)
 
     def __str__(self):
         return "{}"
@@ -829,6 +913,12 @@ class NewJumpError(Term):
             raise TypeError("{} is not a subclass of VJumpException!".format(etype))
         super().__init__()
         self._etype = etype
+
+    def hash(self):
+        return hash(self._etype)
+
+    def equals(self, other):
+        return isinstance(other, NewJumpError) and self._etype is other._etype
 
     def __str__(self):
         t = str(self._etype)
@@ -858,6 +948,12 @@ class NewTypeError(Term):
         super().__init__()
         self._msg = check_type(message, str)
 
+    def hash(self):
+        return hash(self._msg)
+
+    def equals(self, other):
+        return isinstance(other, NewTypeError) and self._msg == other._msg
+
     def __str__(self):
         msg = self._msg
         return f"TypeError({msg})"
@@ -884,6 +980,12 @@ class NewNamespace(Term):
         """
         super().__init__()
 
+    def hash(self):
+        return 1337
+
+    def equals(self, other):
+        return isinstance(other, NewNamespace)
+
     def __str__(self):
         return "Namespace()"
 
@@ -905,6 +1007,12 @@ class NewProcedure(Term):
         super().__init__()
         self._num_args = check_type(num_args, int)
         self._entry = check_type(entry, (ProgramLocation, StackProgram))
+
+    def hash(self):
+        return hash(self._num_args) ^ hash(self._entry)
+
+    def equals(self, other):
+        return isinstance(other, NewProcedure) and self._num_args == other._num_args and (self._entry is other._entry or self._entry == other._entry)
 
     def __str__(self):
         na = self._num_args
@@ -944,6 +1052,12 @@ class NumArgs(Term):
         """
         super().__init__(arg)
 
+    def hash(self):
+        return hash(self.children[0])
+
+    def equals(self, other):
+        return isinstance(other, NumArgs) and tuple(self.children) == tuple(other.children)
+
     def __str__(self):
         p, = self.children
         return f"num_args({p})"
@@ -969,6 +1083,12 @@ class NewProperty(Term):
             super().__init__(getter)
         else:
             super().__init__(getter, setter)
+
+    def hash(self):
+        return hash(tuple(self.children))
+
+    def equals(self, other):
+        return isinstance(other, NewProperty) and tuple(self.children) == tuple(other.children)
 
     def __str__(self):
         g, s = self.children
@@ -1014,6 +1134,12 @@ class NewClass(Term):
         """
         super().__init__(*superclasses, namespace)
         self._name = check_type(name, str)
+
+    def hash(self):
+        return hash(self._name)
+
+    def equals(self, other):
+        return isinstance(other, NewClass) and self._name == other._name and tuple(self.children) == tuple(other.children)
 
     def __str__(self):
         name = self._name
@@ -1070,6 +1196,12 @@ class NewModule(Term):
                           of the module to be created by this term.
         """
         super().__init__(namespace)
+
+    def hash(self):
+        return hash(self.children[0])
+
+    def equals(self, other):
+        return isinstance(other, NewModule) and tuple(self.children) == tuple(other.children)
 
     @property
     def namespace(self):

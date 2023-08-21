@@ -28,7 +28,6 @@ class FrameReference(Reference):
         return self
 
     def hash(self):
-        check_sealed(self)
         return hash(self._index)
 
     def equals(self, other):
@@ -62,7 +61,6 @@ class ReturnValueReference(Reference):
         return self
 
     def hash(self):
-        check_sealed(self)
         return 0
 
     def equals(self, other):
@@ -96,7 +94,6 @@ class ExceptionReference(Reference):
         return self
 
     def hash(self):
-        check_sealed(self)
         return 0
 
     def equals(self, other):

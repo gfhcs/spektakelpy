@@ -1,7 +1,7 @@
 import abc
 
 from util import check_type
-from util.immutable import Sealable
+from util.immutable import Sealable, Immutable
 
 
 class Value(Sealable, abc.ABC):
@@ -60,7 +60,7 @@ class EvaluationException(Exception):
     pass
 
 
-class Term(abc.ABC):
+class Term(Immutable, abc.ABC):
     """
     Defines the types and semantics of expressions that the virtual machine can evaluate.
     A term is an expression the evaluation of which happens atomically and cannot cause any side effects.
@@ -72,12 +72,6 @@ class Term(abc.ABC):
         for c in children:
             check_type(c, Term)
         self._children = children
-
-    def __hash__(self):
-        return hash(len(self._children))
-
-    def __eq__(self, other):
-        return type(self) is type(other) and tuple(self._children) == tuple(other._children)
 
     def __ne(self, other):
         return not self.__eq__(other)
