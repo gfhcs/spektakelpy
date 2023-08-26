@@ -347,8 +347,8 @@ class Spektakel2Stack(Translator):
                 # We are declaring a class/module member. We know that the class/module definition code is
                 # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
                 slot = FrameReference(0)
-                r = NameReference(slot, name)
-                chain.append_update(r, terms.CNone(), on_error)
+                r = NameReference(CRef(slot), name)
+                chain.append_update(CRef(r), terms.CNone(), on_error)
                 self._decl2ref[node] = r
                 return r
             else:
