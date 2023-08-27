@@ -703,6 +703,13 @@ class VException(Value):
         """
         return self._args
 
+    @property
+    def pexception(self):
+        """
+        The python exception that caused this exception, if any.
+        """
+        return self._pexception
+
     def _seal(self):
         for a in self._args:
             a.seal()
@@ -723,6 +730,7 @@ class VException(Value):
             clones[id(self)] = c
             c._args = tuple(c.clone_unsealed(clones=clones) for c in c._args)
             return c
+
 
 class VTypeError(VException):
     """

@@ -2,8 +2,8 @@ import io
 from collections import namedtuple
 
 from engine.functional import terms
-from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
-from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator, Read, NewDict, \
+from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, VRef
+from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     NewProcedure, Project, CTerm
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
@@ -347,8 +347,8 @@ class Spektakel2Stack(Translator):
                 # We are declaring a class/module member. We know that the class/module definition code is
                 # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
                 slot = FrameReference(0)
-                r = NameReference(CRef(slot), name)
-                chain.append_update(CRef(r), terms.CNone(), on_error)
+                r = NameReference(slot, name)
+                chain.append_update(TRef(r), terms.CNone(), on_error)
                 self._decl2ref[node] = r
                 return r
             else:
@@ -377,7 +377,7 @@ class Spektakel2Stack(Translator):
             raise TypeError("Patterns to be declared must only contain AssignableExpression nodes,"
                             " not nodes of type {}!".format(type(pattern)))
 
-    def emit_assignment(self, chain, pattern, dec, expression, on_error):
+    def emit_assignment(self, chain, pattern, dec, expression, on_error, declaring=False):
         """
         Emits VM code for a assigning the result of an expression evaluation to a pattern.
         :param chain: The chain to which the assignment should be appended.
@@ -385,6 +385,10 @@ class Spektakel2Stack(Translator):
         :param dec: A dict mapping AST nodes to decorations.
         :param expression: The expression the result of which is to be assigned.
         :param on_error: The chain that execution should jump to in case of an error.
+        :param declaring: Specifies if this assignment is part of a declaration, in which case it is assumed that
+                          the given pattern is a *defining* occurrence of the declared name, not a *using* one.
+                          The difference between these cases is that *using* occurrences will be mapped to defining
+                          ones first, before the runtime reference for them can be retrieved.
         :return: The chain with which execution is to be continued after the call.
         """
 
@@ -393,8 +397,10 @@ class Spektakel2Stack(Translator):
 
         def assign(chain, pattern, t, on_error):
             if isinstance(pattern, Identifier):
-                r = self._decl2ref[dec[pattern]]
-                chain.append_update(r, t, on_error)
+                if not declaring:
+                    pattern = dec[pattern][1]
+                r = self._decl2ref[pattern]
+                chain.append_update(TRef(r), t, on_error)
                 return chain
             elif isinstance(pattern, Tuple):
                 # FIXME: What we are doing here will not work if t represents a general iterable! For that we would
@@ -523,7 +529,7 @@ class Spektakel2Stack(Translator):
                 raise NotImplementedError("Translation of constant expressions of type {}"
                                           " has not been implemented!".format(type(value)))
         elif isinstance(node, Identifier):
-            return (self._decl2term[dec[node]], chain)
+            return (Read(CTerm(self._decl2ref[dec[node][1]])), chain)
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
@@ -585,9 +591,9 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, UnaryOperation):
             return terms.UnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
         elif isinstance(node, ArithmeticBinaryOperation):
-            return terms.ArithmeticBinaryOperation(node.operator,
-                                                   self.translate_expression(chain, node.left, dec, on_error),
-                                                   self.translate_expression(chain, node.right, dec, on_error)), chain
+            left, chain = self.translate_expression(chain, node.left, dec, on_error)
+            right, chain = self.translate_expression(chain, node.right, dec, on_error)
+            return terms.ArithmeticBinaryOperation(node.operator, left, right), chain
         elif isinstance(node, Comparison):
             return terms.Comparison(node.operator,
                                     self.translate_expression(chain, node.left, dec, on_error),
@@ -642,7 +648,7 @@ class Spektakel2Stack(Translator):
                 break
 
         # We made it to the function level without hitting an exception block.
-        chain.append_update(CRef(ExceptionReference()), terms.CNone(), on_error=on_error)
+        chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
         chain.append_pop()
 
         return chain
@@ -768,8 +774,7 @@ class Spektakel2Stack(Translator):
             # because its evaluation result is not to be bound to anything.
             return chain
         elif isinstance(node, Assignment):
-            e, chain = self.translate_expression(chain, node.value, dec, on_error)
-            chain = self.emit_assignment(chain, node.target, dec, e, on_error)
+            chain = self.emit_assignment(chain, node.target, dec, node.value, on_error)
             return chain
         elif isinstance(node, Block):
             for s in node.children:
@@ -937,7 +942,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, VariableDeclaration):
             self.declare_pattern(chain, node.pattern, on_error)
             if node.expression is not None:
-                chain = self.emit_assignment(chain, node.pattern, dec, node.expression)
+                chain = self.emit_assignment(chain, node.pattern, dec, node.expression, on_error, declaring=True)
             return chain
         elif isinstance(node, ProcedureDefinition):
             if not isinstance(self._blocks[-1], (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
@@ -1054,7 +1059,7 @@ class Spektakel2Stack(Translator):
         panic = Chain()
 
         d = self.declare_name(preamble, None, panic)
-        preamble.append_update(CRef(d), NewDict(), panic)
+        preamble.append_update(TRef(d), NewDict(), panic)
 
         self._blocks.push(BlockStack.FunctionBlock(0))
         imp_code = Chain()
@@ -1062,18 +1067,18 @@ class Spektakel2Stack(Translator):
         load2 = Chain()
         exit = Chain()
         l = self.declare_name(imp_code, None, panic)
-        imp_code.append_push(CTerm(VDict.get), [Read(CRef(d)), Read(CRef(l))], load1)
+        imp_code.append_push(CTerm(VDict.get), [Read(TRef(d)), Read(TRef(l))], load1)
         imp_code.append_pop()
-        load1.append_push(Read(CRef(l)), [], exit)
-        error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(CRef(ExceptionReference())), terms.CNone())
+        load1.append_push(Read(TRef(l)), [], exit)
+        error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
         load1.append_guard({error: exit, negate(error): load2}, panic)
-        load2.append_push(CTerm(VDict.set), [Read(CRef(d)), Read(CRef(l)), Read(CRef(ReturnValueReference()))], panic)
+        load2.append_push(CTerm(VDict.set), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
         load2.append_jump(exit)
         exit.append_pop()
         self._blocks.pop()
 
         imp = self.declare_name(preamble, None, panic)
-        preamble.append_update(CRef(imp), NewProcedure(1, imp_code.compile()), panic)
+        preamble.append_update(TRef(imp), NewProcedure(1, imp_code.compile()), panic)
 
         return preamble
 
@@ -1091,7 +1096,7 @@ class Spektakel2Stack(Translator):
         exit = Chain()
 
         # We create a new Namespace object and put it into the stack frame.
-        block.append_update(CRef(FrameReference(0)), terms.NewNamespace(), exit)
+        block.append_update(TRef(FrameReference(0)), terms.NewNamespace(), exit)
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
@@ -1102,7 +1107,7 @@ class Spektakel2Stack(Translator):
             block = self.translate_statement(block, node, dec, exit)
 
         # Return a Module object. The preamble will store it somewhere.
-        block.append_update(CRef(ReturnValueReference()), terms.NewModule(terms.Read(CRef(FrameReference(0)))), exit)
+        block.append_update(TRef(ReturnValueReference()), terms.NewModule(terms.Read(TRef(FrameReference(0)))), exit)
 
         block.append_pop()
         exit.append_pop()

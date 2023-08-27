@@ -120,7 +120,7 @@ class Update(Instruction):
         try:
             ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
-        except EvaluationException as ee:
+        except Exception as ee:
             tstate.exception = VException(pexception=ee)
             top.instruction_index = self._edestination
             return

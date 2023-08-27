@@ -1,7 +1,7 @@
 from abc import ABC
 from enum import Enum
 
-from engine.functional.reference import FieldReference, NameReference
+from engine.functional.reference import FieldReference, NameReference, VRef
 from util import check_type
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
@@ -37,7 +37,7 @@ class CTerm(Term):
         return self._value
 
 
-class CRef(CTerm):
+class TRef(CTerm):
     """
     A term that represents a reference.
     """
@@ -687,7 +687,7 @@ class Lookup(Term):
     def evaluate(self, tstate, mstate):
         namespace = self.namespace.evaluate(tstate, mstate)
         name = self.name.evaluate(tstate, mstate)
-        return NameReference(namespace, str(name))
+        return NameReference(VRef(namespace), str(name))
 
 
 class LoadAttrCase(Term):

@@ -111,6 +111,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         translator = Spektakel2Stack()
 
         program = translator.translate([node], dec)
+
         program = program.compile()
 
         _, states, internal, external = self.explore(program, self.initialize_machine(program, 2))

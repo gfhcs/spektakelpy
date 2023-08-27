@@ -1,7 +1,50 @@
 from engine.functional import Reference, Value
 from engine.functional.values import VNamespace
 from util import check_type
-from util.immutable import check_sealed, check_unsealed
+from util.immutable import check_unsealed
+
+
+class VRef(Reference):
+    """
+    A reference that represents a Value.
+    """
+
+    def __init__(self, value):
+        """
+        Refers to a runtime value.
+        :param value: The value this reference is to refer to.
+        """
+        super().__init__()
+        self._value = check_type(value, Value)
+
+    def __str__(self):
+        return str(self._value)
+
+    def _seal(self):
+        self._value.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VRef()
+            clones[id(self)] = c
+            c._value = self._value.clone_unsealed(clones=clones)
+            return c
+
+    def hash(self):
+        return hash(self._value)
+
+    def equals(self, other):
+        return isinstance(other, VRef) and self._value == other._value
+
+    def write(self, tstate, mstate, value):
+        raise RuntimeError("Cannot write to a VRef!")
+
+    def read(self, tstate, mstate):
+        return self._value
 
 
 class FrameReference(Reference):
@@ -142,7 +185,6 @@ class FieldReference(Reference):
             return c
 
     def hash(self):
-        check_sealed(self)
         return hash((self._v, self._fidx))
 
     def equals(self, other):
@@ -163,11 +205,11 @@ class NameReference(Reference):
     def __init__(self, namespace, name):
         """
         Refers to a named field of an object.
-        :param namespace: The namespace object this reference is referring to.
+        :param namespace: A Reference pointing to a Namespace object.
         :param name: The string name of the namespace entry to refer to.
         """
         super().__init__()
-        self._ns = check_type(namespace, VNamespace)
+        self._ns = check_type(namespace, Reference)
         self._n = check_type(name, str)
 
     def __str__(self):
@@ -190,15 +232,20 @@ class NameReference(Reference):
             return c
 
     def hash(self):
-        check_sealed(self)
         return hash(self._ns) ^ hash(self._n)
 
     def equals(self, other):
         return isinstance(other, NameReference) and self._n == other._n and self._ns == other._ns
 
     def write(self, tstate, mstate, value):
-        self._ns[self._n] = value
+        ns = self._ns.read(tstate, mstate)
+        if not isinstance(ns, VNamespace):
+            raise TypeError("NameReferences can only refer to VNamespace entries!")
+        ns[self._n] = value
 
     def read(self, tstate, mstate):
-        return self._ns[self._n]
+        ns = self._ns.read(tstate, mstate)
+        if not isinstance(ns, VNamespace):
+            raise TypeError("NameReferences can only refer to VNamespace entries!")
+        return ns[self._n]
 
