@@ -332,16 +332,21 @@ class TestSpektakelParser(unittest.TestCase):
         Tests import statements.
         """
 
+        # Wildcards used to be supported, as in Python.
+        # We stopped supporting them because they would require the validator to
+        # recurse into the imported module, which we cannot do in general because
+        # modules are not always defined by an AST.
+
         samples = ["import mymodule",
                    "import mymodule as m",
                    "from mymodule import name1, name2",
                    "from mymodule import name1 as n1, name2 as n2",
-                   "from mymodule import *",
+                   # "from mymodule import *",
                    "import mypackage.mymodule",
                    "import mypackage.mymodule as m",
                    "from mypackage.mymodule import name1, name2",
                    "from mypackage.mymodule import name1 as n1, name2 as n2",
-                   "from mypackage.mymodule import *"
+                   # "from mypackage.mymodule import *"
                    ]
 
         for idx, s in enumerate(samples):
