@@ -805,7 +805,7 @@ class ImportSource(Statement):
 
     def __init__(self, source, alias=None, **kwargs):
         """
-        Creates a an import statement.
+        Creates an import statement.
         :param source: A Source node.
         :param alias: The alias under which the source should be made available by the import.
         :param kwargs: See statement constructor.
