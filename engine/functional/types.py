@@ -34,6 +34,17 @@ class TBuiltin(Type):
     def create_instance(self):
         return self._ptype()
 
+    @classmethod
+    @property
+    def instances(cls):
+        """
+        Enumerates all the instances of builtin types that have been declared as attributes of TBuiltin.
+        """
+        for name in dir(cls):
+            attribute = getattr(TBuiltin, name)
+            if isinstance(attribute, TBuiltin):
+                yield attribute
+
 
 TBuiltin.object = TBuiltin("object", [], VInstance)
 TBuiltin.type = TBuiltin("type", [TBuiltin.object], None)

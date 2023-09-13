@@ -1102,6 +1102,11 @@ class Spektakel2Stack(Translator):
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
         self._blocks.push(BlockStack.ModuleBlock(0))
 
+        # Import the builtin names:
+
+        for ms in dec["<builtin>"]:
+            self.emit_import(ms, [(s, s) for s in ms.symbols])
+
         # We execute the module code completely, which populates that namespace.
         for node in nodes:
             block = self.translate_statement(block, node, dec, exit)
