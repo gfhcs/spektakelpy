@@ -10,6 +10,7 @@ class Interaction(Enum):
     """
     An enumeration of all the interaction labels that notify a spek program of outside events.
     """
+    NEVER = -1
     TICK = 0
     NEXT = 1
     PREV = 2

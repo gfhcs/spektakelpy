@@ -1,16 +1,17 @@
 from util import check_type
 from .machine import MachineState
 from util.lts import LTS, State, Transition
-from .tasks.interaction import InteractionState
+from .tasks.interaction import InteractionState, Interaction
 
 
 def schedule_all(s):
     """
-    A scheduler function allowing *any* enabled transitions. This is the most simple scheduler.
+    A scheduler function allowing *any* enabled transitions (except for Interaction.NEVER).
+    This is the most basic scheduler.
     :param s: A MachineState object.
     :return: An iterable of indices, specifying which Task objects in s.task_states are eligible for being scheduled.
     """
-    return tuple(idx for idx, ss in enumerate(s.task_states) if ss.enabled(s))
+    return tuple(idx for idx, ss in enumerate(s.task_states) if ss.enabled(s) if not (isinstance(ss, InteractionState) and ss.interaction == Interaction.NEVER))
 
 
 def schedule_nonzeno(s):
@@ -18,6 +19,7 @@ def schedule_nonzeno(s):
     A scheduler function that partially resolves nondeterminism, by the following rules:
     1. If an internal action is scheduled, only one action is scheduled.
     2. Interaction tasks will only be scheduled in states that do not enable any internal actions.
+    3. The NEVER interaction is ignored.
     :param s: A MachineState object.
     :return: An iterable of indices, specifying which Task objects in s.task_states are eligible for being scheduled.
     """
@@ -29,6 +31,8 @@ def schedule_nonzeno(s):
         if not ss.enabled(s):
             continue
         if isinstance(ss, InteractionState):
+            if ss.interaction == Interaction.NEVER:
+                continue
             idx_interaction.append(idx)
         elif idx_internal is None or idx < idx_internal:
             idx_internal = idx

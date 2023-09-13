@@ -141,10 +141,12 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         env_in = static.SpektakelValidator.environment_default()
         program = """
+        from interaction import never
         var x = 42
         var y = 4711
         x = x + 1
         y = x + y
+        await never
         """
         program = dedent(program)
         states, internal, external = self.translate_explore(program, env=env_in)
