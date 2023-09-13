@@ -702,7 +702,11 @@ class SpektakelParser(Parser):
             source = cls._parse_source(lexer)
             lexer.match(keyword("import"))
 
-            if lexer.seeing(keyword("*")):
+            # Python supports the wildcard: "from module import *"
+            # We decided not to support this, because already in Python it is bad practise to use
+            # it and because the way we validate code would require the *validator* to recurse into
+            # the imported module, which we don't want to do.
+            if False and lexer.seeing(keyword("*")):
                 _, _, p = lexer.read()
                 match_newline(lexer, enabled=newline)
                 return ImportNames(source, start=start, end=p)

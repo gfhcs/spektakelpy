@@ -523,6 +523,4 @@ class TestSpektakelValidator(unittest.TestCase):
         for path in example_paths:
             _, filename = os.path.split(path)
             with self.subTest(example=os.path.splitext(filename)[0]):
-                mspec = modules.SpekFileSpecification(path, validator)
-                module = mspec.load()
-                self.assertNoErrors(module.errors)
+                modules.SpekFileModuleSpecification(path, validator).resolve()

@@ -1,26 +1,32 @@
 import abc
 import os.path
 
-from engine.tasks.interaction import Interaction, BuiltinVariable
-from lang.modules import Module, ModuleSpecification, Finder, AdjoinedFinder
+from engine.functional import terms
+from engine.functional.reference import ReturnValueReference
+from engine.functional.terms import TRef, CTerm, CString, ITask
+from engine.functional.values import VProcedure
+from engine.tasks.instructions import Update, Pop, StackProgram, Guard
+from engine.tasks.interaction import Interaction
+from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
+from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 from lang.validator import ValidationError
 
 
 class BuiltinModuleSpecification(ModuleSpecification):
     """
-    Specifies that a module made up of builtin symbols is to be loaded.
+    Specifies a module by explicitly mapping names to Values.
     """
 
     def __init__(self, name, symbols):
         """
-        Creates the specification for a module that is defined by an AST.
+        Maps names to Values in order to specify the contents of this module.
         :param name: The name of the builtin module.
-        :param symbols: A dictionary mapping names to objects that represent the semantics of symbols.
+        :param symbols: A mapping of names to Value objects.
         """
         super().__init__()
         self._name = name
-        self._module = BuiltinModule(symbols)
+        self._m = dict(symbols)
 
     @property
     def name(self):
@@ -29,34 +35,36 @@ class BuiltinModuleSpecification(ModuleSpecification):
         """
         return self._name
 
-    def load(self):
-        return self._module
-
-
-class BuiltinModule(Module):
-    """
-    A module mapping names to variables that are defined by builtin semantics of the runtime environment.
-    """
-
-    def __init__(self, symbols):
-        super().__init__()
-        self._symbols = dict(symbols)
-
     @property
-    def names(self):
-        return self._symbols.keys()
+    def symbols(self):
+        """
+        The mapping of names to Value objects that this module is defined by.
+        """
+        return dict(self._m)
 
-    @property
-    def errors(self):
-        return []
+    def resolve(self):
 
-    def resolve(self, name):
-        return self._symbols[name]
+        code = []
+        panic = 42
+        r = TRef(ReturnValueReference())
+
+        # Initialize a new namespace:
+        code.append(Update(r, terms.NewNamespace(), len(code) + 1, panic))
+
+        # Map names to values:
+        for name, value in self._m.items():
+            code.append(Update(terms.Lookup(r, CString(name)), CTerm(value), len(code) + 1, panic))
+
+        # Return module:
+        code.append(Update(r, terms.NewModule(terms.Read(r)), len(code) + 1, panic))
+        code.append(Pop())
+
+        return StackProgram(code)
 
 
-class ASTSpecification(ModuleSpecification, abc.ABC):
+class ASTModuleSpecification(ModuleSpecification, abc.ABC):
     """
-    Specifies that an ASTModule is to be loaded.
+    Specifies a module by an AST that is to be translated.
     """
 
     def __init__(self, validator):
@@ -67,7 +75,7 @@ class ASTSpecification(ModuleSpecification, abc.ABC):
         super().__init__()
         self._validator = validator
         self._loading = False
-        self._module = None
+        self._code = None
 
     @abc.abstractmethod
     def load_ast(self):
@@ -76,8 +84,8 @@ class ASTSpecification(ModuleSpecification, abc.ABC):
         """
         pass
 
-    def load(self):
-        if self._module is None:
+    def resolve(self):
+        if self._code is None:
             if self._loading:
                 raise ValidationError("Circular reference: "
                                       "The loading of this module seems to depend on loading this module, "
@@ -86,13 +94,16 @@ class ASTSpecification(ModuleSpecification, abc.ABC):
                 self._loading = True
                 ast = self.load_ast()
                 env, dec, err = self._validator.validate(ast, mspec=self)
-                self._module = ASTModule(ast, env, dec, err)
+                if len(err) > 1:
+                    raise ValidationError("Validation failed because of one or more errors.", None, self)
+                translator = Spektakel2Stack()
+                self._code = translator.translate([ast], dec).compile()
             finally:
                 self._loading = False
-        return self._module
+        return self._code
 
 
-class SpekFileSpecification(ASTSpecification):
+class SpekFileModuleSpecification(ASTModuleSpecification):
     """
     Specifies a module that is to be loaded from a *.spek file on disk.
     """
@@ -113,93 +124,6 @@ class SpekFileSpecification(ASTSpecification):
 
     def __str__(self):
         return self._path
-
-
-class ASTModule(Module):
-    """
-    A module represented by an AST.
-    """
-
-    def __init__(self, node, env, dec, err):
-        """
-        Creates a new ASTModule.
-        :param node: The abstract syntax tree (AST) defining this module.
-        :param env: The environment mapping names defined in this module to their declarations.
-        :param dec: The decorations for the AST definining this module.
-        :param err: An iterable of all the validation errors in the AST defining this module.
-        """
-        super().__init__()
-        self._ast = node
-        self._dec = dec
-        self._err = err
-        self._env = env
-
-    @property
-    def errors(self):
-        return self._err
-
-    @property
-    def ast(self):
-        """
-        The abstract syntax tree (AST) defining this module.
-        """
-        return self._ast
-
-    @property
-    def env(self):
-        """
-        The environment mapping names defined in this module to their declarations.
-        :return: A dict mapping strings to AST nodes.
-        """
-        return self._env
-
-    @property
-    def dec(self):
-        """
-        The decorations for the AST definining this module.
-        :return: A dict mapping AST nodes to their decorations.
-        """
-        return self._dec
-
-    @property
-    def err(self):
-        """
-        An iterable of all the validation errors in the AST defining this module.
-        :return: An iterable of ValidationError objects.
-        """
-        return self._err
-
-    @property
-    def names(self):
-        return self._env.keys
-
-    def resolve(self, name):
-        return self._env[name]
-
-
-class CompiledModule(Module):
-    """
-    A module mapping names to variables that are defined by pre-compiled definitions.
-    """
-
-    @property
-    def names(self):
-        raise NotImplementedError("CompiledModule has not been implemented yet!")
-
-    def resolve(self, name):
-        raise NotImplementedError("CompiledModule has not been implemented yet!")
-
-
-class PythonModule(Module):
-    """
-    A module mapping names to variables that are defined by Python code.
-    """
-    @property
-    def names(self):
-        raise NotImplementedError("PythonModule has not been implemented yet!")
-
-    def resolve(self, name):
-        raise NotImplementedError("PythonModule has not been implemented yet!")
 
 
 class FileFinder(Finder):
@@ -232,7 +156,7 @@ class FileFinder(Finder):
             for root in self._roots:
                 path = os.path.join(root, *name[:-1], name[-1] + ".spek")
                 if os.path.isfile(path):
-                    spec = SpekFileSpecification(path, validator=validator)
+                    spec = SpekFileModuleSpecification(path, validator=validator)
                     self._cache[(validator, name)] = spec
                     return spec
 
@@ -247,7 +171,8 @@ class BuiltinModuleFinder(Finder):
     def __init__(self, mapping):
         """
         Instantiates a new BuiltinModuleFinder.
-        :param mapping: A dict-like object mapping names to BuildingModuleSpecification objects.
+        :param mapping: A mapping of module names to dicts. Each dict is supposed to map module member
+                        names to Value objects.
         """
         super().__init__()
         self._m = dict(mapping)
@@ -260,10 +185,18 @@ class BuiltinModuleFinder(Finder):
 
 def build_default_finder(roots):
     ffinder = FileFinder(roots)
-    m = [BuiltinModuleSpecification("interaction", {"next": Interaction.NEXT,
-                                                    "tick": Interaction.TICK,
-                                                    "prev": Interaction.PREV}),
-         BuiltinModuleSpecification("environment", {"time": BuiltinVariable.TIME})]
+
+    symbols = {"next": Interaction.NEXT,
+               "tick": Interaction.TICK,
+               "prev": Interaction.PREV,
+               "never": Interaction.NEVER}
+
+    procedures = {}
+    r = TRef(ReturnValueReference())
+    for name, symbol in symbols:
+        procedures[name] = VProcedure(0, StackProgram([Update(r, ITask(symbol), 1, 42), Pop()]))
+
+    m = [BuiltinModuleSpecification("interaction", procedures)]
     bfinder = BuiltinModuleFinder({mspec.name: mspec for mspec in m})
 
     return AdjoinedFinder(ffinder, bfinder)
