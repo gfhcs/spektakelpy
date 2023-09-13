@@ -2,9 +2,9 @@ import io
 from collections import namedtuple
 
 from engine.functional import terms
-from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, VRef
+from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    NewProcedure, Project, CTerm
+    NewProcedure, CTerm
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from lang.translator import Translator
@@ -13,7 +13,6 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition, AssignableExpression
-from .modules import CompiledModule
 
 
 def negate(bexp):

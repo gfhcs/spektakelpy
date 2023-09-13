@@ -194,7 +194,7 @@ def build_default_finder(roots):
 
     procedures = {}
     r = TRef(ReturnValueReference())
-    for name, symbol in symbols:
+    for name, symbol in symbols.items():
         procedures[name] = VProcedure(0, StackProgram([Update(r, ITask(symbol), 1, 42), Pop()]))
 
     types = {t.name: t for t in TBuiltin.instances}

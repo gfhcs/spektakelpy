@@ -162,6 +162,13 @@ class Type(Value):
         return self._name
 
     @property
+    def name(self):
+        """
+        The name of this type.
+        """
+        return self._name
+
+    @property
     def bases(self):
         """
         The base types inherited by this type.
