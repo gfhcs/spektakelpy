@@ -490,12 +490,18 @@ class TestSpektakelValidator(unittest.TestCase):
         finder = modules.build_default_finder([os.path.join(root, "library")])
         validator = static.SpektakelValidator(finder)
 
+        # We used to support wildcards. We don't do that anymore, because the validator would have to recurse
+        # into the imported module for that, which we don't want to implement for all possible module types (builtin
+        # modules for example).
+        containing_wildcard = ["sourcepos05", "sourceneg04", "sourceneg05"]
+
         for fn in os.listdir(root):
             name, ext = os.path.splitext(fn)
             if ext != ".spek":
                 continue
-
             name, *sums = name.split("_")
+            if name in containing_wildcard:
+                continue
             envsize, numerrors, decsize = map(int, sums)
 
             with self.subTest(example=name):

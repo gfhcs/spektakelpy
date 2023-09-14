@@ -177,22 +177,9 @@ class SpektakelValidator(Validator):
 
             try:
                 spec = self._finder.find(key, validator=self)
+                dec[node.source] = spec
             except KeyError:
                 err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source, mspec))
-                spec = None
-
-            module = None
-            if spec is not None:
-                try:
-                    module = spec.load()
-                except Exception as ex:
-                    err.append(ValidationError("Failed to load module {}: {}".format(".".join(key), str(ex)), node.source, mspec))
-
-            if module is not None:
-                dec[node.source] = module
-                if spec is not None:
-                    # Do not report errors from the same module multiple times:
-                    err.extend((e for e in module.errors if e.mspec != mspec))
 
             if isinstance(node, ImportSource):
                 if node.alias is None:
@@ -202,19 +189,16 @@ class SpektakelValidator(Validator):
                 else:
                     env = self._declare(node, node.alias, env)
             elif isinstance(node, ImportNames):
+
                 if node.wildcard:
-                    if module is not None:
-                        for name, definition in module:
-                            if isinstance(name, str):
-                                env = self._declare(node, name, env)
+                    raise RuntimeError("The validator does not support wildcards, because it would have to recurse"
+                                       "into the imported module for that.")
                 else:
                     for name, alias in node.aliases.items():
                         try:
                             env = self._declare(node, alias, env)
                             if alias is not name:
                                 dec[alias] = name
-                            if module is not None:
-                                dec[name] = module[name.name]
                         except KeyError:
                             err.append(ValidationError("Module {} does not contain a definition for name {}!".format(".".join(key), name.name), name, mspec))
             else:
