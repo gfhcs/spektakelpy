@@ -3,6 +3,7 @@ import unittest
 from io import StringIO
 
 from examples import paths as example_paths
+from lang.modules import ModuleSpecification
 from lang.spek import syntax, static, modules
 
 
@@ -56,7 +57,7 @@ class TestSpektakelValidator(unittest.TestCase):
         node, env_out, dec, err = validate("# Just some empty program.", env=env_in)
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assertEqual(len(dec), 0)
+        self.assertEqual(len(dec), 1)
         self.assertNoErrors(err)
 
     def test_constants(self):
@@ -76,7 +77,7 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertEqual(len(env_in), len(env_out))
         self.assertNoErrors(err)
 
-        found = set(dec.values())
+        found = set(v for v in dec.values() if not isinstance(v, ModuleSpecification))
         expected = {True, False, None, "Hello world!", 42, 3.1415926}
         self.assertSetEqual(found, expected)
 
@@ -95,7 +96,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(1, err)
-        self.assertEqual(7, len(dec))
+        self.assertEqual(8, len(dec))
 
     def test_pass(self):
         """
@@ -108,7 +109,7 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertEqual(len(env_in), len(env_out))
         self.assertNoErrors(err)
 
-        self.assertSetEqual(set(), set(dec.values()))
+        self.assertEqual(1, len(dec))
 
     def test_expressions(self):
         """
@@ -125,7 +126,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(2, err)
-        self.assertEqual(8, len(dec))
+        self.assertEqual(9, len(dec))
 
     def test_assignment(self):
         """
@@ -141,7 +142,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 3)
         self.assertErrors(1, err)
-        self.assertEqual(9, len(dec))
+        self.assertEqual(10, len(dec))
 
     def test_block(self):
         """
@@ -156,7 +157,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 3)
         self.assertErrors(0, err)
-        self.assertEqual(8, len(dec))
+        self.assertEqual(9, len(dec))
 
         referents_y = [v for k, v in dec.items() if isinstance(k, syntax.Identifier) and k.name == "y"]
 
@@ -178,7 +179,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 2)
         self.assertErrors(1, err)  # return outside procedure.
-        self.assertEqual(4, len(dec))
+        self.assertEqual(5, len(dec))
 
     def test_raise(self):
         """
@@ -198,7 +199,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(0, err)
-        self.assertEqual(3, len(dec))
+        self.assertEqual(4, len(dec))
 
     def test_loop_jumps(self):
         """
@@ -220,7 +221,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(6, len(dec))
+        self.assertEqual(7, len(dec))
 
     def test_if(self):
         """
@@ -245,7 +246,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(12, err)
-        self.assertEqual(7, len(dec))
+        self.assertEqual(8, len(dec))
 
     def test_while(self):
         """
@@ -261,7 +262,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(1, err)
-        self.assertEqual(2, len(dec))
+        self.assertEqual(3, len(dec))
 
     def test_for(self):
         """
@@ -280,7 +281,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 1, len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(7, len(dec))
+        self.assertEqual(8, len(dec))
 
     def test_try(self):
         """
@@ -321,7 +322,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(15, err)
-        self.assertEqual(6, len(dec))
+        self.assertEqual(7, len(dec))
 
     def test_var(self):
         """
@@ -340,7 +341,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 7, len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(4, len(dec))
+        self.assertEqual(5, len(dec))
 
     def test_prop(self):
         """
@@ -370,7 +371,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 2, len(env_out))
         self.assertErrors(2, err)
-        self.assertEqual(12, len(dec))
+        self.assertEqual(13, len(dec))
 
     def test_proc(self):
         """
@@ -417,7 +418,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 7, len(env_out))
         self.assertErrors(2, err)
-        self.assertEqual(49, len(dec))
+        self.assertEqual(50, len(dec))
 
     def test_class(self):
         """
@@ -479,7 +480,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 8, len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(30, len(dec))
+        self.assertEqual(31, len(dec))
 
     def test_import(self):
         """
@@ -513,7 +514,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
                     self.assertEqual(len(env_in) + envsize, len(env_out))
                     self.assertErrors(numerrors, err)
-                    self.assertEqual(decsize, len(dec))
+                    self.assertEqual(decsize, len(dec) - 1)
 
     def test_examples(self):
         """

@@ -1103,8 +1103,8 @@ class Spektakel2Stack(Translator):
 
         # Import the builtin names:
 
-        for ms in dec["<builtin>"]:
-            self.emit_import(ms, [(s, s) for s in ms.symbols])
+        bms = dec["<builtin>"]
+        self.emit_import(bms, [(s, s) for s in bms.symbols])
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:

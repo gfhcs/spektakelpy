@@ -86,7 +86,7 @@ class SpektakelValidator(Validator):
         """
 
         if dec is None:
-            dec = {}
+            dec = {"<builtin>": self._finder.find(("<builtin>", ))}
         if err is None:
             err = []
         if env is None:
@@ -163,7 +163,7 @@ class SpektakelValidator(Validator):
         """
 
         if dec is None:
-            dec = {}
+            dec = {"<builtin>": self._finder.find(("<builtin>", ))}
         if err is None:
             err = []
         if env is None:
