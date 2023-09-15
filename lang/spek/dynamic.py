@@ -8,11 +8,13 @@ from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, T
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from lang.translator import Translator
+from util import check_type
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition, AssignableExpression
+from ..modules import ModuleSpecification
 
 
 def negate(bexp):
@@ -471,6 +473,37 @@ class Spektakel2Stack(Translator):
                                 "AssignableExpression, not a {}!".format(type(pattern)))
 
         return assign(chain, pattern, t, on_error)
+
+    def emit_import(self, chain, spec, name, mapping, on_error):
+        """
+        Emits code for an import.
+        :param chain: The chain to which the import should be appended.
+        :param spec: The ModuleSpecification for the module to import.
+        :param name: The name the imported module should be bound to, unless the name is None.
+        :param mapping: A mapping from string names to be defined by this import statement to string names defined
+                        in the imported module.
+        :param on_error: The chain that execution should jump to in case of an error.
+        :return: The chain with which execution is to be continued after the call.
+        """
+
+        check_type(spec, ModuleSpecification)
+
+        module = spec.resolve()
+
+        # FIXME: self._import_procedure is undefined. What we need to call here is on the very bottom of the main task stack.
+        m, chain = self.emit_call(chain, self._import_procedure, [module], on_error)
+
+        # FIXME: If the import is for module.submodule.subsubmodule, m represents only the module and we need to
+        #        project to the (sub-)submodules. emit_import has no information about the subodules to import (yet).
+        for a in node.source.Identifiers[1:]:
+            m = terms.Lookup(m, a)
+
+        if name is not None:
+            chain.append_update(self.declare_pattern(chain, name, on_error), m, on_error)
+
+        # FIXME: 'member' is just a string. We need to turn it into a lookup expression for m.
+        for name, member in mapping.items():
+            chain.append_update(self.declare_pattern(chain, name, on_error), member, on_error)
 
     def emit_call(self, chain, callee, args, on_error):
         """
@@ -995,40 +1028,26 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, (ImportNames, ImportSource)):
 
-            module = dec[node.source.Identifiers[0]]
-
-            assert isinstance(module, CompiledModule)
-
-            m, chain = self.emit_call(chain, self._import_procedure, [module.entry], on_error)
-
-            for a in node.source.Identifiers[1:]:
-                m = terms.Lookup(m, a)
+            ms = check_type(dec[node.source.Identifiers[0]], ModuleSpecification)
 
             if isinstance(node, ImportSource):
+                mapping = {}
                 if node.alias is None:
                     if not (len(node.source.Identifiers) == 1):
                         raise NotImplementedError("Code generation for a source import that contains dots has not been implemented!")
-                    name = self.declare_pattern(chain, node.source.Identifiers[0], on_error)
-                    chain.append_update(name, m, on_error)
+                    name = node.source.Identifiers[0]
                 else:
-                    name = self.declare_pattern(chain, node.alias, on_error)
-                    chain.append_update(name, m, on_error)
+                    name = node.alias
             elif isinstance(node, ImportNames):
-                aliases = []
                 if node.wildcard:
-                    for name, _ in module:
-                        if isinstance(name, str):
-                            aliases.append((name, module[name]))
-                else:
-                    for name, alias in node.aliases.items():
-                        aliases.append((alias, module[name]))
-
-                for name, member in aliases:
-                    name = self.declare_pattern(chain, name, on_error)
-                    chain.append_update(name, member, on_error)
+                    raise NotImplementedError("Compilation of wildcard imports has not been implemented!")
+                mapping = {alias: name for name, alias in node.aliases.items()}
+                name = None
             else:
                 raise NotImplementedError("Code generation for nodes of type {}"
                                           " has not been implemented!".format(type(node)))
+
+            return self.emit_import(chain, ms, name, mapping)
 
         else:
             raise NotImplementedError()
@@ -1104,7 +1123,7 @@ class Spektakel2Stack(Translator):
         # Import the builtin names:
 
         bms = dec["<builtin>"]
-        self.emit_import(bms, [(s, s) for s in bms.symbols])
+        block = self.emit_import(block, bms, [(s, s) for s in bms.symbols])
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:
