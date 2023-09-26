@@ -492,7 +492,6 @@ class Spektakel2Stack(Translator):
 
         module = spec.resolve()
 
-        # FIXME: self._import_procedure is undefined. What we need to call here is on the very bottom of the main task stack.
         m, chain = self.emit_call(chain, self._import_procedure, [module], on_error)
 
         # FIXME: If the import is for module.submodule.subsubmodule, m represents only the module and we need to
