@@ -60,6 +60,14 @@ class FrameReference(Reference):
         super().__init__()
         self._index = index
 
+    @property
+    def index(self):
+        """
+        The index of the stack frame variable to refer to.
+        :return:
+        """
+        return self._index
+
     def __str__(self):
         index = self._index
         return f"@{index}"

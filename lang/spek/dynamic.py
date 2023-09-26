@@ -2,7 +2,8 @@ import io
 from collections import namedtuple
 
 from engine.functional import terms
-from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference
+from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, \
+    AbsoluteFrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     NewProcedure, CTerm
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict
@@ -1077,6 +1078,7 @@ class Spektakel2Stack(Translator):
         panic = Chain()
 
         d = self.declare_name(preamble, None, panic)
+        d = AbsoluteFrameReference(0, 0, d.index)
         preamble.append_update(TRef(d), NewDict(), panic)
 
         self._blocks.push(BlockStack.FunctionBlock(0))
