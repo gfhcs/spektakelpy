@@ -1049,8 +1049,7 @@ class Spektakel2Stack(Translator):
                 raise NotImplementedError("Code generation for nodes of type {}"
                                           " has not been implemented!".format(type(node)))
 
-            return self.emit_import(chain, ms, name, mapping)
-
+            return self.emit_import(chain, ms, name, mapping, on_error)
         else:
             raise NotImplementedError()
 
@@ -1125,7 +1124,7 @@ class Spektakel2Stack(Translator):
         # Import the builtin names:
 
         bms = dec["<builtin>"]
-        block = self.emit_import(block, bms, [(s, s) for s in bms.symbols])
+        block = self.emit_import(block, bms, None, [(s, s) for s in bms.symbols], exit)
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:
