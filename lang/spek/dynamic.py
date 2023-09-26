@@ -476,12 +476,14 @@ class Spektakel2Stack(Translator):
 
         return assign(chain, pattern, t, on_error)
 
-    def emit_import(self, chain, spec, name, mapping, on_error):
+    def emit_import(self, chain, spec, subnames, name, mapping, on_error):
         """
         Emits code for an import.
         :param chain: The chain to which the import should be appended.
         :param spec: The ModuleSpecification for the module to import.
         :param name: The name the imported module should be bound to, unless the name is None.
+        :param subnames: The chain of submodule names to follow from the root module. This must be an iterable of
+                         strings, that can be empty.
         :param mapping: A mapping from string names to be defined by this import statement to string names defined
                         in the imported module.
         :param on_error: The chain that execution should jump to in case of an error.
@@ -494,9 +496,7 @@ class Spektakel2Stack(Translator):
 
         m, chain = self.emit_call(chain, self._import_procedure, [module], on_error)
 
-        # FIXME: If the import is for module.submodule.subsubmodule, m represents only the module and we need to
-        #        project to the (sub-)submodules. emit_import has no information about the subodules to import (yet).
-        for a in node.source.Identifiers[1:]:
+        for a in subnames:
             m = terms.Lookup(m, a)
 
         if name is not None:
@@ -1029,6 +1029,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, (ImportNames, ImportSource)):
 
             ms = check_type(dec[node.source.Identifiers[0]], ModuleSpecification)
+            subnames = list(map(str, node.source.Identifiers[1:]))
 
             if isinstance(node, ImportSource):
                 mapping = {}
@@ -1047,7 +1048,7 @@ class Spektakel2Stack(Translator):
                 raise NotImplementedError("Code generation for nodes of type {}"
                                           " has not been implemented!".format(type(node)))
 
-            return self.emit_import(chain, ms, name, mapping, on_error)
+            return self.emit_import(chain, ms, name, subnames, mapping, on_error)
         else:
             raise NotImplementedError()
 
@@ -1122,7 +1123,7 @@ class Spektakel2Stack(Translator):
         # Import the builtin names:
 
         bms = dec["<builtin>"]
-        block = self.emit_import(block, bms, None, [(s, s) for s in bms.symbols], exit)
+        block = self.emit_import(block, bms, [],None, [(s, s) for s in bms.symbols], exit)
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:
