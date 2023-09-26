@@ -6,7 +6,7 @@ from engine.functional.reference import ReturnValueReference, ExceptionReference
     AbsoluteFrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     NewProcedure, CTerm
-from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict
+from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from lang.translator import Translator
 from util import check_type
@@ -300,6 +300,7 @@ class Spektakel2Stack(Translator):
         super().__init__()
         self._decl2ref = {} # Maps declaration nodes to references.
         self._blocks = BlockStack()
+        self._import_procedure = None
 
     def declare_name(self, chain, node, on_error):
         """
@@ -1097,8 +1098,7 @@ class Spektakel2Stack(Translator):
         exit.append_pop()
         self._blocks.pop()
 
-        imp = self.declare_name(preamble, None, panic)
-        preamble.append_update(TRef(imp), NewProcedure(1, imp_code.compile()), panic)
+        self._import_procedure = VProcedure(1, imp_code.compile())
 
         return preamble
 
