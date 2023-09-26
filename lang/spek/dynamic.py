@@ -5,7 +5,7 @@ from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, \
     AbsoluteFrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    NewProcedure, CTerm
+    NewProcedure, CTerm, Lookup
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
 from lang.translator import Translator
@@ -502,9 +502,8 @@ class Spektakel2Stack(Translator):
         if name is not None:
             chain.append_update(self.declare_pattern(chain, name, on_error), m, on_error)
 
-        # FIXME: 'member' is just a string. We need to turn it into a lookup expression for m.
         for name, member in mapping.items():
-            chain.append_update(self.declare_pattern(chain, name, on_error), member, on_error)
+            chain.append_update(self.declare_pattern(chain, name, on_error), Lookup(m, member), on_error)
 
     def emit_call(self, chain, callee, args, on_error):
         """
