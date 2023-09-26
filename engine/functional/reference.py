@@ -83,6 +83,47 @@ class FrameReference(Reference):
         return tstate.stack[-1][self._index]
 
 
+class AbsoluteFrameReference(Reference):
+    """
+    A reference to a value stored in a stack frame that is addressed explicitly.
+    This reference will always evaluate to the same value regardless of the task that interprets it.
+    """
+
+    def __init__(self, taskid, offset, index):
+        """
+        Refers to a stack frame entry in a way that leads to the same value no matter which Task interprets the
+        reference.
+        :param taskid: The ID of the task the referenced stack frame belongs to.
+        :param offset: The offset (from the base) in the task stack at which the reference stack frame is found.
+        :param index: The index of the stack frame variable to refer to.
+        """
+        super().__init__()
+        self._taskid = taskid
+        self._offset = offset
+        self._index = index
+
+    def __str__(self):
+        return f"@({self._taskid}, {self._offset}, {self._index})"
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, clones=None):
+        return self
+
+    def hash(self):
+        return hash((self._taskid, self._offset, self._index))
+
+    def equals(self, other):
+        return isinstance(other, AbsoluteFrameReference) and (self._taskid, self._offset, self._index) == (other._taskid, other._offset, other._index)
+
+    def write(self, tstate, mstate, value):
+        mstate.task_states[self._taskid].stack[self._offset][self._index] = value
+
+    def read(self, tstate, mstate):
+        return mstate.task_states[self._taskid].stack[self._offset][self._index]
+
+
 class ReturnValueReference(Reference):
     """
     A reference to the value currently being returned from the callee to the caller.
