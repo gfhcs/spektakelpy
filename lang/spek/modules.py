@@ -95,7 +95,7 @@ class ASTModuleSpecification(ModuleSpecification, abc.ABC):
                 self._loading = True
                 ast = self.load_ast()
                 env, dec, err = self._validator.validate(ast, mspec=self)
-                if len(err) > 1:
+                if len(err) > 0:
                     raise ValidationError("Validation failed because of one or more errors.", None, self)
                 translator = Spektakel2Stack()
                 self._code = translator.translate([ast], dec).compile()
