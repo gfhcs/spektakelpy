@@ -530,4 +530,9 @@ class TestSpektakelValidator(unittest.TestCase):
         for path in example_paths:
             _, filename = os.path.split(path)
             with self.subTest(example=os.path.splitext(filename)[0]):
-                modules.SpekFileModuleSpecification(path, validator).resolve()
+                with open(path, 'r') as example:
+                    lexer = syntax.SpektakelLexer(example)
+                    ast = syntax.SpektakelParser.parse_block(lexer)
+                    env_in = static.SpektakelValidator.environment_default()
+                    env_out, dec, err = validator.validate(ast, env_in)
+                    self.assertErrors(0, err)
