@@ -5,9 +5,9 @@ from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, \
     AbsoluteFrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    NewProcedure, CTerm, Lookup
+    NewProcedure, CTerm, Lookup, CString
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
-from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram
+from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram, ProgramLocation
 from lang.translator import Translator
 from util import check_type
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
@@ -309,7 +309,7 @@ class Spektakel2Stack(Translator):
         easily be retrieved later.
         :param chain: The Chain to which the instructions for allocating the new variable should be appended.
         :param on_error: The Chain to which control should be transferred if the allocation code fails.
-        :param node: The AST node for which to create a new variable. It may be None, in which case an anonymous local
+        :param node: The AST node (or str) for which to create a new variable. It may be None, in which case an anonymous local
                      variable is allocated on the stack.
         :return: A Reference object that represents the newly allocated variable.
         """
@@ -323,6 +323,8 @@ class Spektakel2Stack(Translator):
 
         if node is None:
             name = None
+        elif isinstance(node, str):
+            name = node
         elif isinstance(node, Identifier):
             name = node.name
         elif isinstance(node, ProcedureDefinition):
@@ -494,16 +496,21 @@ class Spektakel2Stack(Translator):
 
         module = spec.resolve()
 
-        m, chain = self.emit_call(chain, self._import_procedure, [module], on_error)
+        m, chain = self.emit_call(chain, CTerm(self._import_procedure),
+                                  [CTerm(ProgramLocation(module, 0))], on_error)
+
+        m = TRef(m)
 
         for a in subnames:
-            m = terms.Lookup(m, a)
+            m = terms.Lookup(m, CString(a))
 
         if name is not None:
-            chain.append_update(self.declare_pattern(chain, name, on_error), m, on_error)
+            chain.append_update(TRef(self.declare_name(chain, name, on_error)), m, on_error)
 
         for name, member in mapping.items():
-            chain.append_update(self.declare_pattern(chain, name, on_error), Lookup(m, member), on_error)
+            chain.append_update(TRef(self.declare_name(chain, name, on_error)), Lookup(m, CString(member)), on_error)
+
+        return chain
 
     def emit_call(self, chain, callee, args, on_error):
         """
@@ -519,23 +526,22 @@ class Spektakel2Stack(Translator):
         # Make sure that the right number of arguments is being used:
         call = Chain()
         argc_error = Chain()
-        argc_error.append_update(ExceptionReference(), terms.NewTypeError("Wrong number of arguments for call!"))
+        argc_error.append_update(TRef(ExceptionReference()), terms.NewTypeError("Wrong number of arguments for call!"), on_error)
         argc_error.append_jump(on_error)
         match = terms.Comparison(ComparisonOperator.EQ, terms.NumArgs(callee), terms.CInt(len(args)))
-        chain.append_guard({match: call, ~match : argc_error})
+        chain.append_guard({match: call, negate(match): argc_error}, on_error)
 
         call.append_push(callee, args, on_error)
 
         successor = Chain()
-        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(ExceptionReference()), terms.CNone())
-        chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
+        noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
+        call.append_guard({negate(noerror): on_error, noerror: successor}, on_error)
 
         rv = self.declare_name(successor, None, on_error)
         rr = ReturnValueReference()
-        successor.append_update(rv, terms.Read(rr), on_error)
+        successor.append_update(TRef(rv), terms.Read(TRef(rr)), on_error)
         return rv, successor
 
-    # noinspection PyRedundantParentheses
     def translate_expression(self, chain, node, dec, on_error):
         """
         Translates an AST expression into a machine expression.
@@ -1111,6 +1117,7 @@ class Spektakel2Stack(Translator):
         # We assume that somebody put a fresh frame on the stack.
 
         block = Chain()
+        entry = block
         exit = Chain()
 
         # We create a new Namespace object and put it into the stack frame.
@@ -1123,7 +1130,7 @@ class Spektakel2Stack(Translator):
         # Import the builtin names:
 
         bms = dec["<builtin>"]
-        block = self.emit_import(block, bms, [],None, [(s, s) for s in bms.symbols], exit)
+        block = self.emit_import(block, bms, [], None, {s: s for s in bms.symbols}, exit)
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:
@@ -1137,7 +1144,7 @@ class Spektakel2Stack(Translator):
 
         self._blocks.pop()
 
-        return block
+        return entry
 
     def translate(self, nodes, dec):
         """

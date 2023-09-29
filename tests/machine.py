@@ -462,14 +462,15 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual("Hello World", str(result))
 
-    def test_ArithmeticUnaryOperation(self):
+    def test_UnaryOperation(self):
 
         """
         Tests the successful evaluation of ArithmeticUnaryOperation terms.
         """
 
         cases = [(UnaryOperation(UnaryOperator.MINUS, CInt(42)), VInt(-42)),
-                 (UnaryOperation(UnaryOperator.NOT, CInt(42)), VInt(~42)),
+                 (UnaryOperation(UnaryOperator.INVERT, CInt(42)), VInt(~42)),
+                 (UnaryOperation(UnaryOperator.NOT, CBool(True)), VBool(False)),
                  (UnaryOperation(UnaryOperator.MINUS, CFloat(42.0)), VFloat(-42.0))]
 
         for term, value in cases:

@@ -131,8 +131,9 @@ class UnaryOperator(Enum):
     """
     A unary operator.
     """
-    MINUS = 0
-    NOT = 1
+    NOT = 0
+    INVERT = 1
+    MINUS = 2
 
 
 class UnaryOperation(Term):
@@ -177,6 +178,8 @@ class UnaryOperation(Term):
     def evaluate(self, tstate, mstate):
         r = self.operand.evaluate(tstate, mstate)
         if self._op == UnaryOperator.NOT:
+            return VBool(not bool(r))
+        elif self._op == UnaryOperator.INVERT:
             return ~r
         elif self._op == UnaryOperator.MINUS:
             return -r
