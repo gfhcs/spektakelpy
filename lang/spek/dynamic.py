@@ -556,18 +556,18 @@ class Spektakel2Stack(Translator):
             if isinstance(value, bool):
                 return (terms.CBool(True) if value == True else terms.CBool(False)), chain
             elif isinstance(value, str):
-                return (terms.CString(value), chain)
+                return terms.CString(value), chain
             elif value is None:
-                return (terms.CNone(), chain)
+                return terms.CNone(), chain
             elif isinstance(value, int):
-                return (terms.CInt(value), chain)
+                return terms.CInt(value), chain
             elif isinstance(value, float):
-                return (terms.CFloat(value), chain)
+                return terms.CFloat(value), chain
             else:
                 raise NotImplementedError("Translation of constant expressions of type {}"
                                           " has not been implemented!".format(type(value)))
         elif isinstance(node, Identifier):
-            return (Read(CTerm(self._decl2ref[dec[node][1]])), chain)
+            return Read(CTerm(self._decl2ref[dec[node][1]])), chain
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
