@@ -1,3 +1,4 @@
+from lang.spek.modules import BuiltinModuleSpecification
 from util.environment import Environment
 from lang.modules import Finder
 from lang.validator import *
@@ -22,32 +23,17 @@ class Level(Enum):
     GLOBAL = 3
 
 
-class BuiltinSymbols(Enum):
-    """
-    Symbols that are pre-defined in the Spektakel language.
-    """
-    SUPER = 0
-    GETATTR = 1
-    STOPITERATION = 2
-    ATTRIBUTEERROR = 3
-
-
 class SpektakelValidator(Validator):
     """
     A validator for the Spektakel language.
     """
 
-    __env = Environment({ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None,
-                         "StopIteration": BuiltinSymbols.STOPITERATION,
-                         "AttributeError": BuiltinSymbols.ATTRIBUTEERROR,
-                         "super": BuiltinSymbols.SUPER,
-                         "getattr": BuiltinSymbols.GETATTR,
-                         })
-
-    def __init__(self, finder):
+    def __init__(self, finder, builtin):
         """
         Initializes a new Spektakel validator.
         :param finder: A Finder that is used to resolve module imports.
+        :param builtin: An iterable of BuiltinModuleSpecification objects that define identifiers that are to be
+                        builtin, i.e. valid without any explicit definition or import.
         """
         
         if not isinstance(finder, Finder):
@@ -58,6 +44,14 @@ class SpektakelValidator(Validator):
         self._finder = finder
         self.__t2v = {"True": True, "False": False, "None": None}
 
+        self._denv = {ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None}
+        for b in builtin:
+            check_type(b, BuiltinModuleSpecification)
+            for s in b.symbols:
+                self._denv[s] = b
+
+        self._denv = Environment(k2v=self._denv)
+
     @property
     def finder(self):
         """
@@ -65,13 +59,13 @@ class SpektakelValidator(Validator):
         """
         return self._finder
 
-    @classmethod
-    def environment_default(cls):
+    @property
+    def environment_default(self):
         """
         The environment that a program is validated in by default.
         :return: An Environment object.
         """
-        return cls.__env
+        return self._denv
 
     def validate_expression(self, node, env=None, dec=None, err=None, mspec=None):
         """
@@ -86,11 +80,11 @@ class SpektakelValidator(Validator):
         """
 
         if dec is None:
-            dec = {"<builtin>": self._finder.find(("<builtin>", ))}
+            dec = {}
         if err is None:
             err = []
         if env is None:
-            env = self.environment_default()
+            env = self.environment_default
 
         if err is None:
             err = []
@@ -163,11 +157,11 @@ class SpektakelValidator(Validator):
         """
 
         if dec is None:
-            dec = {"<builtin>": self._finder.find(("<builtin>", ))}
+            dec = {}
         if err is None:
             err = []
         if env is None:
-            env = self.environment_default()
+            env = self.environment_default
 
         if isinstance(node, Pass):
             pass

@@ -18,12 +18,15 @@ def validate(sample, env=None, roots=None):
              names to their declarations, dec is a mapping of refering nodes to their referents and err is an iterable
              of ValidationErrors.
     """
+
     sample = StringIO(sample)
     lexer = syntax.SpektakelLexer(sample)
     node = syntax.SpektakelParser.parse_block(lexer)
-    finder = modules.build_default_finder([] if roots is None else roots)
-    v = static.SpektakelValidator(finder)
-    return (node, *v.validate(node, env))
+    finder, builtin = modules.build_default_finder([] if roots is None else roots)
+    v = static.SpektakelValidator(finder, builtin)
+    if env is None:
+        env = v.environment_default
+    return (node, env, *v.validate(node, env))
 
 
 class TestSpektakelValidator(unittest.TestCase):
@@ -53,26 +56,23 @@ class TestSpektakelValidator(unittest.TestCase):
         Tests the validator on the AST of the empty program.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-        node, env_out, dec, err = validate("# Just some empty program.", env=env_in)
+        node, env_in, env_out, dec, err = validate("# Just some empty program.")
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assertEqual(len(dec), 1)
+        self.assertEqual(len(dec), 0)
         self.assertNoErrors(err)
 
     def test_constants(self):
         """
         Tests the validator on all sorts of constants.
         """
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("True\n"
+        node, env_in, env_out, dec, err = validate("True\n"
                                        "False\n"
                                        "None\n"
                                        "\"Hello world!\"\n"
                                        "\"\"\"Hello world!\"\"\"\n"
                                        "42\n"
-                                       "3.1415926\n", env_in)
+                                       "3.1415926\n")
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertNoErrors(err)
@@ -85,79 +85,69 @@ class TestSpektakelValidator(unittest.TestCase):
         """
         Tests the correct resolution of identifiers.
         """
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("x\n"
+        node, env_in, env_out, dec, err = validate("x\n"
                                            "var x\n"
                                            "x = x + 42\n"
                                            "var x\n"
                                            "def x(a, b):\n"
-                                           "  return x(b, a)", env_in)
+                                           "  return x(b, a)")
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(1, err)
-        self.assertEqual(8, len(dec))
+        self.assertEqual(7, len(dec))
 
     def test_pass(self):
         """
         Makes sure that pass statements don't crash the validator.
         """
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("pass", env_in)
+        node, env_in, env_out, dec, err = validate("pass")
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertNoErrors(err)
 
-        self.assertEqual(1, len(dec))
+        self.assertEqual(0, len(dec))
 
     def test_expressions(self):
         """
         Tests the validation of some expressions
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("1 + 2\n"
+        node, env_in, env_out, dec, err = validate("1 + 2\n"
                                            "var x = 42\n"
                                            "(await f(x)) + 42\n"
                                            "a and x > 5\n"
-                                           "x.somefantasyname", env_in)
+                                           "x.somefantasyname")
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(2, err)
-        self.assertEqual(9, len(dec))
+        self.assertEqual(8, len(dec))
 
     def test_assignment(self):
         """
         Tests the validation of assignments
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("var x, y, z\n"
+        node, env_in, env_out, dec, err = validate("var x, y, z\n"
                                            "x = 42\n"
                                            "x, y = f(x)\n"
-                                           "x, y = (y, x)\n", env_in)
+                                           "x, y = (y, x)\n")
 
         self.assertEqual(len(env_out), len(env_in) + 3)
         self.assertErrors(1, err)
-        self.assertEqual(10, len(dec))
+        self.assertEqual(9, len(dec))
 
     def test_block(self):
         """
         Tests the validation of statement blocks.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("var x, y, z\n"
+        node, env_in, env_out, dec, err = validate("var x, y, z\n"
                                            "x, y, z = 42, 42, 42\n"
-                                           "var y = 4711 + y\n", env_in)
+                                           "var y = 4711 + y\n")
 
         self.assertEqual(len(env_out), len(env_in) + 3)
         self.assertErrors(0, err)
-        self.assertEqual(9, len(dec))
+        self.assertEqual(8, len(dec))
 
         referents_y = [v for k, v in dec.items() if isinstance(k, syntax.Identifier) and k.name == "y"]
 
@@ -169,46 +159,40 @@ class TestSpektakelValidator(unittest.TestCase):
         Tests the validation of return statements.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("return 42\n"
+        node, env_in, env_out, dec, err = validate("return 42\n"
                                            "def f(x):\n"
                                            "    return x\n"
                                            "def g(x):\n"
-                                           "    return\n", env_in)
+                                           "    return\n")
 
         self.assertEqual(len(env_out), len(env_in) + 2)
         self.assertErrors(1, err)  # return outside procedure.
-        self.assertEqual(5, len(dec))
+        self.assertEqual(4, len(dec))
 
     def test_raise(self):
         """
         Tests the validation of raise statements.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("raise # Should work.\n"
+        node, env_in, env_out, dec, err = validate("raise # Should work.\n"
                                            "def f(x):\n"
                                            "    return x\n"
                                            "raise f() # This *should* work outside a catch block!\n"
                                            "try:\n"
                                            "    pass\n"
                                            "except:\n"
-                                           "    raise # Should just work.\n", env_in)
+                                           "    raise # Should just work.\n")
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(0, err)
-        self.assertEqual(4, len(dec))
+        self.assertEqual(3, len(dec))
 
     def test_loop_jumps(self):
         """
         Tests the validation of 'break' and 'continue'.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("break # Must fail, because no loop.\n"
+        node, env_in, env_out, dec, err = validate("break # Must fail, because no loop.\n"
                                            "continue # Must fail, because no loop.\n"
                                            "while True:\n"
                                            "    break\n"
@@ -217,20 +201,18 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "for x in items:\n"
                                            "    break\n"
                                            "for y in items:\n"
-                                           "    continue", env_in)
+                                           "    continue")
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(7, len(dec))
+        self.assertEqual(6, len(dec))
 
     def test_if(self):
         """
         Tests the validation of 'if' statements.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("if meaning_of_life == 42:\n"
+        node, env_in, env_out, dec, err = validate("if meaning_of_life == 42:\n"
                                            "    print(\"easy peasy\")\n"
                                            "elif flyable(pig):\n"
                                            "    print(\"We're lucky!\")\n"
@@ -242,55 +224,49 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "else:\n"
                                            "    print(\"Do you want ice cream?\")\n"
                                            "if done:\n"
-                                           "    print(\"No more work to do :-)\")", env_in)
+                                           "    print(\"No more work to do :-)\")")
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(12, err)
-        self.assertEqual(8, len(dec))
+        self.assertEqual(7, len(dec))
 
     def test_while(self):
         """
         Tests the validation of 'while' loops.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("while True:\n"
+        node, env_in, env_out, dec, err = validate("while True:\n"
                                            "    pass\n"
                                            "while False:\n"
-                                           "    do_some_work()", env_in)
+                                           "    do_some_work()")
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(1, err)
-        self.assertEqual(3, len(dec))
+        self.assertEqual(2, len(dec))
 
     def test_for(self):
         """
         Tests the validation of 'for' loops.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("var items\n"
+        node, env_in, env_out, dec, err = validate("var items\n"
                                            "for x in items:\n"
                                            "    work(x)\n"
                                            "for (a, (b, c)) in items:\n"
                                            "    work(b)\n"
                                            "for 42 in items:\n"
-                                           "    learn(0 == 1)\n", env_in)
+                                           "    learn(0 == 1)\n")
 
         self.assertEqual(len(env_in) + 1, len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(8, len(dec))
+        self.assertEqual(7, len(dec))
 
     def test_try(self):
         """
         Tests the validation of 'try' statements.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("try:\n"
+        node, env_in, env_out, dec, err = validate("try:\n"
                                            "    work()\n"
                                            "except:\n"
                                            "    print(\"An error, sadly\")\n"
@@ -318,39 +294,35 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "except Fception:\n"
                                            "   print(\"Weird\")\n"
                                            "except:\n"
-                                           "   print(\"No idea\")", env_in)
+                                           "   print(\"No idea\")")
 
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(15, err)
-        self.assertEqual(7, len(dec))
+        self.assertEqual(6, len(dec))
 
     def test_var(self):
         """
         Tests the validation of variable declarations.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("var x\n"
+        node, env_in, env_out, dec, err = validate("var x\n"
                                            "var x\n"
                                            "var 42\n"
                                            "var y = x > 0\n"
                                            "var (a, (b, c)) = f(y)\n"
                                            "var a, b, c, d = g(y)\n"
-                                           "var z = z", env_in)
+                                           "var z = z")
 
         self.assertEqual(len(env_in) + 7, len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(5, len(dec))
+        self.assertEqual(4, len(dec))
 
     def test_prop(self):
         """
         Tests the validation of property declarations.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("prop fail: # Must fail, because it's outside a class.\n"
+        node, env_in, env_out, dec, err = validate("prop fail: # Must fail, because it's outside a class.\n"
                                            "  get:\n"
                                            "    return 42\n"
                                            "class C:\n"
@@ -367,20 +339,18 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "      self.x = value\n"
                                            "  prop simple: # Over-declaring should not be possible.\n"
                                            "    get:\n"
-                                           "      return 42", env_in)
+                                           "      return 42")
 
         self.assertEqual(len(env_in) + 2, len(env_out))
         self.assertErrors(2, err)
-        self.assertEqual(13, len(dec))
+        self.assertEqual(12, len(dec))
 
     def test_proc(self):
         """
         Tests the validation of procedure declarations.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("def dummy():\n"
+        node, env_in, env_out, dec, err = validate("def dummy():\n"
                                            "  return 42\n"
                                            "def id(x):\n"
                                            "  return x\n"
@@ -414,20 +384,18 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    return False\n"
                                            "  else:\n"
                                            "    return even(x - 1)\n"
-                                           "", env_in)
+                                           "")
 
         self.assertEqual(len(env_in) + 7, len(env_out))
         self.assertErrors(2, err)
-        self.assertEqual(50, len(dec))
+        self.assertEqual(49, len(dec))
 
     def test_class(self):
         """
         Tests the validation of class declarations.
         """
 
-        env_in = static.SpektakelValidator.environment_default()
-
-        node, env_out, dec, err = validate("class C():\n"
+        node, env_in, env_out, dec, err = validate("class C():\n"
                                            "  pass\n"
                                            "class D(C):\n"
                                            "  pass\n"
@@ -476,11 +444,11 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "  p() # Error.\n"
                                            "\n"
                                            "13 # This is allowed.\n"
-                                           "", env_in)
+                                           "")
 
         self.assertEqual(len(env_in) + 8, len(env_out))
         self.assertErrors(4, err)
-        self.assertEqual(31, len(dec))
+        self.assertEqual(30, len(dec))
 
     def test_import(self):
         """
@@ -488,8 +456,8 @@ class TestSpektakelValidator(unittest.TestCase):
         """
         root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_import")
 
-        finder = modules.build_default_finder([os.path.join(root, "library")])
-        validator = static.SpektakelValidator(finder)
+        finder, builtin = modules.build_default_finder([os.path.join(root, "library")])
+        validator = static.SpektakelValidator(finder, builtin)
 
         # We used to support wildcards. We don't do that anymore, because the validator would have to recurse
         # into the imported module for that, which we don't want to implement for all possible module types (builtin
@@ -509,12 +477,29 @@ class TestSpektakelValidator(unittest.TestCase):
                 with open(os.path.join(root, fn), 'r') as sample:
                     lexer = syntax.SpektakelLexer(sample)
                     ast = syntax.SpektakelParser.parse_block(lexer)
-                    env_in = static.SpektakelValidator.environment_default()
+                    env_in = validator.environment_default
                     env_out, dec, err = validator.validate(ast, env_in)
 
                     self.assertEqual(len(env_in) + envsize, len(env_out))
                     self.assertErrors(numerrors, err)
-                    self.assertEqual(decsize, len(dec) - 1)
+                    self.assertEqual(decsize, len(dec))
+
+    def test_builtin(self):
+        """
+        Tests the validation of builtin names.
+        """
+
+        node, env_in, env_out, dec, err = validate("bool\n"
+                                           "int\n"
+                                           "object\n"
+                                           "dict\n"
+                                           "list\n"
+                                           "tuple\n"
+                                           "float")
+
+        self.assertEqual(len(env_out), len(env_in))
+        self.assertErrors(0, err)
+        self.assertEqual(7, len(dec))
 
     def test_examples(self):
         """
@@ -524,8 +509,8 @@ class TestSpektakelValidator(unittest.TestCase):
         roots = ["examples", "library"]
         roots = [os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", r) for r in roots]
 
-        finder = modules.build_default_finder(roots)
-        validator = static.SpektakelValidator(finder)
+        finder, builtin = modules.build_default_finder(roots)
+        validator = static.SpektakelValidator(finder, builtin)
 
         for path in example_paths:
             _, filename = os.path.split(path)
@@ -533,6 +518,6 @@ class TestSpektakelValidator(unittest.TestCase):
                 with open(path, 'r') as example:
                     lexer = syntax.SpektakelLexer(example)
                     ast = syntax.SpektakelParser.parse_block(lexer)
-                    env_in = static.SpektakelValidator.environment_default()
+                    env_in = validator.environment_default
                     env_out, dec, err = validator.validate(ast, env_in)
                     self.assertErrors(0, err)

@@ -185,6 +185,12 @@ class BuiltinModuleFinder(Finder):
 
 
 def build_default_finder(roots):
+    """
+    Constructs the default Finder for Spektakelpy.
+    :param roots: The root directories in the local file system that should be searched for imported modules.
+    :return: A pair (f, b), where f is a Finder object and b is an iterable of BuiltinModuleSpecification objects whose
+             names are to be imported by default.
+    """
     ffinder = FileFinder(roots)
 
     symbols = {"next": Interaction.NEXT,
@@ -199,8 +205,9 @@ def build_default_finder(roots):
 
     types = {t.name: t for t in TBuiltin.instances}
 
-    m = [BuiltinModuleSpecification("interaction", procedures),
-         BuiltinModuleSpecification("<builtin>", types)]
-    bfinder = BuiltinModuleFinder({mspec.name: mspec for mspec in m})
+    interaction = BuiltinModuleSpecification("interaction", procedures)
+    builtin = BuiltinModuleSpecification("<builtin>", types)
 
-    return AdjoinedFinder(ffinder, bfinder)
+    bfinder = BuiltinModuleFinder({mspec.name: mspec for mspec in [interaction, builtin]})
+
+    return AdjoinedFinder(ffinder, bfinder), [builtin]
