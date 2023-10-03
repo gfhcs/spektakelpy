@@ -68,13 +68,16 @@ class ASTModuleSpecification(ModuleSpecification, abc.ABC):
     Specifies a module by an AST that is to be translated.
     """
 
-    def __init__(self, validator):
+    def __init__(self, validator, builtin):
         """
         Creates the specification for a module that is defined by an AST.
         :param validator: The validator to be used for validating the AST defining this module.
+        :param builtin: An iterable of BuiltinModuleSpecification objects that define identifiers that are to be
+                        builtin, i.e. valid without any explicit definition or import.
         """
         super().__init__()
         self._validator = validator
+        self._builtin = builtin
         self._loading = False
         self._code = None
 
@@ -97,7 +100,7 @@ class ASTModuleSpecification(ModuleSpecification, abc.ABC):
                 env, dec, err = self._validator.validate(ast, mspec=self)
                 if len(err) > 0:
                     raise ValidationError("Validation failed because of one or more errors.", None, self)
-                translator = Spektakel2Stack()
+                translator = Spektakel2Stack(self._builtin)
                 self._code = translator.translate([ast], dec).compile()
             finally:
                 self._loading = False
@@ -109,13 +112,15 @@ class SpekFileModuleSpecification(ASTModuleSpecification):
     Specifies a module that is to be loaded from a *.spek file on disk.
     """
 
-    def __init__(self, path, validator):
+    def __init__(self, path, validator, builtin):
         """
         Creates the specification for a module that is to be loaded from a *.spek file.
         :param path: The file system path for the *.spek file to load.
         :param validator: The validator to be used for validating the AST defining this module.
+        :param builtin: An iterable of BuiltinModuleSpecification objects that define identifiers that are to be
+                        builtin, i.e. valid without any explicit definition or import.
         """
-        super().__init__(validator=validator)
+        super().__init__(validator=validator, builtin=builtin)
         self._path = path
 
     def load_ast(self):
@@ -149,7 +154,7 @@ class FileFinder(Finder):
         """
         return self._roots
 
-    def find(self, name, validator=None):
+    def find(self, name, validator, builtin):
         try:
             return self._cache[(validator, name)]
         except KeyError:
@@ -157,7 +162,7 @@ class FileFinder(Finder):
             for root in self._roots:
                 path = os.path.join(root, *name[:-1], name[-1] + ".spek")
                 if os.path.isfile(path):
-                    spec = SpekFileModuleSpecification(path, validator=validator)
+                    spec = SpekFileModuleSpecification(path, validator=validator, builtin=builtin)
                     self._cache[(validator, name)] = spec
                     return spec
 
@@ -178,7 +183,7 @@ class BuiltinModuleFinder(Finder):
         super().__init__()
         self._m = dict(mapping)
 
-    def find(self, name, validator=None):
+    def find(self, name, validator, builtin):
         if not isinstance(name, tuple) or len(name) != 1:
             raise KeyError("The module key {} could not be resolved!".format(".".join(name)))
         return self._m[name[0]]

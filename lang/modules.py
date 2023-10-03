@@ -7,11 +7,13 @@ class Finder(abc.ABC):
     """
 
     @abc.abstractmethod
-    def find(self, name, validator=None):
+    def find(self, name, validator, builtin):
         """
         Finds a module for the given name.
         :param name: A name pointing to a module, usually an AST node.
         :param validator: The Validator calling this method (if any).
+        :param builtin: An iterable of BuiltinModuleSpecification objects that define identifiers that are to be
+                builtin, i.e. valid without any explicit definition or import.
         :return: A ModuleSpecification object.
         :exception KeyError: If no module could be found for the given name.
         """
@@ -34,11 +36,11 @@ class AdjoinedFinder(Finder):
         self._f = f
         self._g = g
 
-    def find(self, name, validator=None):
+    def find(self, name, validator, builtin):
         try:
-            return self._g.find(name, validator=validator)
+            return self._g.find(name, validator, builtin)
         except KeyError:
-            return self._f.find(name, validator=validator)
+            return self._f.find(name, validator, builtin)
 
 
 class ModuleSpecification(abc.ABC):

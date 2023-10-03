@@ -296,11 +296,17 @@ class Spektakel2Stack(Translator):
     A translator that translates Spektakel AST nodes into stack programs.
     """
 
-    def __init__(self):
+    def __init__(self, builtin):
+        """
+        Initializes a new translator.
+        :param builtin: An iterable of BuiltinModuleSpecification objects that define identifiers that are to be
+                        builtin, i.e. valid without any explicit definition or import.
+        """
         super().__init__()
         self._decl2ref = {} # Maps declaration nodes to references.
         self._blocks = BlockStack()
         self._import_procedure = None
+        self._builtin = list(builtin)
 
     def declare_name(self, chain, node, on_error):
         """
@@ -1128,9 +1134,8 @@ class Spektakel2Stack(Translator):
         self._blocks.push(BlockStack.ModuleBlock(0))
 
         # Import the builtin names:
-
-        bms = dec["<builtin>"]
-        block = self.emit_import(block, bms, [], None, {s: s for s in bms.symbols}, exit)
+        for bms in self._builtin:
+            block = self.emit_import(block, bms, [], None, {s: s for s in bms.symbols}, exit)
 
         # We execute the module code completely, which populates that namespace.
         for node in nodes:

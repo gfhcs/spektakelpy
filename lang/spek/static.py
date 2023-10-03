@@ -51,6 +51,7 @@ class SpektakelValidator(Validator):
                 self._denv[s] = b
 
         self._denv = Environment(k2v=self._denv)
+        self._builtin = builtin
 
     @property
     def finder(self):
@@ -170,7 +171,7 @@ class SpektakelValidator(Validator):
             key = tuple(i.name for i in node.source.identifiers)
 
             try:
-                spec = self._finder.find(key, validator=self)
+                spec = self._finder.find(key, self, self._builtin)
                 dec[node.source] = spec
             except KeyError:
                 err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source, mspec))

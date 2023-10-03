@@ -108,7 +108,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         assert len(err) == 0
 
-        translator = Spektakel2Stack()
+        translator = Spektakel2Stack(builtin)
 
         program = translator.translate([node], dec)
 
