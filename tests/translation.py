@@ -104,6 +104,8 @@ class TestSpektakelTranslation(unittest.TestCase):
         node = syntax.SpektakelParser.parse_block(lexer)
         finder, builtin = modules.build_default_finder([] if roots is None else roots)
         v = static.SpektakelValidator(finder, builtin)
+        if env is None:
+            env = v.environment_default
         _, dec, err = v.validate(node, env)
 
         assert len(err) == 0
@@ -123,8 +125,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests if the empty program is executed successfully.
         """
 
-        env_in = static.SpektakelValidator.environment_default
-        states, internal, external = self.translate_explore("# Just some empty program.", env=env_in)
+        states, internal, external = self.translate_explore("# Just some empty program.")
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
@@ -139,7 +140,6 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests the translation of simple assignment statements. This is useful for all future test cases.
         """
-        env_in = static.SpektakelValidator.environment_default
         program = """
         from interaction import never
         var x = 42
@@ -149,7 +149,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         await never()
         """
         program = dedent(program)
-        states, internal, external = self.translate_explore(program, env=env_in)
+        states, internal, external = self.translate_explore(program)
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
