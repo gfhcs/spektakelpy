@@ -1034,8 +1034,8 @@ class Spektakel2Stack(Translator):
 
         elif isinstance(node, (ImportNames, ImportSource)):
 
-            ms = check_type(dec[node.source.Identifiers[0]], ModuleSpecification)
-            subnames = list(map(str, node.source.Identifiers[1:]))
+            ms = check_type(dec[node.source], ModuleSpecification)
+            subnames = list(map(str, node.source.identifiers[1:]))
 
             if isinstance(node, ImportSource):
                 mapping = {}
@@ -1048,13 +1048,13 @@ class Spektakel2Stack(Translator):
             elif isinstance(node, ImportNames):
                 if node.wildcard:
                     raise NotImplementedError("Compilation of wildcard imports has not been implemented!")
-                mapping = {alias: name for name, alias in node.aliases.items()}
+                mapping = {alias.name: name.name for name, alias in node.aliases.items()}
                 name = None
             else:
                 raise NotImplementedError("Code generation for nodes of type {}"
                                           " has not been implemented!".format(type(node)))
 
-            return self.emit_import(chain, ms, name, subnames, mapping, on_error)
+            return self.emit_import(chain, ms, subnames, name, mapping, on_error)
         else:
             raise NotImplementedError()
 

@@ -146,7 +146,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         var y = 4711
         x = x + 1
         y = x + y
-        await never
+        await never()
         """
         program = dedent(program)
         states, internal, external = self.translate_explore(program, env=env_in)
