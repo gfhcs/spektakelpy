@@ -44,14 +44,14 @@ class Chain:
         except KeyError:
             bijection[self] = other
             for (t1, *args1), (t2, *args2) in zip(self._proto, other._proto):
-                if t1 is not t2:
+                if t1 is not t2 or len(args1) != len(args2):
                     return False
                 for a1, a2 in zip(args1, args2):
                     if isinstance(a1, Chain):
                         if not a1._equals(a2, bijection=bijection):
                             return False
                     elif isinstance(a1, list):
-                        assert t1 is Update
+                        assert t1 is Push or t1 is Launch
                         if tuple(a1) != tuple(a2):
                             return False
                     elif isinstance(a1, dict):
@@ -518,8 +518,6 @@ class Spektakel2Stack(Translator):
         m, chain = self.emit_call(chain, CTerm(self._import_procedure),
                                   [CTerm(ProgramLocation(module, 0))], on_error)
 
-        m = TRef(m)
-
         for a in subnames:
             m = terms.Lookup(m, CString(a))
 
@@ -559,7 +557,7 @@ class Spektakel2Stack(Translator):
         rv = self.declare_name(successor, None, on_error)
         rr = ReturnValueReference()
         successor.append_update(TRef(rv), terms.Read(TRef(rr)), on_error)
-        return rv, successor
+        return Read(TRef(rv)), successor
 
     def translate_expression(self, chain, node, dec, on_error):
         """
@@ -626,20 +624,21 @@ class Spektakel2Stack(Translator):
             chain.append_update(t, terms.Read(ReturnValueReference()), on_error)
             return t, chain
         elif isinstance(node, Await):
-            t = self.translate_expression(chain, node.process, dec, on_error)
+            t, chain = self.translate_expression(chain, node.process, dec, on_error)
             successor = Chain()
             complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, t)
             chain.append_guard({complete: successor}, on_error)
 
             successor = Chain()
-            noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(ExceptionReference()), terms.CNone())
-            chain.append_guard({~noerror: on_error, noerror: successor}, on_error)
+            successor2 = Chain()
+            noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
+            successor.append_guard({negate(noerror): on_error, noerror: successor2}, on_error)
 
-            rv = self.declare_name(successor, None, on_error)
-            rr = ReturnValueReference()
-            successor.append_update(rv, terms.Read(rr), on_error)
-            successor.append_update(rr, terms.CNone(), on_error)
-            return rv, successor
+            rv = TRef(self.declare_name(successor2, None, on_error))
+            rr = TRef(ReturnValueReference())
+            successor2.append_update(rv, terms.Read(rr), on_error)
+            successor2.append_update(rr, terms.CNone(), on_error)
+            return Read(rv), successor2
         elif isinstance(node, Projection):
             idx, chain = self.translate_expression(chain, node.index, dec, on_error)
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
