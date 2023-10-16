@@ -73,7 +73,7 @@ class LexicalGrammar(abc.ABC):
         that the entire input has been lexed all the way to the end.
         :return: A value that is valid as the first component of a token triple.
         """
-        pass
+        pass  # pragma: no cover
 
     @abc.abstractmethod
     def generate_tokens(self, buffer):
@@ -82,7 +82,7 @@ class LexicalGrammar(abc.ABC):
         :param buffer: A BufferedMatchStream the contents of which will be tokenized.
         :return: A generator of triples (kind, text, position) that represent the tokens that were lexed.
         """
-        pass
+        pass  # pragma: no cover
 
 
 class Lexer:
