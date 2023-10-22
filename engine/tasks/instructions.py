@@ -257,7 +257,7 @@ class Push(Instruction):
         self._edestination = check_type(edestination, int)
 
     def __str__(self):
-        return "push({}, [{}])".format(self._entry, ", ".join(self._expressions))
+        return "push({}, [{}])".format(self._entry, ", ".join(map(str, self._expressions)))
 
     def hash(self):
         return hash((self._entry, self._expressions, self._destination, self._edestination))
