@@ -402,7 +402,7 @@ class StackProgram(Immutable):
             prefix = "0: "
             for idx, i in enumerate(self._instructions):
                 s.write(f"{prefix}{i}")
-                prefix = "\n{}: ".format(idx + 1)
+                prefix = f"\n{idx + 1}: "
             return s.getvalue()
 
     def hash(self):
