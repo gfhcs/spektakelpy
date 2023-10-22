@@ -199,6 +199,8 @@ class Chain:
                 continue
             entries[c] = offset
             offset += len(c)
+            if c._can_continue:
+                offset += 1
             chains.extend((t for t in c._targets if t is not None))
 
         instructions = []
