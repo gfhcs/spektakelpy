@@ -435,9 +435,8 @@ class UnaryPredicateTerm(Term):
     def __str__(self):
         op = {UnaryPredicate.ISCALLABLE: "is_callable",
               UnaryPredicate.ISEXCEPTION: "is_exception",
-              UnaryPredicate.ISTERMINATED: "is_terminated"}[self._op]
-        arg = self.operand
-        return f"{op}({arg})"
+              UnaryPredicate.ISTERMINATED: "is_terminated"}[self._p]
+        return f"{op}({self.operand})"
 
     @property
     def operand(self):
