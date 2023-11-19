@@ -24,8 +24,8 @@ class VNone(Value):
     def clone_unsealed(self, clones=None):
         return self
 
-    def __str__(self):
-        return "None"
+    def print(self, out):
+        out.write("None")
 
     def __repr__(self):
         return "VNone.instance"
@@ -52,8 +52,8 @@ class VBool(Value):
         """
         return VBool.true if b else VBool.false
 
-    def __str__(self):
-        return "True" if self._value else "False"
+    def print(self, out):
+        out.write("True" if self._value else "False")
 
     def __repr__(self):
         return "VBool.true" if self._value else "VBool.false"
@@ -157,8 +157,8 @@ class VInt(Value):
         super().__init__()
         self._value = check_type(value, int)
 
-    def __str__(self):
-        return str(self._value)
+    def print(self, out):
+        out.write(str(self._value))
 
     def __repr__(self):
         return "VInt({})".format(self._value)
@@ -258,8 +258,8 @@ class VFloat(Value):
         super().__init__()
         self._value = check_type(value, float)
 
-    def __str__(self):
-        return str(self._value)
+    def print(self, out):
+        out.write(str(self._value))
 
     def __repr__(self):
         return "VFloat({})".format(self._value)
@@ -344,8 +344,8 @@ class VStr(Value):
         super().__init__()
         self._value = check_type(value, str)
 
-    def __str__(self):
-        return str(self._value)
+    def print(self, out):
+        out.write(repr(self._value))
 
     def __repr__(self):
         return "VString(\"{}\")".format(self._value)
@@ -391,8 +391,14 @@ class VTuple(Value):
         super().__init__()
         self._comps = tuple(check_type(c, Value) for c in components)
 
-    def __str__(self):
-        return "({})".format(", ".join(self._comps))
+    def print(self, out):
+        out.write("(")
+        prefix = ""
+        for c in self._comps:
+            out.write(prefix)
+            c.print(out)
+            prefix = ", "
+        out.write(")")
 
     def __repr__(self):
         return "VTuple({})".format(", ".join(self._comps))
@@ -504,8 +510,14 @@ class VList(Value):
             raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
         return self._items.clear()
 
-    def __str__(self):
-        return str(self._items)
+    def print(self, out):
+        out.write("[")
+        prefix = ""
+        for c in self._items:
+            out.write(prefix)
+            c.print(out)
+            prefix = ", "
+        out.write("]")
 
     def __repr__(self):
         return "VList({})".format(repr(list(self._items)))
@@ -612,8 +624,16 @@ class VDict(Value):
             raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
         self._items[check_type(key, Value)] = check_type(value, Value)
 
-    def __str__(self):
-        return str(self._items)
+    def print(self, out):
+        out.write("{")
+        prefix = ""
+        for k, v in self._items.items():
+            out.write(prefix)
+            k.print(out)
+            out.write(": ")
+            v.print(out)
+            prefix = ", "
+        out.write("}")
 
     def __repr__(self):
         return "VDict({})".format(repr(list(self._items)))
@@ -679,8 +699,11 @@ class VException(Value):
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
-    def __str__(self):
-        return str("{}: {}".format(type(self), self._msg))
+    def print(self, out):
+        out.write(str(type(self)))
+        out.write("(")
+        out.write(repr(self._msg))
+        out.write(", ...)")
 
     def __repr__(self):
         return "VException({})".format(", ".join((repr(self._msg), *map(repr, self._args))))
@@ -798,6 +821,17 @@ class VNamespace(Value):
         super().__init__()
         self._m = {}
 
+    def print(self, out):
+        out.write("namespace{")
+        prefix = ""
+        for k, v in self._m.items():
+            out.write(prefix)
+            out.write(k)
+            out.write(": ")
+            v.print(out)
+            prefix = ", "
+        out.write("}")
+
     @property
     def type(self):
         return TBuiltin.namespace
@@ -852,16 +886,25 @@ class VProcedure(Value):
         """
         Creates a new procedure.
         :param num_args: The number of arguments of this procedure.
-        :param entry: Either a ProgramLocation that points to the entry point for this procedure, or an IntrinsicProcedure,
+        :param entry: Either a ProgramLocation that points to the entry point for this procedure,
                       or a StackProgram.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
 
-        if isinstance(entry, (ProgramLocation, IntrinsicProcedure, StackProgram)):
+        if isinstance(entry, (ProgramLocation, StackProgram)):
             self._entry = entry
         else:
-            raise TypeError("The given entry object is neither a ProgramLocation nor an IntrinsicProcedure!")
+            raise TypeError("The given entry object is neither a ProgramLocation, nor a StackProgram!")
+
+    def print(self, out):
+        out.write("Procedure(")
+        out.write(str(self._num_args))
+        e = self._entry
+        if not isinstance(e, StackProgram):
+            e = ProgramLocation(e, 0)
+        e.print(out)
+        out.write(")")
 
     @property
     def type(self):
@@ -909,6 +952,14 @@ class VProperty(Value):
         self._getter = check_type(getter, VProcedure)
         self._setter = None if setter is None else check_type(setter, VProcedure)
 
+    def print(self, out):
+        out.write("Property(")
+        self.getter.print(out)
+        if self.setter is not None:
+            out.write(", ")
+            self.setter.print(out)
+        out.write(")")
+
     @property
     def type(self):
         return TBuiltin.property
@@ -954,6 +1005,11 @@ class VModule(Value):
         super().__init__()
         self._ns = namespace
 
+    def print(self, out):
+        out.write("Module(")
+        self._ns.print(out)
+        out.write(")")
+
     @property
     def type(self):
         return TBuiltin.module
@@ -995,6 +1051,13 @@ class VInstance(Value):
         super().__init__()
         self._c = c
         self._fields = [VNone.instance] * num_fields
+
+    def print(self, out):
+        out.write("Instance(")
+        self.type.print(out)
+        out.write(", ")
+        out.write(str(id(self)))
+        out.write(")")
 
     @property
     def type(self):

@@ -17,8 +17,8 @@ class VRef(Reference):
         super().__init__()
         self._value = check_type(value, Value)
 
-    def __str__(self):
-        return str(self._value)
+    def print(self, out):
+        self._value.print(out)
 
     def _seal(self):
         self._value.seal()
@@ -68,9 +68,9 @@ class FrameReference(Reference):
         """
         return self._index
 
-    def __str__(self):
-        index = self._index
-        return f"@{index}"
+    def print(self, out):
+        out.write("@")
+        self._index.print(out)
 
     def _seal(self):
         pass
@@ -110,8 +110,8 @@ class AbsoluteFrameReference(Reference):
         self._offset = offset
         self._index = index
 
-    def __str__(self):
-        return f"@({self._taskid}, {self._offset}, {self._index})"
+    def print(self, out):
+        return out.write(f"@({self._taskid}, {self._offset}, {self._index})")
 
     def _seal(self):
         pass
@@ -143,8 +143,8 @@ class ReturnValueReference(Reference):
         """
         super().__init__()
 
-    def __str__(self):
-        return f"@return"
+    def print(self, out):
+        return out.write("@return")
 
     def _seal(self):
         pass
@@ -176,8 +176,8 @@ class ExceptionReference(Reference):
         """
         super().__init__()
 
-    def __str__(self):
-        return f"@exception"
+    def print(self, out):
+        return out.write("@exception")
 
     def _seal(self):
         pass
@@ -214,10 +214,9 @@ class FieldReference(Reference):
         self._v = check_type(value, Value)
         self._fidx = check_type(fidx, int)
 
-    def __str__(self):
-        v = self._v
-        idx = self._fidx
-        return f"{v}.{idx}"
+    def print(self, out):
+        self._v.print(out)
+        out.write(f".{self._fidx}")
 
     def _seal(self):
         self._v.seal()
@@ -261,10 +260,9 @@ class NameReference(Reference):
         self._ns = check_type(namespace, Reference)
         self._n = check_type(name, str)
 
-    def __str__(self):
-        ns = self._ns
-        n = self._n
-        return f"{ns}[\"{n}\"]"
+    def print(self, out):
+        self._ns.print(out)
+        out.write(f".{self._n}")
 
     def _seal(self):
         self._ns.seal()

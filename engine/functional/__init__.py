@@ -2,9 +2,10 @@ import abc
 
 from util import check_type
 from util.immutable import Sealable, Immutable
+from util.printable import Printable
 
 
-class Value(Sealable, abc.ABC):
+class Value(Sealable, Printable, abc.ABC):
     """
     Represents a runtime value.
     """
@@ -60,7 +61,7 @@ class EvaluationException(Exception):
     pass
 
 
-class Term(Immutable, abc.ABC):
+class Term(Immutable, Printable, abc.ABC):
     """
     Defines the types and semantics of expressions that the virtual machine can evaluate.
     A term is an expression the evaluation of which happens atomically and cannot cause any side effects.
@@ -158,8 +159,8 @@ class Type(Value):
         for t in self.mro:
             self._nfields += t._nfields
 
-    def __str__(self):
-        return self._name
+    def print(self, out):
+        out.write(self._name)
 
     @property
     def name(self):

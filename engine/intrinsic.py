@@ -51,6 +51,11 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         super().__init__()
         self._m = m
 
+    def print(self, out):
+        out.write("IntrinsicInstanceMethod(")
+        out.write(str(self._m))
+        out.write(")")
+
     def execute(self, tstate, mstate, instance, *args):
         try:
             tstate.returned = self._m(instance, *args)

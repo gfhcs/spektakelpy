@@ -4,6 +4,7 @@ from io import StringIO
 
 from util import check_type, check_types
 from util.immutable import Immutable, Sealable, check_unsealed, check_sealed
+from util.printable import Printable
 from .interaction import InteractionState, Interaction
 from .stack import Frame, StackState
 from ..functional import Reference, EvaluationException, Term, Value
@@ -20,10 +21,22 @@ class InstructionException(Exception):
     pass
 
 
-class Instruction(Immutable, abc.ABC):
+class Instruction(Printable, Immutable, abc.ABC):
     """
     Models the smallest, atomic execution steps.
     """
+
+    @staticmethod
+    @abc.abstractmethod
+    def print_proto(cls, out, *args):
+        """
+        Prints a prototype for this class of instructions to the given text stream.
+        :param out: The TextIOBase object to which strings should be printed.
+        :param args: The arguments that define the prototype for the instruction to be printed. Note that these arguments
+                     are likely not the ones that the constructor will be called with, because prototypes exist, before
+                     the program is complete and so can for example not know final jump locations yet.
+        """
+        pass
 
     @abc.abstractmethod
     def execute(self, tstate, mstate):
@@ -72,8 +85,15 @@ class Update(Instruction):
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
-    def __str__(self):
-        return "{} := {}".format(self._ref, self._term)
+    def print(self, out):
+        Update.print_proto(out, self._ref, self._term, self._edestination)
+
+    @staticmethod
+    def print_proto(out, ref, term, on_error):
+        ref.print(out)
+        out.write(" := ")
+        term.print(out)
+        out.write(f"\ton_error: {on_error}")
 
     def enabled(self, tstate, mstate):
         return True
@@ -150,15 +170,20 @@ class Guard(Instruction):
         self._alternatives = {check_type(e, Term): check_type(d, int) for e, d in alternatives.items()}
         self._edestination = check_type(edestination, int)
 
-    def __str__(self):
-        with StringIO() as s:
-            s.write("{")
-            prefix = ""
-            for t, d in self._alternatives.items():
-                s.write(f"{prefix}{t}: {d}")
-                prefix = ", "
-            s.write("}")
-            return s.getvalue()
+    def print(self, out):
+        Guard.print_proto(out, self._alternatives, self._edestination)
+
+    @staticmethod
+    def print_proto(out, alternatives, on_error):
+        out.write("guard {")
+        prefix = ""
+        for t, d in alternatives.items():
+            out.write(prefix)
+            t.print(out)
+            out.write(": ")
+            d.print(out)
+            prefix = ", "
+        out.write(f"}}\ton_error: {on_error}")
 
     @property
     def conditions(self):
@@ -256,8 +281,21 @@ class Push(Instruction):
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
-    def __str__(self):
-        return "push({}, [{}])".format(self._entry, ", ".join(map(str, self._expressions)))
+    def print(self, out):
+        Push.print_proto(out, self._entry, self._expressions, self._edestination)
+
+    @staticmethod
+    def print_proto(out, entry, aexpressions, on_error):
+        out.write("push(")
+        entry.print(out)
+        out.write(", [")
+        prefix = ""
+        for e in aexpressions:
+            out.write(prefix)
+            e.print(out)
+            prefix = ", "
+        out.write("])")
+        out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
         return hash((self._entry, self._expressions, self._destination, self._edestination))
@@ -305,8 +343,12 @@ class Pop(Instruction):
     def __init__(self):
         super().__init__()
 
-    def __str__(self):
-        return "pop"
+    def print(self, out):
+        Pop.print_proto(out)
+
+    @staticmethod
+    def print_proto(out):
+        out.write("pop")
 
     def hash(self):
         return 0
@@ -343,6 +385,22 @@ class Launch(Instruction):
         self._expressions = tuple(check_types(expressions, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
+
+    def print(self, out):
+        Launch.print_proto(out, self._entry, self._expressions, self._edestination)
+
+    @staticmethod
+    def print_proto(out, entry, aexpressions, on_error):
+        out.write("launch(")
+        entry.print(out)
+        out.write(", [")
+        prefix = ""
+        for e in aexpressions:
+            out.write(prefix)
+            e.print(out)
+            prefix = ", "
+        out.write("])")
+        out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
         return hash((self._entry, self._expressions, self._destination, self._edestination))
@@ -383,7 +441,7 @@ class Launch(Instruction):
         mytop.instruction_index = self._destination
 
 
-class StackProgram(Immutable):
+class StackProgram(Printable, Immutable):
     """
     An array of stack machine instructions. Each instruction updates the state of a stack machine, in particular
     determining which instruction to execute next.
@@ -397,13 +455,13 @@ class StackProgram(Immutable):
         super().__init__()
         self._instructions = tuple(check_type(i, Instruction) for i in instructions)
 
-    def __str__(self):
-        with io.StringIO() as s:
-            prefix = "0: "
-            for idx, i in enumerate(self._instructions):
-                s.write(f"{prefix}{i}")
-                prefix = f"\n{idx + 1}: "
-            return s.getvalue()
+    def print(self, out):
+        out.write("StackProgram ")
+        out.write(str(id(self)))
+        out.write(":")
+        for idx, i in enumerate(self._instructions):
+            out.write(f"\n{idx + 1}: ")
+            i.print(out)
 
     def hash(self):
         return hash(self._instructions)
@@ -442,6 +500,13 @@ class ProgramLocation(Immutable, Value):
         super().__init__()
         self._program = check_type(program, StackProgram)
         self._index = check_type(index, int)
+
+    def print(self, out):
+        out.write("[Line ")
+        out.write(self._index)
+        out.write("of StackProgram")
+        out.write(str(id(self._program)))
+        out.write("]")
 
     @property
     def program(self):

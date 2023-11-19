@@ -1,3 +1,4 @@
+import abc
 from abc import ABC
 from enum import Enum
 
@@ -30,11 +31,13 @@ class CTerm(Term):
     def equals(self, other):
         return isinstance(other, CTerm) and self._value == other._value
 
-    def __str__(self):
-        return str(self._value)
-
     def evaluate(self, tstate, mstate):
         return self._value
+
+    def print(self, out):
+        out.write("CTerm(")
+        self._value.print(out)
+        out.write(")")
 
 
 class TRef(CTerm):
@@ -127,6 +130,54 @@ class CType(CTerm):
         super().__init__(t)
 
 
+def print_child(out, parent, child):
+    """
+    In the process of formatting a parent term, formats one of the parent's children with or without parentheses,
+    depending on the operator precedences of parent and child.
+    :param out: The io.TextIOBase object to which strings should be written.
+    :param parent: A term object the formatting of which has already begun.
+    :param child: A term object that is a direct child of the given parent term and that needs to be formatted
+                  as part of formatting the parent.
+    """
+
+    def level(term):
+        if len(term.children) == 0:
+            return 0
+        elif isinstance(term, ArithmeticBinaryOperation):
+            if term.operator == ArithmeticBinaryOperator.POWER:
+                return 2
+            elif term.operator in (ArithmeticBinaryOperator.TIMES, ArithmeticBinaryOperator.OVER,
+                                   ArithmeticBinaryOperator.INTOVER, ArithmeticBinaryOperator.MODULO):
+                return 4
+            elif term.operator in (ArithmeticBinaryOperator.PLUS, ArithmeticBinaryOperator.MINUS):
+                return 5
+        elif isinstance(term, UnaryOperation):
+            if term.operator == UnaryOperator.MINUS:
+                return 3
+            elif term.operator == UnaryOperator.NOT:
+                return 7
+        elif isinstance(term, Comparison):
+            return 6
+        elif isinstance(term, BooleanBinaryOperation):
+            if term.operator == BooleanBinaryOperator.AND:
+                return 8
+            elif term.operator == BooleanBinaryOperator.OR:
+                return 9
+        else:
+            return 1
+
+        raise NotImplementedError(f"Determining the syntactic operator level for a term of type {type(term)}"
+                                  f" has not been implemented!")
+
+    parentheses_needed = level(child) > level(parent)
+
+    if parentheses_needed:
+        out.write("(")
+    child.print(out)
+    if parentheses_needed:
+        out.write(")")
+
+
 class UnaryOperator(Enum):
     """
     A unary operator.
@@ -156,10 +207,9 @@ class UnaryOperation(Term):
     def equals(self, other):
         return isinstance(other, UnaryOperation) and self._op == other._op and self.operand == other.operand
 
-    def __str__(self):
-        op = {UnaryOperator.NOT: "~", UnaryOperator.MINUS: "-"}[self._op]
-        arg = self.operand
-        return f"{op}{arg}"
+    def print(self, out):
+        out.write({UnaryOperator.NOT: "~", UnaryOperator.MINUS: "-"}[self._op])
+        print_child(out, self, self.operand)
 
     @property
     def operand(self):
@@ -207,6 +257,19 @@ class BinaryTerm(Term, ABC):
 
     def equals(self, other):
         return isinstance(other, BinaryTerm) and self._op == other._op and tuple(self.children) == tuple(other.children)
+
+    @abc.abstractmethod
+    def print_operator(self, out):
+        """
+        Prints a string reprentation of the binary operator used in this operation.
+        :param out: The TextIOBase instance to which the operator should be printed.
+        """
+        pass
+
+    def print(self, out):
+        print_child(out, self, self.left)
+        self.print_operator(out)
+        print_child(out, self, self.right)
 
     @property
     def left(self):
@@ -257,17 +320,14 @@ class ArithmeticBinaryOperation(BinaryTerm):
         """
         super().__init__(check_type(op, ArithmeticBinaryOperator), left, right)
 
-    def __str__(self):
-        op = {ArithmeticBinaryOperator.PLUS: "+",
-              ArithmeticBinaryOperator.MINUS: "-",
-              ArithmeticBinaryOperator.TIMES: "*",
-              ArithmeticBinaryOperator.OVER: "/",
-              ArithmeticBinaryOperator.INTOVER: "//",
-              ArithmeticBinaryOperator.MODULO: "%",
-              ArithmeticBinaryOperator.POWER: "**"}[self._op]
-        left = self.left
-        right = self.right
-        return f"{left} {op} {right}"
+    def print_operator(self, out):
+        out.write({ArithmeticBinaryOperator.PLUS: "+",
+                   ArithmeticBinaryOperator.MINUS: "-",
+                   ArithmeticBinaryOperator.TIMES: "*",
+                   ArithmeticBinaryOperator.OVER: "/",
+                   ArithmeticBinaryOperator.INTOVER: "//",
+                   ArithmeticBinaryOperator.MODULO: "%",
+                   ArithmeticBinaryOperator.POWER: "**"}[self._op])
 
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
@@ -312,12 +372,9 @@ class BooleanBinaryOperation(BinaryTerm):
         """
         super().__init__(check_type(op, BooleanBinaryOperator), left, right)
 
-    def __str__(self):
-        op = {ArithmeticBinaryOperator.AND: "and",
-              ArithmeticBinaryOperator.OR: "or"}[self._op]
-        left = self.left
-        right = self.right
-        return f"{left} {op} {right}"
+    def print_operator(self, out):
+        out.write({ArithmeticBinaryOperator.AND: "and",
+                   ArithmeticBinaryOperator.OR: "or"}[self._op])
 
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
@@ -360,20 +417,17 @@ class Comparison(BinaryTerm):
         """
         super().__init__(check_type(op, ComparisonOperator), left, right)
 
-    def __str__(self):
-        op = {ComparisonOperator.EQ: "==",
-              ComparisonOperator.NEQ: "!=",
-              ComparisonOperator.LESS: "<",
-              ComparisonOperator.LESSOREQUAL: "<=",
-              ComparisonOperator.GREATER: ">",
-              ComparisonOperator.GREATEROREQUAL: ">=",
-              ComparisonOperator.IN: "in",
-              ComparisonOperator.NOTIN: "not in",
-              ComparisonOperator.IS: "is",
-              ComparisonOperator.ISNOT: "is not"}[self._op]
-        left = self.left
-        right = self.right
-        return f"{left} {op} {right}"
+    def print_operator(self, out):
+        out.write({ComparisonOperator.EQ: "==",
+                   ComparisonOperator.NEQ: "!=",
+                   ComparisonOperator.LESS: "<",
+                   ComparisonOperator.LESSOREQUAL: "<=",
+                   ComparisonOperator.GREATER: ">",
+                   ComparisonOperator.GREATEROREQUAL: ">=",
+                   ComparisonOperator.IN: "in",
+                   ComparisonOperator.NOTIN: "not in",
+                   ComparisonOperator.IS: "is",
+                   ComparisonOperator.ISNOT: "is not"}[self._op])
 
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
@@ -432,11 +486,13 @@ class UnaryPredicateTerm(Term):
     def equals(self, other):
         return isinstance(other, UnaryPredicateTerm) and self._p == other._p and self.operand == other.operand
 
-    def __str__(self):
-        op = {UnaryPredicate.ISCALLABLE: "is_callable",
-              UnaryPredicate.ISEXCEPTION: "is_exception",
-              UnaryPredicate.ISTERMINATED: "is_terminated"}[self._p]
-        return f"{op}({self.operand})"
+    def print(self, out):
+        out.write({UnaryPredicate.ISCALLABLE: "is_callable",
+                   UnaryPredicate.ISEXCEPTION: "is_exception",
+                   UnaryPredicate.ISTERMINATED: "is_terminated"}[self._p])
+        out.write("(")
+        self.operand.print(out)
+        out.write(")")
 
     @property
     def operand(self):
@@ -493,9 +549,10 @@ class ITask(Term):
     def equals(self, other):
         return isinstance(other, ITask) and self._s == other._s
 
-    def __str__(self):
-        s = self._s
-        return f"itask({s})"
+    def print(self, out):
+        out.write("itask(")
+        self._s.print(out)
+        out.write(")")
 
     @property
     def predicate(self):
@@ -537,9 +594,12 @@ class IsInstance(Term):
     def equals(self, other):
         return isinstance(other, IsInstance) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        value, types = self.children
-        return f"is_instance({value}, {types})"
+    def print(self, out):
+        out.write("is_instance(")
+        self.value.print(out)
+        out.write(", ")
+        self.types.print(out)
+        out.write(")")
 
     @property
     def value(self):
@@ -590,9 +650,10 @@ class Read(Term):
     def equals(self, other):
         return isinstance(other, Read) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        r = self.reference
-        return f"read({r})"
+    def print(self, out):
+        out.write("read(")
+        self.reference.print(out)
+        out.write(")")
 
     @property
     def reference(self):
@@ -626,9 +687,11 @@ class Project(Term):
     def equals(self, other):
         return isinstance(other, Project) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        t, idx = self.children
-        return f"{t}[{idx}]"
+    def print(self, out):
+        print_child(out, self, self.tuple)
+        out.write("[")
+        self.index.print(out)
+        out.write("]")
 
     @property
     def tuple(self):
@@ -668,9 +731,11 @@ class Lookup(Term):
     def equals(self, other):
         return isinstance(other, Lookup) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        ns, n = self.children
-        return f"{ns}[{n}]"
+    def print(self, out):
+        print_child(out, self, self.namespace)
+        out.write("[")
+        self.name.print(out)
+        out.write("]")
 
     @property
     def namespace(self):
@@ -720,9 +785,10 @@ class LoadAttrCase(Term):
     def equals(self, other):
         return isinstance(other, LoadAttrCase) and self._name == other._name and self.value == other.value
 
-    def __str__(self):
-        v, a = self.value, self._name
-        return f"{v}.{a}"
+    def print(self, out):
+        print_child(out, self, self.value)
+        out.write(".")
+        out.write(self._name)
 
     @property
     def value(self):
@@ -784,9 +850,10 @@ class StoreAttrCase(Term):
     def equals(self, other):
         return isinstance(other, StoreAttrCase) and self._name == other._name and self.value == other.value
 
-    def __str__(self):
-        v, a = self.value, self._name
-        return f"{v}.{a}"
+    def print(self, out):
+        print_child(out, self, self.value)
+        out.write(".")
+        out.write(self._name)
 
     @property
     def value(self):
@@ -838,8 +905,14 @@ class NewTuple(Term):
     def equals(self, other):
         return isinstance(other, NewTuple) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        return "({})".format(", ".join(self.children))
+    def print(self, out):
+        out.write("(")
+        prefix = ""
+        for c in self.children:
+            out.write(prefix)
+            c.print(out)
+            prefix = ", "
+        out.write(")")
 
     @property
     def components(self):
@@ -870,8 +943,8 @@ class NewList(Term):
     def equals(self, other):
         return isinstance(other, NewList)
 
-    def __str__(self):
-        return "[]"
+    def print(self, out):
+        out.write("[]")
 
     def evaluate(self, tstate, mstate):
         return VList()
@@ -894,8 +967,8 @@ class NewDict(Term):
     def equals(self, other):
         return isinstance(other, NewDict)
 
-    def __str__(self):
-        return "{}"
+    def print(self, out):
+        out.write("{}")
 
     def evaluate(self, tstate, mstate):
         return VDict()
@@ -922,9 +995,9 @@ class NewJumpError(Term):
     def equals(self, other):
         return isinstance(other, NewJumpError) and self._etype is other._etype
 
-    def __str__(self):
-        t = str(self._etype)
-        return f"{t}()"
+    def print(self, out):
+        out.write(str(self._etype))
+        out.write("()")
 
     @property
     def etype(self):
@@ -956,9 +1029,10 @@ class NewTypeError(Term):
     def equals(self, other):
         return isinstance(other, NewTypeError) and self._msg == other._msg
 
-    def __str__(self):
-        msg = self._msg
-        return f"TypeError({msg})"
+    def print(self, out):
+        out.write("TypeError(")
+        out.write(repr(self._msg))
+        out.write(")")
 
     @property
     def message(self):
@@ -988,8 +1062,8 @@ class NewNamespace(Term):
     def equals(self, other):
         return isinstance(other, NewNamespace)
 
-    def __str__(self):
-        return "Namespace()"
+    def print(self, out):
+        out.write("Namespace()")
 
     def evaluate(self, tstate, mstate):
         return VNamespace()
@@ -1016,10 +1090,15 @@ class NewProcedure(Term):
     def equals(self, other):
         return isinstance(other, NewProcedure) and self._num_args == other._num_args and (self._entry is other._entry or self._entry == other._entry)
 
-    def __str__(self):
-        na = self._num_args
-        entry = self._entry
-        return f"Procedure({na}, {entry})"
+    def print(self, out):
+        out.write("Procedure(")
+        out.write(str(self._num_args))
+        out.write(", ")
+        e = self._entry
+        if isinstance(e, StackProgram):
+            e = ProgramLocation(e, 0)
+        e.print(out)
+        out.write(")")
 
     @property
     def num_args(self):
@@ -1060,9 +1139,10 @@ class NumArgs(Term):
     def equals(self, other):
         return isinstance(other, NumArgs) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        p, = self.children
-        return f"num_args({p})"
+    def print(self, out):
+        out.write("num_args(")
+        self.children[0].print(out)
+        out.write(")")
 
     def evaluate(self, tstate, mstate):
         p = self.children[0].evaluate(tstate, mstate)
@@ -1092,9 +1172,13 @@ class NewProperty(Term):
     def equals(self, other):
         return isinstance(other, NewProperty) and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        g, s = self.children
-        return f"Property({g}, {s})"
+    def print(self, out):
+        out.write("Property(")
+        self.getter.print(out)
+        if self.setter is not None:
+            out.write(", ")
+            self.setter.print(out)
+        out.write(")")
 
     @property
     def getter(self):
@@ -1143,11 +1227,19 @@ class NewClass(Term):
     def equals(self, other):
         return isinstance(other, NewClass) and self._name == other._name and tuple(self.children) == tuple(other.children)
 
-    def __str__(self):
-        name = self._name
+    def print(self, out):
+        out.write("class(")
+        out.write(repr(self._name))
         *superclasses, ns = self.children
-        superclasses = ", ".join(superclasses)
-        return f"class(\"{name}\"{name}, [{superclasses}], {ns})"
+        out.write(", [")
+        prefix = ""
+        for s in superclasses:
+            out.write(prefix)
+            s.print(out)
+            prefix = ", "
+        out.write("], ")
+        ns.print(out)
+        out.write(")")
 
     @property
     def name(self):
@@ -1216,3 +1308,7 @@ class NewModule(Term):
         ns = self.namespace.evaluate(tstate, mstate)
         return VModule(ns)
 
+    def print(self, out):
+        out.write("Module(")
+        self.namespace.print(out)
+        out.write(")")

@@ -1,9 +1,10 @@
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
+from util.printable import Printable
 from .task import TaskState
 
 
-class MachineState(Sealable):
+class MachineState(Printable, Sealable):
     """
     Represents the state of a virtual machine that is executing tasks.
     """
@@ -15,6 +16,15 @@ class MachineState(Sealable):
         """
         super().__init__()
         self._tstates = check_types(task_states, TaskState)
+
+    def print(self, out):
+        out.write("MachineState(")
+        prefix = ""
+        for t in self._tstates:
+            out.write(prefix)
+            t.print(out)
+            prefix = ", "
+        out.write(")")
 
     def _seal(self):
         for t in self._tstates:

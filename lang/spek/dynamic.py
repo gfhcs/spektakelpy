@@ -10,6 +10,7 @@ from engine.functional.values import VReturnError, VBreakError, VContinueError, 
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram, ProgramLocation
 from lang.translator import Translator
 from util import check_type
+from util.printable import Printable
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
@@ -22,7 +23,7 @@ def negate(bexp):
     return terms.UnaryOperation(UnaryOperator.NOT, bexp)
 
 
-class Chain:
+class Chain(Printable):
     """
     Represents a sequence of instructions. Control flow can enter this chain only at its start.
     """
@@ -85,20 +86,13 @@ class Chain:
         s._can_continue = other._can_continue
         return s
 
-    def __str__(self):
-        t2s = {Update: "Update", Guard: "Guard", Push: "Push", Pop: "Pop", Launch: "Launch"}
-        newline = ""
-        with io.StringIO() as s:
-            for t, *args in self._proto:
-                s.write(newline)
-                newline = "\n"
-                s.write(t2s[t])
-                prefix = ": "
-                for a in args:
-                    s.write(prefix)
-                    s.write(str(a))
-                    prefix = ", "
-            return s.getvalue()
+    def print(self, out):
+        out.write("Chain ")
+        out.write(str(id(self)))
+        out.write(":")
+        for t, *args in self._proto:
+            out.write(f"\n ")
+            t.print_proto(out, *args)
 
     def __len__(self):
         return len(self._proto)

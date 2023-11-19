@@ -1,11 +1,13 @@
 from engine.functional.values import VException
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
+from util.printable import Printable
+from .instructions import ProgramLocation
 from ..functional import Value
 from ..task import TaskState, TaskStatus
 
 
-class Frame(Sealable):
+class Frame(Printable, Sealable):
     """
     Represents a set of local variables and a pointer to the next machine instruction to execute.
     """
@@ -21,6 +23,17 @@ class Frame(Sealable):
 
         self._location = check_type(location, ProgramLocation)
         self._local_values = list(check_types(local_values, Value))
+
+    def print(self, out):
+        out.write("Frame@")
+        self._location.print(out)
+        out.write(": [")
+        prefix = ""
+        for v in self._local_values:
+            out.write(prefix)
+            v.print(out)
+            prefix = ", "
+        out.write("]")
 
     def _seal(self):
         self._location.seal()
@@ -110,6 +123,15 @@ class StackState(TaskState):
         self._stack = list(check_types(stack, Frame))
         self._exception = check_type(exception, Value, allow_none=True)
         self._returned = check_type(returned, Value, allow_none=True)
+
+    def print(self, out):
+        out.write("StackState[")
+        prefix = ""
+        for f in self._stack:
+            out.write(prefix)
+            ProgramLocation(f.instruction_index, f.program).print(out)
+            prefix = ", "
+        out.write("]")
 
     def _seal(self):
         self._stack = tuple(self._stack)

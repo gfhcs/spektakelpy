@@ -16,6 +16,16 @@ class Interaction(Enum):
     PREV = 2
 
 
+def i2s(i):
+    """
+    Formats an interaction label as a string.
+    :param i: An Interaction value.
+    :return: A string.
+    """
+    r = str(i)
+    return r[r.index(".") + 1:]
+
+
 class BuiltinVariable(Enum):
     """
     Builtin variables.
@@ -35,6 +45,10 @@ class InteractionState(TaskState):
         """
         super().__init__(status)
         self._interaction = check_type(interaction, Interaction)
+
+    def print(self, out):
+        status = "RECEIVED" if self.status == TaskStatus.COMPLETED else "Waiting for"
+        out.write(f"InteractionState[{status} {i2s(self._interaction)}]")
 
     def clone_unsealed(self, clones=None):
         if clones is None:
