@@ -461,7 +461,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         result = states[-1].content.task_states[0].stack[0][0]
 
-        self.assertEqual("Hello World", str(result))
+        self.assertEqual("Hello World", result.string)
 
     def test_UnaryOperation(self):
 

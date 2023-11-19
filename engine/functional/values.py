@@ -347,6 +347,10 @@ class VStr(Value):
     def print(self, out):
         out.write(repr(self._value))
 
+    @property
+    def string(self):
+        return self._value
+
     def __repr__(self):
         return "VString(\"{}\")".format(self._value)
 
@@ -367,7 +371,7 @@ class VStr(Value):
         return self
 
     def __contains__(self, item):
-        return str(item) in self._value
+        return item.string in self._value
 
     def __lt__(self, other):
         return VBool.from_bool(self._value < other._value)
