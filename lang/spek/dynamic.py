@@ -7,7 +7,8 @@ from engine.functional.reference import ReturnValueReference, ExceptionReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     NewProcedure, CTerm, Lookup, CString
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
-from engine.tasks.instructions import Push, Pop, Launch, Update, Guard, StackProgram, ProgramLocation
+from engine.tasks.instructions import Push, Pop, Launch, Update, Guard
+from engine.tasks.program import StackProgram, ProgramLocation
 from lang.translator import Translator
 from util import check_type
 from util.printable import Printable

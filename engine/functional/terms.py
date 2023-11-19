@@ -8,7 +8,7 @@ from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VModule, VAttributeError, VJumpError, VList
 from ..task import TaskStatus
-from ..tasks.instructions import StackProgram, ProgramLocation
+from ..tasks.program import StackProgram, ProgramLocation
 from ..tasks.interaction import Interaction, InteractionState
 
 

@@ -6,7 +6,7 @@ from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.values import VNone
 from engine.machine import MachineState
 from engine.task import TaskStatus
-from engine.tasks.instructions import ProgramLocation
+from engine.tasks.program import ProgramLocation
 from engine.tasks.interaction import InteractionState, Interaction
 from engine.tasks.stack import StackState, Frame
 from lang.spek import syntax, static, modules

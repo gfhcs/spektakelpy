@@ -1094,4 +1094,4 @@ class VInstance(Value):
         self._fields[check_type(key, int)] = check_type(value, Value)
 
 from .types import TBuiltin
-from ..tasks.instructions import ProgramLocation, StackProgram
+from ..tasks.program import StackProgram, ProgramLocation

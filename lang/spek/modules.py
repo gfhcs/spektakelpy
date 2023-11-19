@@ -6,7 +6,8 @@ from engine.functional.reference import ReturnValueReference
 from engine.functional.terms import TRef, CTerm, CString, ITask
 from engine.functional.types import TBuiltin
 from engine.functional.values import VProcedure
-from engine.tasks.instructions import Update, Pop, StackProgram, Guard
+from engine.tasks.instructions import Update, Pop, Guard
+from engine.tasks.program import StackProgram
 from engine.tasks.interaction import Interaction
 from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.dynamic import Spektakel2Stack

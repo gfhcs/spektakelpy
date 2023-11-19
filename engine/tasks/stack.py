@@ -2,7 +2,7 @@ from engine.functional.values import VException
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
 from util.printable import Printable
-from .instructions import ProgramLocation
+from .program import ProgramLocation
 from ..functional import Value
 from ..task import TaskState, TaskStatus
 
@@ -240,7 +240,7 @@ class StackState(TaskState):
             try:
                 i = top.program[top.instruction_index]
             except IndexError:
-                from .instructions import InstructionException
+                from . import InstructionException
                 self.exception = VException(pexception=InstructionException("Instruction index invalid, don't know how to continue."))
                 tstate.status = TaskStatus.FAILED
                 break

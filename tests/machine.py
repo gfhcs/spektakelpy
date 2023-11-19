@@ -13,7 +13,8 @@ from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBo
     VBreakError, VNamespace, VStr, VModule, VProperty, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
-from engine.tasks.instructions import StackProgram, ProgramLocation, Update, Pop, Guard, Push, Launch
+from engine.tasks.instructions import Update, Pop, Guard, Push, Launch
+from engine.tasks.program import StackProgram, ProgramLocation
 from engine.tasks.interaction import InteractionState, Interaction
 from engine.tasks.stack import StackState, Frame
 from util.lts import lts2str
