@@ -704,7 +704,7 @@ class VException(Value):
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
     def print(self, out):
-        out.write(str(type(self)))
+        out.write(type(self).__name__)
         out.write("(")
         out.write(repr(self._msg))
         out.write(", ...)")
@@ -890,16 +890,11 @@ class VProcedure(Value):
         """
         Creates a new procedure.
         :param num_args: The number of arguments of this procedure.
-        :param entry: Either a ProgramLocation that points to the entry point for this procedure,
-                      or a StackProgram.
+        :param entry: A ProgramLocation that points to the entry point for this procedure.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
-
-        if isinstance(entry, (ProgramLocation, StackProgram)):
-            self._entry = entry
-        else:
-            raise TypeError("The given entry object is neither a ProgramLocation, nor a StackProgram!")
+        self._entry = check_type(entry, ProgramLocation)
 
     def print(self, out):
         out.write("Procedure(")
@@ -924,7 +919,7 @@ class VProcedure(Value):
     @property
     def entry(self):
         """
-        Either a ProgramLocation or an IntrinsicProcedure, or a StackProgram object.
+        A ProgramLocation that points to the entry point for this procedure.
         """
         return self._entry
 

@@ -59,12 +59,13 @@ class ProgramLocation(Immutable, Value):
         :param program: The StackProgram this object is pointing into.
         :param index: The index of the instruction in the given stack program that this location is pointing to.
         """
-        if not program.sealed:
-            raise ValueError("The given program must be sealed!")
 
         super().__init__()
         self._program = check_type(program, StackProgram)
         self._index = check_type(index, int)
+
+        if not program.sealed:
+            raise ValueError("The given program must be sealed!")
 
     def print(self, out):
         out.write("[Line ")

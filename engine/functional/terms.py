@@ -268,7 +268,9 @@ class BinaryTerm(Term, ABC):
 
     def print(self, out):
         print_child(out, self, self.left)
+        out.write(" ")
         self.print_operator(out)
+        out.write(" ")
         print_child(out, self, self.right)
 
     @property

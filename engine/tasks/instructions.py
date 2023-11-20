@@ -122,8 +122,7 @@ class Guard(Instruction):
         for t, d in alternatives.items():
             out.write(prefix)
             t.print(out)
-            out.write(": ")
-            d.print(out)
+            out.write(f": {d}")
             prefix = ", "
         out.write(f"}}\ton_error: {on_error}")
 

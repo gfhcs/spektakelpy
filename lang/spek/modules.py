@@ -7,7 +7,7 @@ from engine.functional.terms import TRef, CTerm, CString, ITask
 from engine.functional.types import TBuiltin
 from engine.functional.values import VProcedure
 from engine.tasks.instructions import Update, Pop, Guard
-from engine.tasks.program import StackProgram
+from engine.tasks.program import StackProgram, ProgramLocation
 from engine.tasks.interaction import Interaction
 from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.dynamic import Spektakel2Stack
@@ -207,7 +207,8 @@ def build_default_finder(roots):
     procedures = {}
     r = TRef(ReturnValueReference())
     for name, symbol in symbols.items():
-        procedures[name] = VProcedure(0, StackProgram([Update(r, ITask(symbol), 1, 42), Pop()]))
+        p = StackProgram([Update(r, ITask(symbol), 1, 42), Pop()])
+        procedures[name] = VProcedure(0, ProgramLocation(p, 0))
 
     types = {t.name: t for t in TBuiltin.instances}
 

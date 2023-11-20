@@ -69,8 +69,7 @@ class FrameReference(Reference):
         return self._index
 
     def print(self, out):
-        out.write("@")
-        self._index.print(out)
+        out.write(f"@{self._index}")
 
     def _seal(self):
         pass

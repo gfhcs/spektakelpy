@@ -1117,7 +1117,7 @@ class Spektakel2Stack(Translator):
         exit.append_pop()
         self._blocks.pop()
 
-        self._import_procedure = VProcedure(1, imp_code.compile())
+        self._import_procedure = VProcedure(1, ProgramLocation(imp_code.compile(), 0))
 
         return preamble
 
