@@ -208,7 +208,7 @@ class UnaryOperation(Term):
         return isinstance(other, UnaryOperation) and self._op == other._op and self.operand == other.operand
 
     def print(self, out):
-        out.write({UnaryOperator.NOT: "~", UnaryOperator.MINUS: "-"}[self._op])
+        out.write({UnaryOperator.NOT: "not ", UnaryOperator.MINUS: "-"}[self._op])
         print_child(out, self, self.operand)
 
     @property

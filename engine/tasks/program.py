@@ -25,7 +25,7 @@ class StackProgram(Printable, Immutable):
         out.write(str(id(self)))
         out.write(":")
         for idx, i in enumerate(self._instructions):
-            out.write(f"\n{idx + 1}: ")
+            out.write(f"\n{idx}: ")
             i.print(out)
 
     def hash(self):
@@ -68,11 +68,7 @@ class ProgramLocation(Immutable, Value):
             raise ValueError("The given program must be sealed!")
 
     def print(self, out):
-        out.write("[Line ")
-        out.write(self._index)
-        out.write("of StackProgram")
-        out.write(str(id(self._program)))
-        out.write("]")
+        out.write(f"[Line {self._index} of StackProgram {id(self._program)}]")
 
     @property
     def program(self):

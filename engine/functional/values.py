@@ -1,4 +1,4 @@
-from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicProcedure
+from engine.intrinsic import IntrinsicInstanceMethod
 from util import check_type
 from . import Value
 
@@ -900,7 +900,7 @@ class VProcedure(Value):
         out.write("Procedure(")
         out.write(str(self._num_args))
         e = self._entry
-        if not isinstance(e, StackProgram):
+        if not isinstance(e, ProgramLocation):
             e = ProgramLocation(e, 0)
         e.print(out)
         out.write(")")
@@ -1093,4 +1093,4 @@ class VInstance(Value):
         self._fields[check_type(key, int)] = check_type(value, Value)
 
 from .types import TBuiltin
-from ..tasks.program import StackProgram, ProgramLocation
+from ..tasks.program import ProgramLocation

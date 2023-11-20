@@ -1,6 +1,7 @@
 import unittest
 from io import StringIO
 
+from engine.functional.terms import ComparisonOperator, Comparison, UnaryOperator, UnaryOperation, CNone
 from lang.spek import syntax, static, modules
 from lang.spek.dynamic import Spektakel2Stack
 
@@ -40,11 +41,21 @@ class TestPrinting(unittest.TestCase):
 
     def test_empty(self):
         """
-        Tests if the empty program is executed successfully.
+        Tests if the machine for the empty program can be printed without crash.
         """
-
         program = self.compile("# Just some empty program.")
-
-        # We just want to know that this is printable without crashes.
-
         str(program)
+
+    def test_negated_comparison(self):
+        """
+        Tests that the printing for a negated comparison does _not_ put the comparison into parentheses
+        and that 'not' is used to print negations.
+        """
+        term = UnaryOperation(UnaryOperator.NOT, Comparison(ComparisonOperator.EQ, CNone(), CNone()))
+
+        s = str(term)
+
+        self.assertTrue(s.count("(") <= 2 and s.count("(") <= 2)
+
+        self.assertTrue("not" in s)
+
