@@ -35,9 +35,7 @@ class CTerm(Term):
         return self._value
 
     def print(self, out):
-        out.write("CTerm(")
         self._value.print(out)
-        out.write(")")
 
 
 class TRef(CTerm):

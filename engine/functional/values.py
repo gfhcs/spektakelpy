@@ -897,13 +897,7 @@ class VProcedure(Value):
         self._entry = check_type(entry, ProgramLocation)
 
     def print(self, out):
-        out.write("Procedure(")
-        out.write(str(self._num_args))
-        e = self._entry
-        if not isinstance(e, ProgramLocation):
-            e = ProgramLocation(e, 0)
-        e.print(out)
-        out.write(")")
+        out.write(f"Procedure({self._num_args}, {self._entry})")
 
     @property
     def type(self):
