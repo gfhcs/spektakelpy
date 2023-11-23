@@ -11,6 +11,7 @@ from engine.tasks.interaction import InteractionState, Interaction
 from engine.tasks.stack import StackState, Frame
 from lang.spek import syntax, static, modules
 from lang.spek.dynamic import Spektakel2Stack
+from lang.spek.modules import SpekStringModuleSpecification
 from tests.tools import dedent
 
 
@@ -69,10 +70,9 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         return lts, states, internal, external
 
-    def translate_explore(self, sample, env=None, roots=None):
+    def translate_explore(self, sample, roots=None):
         """
         Translates and executes the given code sample.
-        :param env: The environment in which the AST of the given sample is to be validated.
         :exception ParserError: If the given string was not a syntactically correct Spektakel program.
         :param sample: The code to lex, parse and validate, as a string.
         :param roots: The file system roots that should be searched for modules to be imported.
@@ -80,21 +80,12 @@ class TestSpektakelTranslation(unittest.TestCase):
                  names to their declarations, dec is a mapping of refering nodes to their referents and err is an iterable
                  of ValidationErrors.
         """
-        sample = StringIO(sample)
-        lexer = syntax.SpektakelLexer(sample)
-        node = syntax.SpektakelParser.parse_block(lexer)
         finder, builtin = modules.build_default_finder([] if roots is None else roots)
         v = static.SpektakelValidator(finder, builtin)
-        if env is None:
-            env = v.environment_default
-        _, dec, err = v.validate(node, env)
-
-        assert len(err) == 0
 
         translator = Spektakel2Stack(builtin)
 
-        program = translator.translate([node], dec)
-
+        program = translator.translate(SpekStringModuleSpecification(sample, v, builtin))
         program = program.compile()
 
         _, states, internal, external = self.explore(program, self.initialize_machine(program, 2))
