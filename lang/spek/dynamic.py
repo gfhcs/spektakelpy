@@ -5,7 +5,7 @@ from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, \
     AbsoluteFrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    NewProcedure, CTerm, Lookup, CString
+    NewProcedure, CTerm, Lookup, CString, CNone
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard
 from engine.tasks.program import StackProgram, ProgramLocation
@@ -1108,6 +1108,7 @@ class Spektakel2Stack(Translator):
         l = self.declare_name(imp_code, None, panic)
         imp_code.append_push(CTerm(VDict.get), [Read(TRef(d)), Read(TRef(l))], load1)
         imp_code.append_pop()
+        load1.append_update(TRef(ExceptionReference()), CNone(), panic)
         load1.append_push(Read(TRef(l)), [], exit)
         error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
         load1.append_guard({error: exit, negate(error): load2}, panic)
