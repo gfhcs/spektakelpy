@@ -1,5 +1,6 @@
 import abc
 import os.path
+from io import StringIO
 
 from engine.functional import terms
 from engine.functional.reference import ReturnValueReference
@@ -102,10 +103,33 @@ class ASTModuleSpecification(ModuleSpecification, abc.ABC):
                 if len(err) > 0:
                     raise ValidationError("Validation failed because of one or more errors.", None, self)
                 translator = Spektakel2Stack(self._builtin)
-                self._code = translator.translate([ast], dec).compile()
+                self._code = translator.translate_module([ast], dec).compile()
             finally:
                 self._loading = False
         return self._code
+
+
+class SpekStringModuleSpecification(ASTModuleSpecification):
+    """
+    Specifies a module that is to be loaded from a given string.
+    """
+
+    def __init__(self, code, validator, builtin):
+        """
+        Creates the specification for a module that is to be read from a source code string.
+        :param code: The source code string to load parse and load as a module.
+        :param validator: The validator to be used for validating the AST defining this module.
+        :param builtin: An iterable of BuiltinModuleSpecification objects that define identifiers that are to be
+                        builtin, i.e. valid without any explicit definition or import.
+        """
+        super().__init__(validator=validator, builtin=builtin)
+        self._s = code
+
+    def load_ast(self):
+        return SpektakelParser.parse_block(SpektakelLexer(StringIO(self._s)))
+
+    def __str__(self):
+        return self._s
 
 
 class SpekFileModuleSpecification(ASTModuleSpecification):

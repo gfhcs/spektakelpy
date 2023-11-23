@@ -302,7 +302,6 @@ class Spektakel2Stack(Translator):
         super().__init__()
         self._decl2ref = {}  # Maps declaration nodes to references.
         self._blocks = BlockStack()
-        self._import_procedure = None
         self._builtin = list(builtin)
 
     def declare_name(self, chain, name, on_error):
@@ -512,7 +511,7 @@ class Spektakel2Stack(Translator):
 
         module = spec.resolve()
 
-        m, chain = self.emit_call(chain, CTerm(self._import_procedure),
+        m, chain = self.emit_call(chain, Read(TRef(AbsoluteFrameReference(0, 0, 1))),
                                   [CTerm(ProgramLocation(module, 0))], on_error)
 
         for a in subnames:
@@ -1117,7 +1116,8 @@ class Spektakel2Stack(Translator):
         exit.append_pop()
         self._blocks.pop()
 
-        self._import_procedure = VProcedure(1, ProgramLocation(imp_code.compile(), 0))
+        d = AbsoluteFrameReference(0, 0, 1)
+        preamble.append_update(TRef(d), CTerm(VProcedure(1, ProgramLocation(imp_code.compile(), 0))), panic)
 
         return preamble
 
@@ -1160,14 +1160,16 @@ class Spektakel2Stack(Translator):
 
         return entry
 
-    def translate(self, nodes, dec):
+    def translate(self, spec):
         """
         Translate a standalone program.
-        :param nodes: An iterable of statements that represent the code of the main module.
-        :param dec: A dict mapping AST nodes to decorations.
+        :param spec: A ModuleSpecification to translate into a standalone program.
         :return: A Chain object.
         """
         self._blocks.push(BlockStack.ModuleBlock(0))
-        code = self.emit_preamble() + self.translate_module(nodes, dec)
+        code = self.emit_preamble()
+        on_error = Chain()
+        on_error.append_pop()
+        self.emit_import(code, spec, [],  None,{}, on_error)
         self._blocks.pop()
         return code

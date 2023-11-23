@@ -4,6 +4,7 @@ from io import StringIO
 from engine.functional.terms import ComparisonOperator, Comparison, UnaryOperator, UnaryOperation, CNone
 from lang.spek import syntax, static, modules
 from lang.spek.dynamic import Spektakel2Stack
+from lang.spek.modules import SpekStringModuleSpecification
 
 
 class TestPrinting(unittest.TestCase):
@@ -20,20 +21,12 @@ class TestPrinting(unittest.TestCase):
         :param roots: The file system roots that should be searched for modules to be imported.
         :return: A StackProgram object.
         """
-        sample = StringIO(sample)
-        lexer = syntax.SpektakelLexer(sample)
-        node = syntax.SpektakelParser.parse_block(lexer)
         finder, builtin = modules.build_default_finder([] if roots is None else roots)
         v = static.SpektakelValidator(finder, builtin)
-        if env is None:
-            env = v.environment_default
-        _, dec, err = v.validate(node, env)
-
-        assert len(err) == 0
 
         translator = Spektakel2Stack(builtin)
 
-        program = translator.translate([node], dec)
+        program = translator.translate(SpekStringModuleSpecification(sample, v, builtin))
 
         program = program.compile()
 
