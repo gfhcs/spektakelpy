@@ -686,7 +686,7 @@ class VDict(Value):
         self.set(key, value)
 
 
-class VException(Value):
+class VException(Value, Exception):
     """
     The base type for all exceptions.
     """
@@ -698,7 +698,8 @@ class VException(Value):
         :param args: Additional constructor arguments that annotate the exception.
         :param pexception: An underlying Python exception, if it caused the exception to be created.
         """
-        super().__init__()
+        super(Value, self).__init__()
+        super(Exception, self).__init__(message)
         self._msg = check_type(message, str, allow_none=True)
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)

@@ -38,6 +38,8 @@ class IntrinsicProcedure(Value):
         :param mstate: The unsealed MachineState object that this instruction is to be executed in.
         It must contain the given task state.
         :param args: The argument Values that this intrinsic procedure is being called for.
+        :return: The return value of the intrinsic procedure.
+        :raises: Any exceptions.
         """
         pass
 
@@ -57,10 +59,7 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         out.write(")")
 
     def execute(self, tstate, mstate, instance, *args):
-        try:
-            tstate.returned = self._m(instance, *args)
-        except Exception as ex:
-            raise IntrinsicException("The intrinsic procedure raised an exception!") from ex
+        return self._m(instance, *args)
 
     def hash(self):
         return hash(self._m)
