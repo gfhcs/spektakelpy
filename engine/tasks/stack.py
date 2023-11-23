@@ -129,7 +129,7 @@ class StackState(TaskState):
         prefix = ""
         for f in self._stack:
             out.write(prefix)
-            ProgramLocation(f.instruction_index, f.program).print(out)
+            ProgramLocation(f.program, f.instruction_index).print(out)
             prefix = ", "
         out.write(")")
 
