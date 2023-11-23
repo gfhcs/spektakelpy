@@ -235,7 +235,6 @@ class Push(Instruction):
             out.write(prefix)
             e.print(out)
             prefix = ", "
-        out.write("])")
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
@@ -340,7 +339,6 @@ class Launch(Instruction):
             out.write(prefix)
             e.print(out)
             prefix = ", "
-        out.write("])")
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):

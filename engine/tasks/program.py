@@ -68,7 +68,7 @@ class ProgramLocation(Immutable, Value):
             raise ValueError("The given program must be sealed!")
 
     def print(self, out):
-        out.write(f"[Line {self._index} of StackProgram {id(self._program)}]")
+        out.write(f"<Line {self._index} of StackProgram {id(self._program)}>")
 
     @property
     def program(self):

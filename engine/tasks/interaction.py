@@ -48,7 +48,7 @@ class InteractionState(TaskState):
 
     def print(self, out):
         status = "RECEIVED" if self.status == TaskStatus.COMPLETED else "Waiting for"
-        out.write(f"InteractionState[{status} {i2s(self._interaction)}]")
+        out.write(f"InteractionState({status} {i2s(self._interaction)})")
 
     def clone_unsealed(self, clones=None):
         if clones is None:

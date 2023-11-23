@@ -125,13 +125,13 @@ class StackState(TaskState):
         self._returned = check_type(returned, Value, allow_none=True)
 
     def print(self, out):
-        out.write("StackState[")
+        out.write("StackState(")
         prefix = ""
         for f in self._stack:
             out.write(prefix)
             ProgramLocation(f.instruction_index, f.program).print(out)
             prefix = ", "
-        out.write("]")
+        out.write(")")
 
     def _seal(self):
         self._stack = tuple(self._stack)
