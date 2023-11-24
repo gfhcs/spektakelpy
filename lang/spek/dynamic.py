@@ -514,6 +514,8 @@ class Spektakel2Stack(Translator):
         m, chain = self.emit_call(chain, Read(TRef(AbsoluteFrameReference(0, 0, 1))),
                                   [CTerm(ProgramLocation(module, 0))], on_error)
 
+        m = m.children[0]
+
         for a in subnames:
             m = terms.Lookup(m, CString(a))
 
