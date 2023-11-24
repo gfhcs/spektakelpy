@@ -3,7 +3,7 @@ from . import InstructionException, Instruction
 from .program import ProgramLocation
 from .stack import Frame, StackState
 from ..functional import EvaluationException, Term
-from ..functional.values import VException, VProcedure
+from ..functional.values import VException, VProcedure, VNone
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
@@ -268,7 +268,8 @@ class Push(Instruction):
             old_top.instruction_index = self._destination
         elif isinstance(location, IntrinsicProcedure):
             try:
-                tstate.returned = location.execute(tstate, mstate, *args)
+                r = location.execute(tstate, mstate, *args)
+                tstate.returned = VNone.instance if r is None else r
             except VException as ex:
                 tstate.exception = ex
                 old_top.instruction_index = self._edestination
