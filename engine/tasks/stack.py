@@ -24,6 +24,22 @@ class Frame(Printable, Sealable):
         self._location = check_type(location, ProgramLocation)
         self._local_values = list(check_types(local_values, Value))
 
+    def __len__(self):
+        return len(self._local_values)
+
+    def resize(self, new_length):
+        """
+        Changes the number of local variables in this stack frame.
+        :param new_length: The new number of local variables in this stack frame.
+        """
+        d = new_length - len(self._local_values)
+        if d > 0:
+            from engine.functional.values import VNone
+
+            self._local_values.extend([VNone.instance] * d)
+        elif d < 0:
+            self._local_values = self._local_values[:d]
+
     def print(self, out):
         out.write("Frame@")
         self._location.print(out)

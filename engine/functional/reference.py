@@ -84,7 +84,10 @@ class FrameReference(Reference):
         return isinstance(other, FrameReference) and self._index == other._index
 
     def write(self, tstate, mstate, value):
-        tstate.stack[-1][self._index] = value
+        frame = tstate.stack[-1]
+        if len(frame) < self._index + 1:
+            frame.resize(self._index + 1)
+        frame[self._index] = value
 
     def read(self, tstate, mstate):
         return tstate.stack[-1][self._index]
@@ -125,7 +128,10 @@ class AbsoluteFrameReference(Reference):
         return isinstance(other, AbsoluteFrameReference) and (self._taskid, self._offset, self._index) == (other._taskid, other._offset, other._index)
 
     def write(self, tstate, mstate, value):
-        mstate.task_states[self._taskid].stack[self._offset][self._index] = value
+        frame = mstate.task_states[self._taskid].stack[self._offset]
+        if len(frame) < self._index + 1:
+            frame.resize(self._index + 1)
+        frame[self._index] = value
 
     def read(self, tstate, mstate):
         return mstate.task_states[self._taskid].stack[self._offset][self._index]
