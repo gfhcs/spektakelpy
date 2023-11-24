@@ -7,10 +7,10 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NumArgs, NewProperty, NewClass, NewModule, CTerm, LoadAttrCase, StoreAttrCase
+    NumArgs, NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
-    VBreakError, VNamespace, VStr, VModule, VProperty, VException
+    VBreakError, VNamespace, VStr, VProperty, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import Update, Pop, Guard, Push, Launch
@@ -636,7 +636,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
 
-    def test_namespace(self):
+    def test_namespace1(self):
         """
         Tests the successful evaluation of namespace-related terms.
         """
@@ -656,6 +656,27 @@ class TestSpektakelMachine(unittest.TestCase):
                 _, states, _, _ = self.explore(p, s0)
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
+
+    def test_namespace2(self):
+        """
+        Tests the successful evaluation of namespace-related terms.
+        """
+
+        p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
+                          Update(Lookup(TRef(FrameReference(0)), CString("x")), CInt(42), 2, 42),
+                          Update(Lookup(TRef(FrameReference(0)), CString("y")), CInt(4711), 3, 42),
+                          Update(TRef(FrameReference(0)), Read(TRef(FrameReference(0))), 4, 42)]
+                         )
+
+        state0 = self.initialize_machine(p, 1)
+
+        _, states, internal, external = self.explore(p, state0)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], VNamespace)
 
     def test_procedure(self):
         """
@@ -773,26 +794,6 @@ class TestSpektakelMachine(unittest.TestCase):
                 else:
                     self.assertIs(states[-1].content.task_states[0].stack[0][0], value)
 
-    def test_module(self):
-        """
-        Tests the successful evaluation of module-related terms.
-        """
-
-        p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
-                          Update(Lookup(TRef(FrameReference(0)), CString("x")), CInt(42), 2, 42),
-                          Update(Lookup(TRef(FrameReference(0)), CString("y")), CInt(4711), 3, 42),
-                          Update(TRef(FrameReference(0)), NewModule(Read(TRef(FrameReference(0)))), 4, 42)]
-                         )
-
-        state0 = self.initialize_machine(p, 1)
-
-        _, states, internal, external = self.explore(p, state0)
-
-        self.assertEqual(len(states), 2)
-        self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
-
-        self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], VModule)
 
 
 

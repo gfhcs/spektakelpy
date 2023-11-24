@@ -986,49 +986,6 @@ class VProperty(Value):
         return self
 
 
-class VModule(Value):
-    """
-    Represents a module at runtime.
-    """
-
-    def __init__(self, namespace):
-        """
-        Creates a new module.
-        :param namespace: The namespace defining this module.
-        """
-        super().__init__()
-        self._ns = namespace
-
-    def print(self, out):
-        out.write("Module(")
-        self._ns.print(out)
-        out.write(")")
-
-    @property
-    def type(self):
-        return TBuiltin.module
-
-    def hash(self):
-        return hash(self._ns)
-
-    def equals(self, other):
-        return self._ns == other._ns
-
-    def _seal(self):
-        self._ns.seal()
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = VModule(self._ns)
-            clones[id(self)] = c
-            c._ns = c._ns.clone_unsealed(clones=clones)
-            return c
-
-
 class VInstance(Value):
     """
     An instance of a user-defined class.

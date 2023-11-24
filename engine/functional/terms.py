@@ -6,7 +6,7 @@ from engine.functional.reference import FieldReference, NameReference, VRef
 from util import check_type
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VModule, VAttributeError, VJumpError, VList
+    VProperty, VAttributeError, VJumpError, VList
 from ..task import TaskStatus
 from ..tasks.program import StackProgram, ProgramLocation
 from ..tasks.interaction import Interaction, InteractionState
@@ -1276,39 +1276,3 @@ class NewClass(Term):
                 raise EvaluationException("Encountered an unexpected entry in a namespace to be used for class creation!")
 
         return Type(self._name, ss, field_names, members)
-
-
-class NewModule(Term):
-    """
-    A term that evaluates to a new Module object.
-    """
-
-    def __init__(self, namespace):
-        """
-        Creates a new module term.
-        :param namespace: A term evaluating to a namespace binding names to members
-                          of the module to be created by this term.
-        """
-        super().__init__(namespace)
-
-    def hash(self):
-        return hash(self.children[0])
-
-    def equals(self, other):
-        return isinstance(other, NewModule) and tuple(self.children) == tuple(other.children)
-
-    @property
-    def namespace(self):
-        """
-        A term evaluating to a namespace binding names to members of the module to be created by this term.
-        """
-        return self.children[0]
-
-    def evaluate(self, tstate, mstate):
-        ns = self.namespace.evaluate(tstate, mstate)
-        return VModule(ns)
-
-    def print(self, out):
-        out.write("Module(")
-        self.namespace.print(out)
-        out.write(")")

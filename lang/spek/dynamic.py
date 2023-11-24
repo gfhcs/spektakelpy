@@ -1154,8 +1154,8 @@ class Spektakel2Stack(Translator):
         for node in nodes:
             block = self.translate_statement(block, node, dec, exit)
 
-        # Return a Module object. The preamble will store it somewhere.
-        block.append_update(TRef(ReturnValueReference()), terms.NewModule(terms.Read(TRef(FrameReference(0)))), exit)
+        # Return the namespace. The preamble will store it somewhere.
+        block.append_update(TRef(ReturnValueReference()), terms.Read(TRef(FrameReference(0))), exit)
 
         block.append_pop()
         exit.append_pop()

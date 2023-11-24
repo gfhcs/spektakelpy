@@ -59,7 +59,6 @@ class BuiltinModuleSpecification(ModuleSpecification):
             code.append(Update(terms.Lookup(r, CString(name)), CTerm(value), len(code) + 1, panic))
 
         # Return module:
-        code.append(Update(r, terms.NewModule(terms.Read(r)), len(code) + 1, panic))
         code.append(Pop())
 
         return StackProgram(code)
