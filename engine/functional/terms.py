@@ -754,7 +754,7 @@ class Lookup(Term):
     def evaluate(self, tstate, mstate):
         namespace = self.namespace.evaluate(tstate, mstate)
         name = self.name.evaluate(tstate, mstate)
-        return NameReference(VRef(namespace), str(name))
+        return NameReference(namespace, str(name))
 
 
 class LoadAttrCase(Term):
