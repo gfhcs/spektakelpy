@@ -106,7 +106,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         for s in states:
             for t in s.content.task_states:
                 if isinstance(t, StackState):
-                    self.assertIs(t.exception, None)
+                    self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
 
     def test_assignment_simple(self):
         """
