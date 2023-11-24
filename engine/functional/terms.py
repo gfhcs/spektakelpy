@@ -720,7 +720,7 @@ class Lookup(Term):
     def __init__(self, namespace, name):
         """
         Creates a new namespace lookup.
-        :param namespace: A term evaluating to a Namespace value.
+        :param namespace: A term evaluating to a reference to a Namespace value.
         :param name: A term specifying the string name that is to be looked up.
         """
         super().__init__(check_type(namespace, Term), check_type(name, Term))

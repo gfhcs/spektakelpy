@@ -642,7 +642,7 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         cases = [(IsInstance(NewNamespace(), CType(TBuiltin.namespace)), VBool.true),
-                 (Read(Lookup(Read(TRef(FrameReference(0))), CString("hello"))), VInt(42))]
+                 (Read(Lookup(TRef(FrameReference(0)), CString("hello"))), VInt(42))]
 
         for term, value in cases:
             with self.subTest(term=term):
@@ -691,7 +691,7 @@ class TestSpektakelMachine(unittest.TestCase):
         s = StackProgram([Pop()])
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
-                          Update(Lookup(Read(TRef(FrameReference(0))), CString("test")), NewProperty(NewProcedure(1, g), NewProcedure(2, s)), 2, 42),
+                          Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, g), NewProcedure(2, s)), 2, 42),
                           Update(TRef(FrameReference(0)), NewClass("C", [CType(TBuiltin.object)], Read(TRef(FrameReference(0)))), 3, 42)])
 
         state0 = self.initialize_machine(p, 1)
@@ -779,9 +779,10 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
-                          Update(Lookup(Read(TRef(FrameReference(0))), CString("x")), CInt(42), 2, 42),
-                          Update(Lookup(Read(TRef(FrameReference(0))), CString("y")), CInt(4711), 3, 42),
-                          Update(TRef(FrameReference(0)), NewModule(Read(TRef(FrameReference(0)))), 4, 42)])
+                          Update(Lookup(TRef(FrameReference(0)), CString("x")), CInt(42), 2, 42),
+                          Update(Lookup(TRef(FrameReference(0)), CString("y")), CInt(4711), 3, 42),
+                          Update(TRef(FrameReference(0)), NewModule(Read(TRef(FrameReference(0)))), 4, 42)]
+                         )
 
         state0 = self.initialize_machine(p, 1)
 
