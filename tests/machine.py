@@ -105,7 +105,8 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the errors raised by failing execution of the Update instruction.
         """
-        p = StackProgram([Update(TRef(FrameReference(1)), CInt(42), 1, 1),
+
+        p = StackProgram([Update(TRef(FrameReference(1)), Read(TRef(FrameReference(2))), 1, 1),
                           Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
