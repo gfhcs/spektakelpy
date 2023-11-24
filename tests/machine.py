@@ -712,8 +712,8 @@ class TestSpektakelMachine(unittest.TestCase):
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
         method = VProcedure(1, ProgramLocation(method, 0))
 
-        g = VProcedure(1, StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]))
-        s = VProcedure(2, StackProgram([Pop()]))
+        g = VProcedure(1, ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
+        s = VProcedure(2, ProgramLocation(StackProgram([Pop()]), 0))
         property = VProperty(g, s)
 
         members = {"method": method, "property": property}
@@ -745,8 +745,8 @@ class TestSpektakelMachine(unittest.TestCase):
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
         method = VProcedure(1, ProgramLocation(method, 0))
 
-        g = VProcedure(1, StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]))
-        s = VProcedure(2, StackProgram([Pop()]))
+        g = VProcedure(1, ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
+        s = VProcedure(2, ProgramLocation(StackProgram([Pop()]), 0))
         property = VProperty(g, s)
 
         members = {"method": method, "property": property}
