@@ -355,7 +355,6 @@ class Spektakel2Stack(Translator):
                 # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
                 slot = FrameReference(0)
                 r = NameReference(slot, name)
-                chain.append_update(TRef(r), terms.CNone(), on_error)
                 self._decl2ref[name] = r
                 return r
             else:
