@@ -180,6 +180,7 @@ class ExceptionReference(Reference):
         Refers to the exception currently being handeled in a task.
         """
         super().__init__()
+        self.seal()
 
     def print(self, out):
         return out.write("@exception")
@@ -197,7 +198,6 @@ class ExceptionReference(Reference):
         return isinstance(other, ExceptionReference)
 
     def write(self, tstate, mstate, value):
-        check_unsealed(self)
         tstate.exception = value
 
     def read(self, tstate, mstate):

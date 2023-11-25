@@ -67,6 +67,12 @@ class Sealable:
         pass
 
     def __hash__(self):
+        try:
+            check_sealed(self)
+        except UnsealedException as ex:
+            raise UnsealedException("Hashes can only be computed once the sealable object has been sealed, "
+                                    "because modifying it might change its hash and thus violate invariants"
+                                    " of hash-based container structures!") from ex
         return self.hash()
 
     def __eq__(self, other):
@@ -88,10 +94,12 @@ class Sealable:
     def seal(self):
         """
         Seals this object, i.e. makes it immutable.
+        :return: This object.
         """
         if not self._sealed:
             self._seal()
             self._sealed = True
+        return self
 
     @property
     def sealed(self):

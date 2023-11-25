@@ -584,7 +584,19 @@ class VDict(Value):
 
     def __init__(self, items=None):
         super().__init__()
-        self._items = {} if items is None else {check_type(k, Value): check_type(v, Value) for k, v in items.items()}
+        self._items = {} if items is None else {VDict._assert_key_hashable(check_type(k, Value)): check_type(v, Value) for k, v in items.items()}
+
+    @staticmethod
+    def _assert_key_hashable(key):
+        """
+        Asserts that the given key is hashable.
+        :param key: The key to check.
+        :return: The check key.
+        :except VException: If the key is not hashable.
+        """
+        if not key.sealed:
+            raise ValueError("The given key is not immutable and thus cannot be hashed!")
+        return key
 
     @IntrinsicInstanceMethod
     def clear(self):
@@ -602,8 +614,7 @@ class VDict(Value):
         :param key: The key for which a value is to be retrieved.
         :return: The value that was retrieved.
         """
-        if self.sealed:
-            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        VDict._assert_key_hashable(key)
         return self._items[check_type(key, Value)]
 
     @IntrinsicInstanceMethod
@@ -615,6 +626,7 @@ class VDict(Value):
         """
         if self.sealed:
             raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        VDict._assert_key_hashable(key)
         return self._items.pop(check_type(key, Value))
 
     @IntrinsicInstanceMethod
@@ -626,6 +638,7 @@ class VDict(Value):
         """
         if self.sealed:
             raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        VDict._assert_key_hashable(key)
         self._items[check_type(key, Value)] = check_type(value, Value)
 
     def print(self, out):
@@ -670,7 +683,8 @@ class VDict(Value):
         except KeyError:
             c = VDict(self._items)
             clones[id(self)] = c
-            c._items = {k.clone_unsealed(clones=clones): v.clone_unsealed(clones=clones) for k, v in c._items.items()}
+            # Keys are immutable anyway and thus can remain sealed.
+            c._items = {k: v.clone_unsealed(clones=clones) for k, v in c._items.items()}
             return c
 
     def __len__(self):
@@ -1021,6 +1035,7 @@ class VInstance(Value):
         return isinstance(other, VInstance) and self._c == other._c and tuple(self._fields) == tuple(other._fields)
 
     def _seal(self):
+        self._c.seal()
         for f in self._fields:
             f.seal()
 

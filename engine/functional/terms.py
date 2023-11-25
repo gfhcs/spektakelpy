@@ -23,7 +23,7 @@ class CTerm(Term):
         :param value: The Value object that this term should evaluate to.
         """
         super().__init__()
-        self._value = check_type(value, Value)
+        self._value = check_type(value, Value).clone_unsealed().seal()
 
     def hash(self):
         return hash(self._value)
