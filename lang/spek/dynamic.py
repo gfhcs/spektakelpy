@@ -1,11 +1,10 @@
-import io
 from collections import namedtuple
 
 from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, \
     AbsoluteFrameReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    NewProcedure, CTerm, Lookup, CString, CNone
+    CTerm, Lookup, CString, CNone
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard
 from engine.tasks.program import StackProgram, ProgramLocation
