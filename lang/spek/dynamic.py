@@ -282,7 +282,7 @@ class BlockStack:
         self._entries[key] = value
 
     def __iter__(self):
-        return reversed(self._entries)
+        return iter(self._entries)
 
     def __len__(self):
         return len(self._entries)
@@ -316,10 +316,10 @@ class Spektakel2Stack(Translator):
         :return: A Reference object that represents the newly allocated variable.
         """
 
-        blocks_iter = iter(self._blocks)
+        blocks_iter = iter(reversed(list(enumerate(self._blocks))))
 
         try:
-            idx, top = 0, next(blocks_iter)
+            idx, top = next(blocks_iter)
         except StopIteration:
             raise Exception("Bug in create_local!")
 
@@ -360,7 +360,7 @@ class Spektakel2Stack(Translator):
                 return r
             else:
                 try:
-                    idx, top = idx + 1, next(blocks_iter)
+                    idx, top = next(blocks_iter)
                 except StopIteration:
                     raise Exception("Bug in create_local!")
 
