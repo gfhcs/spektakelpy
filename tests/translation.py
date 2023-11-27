@@ -32,7 +32,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         m = StackState(TaskStatus.RUNNING, frames)
 
-        isymbols = [Interaction.NEXT, Interaction.PREV, Interaction.TICK]
+        isymbols = [Interaction.NEXT, Interaction.PREV, Interaction.TICK, Interaction.NEVER]
         istates = (InteractionState(i) for i in isymbols)
 
         return MachineState([m, *istates])
