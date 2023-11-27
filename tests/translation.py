@@ -132,4 +132,4 @@ class TestSpektakelTranslation(unittest.TestCase):
                 if isinstance(t, StackState):
                     self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
 
-        self.assertEqual(int(states[-1].content.task_states[0].stack[-1][-1]), 4754)
+        self.assertEqual(int(states[-1].content.task_states[0].stack[-1][0]["y"]), 4754)
