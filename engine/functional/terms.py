@@ -9,7 +9,7 @@ from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict,
     VProperty, VAttributeError, VJumpError, VList
 from ..task import TaskStatus
 from ..tasks.program import StackProgram, ProgramLocation
-from ..tasks.interaction import Interaction, InteractionState
+from ..tasks.interaction import Interaction, InteractionState, i2s
 
 
 class CTerm(Term):
@@ -550,9 +550,7 @@ class ITask(Term):
         return isinstance(other, ITask) and self._s == other._s
 
     def print(self, out):
-        out.write("itask(")
-        self._s.print(out)
-        out.write(")")
+        out.write(f"itask({i2s(self._s)})")
 
     @property
     def predicate(self):
