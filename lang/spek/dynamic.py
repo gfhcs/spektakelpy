@@ -521,7 +521,7 @@ class Spektakel2Stack(Translator):
             chain.append_update(TRef(self.declare_name(chain, name, on_error)), m, on_error)
 
         for name, member in mapping.items():
-            chain.append_update(TRef(self.declare_name(chain, name, on_error)), Lookup(m, CString(member)), on_error)
+            chain.append_update(TRef(self.declare_name(chain, name, on_error)), Read(Lookup(m, CString(member))), on_error)
 
         return chain
 
