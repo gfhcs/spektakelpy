@@ -1144,7 +1144,7 @@ class Spektakel2Stack(Translator):
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
-        self._blocks.push(BlockStack.ModuleBlock(0))
+        self._blocks.push(BlockStack.ModuleBlock(1))
 
         # Import the builtin names:
         for bms in self._builtin:
