@@ -1,4 +1,0 @@
-
-
-class Ray:
-    pass
