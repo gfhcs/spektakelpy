@@ -1,17 +1,16 @@
-import io
 import unittest
-from io import StringIO
 
 from engine.exploration import explore, state_space, schedule_nonzeno
 from engine.functional.values import VNone
 from engine.machine import MachineState
 from engine.task import TaskStatus
-from engine.tasks.program import ProgramLocation
 from engine.tasks.interaction import InteractionState, Interaction
+from engine.tasks.program import ProgramLocation
 from engine.tasks.stack import StackState, Frame
-from lang.spek import syntax, static, modules
+from lang.spek import static, modules
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
+from tests.samples_translation.expressions import samples as expressions
 from tests.tools import dedent
 
 
@@ -133,3 +132,34 @@ class TestSpektakelTranslation(unittest.TestCase):
                     self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
 
         self.assertEqual(int(states[-1].content.task_states[0].stack[-1][0]["y"]), 4754)
+
+    def test_expressions(self):
+        """
+        Tests the translation of all expression types, by executing the translation result and inspecting the final
+        machine state.
+        """
+
+        for idx, (program, ((num_states, num_internal, num_external), expectation)) in enumerate(expressions.items()):
+            with self.subTest(idx=idx):
+
+                program = dedent(program)
+                states, internal, external = self.translate_explore(program)
+
+                self.assertEqual(len(states), num_states)
+                self.assertEqual(len(internal), num_internal)
+                self.assertEqual(len(external), num_external)
+
+                for s in states:
+                    for t in s.content.task_states:
+                        if isinstance(t, StackState):
+                            self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
+
+                for vname, expected in expectation.items():
+
+                    found = states[-1].content.task_states[0].stack[-1][0][vname]
+                    if expected is None:
+                        self.assertTrue(isinstance(found, VNone))
+                    elif isinstance(expected, str):
+                        self.assertEqual(found.string, expected)
+                    else:
+                        self.assertEqual((type(expected))(found), expected)
