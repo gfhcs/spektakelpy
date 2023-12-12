@@ -6,7 +6,7 @@ import lang.buffer
 from examples import paths as example_paths
 from lang import lexer, pythonesque
 from lang.spek import syntax
-from tests.samples_python import samples
+from tests.samples_lexing.python import samples
 
 kw_python = ["False", "await", "else", "import", "pass", "None", "break", "except", "in", "raise", "True", "class",
              "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "from", "nonlocal",

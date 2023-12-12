@@ -454,7 +454,7 @@ class TestSpektakelValidator(unittest.TestCase):
         """
         Tests the validation of import statements.
         """
-        root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_import")
+        root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_validation")
 
         finder, builtin = modules.build_default_finder([os.path.join(root, "library")])
         validator = static.SpektakelValidator(finder, builtin)

@@ -7,11 +7,11 @@ from examples import paths as example_paths
 from lang.lexer import LexError
 from lang.parser import ParserError
 from lang.spek import ast, syntax
-from tests.samples_class import samples as samples_class
-from tests.samples_controlflow import samples as samples_controlflow
-from tests.samples_def import samples as samples_def
-from tests.samples_large import samples as samples_large
-from tests.samples_prop import samples as samples_prop
+from tests.samples_parsing.classes import samples as samples_class
+from tests.samples_parsing.controlflow import samples as samples_controlflow
+from tests.samples_parsing.procedures import samples as samples_def
+from tests.samples_general.large import samples as samples_large
+from tests.samples_parsing.properties import samples as samples_prop
 
 
 def parse(sample):
