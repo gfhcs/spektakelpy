@@ -163,3 +163,95 @@ class TestSpektakelTranslation(unittest.TestCase):
                         self.assertEqual(found.string, expected)
                     else:
                         self.assertEqual((type(expected))(found), expected)
+
+    def test_pass(self):
+        """
+        Tests the 'pass' statement.
+        """
+        raise NotImplementedError()
+
+    def test_assignments(self):
+        """
+        Tests more complex assignments, in particular assignments to patterns.
+        """
+        raise NotImplementedError()
+
+    def test_if(self):
+        """
+        Tests if statements, including elif and else clauses.
+        """
+        raise NotImplementedError()
+
+    def test_while(self):
+        """
+        Tests while loops, including break and continue.
+        """
+        raise NotImplementedError()
+
+    def test_procedures(self):
+        """
+        Tests the definition and execution of procedures, involving Call expressions, Return statements and recursion.
+        """
+        raise NotImplementedError()
+
+    def test_async(self):
+        """
+        Tests launching and awaiting procedures as tasks, involving Launch and Await expressions.
+        """
+        raise NotImplementedError()
+
+    def test_exceptions(self):
+        """
+        Test creation, raising and handling of exceptions, i.e. the constructors of exception types, Raise statements,
+        and try blocks.
+        """
+        # TODO: Insbesondere will ich für das finally folgende Fälle abtesten:
+        #         If an exception occurs during execution of the try clause, the exception may be handled by an except clause. If the exception is not handled by an except clause, the exception is re-raised after the finally clause has been executed.
+        #         An exception could occur during execution of an except or else clause. Again, the exception is re-raised after the finally clause has been executed.
+        #         If the finally clause executes a break, continue or return statement, exceptions are not re-raised.
+        #         If the try statement reaches a break, continue or return statement, the finally clause will execute just prior to the break, continue or return statement’s execution.
+        #         If a finally clause includes a return statement, the returned value will be the one from the finally clause’s return statement, not the value from the try clause’s return statement.
+        #         --> Insbesondere müssen Nester aus Schleifen und (mehreren) Finallys getestet werden.
+        raise NotImplementedError()
+
+    def test_for(self):
+        """
+        Tests for loops, including break and continue.
+        """
+        raise NotImplementedError()
+
+    def test_tuples(self):
+        """
+        Tests the creation and usage of tuples, including Projection expressions and "in" expressions
+        """
+        raise NotImplementedError()
+
+    def test_lists(self):
+        """
+        Tests the creation and usage of lists, including Projection expressions and "in" expressions
+        """
+        raise NotImplementedError()
+
+    def test_dicts(self):
+        """
+        Tests the creation and usage of dicts, including Projection expressions and "in" expressions
+        """
+        raise NotImplementedError()
+
+    def test_classes(self):
+        """
+        Tests the creation and instantiation of classes, including inheritance and defining/calling methods.
+        """
+        raise NotImplementedError()
+
+    def test_properties(self):
+        """
+        Tests the declaration and execution of properties, involving attribute expressions.
+        """
+        raise NotImplementedError()
+
+    def test_imports(self):
+        """
+        Tests the execution of import statements.
+        """
+        raise NotImplementedError()
