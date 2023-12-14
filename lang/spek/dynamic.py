@@ -648,14 +648,14 @@ class Spektakel2Stack(Translator):
             right, chain = self.translate_expression(chain, node.right, dec, on_error)
             return terms.ArithmeticBinaryOperation(node.operator, left, right), chain
         elif isinstance(node, Comparison):
-            return terms.Comparison(node.operator,
-                                    self.translate_expression(chain, node.left, dec, on_error),
-                                    self.translate_expression(chain, node.right, dec, on_error)), chain
+            left, chain = self.translate_expression(chain, node.left, dec, on_error)
+            right, chain = self.translate_expression(chain, node.right, dec, on_error)
+            return terms.Comparison(node.operator, left, right), chain
         elif isinstance(node, BooleanBinaryOperation):
             # Note: Like in Python, we want AND and OR to be short-circuited. This means that we require some control
             #       flow in order to possibly skip the evaluation of the right operand.
 
-            v = self.declare_name(chain, None, on_error)
+            v = TRef(self.declare_name(chain, None, on_error))
             left, chain = self.translate_expression(chain, node.left, dec, on_error)
             chain.append_update(v, left, on_error)
 
@@ -663,17 +663,17 @@ class Spektakel2Stack(Translator):
             successor = Chain()
 
             if node.operator == BooleanBinaryOperator.AND:
-                skip = ~terms.Read(v)
+                skip = negate(terms.Read(v))
             elif node.operator == BooleanBinaryOperator.OR:
                 skip = terms.Read(v)
             else:
                 skip = terms.CBool(False)
 
-            chain.append_guard({skip: successor, ~skip: rest})
+            chain.append_guard({skip: successor, negate(skip): rest}, on_error)
 
             right, rest = self.translate_expression(rest, node.right, dec, on_error)
-            chain.append_update(v, terms.BooleanBinaryOperation(node.operator, terms.Read(v), right), on_error)
-            chain.append_jump(successor)
+            rest.append_update(v, terms.BooleanBinaryOperation(node.operator, terms.Read(v), right), on_error)
+            rest.append_jump(successor)
             return terms.Read(v), successor
         elif isinstance(node, Tuple):
             return terms.NewTuple(*(self.translate_expression(chain, c, dec, on_error) for c in node.children)), chain
