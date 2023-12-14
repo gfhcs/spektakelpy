@@ -34,7 +34,7 @@ var x = 42
 var y = -x
 var z = not True
 await never()
-""": ((2, 1, 3), {"y": "-42", "z": False}),
+""": ((2, 1, 3), {"y": -42, "z": False}),
 """
 from interaction import never
 var x = 42

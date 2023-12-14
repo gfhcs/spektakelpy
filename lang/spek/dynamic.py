@@ -641,7 +641,8 @@ class Spektakel2Stack(Translator):
             callee, chain = self.translate_expression(chain, Attribute(v, "__get_item__"), dec, on_error)
             return self.emit_call(chain, callee, [idx], on_error)
         elif isinstance(node, UnaryOperation):
-            return terms.UnaryOperation(node.operator, self.translate_expression(chain, node.operand, dec, on_error)), chain
+            arg, chain = self.translate_expression(chain, node.operand, dec, on_error)
+            return terms.UnaryOperation(node.operator, arg), chain
         elif isinstance(node, ArithmeticBinaryOperation):
             left, chain = self.translate_expression(chain, node.left, dec, on_error)
             right, chain = self.translate_expression(chain, node.right, dec, on_error)
