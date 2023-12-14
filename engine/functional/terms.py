@@ -373,8 +373,8 @@ class BooleanBinaryOperation(BinaryTerm):
         super().__init__(check_type(op, BooleanBinaryOperator), left, right)
 
     def print_operator(self, out):
-        out.write({ArithmeticBinaryOperator.AND: "and",
-                   ArithmeticBinaryOperator.OR: "or"}[self._op])
+        out.write({BooleanBinaryOperator.AND: "and",
+                   BooleanBinaryOperator.OR: "or"}[self._op])
 
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)

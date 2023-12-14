@@ -1,7 +1,8 @@
 import unittest
 from io import StringIO
 
-from engine.functional.terms import ComparisonOperator, Comparison, UnaryOperator, UnaryOperation, CNone
+from engine.functional.terms import ComparisonOperator, Comparison, UnaryOperator, UnaryOperation, CNone, \
+    BooleanBinaryOperation, BooleanBinaryOperator, CBool
 from lang.spek import syntax, static, modules
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
@@ -52,3 +53,11 @@ class TestPrinting(unittest.TestCase):
 
         self.assertTrue("not" in s)
 
+    def test_and(self):
+        """
+        Tests that pretty-printing AND expressions works.
+        """
+
+        term = BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(True), CBool(True))
+
+        self.assertEqual("True and True", str(term))
