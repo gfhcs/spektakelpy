@@ -148,6 +148,20 @@ VBool.true = VBool(True)
 VBool.false = VBool(False)
 
 
+def p2s(x):
+    """
+    Casts the numeric Python value to the corresponding Spek value.
+    :param x: A numeric Python value.
+    :return: A corresponding Spek value of appropriate type.
+    """
+    if isinstance(x, int):
+        return VInt(x)
+    elif isinstance(x, float):
+        return VFloat(x)
+    else:
+        raise TypeError(f"p2s cannot convert values of Pyton type {type(x)}!")
+
+
 class VInt(Value):
     """
     Equivalent to Python's int.
@@ -228,13 +242,13 @@ class VInt(Value):
         return VInt(self._value >> int(other))
 
     def __add__(self, other):
-        return VInt(self._value + other._value)
+        return p2s(self._value + other._value)
 
     def __sub__(self, other):
-        return VInt(self._value - other._value)
+        return p2s(self._value - other._value)
 
     def __mul__(self, other):
-        return VInt(self._value * other._value)
+        return p2s(self._value * other._value)
 
     def __truediv__(self, other):
         return VFloat(self._value / other._value)

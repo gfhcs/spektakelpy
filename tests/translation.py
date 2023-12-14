@@ -152,7 +152,8 @@ class TestSpektakelTranslation(unittest.TestCase):
                 for s in states:
                     for t in s.content.task_states:
                         if isinstance(t, StackState):
-                            self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
+                            if not (t.exception is None or isinstance(t.exception, VNone)):
+                                raise t.exception
 
                 for vname, expected in expectation.items():
 
