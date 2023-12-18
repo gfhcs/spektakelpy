@@ -26,7 +26,7 @@ lexical_grammar = PythonesqueLexicalGrammar(separators=separators, keywords=keyw
 
 class SpektakelLexer(Lexer):
     """
-    A Lexer using the the lexical grammar for the Spektakel language.
+    A Lexer using the lexical grammar for the Spektakel language.
     """
     def __init__(self, source):
         super().__init__(lexical_grammar, source)
@@ -124,6 +124,39 @@ class SpektakelParser(Parser):
         return Identifier(s, start=p, end=end((t, s, p)))
 
     @classmethod
+    def _parse_expressions(cls, lexer):
+        """
+        Parses a comma-separated sequence of expressions.
+        :param lexer: The lexer to consume tokens from.
+        :return: An Expression node.
+        """
+        components = []
+        is_tuple = False
+        _, _, start = lexer.peek()
+        while True:
+            t, s, p = lexer.peek()
+            if (t == KW and s in (")", "=", "in")) or t == NL:
+                break
+            components.append(cls.parse_expression(lexer))
+            if lexer.seeing(keyword(",")):
+                lexer.read()
+                is_tuple = True
+            else:
+                break
+
+        _, _, end = lexer.peek()
+
+        if is_tuple:
+            if len(components) > 0:
+                start = components[0].start
+                end = components[-1].end
+            return Tuple(*components, start=start, end=end)
+        else:
+            assert len(components) == 1
+            return components[0]
+
+
+    @classmethod
     def _parse_simple_expression(cls, lexer):
         """
         Parses a "simple expression", i.e. either an identifier, a literal, a parenthesized expression,
@@ -141,20 +174,9 @@ class SpektakelParser(Parser):
             return Constant(s, start=start, end=end(lexer.read()))
         elif t == KW and s == "(":
             lexer.read()
-            components = []
-            is_tuple = False
-            while True:
-                components.append(cls.parse_expression(lexer))
-                if lexer.seeing(keyword(",")):
-                    is_tuple = True
-                    lexer.read()
-                else:
-                    t, s, p = lexer.match(keyword(")"))
-                    if is_tuple:
-                        return Tuple(*components, start=p, end=p)
-                    else:
-                        assert len(components) == 1
-                        return components[0]
+            e = cls._parse_expressions(lexer)
+            lexer.match(keyword(")"))
+            return e
 
         raise ParserError("Expected an identifier, literal, or opening parenthesis!", start)
 
@@ -481,16 +503,7 @@ class SpektakelParser(Parser):
                 lexer.read()
                 var = True
 
-            es = [cls.parse_expression(lexer)]
-            t, s, p = lexer.peek()
-            while t == KW and s == ",":
-                lexer.read()
-                es.append(cls.parse_expression(lexer))
-                t, s, p = lexer.peek()
-            if len(es) == 1:
-                pattern = es[0]
-            else:
-                pattern = Tuple(*es, start=es[0].start, end=es[-1].end)
+            pattern = cls._parse_expressions(lexer)
 
             t, s, p = lexer.peek()
             if t == KW and s == "=":
@@ -499,16 +512,8 @@ class SpektakelParser(Parser):
                 lexer.read()
 
                 # Parse right hand side, which might be an unparenthesised tuple as well:
-                rs = [cls.parse_expression(lexer)]
-                t, s, p = lexer.peek()
-                while t == KW and s == ",":
-                    lexer.read()
-                    rs.append(cls.parse_expression(lexer))
-                    t, s, p = lexer.peek()
-                if len(rs) == 1:
-                    right = rs[0]
-                else:
-                    right = Tuple(*rs, start=rs[0].start, end=rs[-1].end)
+
+                right = cls._parse_expressions(lexer)
 
                 match_newline(lexer)
 
@@ -539,7 +544,7 @@ class SpektakelParser(Parser):
         if lexer.seeing(nl):
             e = None
         else:
-            e = cls.parse_expression(lexer)
+            e = cls._parse_expressions(lexer)
         match_newline(lexer, enabled=newline)
         return Return(e, start=p, end=end((t, s, p)) if e is None else e.end)
 

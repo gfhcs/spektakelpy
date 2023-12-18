@@ -6,8 +6,10 @@ var (x,) = (1,)
 """: ast.VariableDeclaration,
 """
 var x,
-x, = 1,
 """: ast.VariableDeclaration,
+"""
+x, = 1,
+""": ast.Assignment,
 """
 var x, = 1,
 """: ast.VariableDeclaration,
