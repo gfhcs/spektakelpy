@@ -876,7 +876,7 @@ class Spektakel2Stack(Translator):
             consequence.append_jump(successor)
             if node.alternative is not None:
                 alternative = self.translate_statement(alternative, node.alternative, dec, on_error)
-                alternative.append_jump(successor)
+            alternative.append_jump(successor)
             return successor
         elif isinstance(node, While):
             head = Chain()

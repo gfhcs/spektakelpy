@@ -6,18 +6,20 @@ from interaction import never
 var x = 42
 if x % 2 == 0:
     x = "even"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even"}),
+""": ((2, 1, 3), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
 var x = 43
 if x % 2 == 0:
     x = "even"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": 43}),
+""": ((2, 1, 3), {"x": 43, "y": "done"}),
 
 
 """
@@ -27,9 +29,10 @@ if x % 2 == 0:
     x = "even"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even"}),
+""": ((2, 1, 3), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -38,9 +41,10 @@ if x % 2 == 0:
     x = "even"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "odd"}),
+""": ((2, 1, 3), {"x": "odd", "y": "done"}),
 
 """
 from interaction import never
@@ -51,9 +55,10 @@ elif x == 1:
     x = "one"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even"}),
+""": ((2, 1, 3), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -64,9 +69,10 @@ elif x == 1:
     x = "one"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "odd"}),
+""": ((2, 1, 3), {"x": "odd", "y": "done"}),
 
 """
 from interaction import never
@@ -77,9 +83,10 @@ elif x == 1:
     x = "one"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "one"}),
+""": ((2, 1, 3), {"x": "one", "y": "done"}),
 
 
 
@@ -94,9 +101,10 @@ elif x == 2:
     x = "two"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even"}),
+""": ((2, 1, 3), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -109,9 +117,10 @@ elif x == 2:
     x = "two"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "odd"}),
+""": ((2, 1, 3), {"x": "odd", "y": "done"}),
 
 """
 from interaction import never
@@ -125,9 +134,10 @@ elif x == 2:
     x = "two"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "one"}),
+""": ((2, 1, 3), {"x": "one", "y": "done"}),
 
 """
 from interaction import never
@@ -141,9 +151,10 @@ elif x == 3:
     x = "three"
 else:
     x = "odd"
+var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "three"}),
+""": ((2, 1, 3), {"x": "three", "y": "done"}),
 
 
 }
