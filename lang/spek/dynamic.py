@@ -819,7 +819,7 @@ class Spektakel2Stack(Translator):
         """
 
         if isinstance(node, Pass):
-            pass
+            return chain
         elif isinstance(node, ExpressionStatement):
             _, chain = self.translate_expression(chain, node.expression, dec, on_error)
             # The previous line generated code for any side effects of the expression.

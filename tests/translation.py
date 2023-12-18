@@ -169,7 +169,22 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests the 'pass' statement.
         """
-        raise NotImplementedError()
+        program = """
+        pass
+        pass
+        pass
+        """
+        program = dedent(program)
+        states, internal, external = self.translate_explore(program)
+
+        self.assertEqual(len(states), 2)
+        self.assertEqual(len(internal), 1)
+        self.assertEqual(len(external), 3)
+
+        for s in states:
+            for t in s.content.task_states:
+                if isinstance(t, StackState):
+                    self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
 
     def test_assignments(self):
         """
