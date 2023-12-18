@@ -10,6 +10,7 @@ from lang.spek import ast, syntax
 from tests.samples_parsing.classes import samples as samples_class
 from tests.samples_parsing.controlflow import samples as samples_controlflow
 from tests.samples_parsing.procedures import samples as samples_def
+from tests.samples_parsing.tuples import samples as samples_tuples
 from tests.samples_general.large import samples as samples_large
 from tests.samples_parsing.properties import samples as samples_prop
 
@@ -326,6 +327,19 @@ class TestSpektakelParser(unittest.TestCase):
                 statement = n.children[0]
 
                 self.assertIsInstance(statement, ast.Assignment)
+
+    def test_tuples(self):
+        """
+        Tests various ways of constructing tuples.
+        """
+        for idx, (s, t) in enumerate(samples_tuples.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+
+                if t is not None:
+                    for statement in n.children:
+                        self.assertIsInstance(statement, t)
 
     def test_import(self):
         """

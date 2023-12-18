@@ -11,6 +11,7 @@ from lang.spek import static, modules
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
 from tests.samples_translation.expressions import samples as expressions
+from tests.samples_translation.assignments import samples as assignments
 from tests.tools import dedent
 
 
@@ -180,7 +181,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests more complex assignments, in particular assignments to patterns.
         """
-        raise NotImplementedError()
+        self.examine_samples(assignments)
 
     def test_if(self):
         """
@@ -234,13 +235,15 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_lists(self):
         """
-        Tests the creation and usage of lists, including Projection expressions and "in" expressions
+        Tests the creation and usage of lists, including Projection expressions and "in" expressions,
+        assignment to projection expressions.
         """
         raise NotImplementedError()
 
     def test_dicts(self):
         """
-        Tests the creation and usage of dicts, including Projection expressions and "in" expressions
+        Tests the creation and usage of dicts, including Projection expressions and "in" expressions, including
+        assignment to projection expressions.
         """
         raise NotImplementedError()
 
@@ -252,7 +255,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_properties(self):
         """
-        Tests the declaration and execution of properties, involving attribute expressions.
+        Tests the declaration and execution of properties, involving attribute expressions, assignment to attribute expressions.
         """
         raise NotImplementedError()
 
