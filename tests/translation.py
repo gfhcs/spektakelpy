@@ -13,6 +13,7 @@ from lang.spek.modules import SpekStringModuleSpecification
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.assignments import samples as assignments
 from tests.samples_translation.ifs import samples as ifs
+from tests.samples_translation.whiles import samples as whiles
 from tests.tools import dedent
 
 
@@ -194,12 +195,12 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests while loops, including break and continue.
         """
-        raise NotImplementedError()
+        self.examine_samples(whiles)
 
     def test_procedures(self):
         """
-        Tests the definition and execution of procedures, involving Call expressions, Return statements and recursion,
-        also calls inside expressions and calls in loop conditions or if conditions!
+        Tests the definition and execution of procedures, involving Call expressions, Return statements (out of if's and loops!)
+        and recursion, also calls inside expressions and calls in loop conditions or if conditions!
         """
         raise NotImplementedError()
 
