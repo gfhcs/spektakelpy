@@ -91,21 +91,56 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         return states, internal, external
 
-    def test_empty(self):
+    def examine_sample(self, code, num_states, num_internal, num_external, **expectation):
         """
-        Tests if the empty program is executed successfully.
+        Translates and executes a code sample, in order to examine the final state.
+        This procedure will make a test fail if the translation and execution of the code does not meet expectations.
+        :param code: The string encoding the program to examine.
+        :param num_states: The number of observable states for the program.
+        :param num_internal: The number of observable internal transitions for the program.
+        :param num_external: The number of observable external transitions for the program.
+        :param expectation: A dict mapping variable names to expected values.
         """
+        code = dedent(code)
+        states, internal, external = self.translate_explore(code)
 
-        states, internal, external = self.translate_explore("# Just some empty program.")
-
-        self.assertEqual(len(states), 2)
-        self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(states), num_states)
+        self.assertEqual(len(internal), num_internal)
+        self.assertEqual(len(external), num_external)
 
         for s in states:
             for t in s.content.task_states:
                 if isinstance(t, StackState):
-                    self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
+                    if not (t.exception is None or isinstance(t.exception, VNone)):
+                        raise t.exception
+
+        for vname, expected in expectation.items():
+            found = states[-1].content.task_states[0].stack[-1][0][vname]
+            if expected is None:
+                self.assertTrue(isinstance(found, VNone))
+            elif isinstance(expected, str):
+                self.assertEqual(found.string, expected)
+            else:
+                self.assertEqual((type(expected))(found), expected)
+
+    def examine_samples(self, samples):
+        """
+        Translates and executes a set of samples and examines their final states.
+        This procedure will make a test fail if the translation and execution of a sample does not meet expectations.
+        :param samples: A dict that maps program strings to examination tuples. An examination tuple has the form
+                        ((num_states, num_internal, num_external), expectation), where num_states is the number
+                        of states observable for the program, num_internal and num_external are the numbers of internal
+                        and external transitions and expectation is a dict mapping variable names to expected values.
+        """
+        for idx, (program, (numbers, expectation)) in enumerate(samples.items()):
+            with self.subTest(idx=idx):
+                self.examine_sample(program, *numbers, **expectation)
+
+    def test_empty(self):
+        """
+        Tests if the empty program is executed successfully.
+        """
+        self.examine_sample("# Just some empty program.", 2, 1, 3)
 
     def test_assignment_simple(self):
         """
@@ -119,51 +154,15 @@ class TestSpektakelTranslation(unittest.TestCase):
         y = x + y
         await never()
         """
-        program = dedent(program)
-        states, internal, external = self.translate_explore(program)
 
-        self.assertEqual(len(states), 2)
-        self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
-
-        for s in states:
-            for t in s.content.task_states:
-                if isinstance(t, StackState):
-                    self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
-
-        self.assertEqual(int(states[-1].content.task_states[0].stack[-1][0]["y"]), 4754)
+        self.examine_sample(program, 2, 1, 3, y=4754)
 
     def test_expressions(self):
         """
         Tests the translation of all expression types, by executing the translation result and inspecting the final
         machine state.
         """
-
-        for idx, (program, ((num_states, num_internal, num_external), expectation)) in enumerate(expressions.items()):
-            with self.subTest(idx=idx):
-
-                program = dedent(program)
-                states, internal, external = self.translate_explore(program)
-
-                self.assertEqual(len(states), num_states)
-                self.assertEqual(len(internal), num_internal)
-                self.assertEqual(len(external), num_external)
-
-                for s in states:
-                    for t in s.content.task_states:
-                        if isinstance(t, StackState):
-                            if not (t.exception is None or isinstance(t.exception, VNone)):
-                                raise t.exception
-
-                for vname, expected in expectation.items():
-
-                    found = states[-1].content.task_states[0].stack[-1][0][vname]
-                    if expected is None:
-                        self.assertTrue(isinstance(found, VNone))
-                    elif isinstance(expected, str):
-                        self.assertEqual(found.string, expected)
-                    else:
-                        self.assertEqual((type(expected))(found), expected)
+        self.examine_samples(expressions)
 
     def test_pass(self):
         """
@@ -174,17 +173,8 @@ class TestSpektakelTranslation(unittest.TestCase):
         pass
         pass
         """
-        program = dedent(program)
-        states, internal, external = self.translate_explore(program)
 
-        self.assertEqual(len(states), 2)
-        self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
-
-        for s in states:
-            for t in s.content.task_states:
-                if isinstance(t, StackState):
-                    self.assertTrue(t.exception is None or isinstance(t.exception, VNone))
+        self.examine_sample(program, 2, 1, 3)
 
     def test_assignments(self):
         """
