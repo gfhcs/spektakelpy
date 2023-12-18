@@ -425,6 +425,7 @@ class Spektakel2Stack(Translator):
                 #       need to call a procedure first that turns it into a sequence.
                 for idx, c in enumerate(pattern.children):
                     chain = assign(chain, c, terms.Project(t, terms.CInt(idx)), on_error)
+                return chain
             elif isinstance(pattern, Projection):
                 callee, chain = self.translate_expression(chain, Attribute(pattern.value, "__set_item__"), dec, on_error)
                 index, chain = self.translate_expression(chain, pattern.index, dec, on_error)
@@ -676,7 +677,11 @@ class Spektakel2Stack(Translator):
             rest.append_jump(successor)
             return terms.Read(v), successor
         elif isinstance(node, Tuple):
-            return terms.NewTuple(*(self.translate_expression(chain, c, dec, on_error) for c in node.children)), chain
+            cs = []
+            for c in node.children:
+                r, chain = self.translate_expression(chain, c, dec, on_error)
+                cs.append(r)
+            return terms.NewTuple(*cs), chain
         else:
             raise NotImplementedError()
 
