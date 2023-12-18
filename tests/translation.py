@@ -197,7 +197,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_procedures(self):
         """
-        Tests the definition and execution of procedures, involving Call expressions, Return statements and recursion.
+        Tests the definition and execution of procedures, involving Call expressions, Return statements and recursion,
+        also calls inside expressions and calls in loop conditions or if conditions!
         """
         raise NotImplementedError()
 
