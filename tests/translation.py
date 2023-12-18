@@ -12,6 +12,7 @@ from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.assignments import samples as assignments
+from tests.samples_translation.ifs import samples as ifs
 from tests.tools import dedent
 
 
@@ -187,7 +188,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests if statements, including elif and else clauses.
         """
-        raise NotImplementedError()
+        self.examine_samples(ifs)
 
     def test_while(self):
         """
