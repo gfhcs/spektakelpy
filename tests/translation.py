@@ -264,3 +264,9 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the execution of import statements.
         """
         raise NotImplementedError()
+
+    def test_examples(self):
+        """
+        Tests the translator on all spek examples.
+        """
+        raise NotImplementedError()
