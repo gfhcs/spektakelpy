@@ -871,11 +871,12 @@ class Spektakel2Stack(Translator):
             alternative = Chain()
             successor = Chain()
             condition, chain = self.translate_expression(chain, node.condition, dec, on_error)
-            chain.append_guard({condition: consequence, ~condition: alternative}, on_error)
+            chain.append_guard({condition: consequence, negate(condition): alternative}, on_error)
             consequence = self.translate_statement(consequence, node.consequence, dec, on_error)
             consequence.append_jump(successor)
-            alternative = self.translate_statement(alternative, node.consequence, dec, on_error)
-            alternative.append_jump(successor)
+            if node.alternative is not None:
+                alternative = self.translate_statement(alternative, node.alternative, dec, on_error)
+                alternative.append_jump(successor)
             return successor
         elif isinstance(node, While):
             head = Chain()
