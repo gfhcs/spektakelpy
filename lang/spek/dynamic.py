@@ -725,13 +725,13 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewJumpError(VBreakError), on_error=on_error)
+                chain.append_update(TRef(ExceptionReference()), terms.NewJumpError(VBreakError), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
-                return chain
+                return Chain()
             elif isinstance(entry, BlockStack.LoopBlock):
-                chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
+                chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
                 chain.append_jump(entry.successorChain)
-                return chain
+                return Chain()
 
         raise AssertionError("This code location must never be reached,"
                              " because break statements cannot be emitted outside loops!")
@@ -750,13 +750,13 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for entry in self._blocks:
             if isinstance(entry, BlockStack.ExceptionBlock):
-                chain.append_update(ExceptionReference(), terms.NewJumpError(VContinueError), on_error=on_error)
+                chain.append_update(TRef(ExceptionReference()), terms.NewJumpError(VContinueError), on_error=on_error)
                 chain.append_jump(entry.finallyChain)
-                return chain
+                return Chain()
             elif isinstance(entry, BlockStack.LoopBlock):
-                chain.append_update(ExceptionReference(), terms.CNone(), on_error=on_error)
+                chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
                 chain.append_jump(entry.headChain)
-                return chain
+                return Chain()
 
         raise AssertionError("This code location must never be reached,"
                              " because break statements cannot be emitted outside loops!")
@@ -861,11 +861,9 @@ class Spektakel2Stack(Translator):
             chain.append_jump(on_error)
             return Chain()
         elif isinstance(node, Break):
-            self.emit_break(on_error, chain)
-            return Chain()
+            return self.emit_break(on_error, chain)
         elif isinstance(node, Continue):
-            self.emit_continue(on_error, chain)
-            return Chain()
+            return self.emit_continue(on_error, chain)
         elif isinstance(node, Conditional):
             consequence = Chain()
             alternative = Chain()
@@ -884,7 +882,7 @@ class Spektakel2Stack(Translator):
             successor = Chain()
             chain.append_jump(head)
             condition, head = self.translate_expression(head, node.condition, dec, on_error)
-            head.append_guard({condition: body, ~condition: successor}, on_error)
+            head.append_guard({condition: body, negate(condition): successor}, on_error)
             self._blocks.push(BlockStack.LoopBlock(head, successor))
             body = self.translate_statement(body, node.body, dec, on_error)
             self._blocks.pop()

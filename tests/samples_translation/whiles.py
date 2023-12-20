@@ -29,12 +29,13 @@ var x = 0
 while x < 10:
 
     if x % 2 == 0:
+        x = x + 3
         continue
 
     x = x + 1
 
 await never()
-""": ((2, 1, 3), {"x": 0}),
+""": ((2, 1, 3), {"x": 11}),
 
 """
 from interaction import never

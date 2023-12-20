@@ -206,7 +206,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_async(self):
         """
-        Tests launching and awaiting procedures as tasks, involving Launch and Await expressions.
+        Tests launching and awaiting procedures as tasks, involving Launch and Await expressions. This should also
+        include some infinite loops through a finite state space.
         """
         raise NotImplementedError()
 
