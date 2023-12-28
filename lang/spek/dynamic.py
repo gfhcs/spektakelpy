@@ -15,7 +15,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition, AssignableExpression
+    PropertyDefinition, ClassDefinition
 from ..modules import ModuleSpecification
 
 
@@ -383,23 +383,22 @@ class Spektakel2Stack(Translator):
         easily be retrieved later.
         :param chain: The Chain to which the instructions for allocating the new variables should be appended.
         :param on_error: The Chain to which control should be transferred if the allocation code fails.
-        :param pattern: The AssignableExpression node holding the pattern expression for which to allocate new variables.
+        :param pattern: The Expression node holding the pattern expression for which to allocate new variables.
         """
 
         if isinstance(pattern, Identifier):
             self.declare_name(chain, pattern, on_error)
-        elif isinstance(pattern, AssignableExpression):
+        elif pattern.assignable:
             for c in pattern.children:
                 self.declare_pattern(chain, c, on_error)
         else:
-            raise TypeError("Patterns to be declared must only contain AssignableExpression nodes,"
-                            " not nodes of type {}!".format(type(pattern)))
+            raise TypeError("Patterns to be declared must only contain assignable nodes!")
 
     def emit_assignment(self, chain, pattern, dec, expression, on_error, declaring=False):
         """
         Emits VM code for a assigning the result of an expression evaluation to a pattern.
         :param chain: The chain to which the assignment should be appended.
-        :param pattern: An AssignableExpression to which a value should be assigned.
+        :param pattern: An Expression to which a value should be assigned.
         :param dec: A dict mapping AST nodes to decorations.
         :param expression: The expression the result of which is to be assigned.
         :param on_error: The chain that execution should jump to in case of an error.
@@ -483,12 +482,11 @@ class Spektakel2Stack(Translator):
 
                 # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
                 #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
-            elif isinstance(pattern, AssignableExpression):
+            elif pattern.assignable:
                 raise NotImplementedError("Assignment to patterns of type {} "
                                           "has not been implemented yet!".format(type(pattern)))
             else:
-                raise TypeError("The pattern to which a value is assigned must be an "
-                                "AssignableExpression, not a {}!".format(type(pattern)))
+                raise TypeError("The pattern to which a value is assigned must be an assignable expression!")
 
         return assign(chain, pattern, t, on_error)
 

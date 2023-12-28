@@ -126,7 +126,7 @@ class SpektakelValidator(Validator):
         """
         Traverses the AST nodes of a pattern expression and adjoins the given environment.
         :param decl: The node that represents the declaration.
-        :param pattern: An AssignableExpression containing identifiers to be declared variables, or a string.
+        :param pattern: An Expression containing identifiers to be declared variables, or a string.
         :param env: The environment that is to be adjoined. It will not be modified by this method.
         :return: The new environment in which the identifiers found in the pattern are declared. Based on env.
         """
@@ -206,7 +206,7 @@ class SpektakelValidator(Validator):
             else:
                 self.validate_expression(node.expression, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, Assignment):
-            if not isinstance(node.target, AssignableExpression):
+            if not node.target.assignable:
                 err.append(ValidationError("Left side of an assignment must be an assignable expression!", node.target, mspec))
             self.validate_expression(node.target, env, dec=dec, err=err, mspec=mspec)
             self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
@@ -250,7 +250,7 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("'while' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, For):
             self.validate_expression(node.iterable, env, dec=dec, err=err, mspec=mspec)
-            if not isinstance(node.pattern, AssignableExpression):
+            if not node.pattern.assignable:
                 err.append(ValidationError("The pattern must be an assignable expression!", node.pattern, mspec))
             env_body = self._declare(node, node.pattern, env)
             env_body = env_body.adjoin({ValidationKey.LOOP: node})
@@ -271,7 +271,7 @@ class SpektakelValidator(Validator):
             if env[ValidationKey.LEVEL] == Level.CLASS:
                 err.append(ValidationError("'try' statements are not allowed in the root of a class definition!", node, mspec))
         elif isinstance(node, VariableDeclaration):
-            if not isinstance(node.pattern, AssignableExpression):
+            if not node.pattern.assignable:
                 err.append(ValidationError("Declared expression must be assignable!", node.pattern, mspec))
             if node.expression is not None:
                 self.validate_expression(node.expression, env, dec=dec, err=err, mspec=mspec)

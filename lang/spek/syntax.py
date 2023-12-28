@@ -507,8 +507,8 @@ class SpektakelParser(Parser):
 
             t, s, p = lexer.peek()
             if t == KW and s == "=":
-                if not isinstance(pattern, AssignableExpression):
-                    raise ParserError("Only 'assignable' expressions must occur on the left hand side of '='!", pos=p)
+                if not pattern.assignable:
+                    raise ParserError("Only assignable expressions may occur on the left hand side of '='!", pos=p)
                 lexer.read()
 
                 # Parse right hand side, which might be an unparenthesised tuple as well:

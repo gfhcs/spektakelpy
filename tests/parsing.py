@@ -296,8 +296,8 @@ class TestSpektakelParser(unittest.TestCase):
         Lumps together all the test cases in which the parser should complain.
         """
 
-        samples = ["not (x and y) == not x or not y"  # Must not work, because the second not cannot follow the == .
-                   "a, 42 = f(x)" # Must not work because 42 is not assignable.
+        samples = ["not (x and y) == not x or not y",  # Must not work, because the second not cannot follow the == .
+                   "a, 42 = f(x)"  # Must not work because 42 is not assignable.
                   ]
 
         for idx, s in enumerate(samples):

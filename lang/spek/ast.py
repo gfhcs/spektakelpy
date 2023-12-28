@@ -53,9 +53,18 @@ class Expression(Node, abc.ABC):
         super().__init__(*largs, **kwargs)
         self._vars = None
 
+    @property
+    @abc.abstractmethod
+    def assignable(self):
+        """
+        Indicates if this expression denotes a target for assignments.
+        :return: A boolean value.
+        """
+        pass
+
     def variables(self):
         """
-        An iterable of the variables occuring in this expression.
+        An iterable of the variables occurring in this expression.
         :return: An iterable without duplicates.
         """
         if self._vars is None:
@@ -74,6 +83,10 @@ class Constant(Expression):
         self._text = check_type(text, str)
 
     @property
+    def assignable(self):
+        return False
+
+    @property
     def text(self):
         """
         The text representation of this constant.
@@ -81,30 +94,7 @@ class Constant(Expression):
         return self._text
 
 
-class AssignableExpression(Expression, abc.ABC):
-    """
-    An expression that may represent the target of a write operation.
-    """
-
-    def __init__(self, *largs, assigned=False, **kwargs):
-        """
-        Creates a new potentially assignable expression.
-        :param largs: See Expression constructor.
-        :param assigned: Whether this expression is the target of an assignment.
-        :param kwargs: See Expression constructor.
-        """
-        super().__init__(*largs, **kwargs)
-        self._assigned = check_type(assigned, bool)
-
-    @property
-    def assigned(self):
-        """
-        Indicates if this expression is (part of) the target of an assignment.
-        """
-        return self._assigned
-
-
-class Identifier(AssignableExpression):
+class Identifier(Expression):
     """
     An identifier.
     """
@@ -113,10 +103,14 @@ class Identifier(AssignableExpression):
         """
         Creates a new identifier expression
         :param name: The name of this identifier.
-        :param kwargs: See AssignableExpression constructor.
+        :param kwargs: See Expression constructor.
         """
         super().__init__(**kwargs)
         self._name = check_type(name, str)
+
+    @property
+    def assignable(self):
+        return True
 
     @property
     def name(self):
@@ -126,7 +120,7 @@ class Identifier(AssignableExpression):
         return self._name
 
 
-class Tuple(AssignableExpression):
+class Tuple(Expression):
     """
     A tuple expression.
     """
@@ -138,8 +132,12 @@ class Tuple(AssignableExpression):
         """
         super().__init__(*(check_type(c, Expression) for c in components), **kwargs)
 
+    @property
+    def assignable(self):
+        return all(c.assignable for c in self.children)
 
-class Projection(AssignableExpression):
+
+class Projection(Expression):
     """
     An expression representing a particular component of a sequence.
     """
@@ -151,6 +149,10 @@ class Projection(AssignableExpression):
         :param kwargs: See AssigneableExpression constructor.
         """
         super().__init__(check_type(target, Expression), check_type(index, Expression), **kwargs)
+
+    @property
+    def assignable(self):
+        return True
 
     @property
     def value(self):
@@ -167,7 +169,7 @@ class Projection(AssignableExpression):
         return self.children[1]
 
 
-class Attribute(AssignableExpression):
+class Attribute(Expression):
     """
     An expression representing an attribute of a value.
     """
@@ -179,6 +181,10 @@ class Attribute(AssignableExpression):
         :param kwargs: See AssigneableExpression constructor.
         """
         super().__init__(check_type(value, Expression), check_type(identifier, Identifier), **kwargs)
+
+    @property
+    def assignable(self):
+        return True
 
     @property
     def value(self):
@@ -209,6 +215,10 @@ class Call(Expression):
         super().__init__(check_type(callee, Expression), *(check_type(a, Expression) for a in args), **kwargs)
 
     @property
+    def assignable(self):
+        return False
+
+    @property
     def callee(self):
         """
         The procedure that is called.
@@ -237,6 +247,10 @@ class Launch(Expression):
         super().__init__(check_type(work, Expression), **kwargs)
 
     @property
+    def assignable(self):
+        return False
+
+    @property
     def work(self):
         """
         The expression that the new process is supposed to evaluate.
@@ -256,6 +270,10 @@ class Await(Expression):
         :param kwargs: See Expression constructor.
         """
         super().__init__(check_type(process, Expression), **kwargs)
+
+    @property
+    def assignable(self):
+        return False
 
     @property
     def process(self):
@@ -280,6 +298,10 @@ class UnaryOperation(Expression, abc.ABC):
         """
         super().__init__(check_type(arg, Expression), **kwargs)
         self._op = check_type(op, UnaryOperator)
+
+    @property
+    def assignable(self):
+        return False
 
     @property
     def operand(self):
@@ -311,6 +333,10 @@ class BinaryOperation(Expression):
         """
         super().__init__(check_type(left, Expression), check_type(right, Expression), **kwargs)
         self._op = check_type(op, Enum)
+
+    @property
+    def assignable(self):
+        return False
 
     @property
     def left(self):
@@ -427,7 +453,9 @@ class Assignment(Statement):
         :param value: The expression the value of which is to be assigned.
         :param kwargs: See Statement constructor.
         """
-        super().__init__(check_type(target, AssignableExpression), check_type(value, Expression), **kwargs)
+        if not check_type(target, Expression).assignable:
+            raise ValueError("The given target expression is not assignable!")
+        super().__init__(target, check_type(value, Expression), **kwargs)
 
     @property
     def target(self):
