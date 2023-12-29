@@ -394,101 +394,99 @@ class Spektakel2Stack(Translator):
         else:
             raise TypeError("Patterns to be declared must only contain assignable nodes!")
 
-    def emit_assignment(self, chain, pattern, dec, expression, on_error, declaring=False):
+    def emit_assignment(self, chain, pattern, dec, term, on_error, declaring=False):
         """
-        Emits VM code for a assigning the result of an expression evaluation to a pattern.
+        Emits VM code for assigning the result of an expression evaluation to a pattern.
         :param chain: The chain to which the assignment should be appended.
         :param pattern: An Expression to which a value should be assigned.
         :param dec: A dict mapping AST nodes to decorations.
-        :param expression: The expression the result of which is to be assigned.
+        :param term: The term the result of which is to be assigned.
         :param on_error: The chain that execution should jump to in case of an error.
         :param declaring: Specifies if this assignment is part of a declaration, in which case it is assumed that
                           the given pattern is a *defining* occurrence of the declared name, not a *using* one.
                           The difference between these cases is that *using* occurrences will be mapped to defining
                           ones first, before the runtime reference for them can be retrieved.
-        :return: The chain with which execution is to be continued after the call.
+        :return: A pair (refs, chain), where refs is a nested iterable of references that represent the assignment
+                 targets and 'chain' is the chain with which execution is to be continued after the call.
+                 ref will contain 'None' for targets that are not local variables.
         """
 
-        # First we evaluate the expression:
-        t, chain = self.translate_expression(chain, expression, dec, on_error)
+        if isinstance(pattern, Identifier):
+            if not declaring:
+                pattern = dec[pattern][1]
+            r = self.decl2ref(pattern)
+            chain.append_update(TRef(r), term, on_error)
+            return r, chain
+        elif isinstance(pattern, Tuple):
+            # FIXME: What we are doing here will not work if t represents a general iterable! For that we would
+            #       need to call a procedure first that turns it into a sequence.
+            refs = []
+            for idx, c in enumerate(pattern.children):
+                r, chain = self.emit_assignment(chain, c, dec, terms.Project(term, terms.CInt(idx)), on_error, declaring=declaring)
+                refs.append(r)
+            return tuple(refs), chain
+        elif isinstance(pattern, Projection):
+            callee, chain = self.translate_expression(chain, Attribute(pattern.value, "__set_item__"), dec, on_error)
+            index, chain = self.translate_expression(chain, pattern.index, dec, on_error)
+            return None, self.emit_call(chain, callee, [index, term], on_error)
+        elif isinstance(pattern, Attribute):
+            # Python's "Descriptor How-To Guide"
+            # (https://docs.python.org/3/howto/descriptor.html#overview-of-descriptor-invocation)
+            # lists the following procedure for attribute lookup:
+            # def object_getattribute(obj, name):
+            #     "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+            #     null = object()
+            #     objtype = type(obj)
+            #     cls_var = find_name_in_mro(objtype, name, null)
+            #     descr_get = getattr(type(cls_var), '__get__', null)
+            #     if descr_get is not null:
+            #         if (hasattr(type(cls_var), '__set__')
+            #             or hasattr(type(cls_var), '__delete__')):
+            #             return descr_get(cls_var, obj, objtype)     # data descriptor
+            #     if hasattr(obj, '__dict__') and name in vars(obj):
+            #         return vars(obj)[name]                          # instance variable
+            #     if descr_get is not null:
+            #         return descr_get(cls_var, obj, objtype)         # non-data descriptor
+            #     if cls_var is not null:
+            #         return cls_var                                  # class variable
+            #     raise AttributeError(name)
 
-        def assign(chain, pattern, t, on_error):
-            if isinstance(pattern, Identifier):
-                if not declaring:
-                    pattern = dec[pattern][1]
-                r = self.decl2ref(pattern)
-                chain.append_update(TRef(r), t, on_error)
-                return chain
-            elif isinstance(pattern, Tuple):
-                # FIXME: What we are doing here will not work if t represents a general iterable! For that we would
-                #       need to call a procedure first that turns it into a sequence.
-                for idx, c in enumerate(pattern.children):
-                    chain = assign(chain, c, terms.Project(t, terms.CInt(idx)), on_error)
-                return chain
-            elif isinstance(pattern, Projection):
-                callee, chain = self.translate_expression(chain, Attribute(pattern.value, "__set_item__"), dec, on_error)
-                index, chain = self.translate_expression(chain, pattern.index, dec, on_error)
-                return self.emit_call(chain, callee, [index, t], on_error)
-            elif isinstance(pattern, Attribute):
-                # Python's "Descriptor How-To Guide"
-                # (https://docs.python.org/3/howto/descriptor.html#overview-of-descriptor-invocation)
-                # lists the following procedure for attribute lookup:
-                # def object_getattribute(obj, name):
-                #     "Emulate PyObject_GenericGetAttr() in Objects/object.c"
-                #     null = object()
-                #     objtype = type(obj)
-                #     cls_var = find_name_in_mro(objtype, name, null)
-                #     descr_get = getattr(type(cls_var), '__get__', null)
-                #     if descr_get is not null:
-                #         if (hasattr(type(cls_var), '__set__')
-                #             or hasattr(type(cls_var), '__delete__')):
-                #             return descr_get(cls_var, obj, objtype)     # data descriptor
-                #     if hasattr(obj, '__dict__') and name in vars(obj):
-                #         return vars(obj)[name]                          # instance variable
-                #     if descr_get is not null:
-                #         return descr_get(cls_var, obj, objtype)         # non-data descriptor
-                #     if cls_var is not null:
-                #         return cls_var                                  # class variable
-                #     raise AttributeError(name)
+            # We do not have general descriptors, but we have properties (which are data descriptors) and we have
+            # methods (which are non-data descriptors). Hence for us the procedure above becomes this:
 
-                # We do not have general descriptors, but we have properties (which are data descriptors) and we have
-                # methods (which are non-data descriptors). Hence for us the procedure above becomes this:
+            a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
-                a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
+            r = self.declare_name(chain, None, on_error)
+            chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
 
-                r = self.declare_name(chain, None, on_error)
-                chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
+            csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
+            cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, r)
+            cupdate = ~(csetter | cexception)
 
-                csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
-                cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, r)
-                cupdate = ~(csetter | cexception)
+            setter = Chain()
+            update = Chain()
+            exception = Chain()
+            successor = Chain()
+            chain.append_guard({csetter: setter, cupdate: update, cexception: exception}, on_error)
 
-                setter = Chain()
-                update = Chain()
-                exception = Chain()
-                successor = Chain()
-                chain.append_guard({csetter: setter, cupdate: update, cexception: exception}, on_error)
+            self.emit_call(setter, r, [term], on_error)
+            setter.append_jump(successor)
 
-                self.emit_call(setter, r, [t], on_error)
-                setter.append_jump(successor)
+            update.append_update(r, term, on_error)
+            update.append_jump(successor)
 
-                update.append_update(r, t, on_error)
-                update.append_jump(successor)
+            exception.append_update(ExceptionReference(), r, on_error)
+            exception.append_jump(on_error)
 
-                exception.append_update(ExceptionReference(), r, on_error)
-                exception.append_jump(on_error)
+            return None, successor
 
-                return successor
-
-                # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
-                #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
-            elif pattern.assignable:
-                raise NotImplementedError("Assignment to patterns of type {} "
-                                          "has not been implemented yet!".format(type(pattern)))
-            else:
-                raise TypeError("The pattern to which a value is assigned must be an assignable expression!")
-
-        return assign(chain, pattern, t, on_error)
+            # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
+            #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
+        elif pattern.assignable:
+            raise NotImplementedError("Assignment to patterns of type {} "
+                                      "has not been implemented yet!".format(type(pattern)))
+        else:
+            raise TypeError("The pattern to which a value is assigned must be an assignable expression!")
 
     def emit_import(self, chain, spec, subnames, name, mapping, on_error):
         """
@@ -805,8 +803,9 @@ class Spektakel2Stack(Translator):
         if name is None:
             return f, chain
         else:
-            name = self.declare_pattern(chain, name, on_error)
-            chain = chain.append_update(name, f, on_error)
+            if name not in self._decl2ref:
+                self.declare_name(chain, name, on_error)
+            name, chain = self.emit_assignment(chain, name, dec, f, on_error, declaring=True)
             return name, chain
 
     def translate_statement(self, chain, node, dec, on_error):
@@ -830,7 +829,8 @@ class Spektakel2Stack(Translator):
             # because its evaluation result is not to be bound to anything.
             return chain
         elif isinstance(node, Assignment):
-            chain = self.emit_assignment(chain, node.target, dec, node.value, on_error)
+            t, chain = self.translate_expression(chain, node.value, dec, on_error)
+            _, chain = self.emit_assignment(chain, node.target, dec, t, on_error)
             return chain
         elif isinstance(node, Block):
             for s in node.children:
@@ -917,7 +917,8 @@ class Spektakel2Stack(Translator):
             stopper.append_guard({s: successor, ~s: on_error}, on_error)
             successor.append_update(ExceptionReference(), terms.CNone(), on_error)
 
-            head = self.emit_assignment(chain, node.pattern, dec, element, on_error)
+            t, head = self.translate_expression(chain, element, dec, on_error)
+            _, head = self.emit_assignment(head, node.pattern, dec, t, on_error)
 
             self._blocks.push(BlockStack.LoopBlock(head, successor))
             self.translate_statement(body, node.body, dec, on_error)
@@ -997,7 +998,8 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, VariableDeclaration):
             self.declare_pattern(chain, node.pattern, on_error)
             if node.expression is not None:
-                chain = self.emit_assignment(chain, node.pattern, dec, node.expression, on_error, declaring=True)
+                t, chain = self.translate_expression(chain, node.expression, dec, on_error)
+                _, chain = self.emit_assignment(chain, node.pattern, dec, t, on_error, declaring=True)
             return chain
         elif isinstance(node, ProcedureDefinition):
             if not isinstance(self._blocks[-1], (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
