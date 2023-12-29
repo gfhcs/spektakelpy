@@ -1,0 +1,180 @@
+samples = {
+
+
+"""
+from interaction import never
+
+def foo():
+    return 42
+    
+var x = foo()
+
+await never()
+""": ((2, 1, 3), {"x": 42}),
+
+"""
+from interaction import never
+
+def foo(x):
+    return x + 1
+
+var x = foo(42)
+
+await never()
+""": ((2, 1, 3), {"x": 43}),
+
+
+"""
+from interaction import never
+
+def foo(x):
+    return x + 1
+    
+def bar(x):
+    return x - 1
+
+var x = bar(bar(foo(42) - bar(42)))
+
+await never()
+""": ((2, 1, 3), {"x": 0}),
+
+"""
+from interaction import never
+
+var x = 42
+
+def foo(x):
+    x = x + 1    
+    
+foo()
+foo()
+
+await never()
+""": ((2, 1, 3), {"x": 44}),
+
+
+"""
+from interaction import never
+
+var x = 0
+
+def small(x):
+    return x < 42
+    
+def even(x):
+    return x % 2 == 0
+    
+def increment(x):
+    x = x + 1 
+
+if small(x) and even(x):
+    increment(x)
+
+await never()
+""": ((2, 1, 3), {"x": 1}),
+
+"""
+from interaction import never
+
+var x = 0
+
+def small(x):
+    return x < 42  
+
+def even(x):
+    return x % 2 == 0
+
+def increment(x):
+    x = x + 1 
+
+while small(x) or even(x):
+    increment(x)
+
+await never()
+""": ((2, 1, 3), {"x": 43}),
+
+"""
+from interaction import never
+
+def even(x):
+    return x % 2 == 0
+
+def foo(x):
+    if even(x):
+        return True
+    return False
+    
+var x = foo(42) and not foo(43)
+
+await never()
+""": ((2, 1, 3), {"x": True}),
+
+"""
+from interaction import never
+
+def geq(x, y):        
+    while x >= 0:        
+        if x == y:
+            return True
+        x = x - 1
+
+var x = geq(17, 12) and not geq(5, 7)
+
+await never()
+""": ((2, 1, 3), {"x": True}),
+
+"""
+from interaction import never
+
+def geq(x, y):    
+
+    if x == 0:
+        return y == 0
+    if x == y:
+        return True
+    
+    return geq(x - 1, y)
+
+var x = geq(17, 12) and not geq(5, 7)
+
+await never()
+""": ((2, 1, 3), {"x": True}),
+
+"""
+from interaction import never
+
+var odd
+def even(x):
+     if x == 0:
+        return True
+    return odd(x - 1)
+    
+def odd(x):
+    if x == 0:
+        return False
+    return even(x - 1) 
+
+var x = even(4) and not even(5)
+
+await never()
+""": ((2, 1, 3), {"x": True}),
+
+"""
+from interaction import never
+
+def foo(x):
+    return x + 1
+    
+var a = foo(42)
+
+def bar(x):
+    return foo(x) - 2
+    
+foo = bar
+
+var b = foo(42)
+
+await never()
+""": ((2, 1, 3), {"a": 43, "b": 41}),
+
+}

@@ -14,6 +14,7 @@ from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.assignments import samples as assignments
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.whiles import samples as whiles
+from tests.samples_translation.procedures import samples as procedures
 from tests.tools import dedent
 
 
@@ -199,10 +200,14 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_procedures(self):
         """
-        Tests the definition and execution of procedures, involving Call expressions, Return statements (out of if's and loops!)
-        and recursion, also calls inside expressions and calls in loop conditions or if conditions!
+        Tests the definition and execution of procedures, involving:
+            - call statements and call expressions (also nested deep inside expressions).
+            - calls in if conditions and while heads.
+            - return statements, also inside if statements and loops.
+            - recursion and entangled recursion.
+            - reassignment to procedure identifiers.
         """
-        raise NotImplementedError()
+        self.examine_samples(procedures)
 
     def test_async(self):
         """
