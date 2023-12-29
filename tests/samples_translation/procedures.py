@@ -43,7 +43,7 @@ from interaction import never
 
 var x = 42
 
-def foo(x):
+def foo():
     x = x + 1    
     
 foo()

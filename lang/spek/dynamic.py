@@ -769,7 +769,7 @@ class Spektakel2Stack(Translator):
                  following the procedure definition can be appended.
         """
 
-        bodyBlock = Chain()
+        entryBlock = Chain()
         exitBlock = Chain()
 
         num_args = len(argnames)
@@ -778,10 +778,11 @@ class Spektakel2Stack(Translator):
 
         # Declare the function arguments as local variables:
         for aname in argnames:
-            self.declare_pattern(bodyBlock, aname, on_error)
+            self.declare_pattern(entryBlock, aname, on_error)
 
-        body = self.translate_statement(bodyBlock, body, dec, exitBlock)
-        body.append_pop()
+        bodyBlock = self.translate_statement(entryBlock, body, dec, exitBlock)
+        bodyBlock.append_pop()
+        del bodyBlock
 
         exitBlock.append_pop()
 
@@ -796,7 +797,7 @@ class Spektakel2Stack(Translator):
         #               must thus map the shared variables to offsets in the heap frame.
         #               --> For now we should just *detect* nonlocal variables and raise a NotImplementedError
 
-        f = terms.NewProcedure(num_args, body.compile())
+        f = terms.NewProcedure(num_args, entryBlock.compile())
 
         self._blocks.pop()
 
@@ -839,7 +840,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, Return):
             if node.value is not None:
                 r, chain = self.translate_expression(chain, node.value, dec, on_error)
-                chain.append_update(ReturnValueReference(), r, on_error)
+                chain.append_update(TRef(ReturnValueReference()), r, on_error)
             self.emit_return(on_error, chain)
             return Chain()
         elif isinstance(node, Raise):
