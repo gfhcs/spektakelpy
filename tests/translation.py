@@ -234,6 +234,15 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests for loops, including break and continue.
         """
+
+        # TODO: Here and in many of the following test cases, we will have to use an object's interface.
+        #       This cannot be done with terms only, because terms are functional, but many of the operations in
+        #       question have side effects. So we must use instructions. The only useful instruction is
+        #       the push instruction, which can be used to call double-underscore methods. Using them might make
+        #       certain terms obsolete, which is good.
+        #       The alternative would be to introduce additional instructions for the special methods, but this
+        #       bloats the instruction set and does not really have any advantages.
+
         raise NotImplementedError()
 
     def test_tuples(self):
