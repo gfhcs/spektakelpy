@@ -390,6 +390,20 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertErrors(2, err)
         self.assertEqual(49, len(dec))
 
+    def test_closure(self):
+        """
+        Tests the validation of procedure declarations.
+        """
+
+        node, env_in, env_out, dec, err = validate("def add(x):\n"
+                                                   "  def c(y):\n"
+                                                   "    return x + y\n"
+                                                   "  return c\n")
+
+        self.assertEqual(len(env_in) + 1, len(env_out))
+        self.assertErrors(0, err)
+        self.assertEqual(5, len(dec))
+
     def test_class(self):
         """
         Tests the validation of class declarations.
