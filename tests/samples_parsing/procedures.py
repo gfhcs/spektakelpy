@@ -22,6 +22,12 @@ def max(x, y):
 """
 def max3(x, y, z):
     return max(x, max(y, z))
-""": ast.ProcedureDefinition
+""": ast.ProcedureDefinition,
 
+"""
+def add(x):
+    def c(y):
+        return x + y
+    return c
+""": ast.ProcedureDefinition
 }
