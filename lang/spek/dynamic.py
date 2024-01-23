@@ -1131,6 +1131,18 @@ class Spektakel2Stack(Translator):
 
         return preamble
 
+    def prepare_allocations(self, nodes, dec):
+        """
+        Analyses the AST to decide how each variable is to be allocated:
+        Variables that are used in an "inner" procedure declaration AND are not functional (i.e. might be written
+        after they have been read), will not be allocated in stack frames, but in "heap cells".
+        Note: This mechanism is designed such that procedure names and type names typically can be allocated on the
+        stack, even though they are used in "inner" scopes.
+        :param nodes: An iterable of statements that represent the code of the module.
+        :param dec: A dict mapping AST nodes to decorations.
+        """
+        # TODO: This analysis is actually in vanalysis.py . All we need here is the "cell" predicate, see docstring!
+
     def translate_module(self, nodes, dec):
         """
         Generates code for an entire module.
