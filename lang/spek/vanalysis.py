@@ -42,68 +42,82 @@ class VariableAnalysis:
                 self._analyse_expression(c, dec, acc)
         return acc
 
+    def _update_analysis(self, functional, volatile, declared, written, read, free, unread, ds, ws, rs, fs):
+        """
+        Given the current state of the analysis, and the result of analysing another statement, updates the state of
+        the analysis.
+        :param functional: The set of variables that so far are considered functional.
+        :param volatile: The set of variables that are considered to be allocated in a volatile context. If the newly
+                         analysed statement is declaring variables in a non-volatile context, None must be given.
+        :param declared: The set of variables declared so far.
+        :param written: The set of variables that were written so far.
+        :param read: The set of variables that were read so far.
+        :param free: The set of variables that are considered free so far.
+        :param unread: The set of variables that were not read so far.
+        :param ds: The variables declared in the newly analysed statement.
+        :param ws: The variables written in the newly analysed statement.
+        :param rs: The variables read in the newly analysed statement.
+        :param fs: The free variables of the newly analysed statement.
+        """
+        functional += ds
+        unread -= rs
+        unread += ds
+        functional -= ws - unread
+        read += rs
+        free += fs - declared
+        declared += ds
+        if volatile is not None:
+            volatile += ds
+        written += ws
 
-    def _analyse_statement(self, volatile_context, unread, node, dec):
+    def _analyse_statement(self, functional, volatile, declared, written, read, free, unread, node, dec):
         """
         Analyses a statement, updating the information collections in this instance.
-        :param volatile_context: A boolean value specifying if the statement is in a context in which local variables
-                                 would be allocated in a 'volatile context', i.e. a stack frame that might be deallocated
-                                 code objects constructed as part of the statement execution are being executed.
-        :param node: A Statement.
-        :param unread: The set of available variables that have not been read yet.
+        :param functional: The set of variables that so far are considered functional.
+        :param volatile: The set of variables that are considered to be allocated in a volatile context. If the newly
+                         analysed statement is declaring variables in a non-volatile context, None must be given.
+        :param declared: The set of variables declared so far.
+        :param written: The set of variables that were written so far.
+        :param read: The set of variables that were read so far.
+        :param free: The set of variables that are considered free so far.
+        :param unread: The set of variables that were not read so far.
+        :param node: A Statement to analyse.
         :param dec: A dict mapping AST nodes to decorations.
         :return: A triple (declared, written, read, free) of iterables that hold the variables written and read by this statement,
                  as well as the free variables of this statement.
         """
 
         if isinstance(node, (Pass, Break, Continue)):
-            return tuple(), tuple(), tuple(), tuple()
+            pass
         elif isinstance(node, (ExpressionStatement, Return, Raise)):
             vars = tuple(self._analyse_expression(node, dec).keys())
-            return tuple(), tuple(), vars, vars
+            self._update_analysis(functional, volatile, declared, written, read, free, unread, [], [], vars, vars)
         elif isinstance(node, VariableDeclaration):
-            declared = tuple(self._analyse_expression(node.pattern, dec).keys())
-            self._functionals += declared
-            if volatile_context:
-                self._volatiles += declared
-            read = tuple(self._analyse_expression(node.expression, dec).keys())
-            return declared, declared, read, read - declared
+            ds = tuple(self._analyse_expression(node.pattern, dec).keys())
+            if node.expression is None:
+                rs = tuple()
+            else:
+                rs = tuple(self._analyse_expression(node.expression, dec).keys())
+            self._update_analysis(functional, volatile, declared, written, read, free, unread, ds, ds, rs, rs)
         elif isinstance(node, Assignment):
-            written = tuple(self._analyse_expression(node.target, dec).keys())
-            vars = tuple(self._analyse_expression(node.value, dec).keys())
-            return tuple(), written, vars, written + vars
+            ws = tuple(self._analyse_expression(node.target, dec).keys())
+            rs = tuple(self._analyse_expression(node.value, dec).keys())
+            self._update_analysis(functional, volatile, declared, written, read, free, unread, [], ws, rs, ws + rs)
         elif isinstance(node, Block):
-            declared = set()
-            written = set()
-            read = set()
-            free = ()
-            unread = set(unread)
             for s in node.children:
-                ds, ws, rs, fs = self._analyse_statement(volatile_context, unread, s, dec)
-                for v in ws - unread:
-                    self._functional -= v
-                unread -= rs
-                unread += ds
-                read += rs
-                free += fs - declared
-                declared += ds
-                written += ws
-            return declared, written, read, free
+                functional, volatile, declared, written, read, free, unread = self._analyse_statement(functional, volatile, declared, written, read, free, unread, s, dec)
         elif isinstance(node, Conditional):
-            declared = set()
-            written = set()
-            read = set()
-            free = ()
-            unread = set(unread)
 
-            vars_condition = self._analyse_expression(node.condition, dec).keys()
-            read += vars_condition
-            free += vars_condition
-            unread -= vars_condition
+            rs = self._analyse_expression(node.condition, dec).keys()
+            self._update_analysis(functional, volatile, declared, written, read, free, unread, [], [], rs, rs)
 
-            # TODO: Continue here, with consequence and alternative, like in the Block case!
+            _, _, _, written1, read1, _, unread1 = self._analyse_statement(functional, volatile, declared, set(written), set(read), free, set(unread), node.consequence, dec)
+            _, _, _, written2, read2, _, unread2 = self._analyse_statement(functional, volatile, declared, set(written), set(read), free, set(unread), node.alternative, dec)
 
-            return declared, written, read, free
+            written += written1 + written2
+            read += read1 + read2
+            unread -= read1 + read2
+
         elif isinstance(node, While):
             self._analyse_statement(volatile_context, node.body, dec)
         elif isinstance(node, For):
@@ -142,6 +156,8 @@ class VariableAnalysis:
             # TODO: Names defined here need to be treated like VariableDeclarations.
         else:
             raise NotImplementedError()
+
+        return functional, volatile, declared, written, read, free, unread
 
 
     def functional(self, node):
