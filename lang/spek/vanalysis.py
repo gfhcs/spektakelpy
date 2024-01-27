@@ -149,7 +149,6 @@ class VariableAnalysis:
             ds, ws, rs, us, fs = self._analyse_statement(node.final, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
         elif isinstance(node, ProcedureDefinition):
-            # First we analyse the body:
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
             self._pfree[node] = fsb - node.argnames
             ds = {node.name: False}
@@ -157,15 +156,21 @@ class VariableAnalysis:
                 ds[d] = True
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb | {node.name}, rsb, nsb | wsb, fsb - {node.name, *node.argnames})
         elif isinstance(node, PropertyDefinition):
+            dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.getter, dec)
+            self._pfree[node.getter] = fsb
+            ds = {d: True for d in dsb}
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb)
 
-            # TODO: Like for procedures, the property name and the value argument of a setter need to be treated like VariableDeclarations!
-            self._analyse_statement(True, node.getter, dec)
-            self._analyse_statement(True, node.setter, dec)
-
+            dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.setter, dec)
+            self._pfree[node] = fsb - {node.vname}
+            ds = {d: True for d in chain([node.vname], dsb)}
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb - {node.vname})
         elif isinstance(node, ClassDefinition):
 
-            # The class variable needs to be treated like a VariableDeclaration.
-            self._analyse_statement(volatile_context, node.body, dec)
+            # TODO: Treat the class variable like a Variable declaration.
+            # TODO: In the body there can only be 3 types of statements:
+            #       instance variable declarations, method declarations and property declarations.
+            #       These may need to be treated specially, because of the class context.
 
         elif isinstance(node, (ImportNames, ImportSource)):
             # TODO: Names defined here need to be treated like VariableDeclarations.
