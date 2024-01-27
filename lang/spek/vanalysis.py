@@ -1,6 +1,8 @@
+from itertools import chain
+
 from lang.spek.ast import Identifier, Pass, ExpressionStatement, Assignment, Return, Raise, Continue, Break, Block, \
     VariableDeclaration, Conditional, While, For, Try, ProcedureDefinition, PropertyDefinition, ClassDefinition, \
-    ImportNames, ImportSource
+    ImportNames, ImportSource, Except
 
 
 class VariableAnalysis:
@@ -99,14 +101,14 @@ class VariableAnalysis:
             pass
         elif isinstance(node, (ExpressionStatement, Return, Raise)):
             fs = self._analyse_expression(node, dec).keys()
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, dict(), empty, fs, [], fs)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, dict(), empty, fs, empty, fs)
         elif isinstance(node, VariableDeclaration):
             ds = {v: False for v in self._analyse_expression(node.pattern, dec).keys()}
             if node.expression is None:
-                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, empty, [], [], [])
+                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, empty, empty, empty, empty)
             else:
                 rs = self._analyse_expression(node.expression, dec).keys()
-                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), rs, [], rs)
+                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), rs, empty, rs)
         elif isinstance(node, Assignment):
             ws = self._analyse_expression(node.target, dec).keys()
             rs = self._analyse_expression(node.value, dec).keys()
@@ -131,26 +133,29 @@ class VariableAnalysis:
             rs = self._analyse_expression(node.iterable, dec).keys()
             VariableAnalysis._update(declared, written, read, nonfunctional, free, dict(), empty, rs, empty, rs)
             ds = self._analyse_expression(node.pattern, dec).keys()
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, {d: False for d in ds}, ds, empty, empty, empty)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, {d: True for d in ds}, ds, empty, empty, empty)
             ds, ws, rs, ns, fs = self._analyse_statement(node.body, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, ns, fs)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, dict(), ws, rs, empty, fs)
         elif isinstance(node, Try):
-
-            # TODO: The exception variables need to be treated like VariableDeclarations!
-
-            self._analyse_statement(volatile_context, node.body, dec)
-            self._analyse_statement(volatile_context, node.final, dec)
+            ds, ws, rs, us, fs = self._analyse_statement(node.body, dec)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
             for h in node.handlers:
-                self._analyse_statement(volatile_context, h, dec)
-
-
+                assert isinstance(h, Except)
+                ds = self._analyse_expression(h.identifier, dec).keys()
+                VariableAnalysis._update(declared, written, read, nonfunctional, free, {d: True for d in ds}, ds, empty, empty, empty)
+                ds, ws, rs, us, fs = self._analyse_statement(h.body, dec)
+                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
+            ds, ws, rs, us, fs = self._analyse_statement(node.final, dec)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
         elif isinstance(node, ProcedureDefinition):
-
-            # TODO: Any of the argument variables, or the procedure variable need to be treated like VariableDeclarations!
-
-            self._analyse_statement(True, node.body, dec)
-
+            # First we analyse the body:
+            dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
+            self._pfree[node] = fsb - node.argnames
+            ds = {node.name: False}
+            for d in chain(node.argnames, dsb):
+                ds[d] = True
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb | {node.name}, rsb, nsb | wsb, fsb - {node.name, *node.argnames})
         elif isinstance(node, PropertyDefinition):
 
             # TODO: Like for procedures, the property name and the value argument of a setter need to be treated like VariableDeclarations!
