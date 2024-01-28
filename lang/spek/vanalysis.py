@@ -2,7 +2,7 @@ from itertools import chain
 
 from lang.spek.ast import Identifier, Pass, ExpressionStatement, Assignment, Return, Raise, Continue, Break, Block, \
     VariableDeclaration, Conditional, While, For, Try, ProcedureDefinition, PropertyDefinition, ClassDefinition, \
-    ImportNames, ImportSource, Except
+    ImportNames, ImportSource, Except, Expression, Statement
 
 
 class VariableAnalysis:
@@ -16,16 +16,17 @@ class VariableAnalysis:
       that this analysis cannot possibly decide this question accurately, but gives a safe underapproximation.
     """
 
-    def __init__(self, node, dec):
+    def __init__(self, statement, dec):
         """
         Analyses the variables in a sequence of AST nodes.
-        :param node: The AST node to analyse.
         :param dec: The dict returned from the Validator.
+        :param statement: The Statement node to analyse as an executed sequence.
         """
-        self._dec = dec
-        self._analyse(node)
+        self._free = dict()
+        declared, _, _, nonfunctional, _ = self._analyse_statement(statement, dec)
+        self._declared = {v: (vol, v not in nonfunctional) for v, vol in declared.items()}
 
-    def _analyse_expression(self, node, dec, acc=None):
+    def analyse_expression(self, node, dec, acc=None):
         """
         Analyses an expression node.
         :param node: An ExpressionNode.
@@ -149,19 +150,16 @@ class VariableAnalysis:
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
         elif isinstance(node, ProcedureDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
-            self._pfree[node] = fsb - node.argnames
             ds = {node.name: False}
             for d in chain(node.argnames, dsb):
                 ds[d] = True
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb | {node.name}, rsb, nsb | wsb, fsb - {node.name, *node.argnames})
         elif isinstance(node, PropertyDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.getter, dec)
-            self._pfree[node.getter] = fsb
             ds = {d: True for d in dsb}
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb)
 
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.setter, dec)
-            self._pfree[node] = fsb - {node.vname}
             ds = {d: True for d in chain([node.vname], dsb)}
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb - {node.vname})
         elif isinstance(node, ClassDefinition):
@@ -193,27 +191,17 @@ class VariableAnalysis:
         else:
             raise NotImplementedError()
 
+        self._free[id(node)] = free
         return declared, written, read, nonfunctional, free
 
-
-    def functional(self, node):
+    @property
+    def variables(self):
         """
-        Returns a subset of the variables allocated in the given node that can be identified as functional, i.e.
-        where it can be deduced that the first read to the variable happens after the last write.
-        :param node: The AST node that should be searched for functional variables.
-        :return: A set of ASTNode objects that identify the functional variables.
+        A mapping of all declared names to a tuple of boolean values (vol, fun):
+        vol indicates if the declared name is allocated in a volatile context, i.e. if the allocated memory might be freed while the variable is still alive.
+        fun indicates if the declared name can safely be considered to be functional, i.e. it is never written after it has been read.
         """
-        # TODO: Implement this, as part of the "big recursive pass"
-        #       Erst einmal setzten wir die Variable auf "nicht gelesen". Wenn wir einen Lesezugriff finden, setzen wir sie auf "gelesen". Wenn wir einen Schreibzugriff finden, zu dessen Zeit sie schon gelesen war, ist sie nicht mehr funktional.
-
-    def volatile(self, node):
-        """
-        Returns the set of variables that are declared inside the given node, and belong to scopes that might be left
-        while the variables are still alive.
-        :param node: The AST node that should be searched for volatile variables.
-        :return: A set of ASTNode objects that identify the volatile variables.
-        """
-        # TODO: Implement this, as part of the "big recursive pass"
+        return dict(self._declared)
 
     def free(self, node):
         """
@@ -222,4 +210,6 @@ class VariableAnalysis:
         :return: A set of ASTNode objects that identify the variables that are free in the given node.
         :exception TypeError: If the given node is a type for which this analysis does not record free variables.
         """
-        # TODO: Implement this, as part of the "big recursive pass". It needs to work only for *some* node types!
+        if isinstance(node, Expression):
+            raise ValueError("For computing the free variables of expression nodes, call self.analyse_expression!")
+        return self._free[id(node)]
