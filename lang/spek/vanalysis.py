@@ -172,8 +172,12 @@ class VariableAnalysis:
             #       instance variable declarations, method declarations and property declarations.
             #       These may need to be treated specially, because of the class context.
 
-        elif isinstance(node, (ImportNames, ImportSource)):
-            # TODO: Names defined here need to be treated like VariableDeclarations.
+        elif isinstance(node, ImportNames):
+            ds = {v: False for v in node.aliases.values()}
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), empty, empty, empty)
+        elif isinstance(node, ImportSource):
+            ds = {node.alias: False}
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), empty, empty, empty)
         else:
             raise NotImplementedError()
 
