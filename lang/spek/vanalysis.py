@@ -25,7 +25,6 @@ class VariableAnalysis:
         self._dec = dec
         self._analyse(node)
 
-
     def _analyse_expression(self, node, dec, acc=None):
         """
         Analyses an expression node.
@@ -166,12 +165,25 @@ class VariableAnalysis:
             ds = {d: True for d in chain([node.vname], dsb)}
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb - {node.vname})
         elif isinstance(node, ClassDefinition):
-
-            # TODO: Treat the class variable like a Variable declaration.
-            # TODO: In the body there can only be 3 types of statements:
-            #       instance variable declarations, method declarations and property declarations.
-            #       These may need to be treated specially, because of the class context.
-
+            ds = {node.name: False}
+            rs = node.bases
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), rs, empty, rs)
+            for member in node.body:
+                dsb, wsb, rsb, nsb, fsb = self._analyse_statement(member, dec)
+                if isinstance(member, VariableDeclaration):
+                    toremove = self._analyse_expression(member.pattern, dec).keys()
+                elif isinstance(member, ProcedureDefinition):
+                    toremove = (member.name, )
+                elif isinstance(member, PropertyDefinition):
+                    toremove = (member.name, )
+                else:
+                    raise TypeError(f"Cannot analyse class members of type {type(member)}!")
+                for v in toremove:
+                    del dsb[v]
+                    wsb.remove(v)
+                    rsb.remove(v)
+                    nsb.remove(v)
+                VariableAnalysis._update(declared, written, read, nonfunctional, free, dsb, wsb, rsb, nsb, fsb)
         elif isinstance(node, ImportNames):
             ds = {v: False for v in node.aliases.values()}
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), empty, empty, empty)
