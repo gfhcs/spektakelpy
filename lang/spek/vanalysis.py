@@ -21,8 +21,12 @@ class VariableAnalysis:
         :param statement: The Statement node to analyse as an executed sequence.
         """
         self._free = dict()
+        self._free_in_proc = set()
         declared, _, _, nonfunctional, _ = self._analyse_statement(statement, dec)
         self._declared = {v: v not in nonfunctional for v in declared}
+
+        self._unsafeonstack = nonfunctional & self._free_in_proc
+        del self._free_in_proc
 
     def analyse_expression(self, node, dec, acc=None):
         """
@@ -146,6 +150,7 @@ class VariableAnalysis:
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
             ds = {node.name, *node.argnames, *dsb}
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb | {node.name}, rsb, nsb | wsb, fsb - {node.name, *node.argnames})
+            self._free_in_proc |= free
         elif isinstance(node, PropertyDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.getter, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, dsb, wsb, rsb, nsb | wsb, fsb)
@@ -153,6 +158,8 @@ class VariableAnalysis:
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.setter, dec)
             ds = {node.vname, *dsb}
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb - {node.vname})
+
+            self._free_in_proc |= free
         elif isinstance(node, ClassDefinition):
             ds = {node.name}
             rs = node.bases
@@ -183,6 +190,7 @@ class VariableAnalysis:
             raise NotImplementedError()
 
         self._free[id(node)] = free
+
         return declared, written, read, nonfunctional, free
 
     @property
@@ -203,3 +211,12 @@ class VariableAnalysis:
         if isinstance(node, Expression):
             raise ValueError("For computing the free variables of expression nodes, call self.analyse_expression!")
         return self._free[id(node)]
+
+    def safe_on_stack(self, var):
+        """
+        Indicates if the given variable can safely be allocated directly on the call stack, or if it may be necessary
+        to allocate it in a heap cell.
+        :param var: The defining occurrence of the variable in question.
+        :return: True if this analysis could reliably determine that stack allocation is sufficient, False otherwise.
+        """
+        return var not in self._unsafeonstack
