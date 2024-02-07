@@ -2,9 +2,9 @@ from collections import namedtuple
 
 from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, NameReference, FrameReference, \
-    AbsoluteFrameReference
+    AbsoluteFrameReference, CellReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    CTerm, Lookup, CString, CNone
+    CTerm, Lookup, CString, CNone, NewCell
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.instructions import Push, Pop, Launch, Update, Guard
 from engine.tasks.program import StackProgram, ProgramLocation
@@ -16,6 +16,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
+from .vanalysis import VariableAnalysis
 from ..modules import ModuleSpecification
 
 
@@ -247,7 +248,7 @@ class BlockStack:
     ExceptionBlock = namedtuple("ExceptionBlock", ("exceptionReference", "finallyChain"))
     FunctionBlock = namedtuple("FunctionBlock", ("offset", ))
     ClassBlock = namedtuple("ClassBlock", ("offset", ))
-    ModuleBlock = namedtuple("ModuleBlock", ("offset", ))
+    ModuleBlock = namedtuple("ModuleBlock", ("offset", "cells"))
 
     def __init__(self):
         super().__init__()
@@ -305,8 +306,8 @@ class Spektakel2Stack(Translator):
 
     def declare_name(self, chain, name, on_error):
         """
-        Statically declares a new variable name. Depending on the context the name will be declared as a stack frame
-        variable, or as a namespace entry. The new variable is recorded for the given declaration, such that it can
+        Statically declares a new variable name, allocating memory for the variable. The type of allocation depends on
+        the context and the way the variable is used. The new variable is recorded for the given declaration, such that it can
         easily be retrieved later.
         :param chain: The Chain to which the instructions for allocating the new variable should be appended.
         :param on_error: The Chain to which control should be transferred if the allocation code fails.
@@ -322,17 +323,14 @@ class Spektakel2Stack(Translator):
         except StopIteration:
             raise Exception("Bug in create_local!")
 
+        cell = False
+
         if name is None:
             pass
         elif isinstance(name, str):
             pass
         elif isinstance(name, Identifier):
-            name = name.name
-        elif isinstance(name, ProcedureDefinition):
-            name = name.name
-        elif isinstance(name, PropertyDefinition):
-            name = name.name
-        elif isinstance(name, ClassDefinition):
+            cell = name in self._blocks[0].cells
             name = name.name
         else:
             raise TypeError(f"Cannot declare names for objects of type {type(name)}!")
@@ -347,20 +345,24 @@ class Spektakel2Stack(Translator):
                 offset = top.offset
                 self._blocks[idx] = type(top)(offset + 1)
                 r = FrameReference(offset)
-                self._decl2ref[name] = r
-                return r
+                break
             elif isinstance(top, (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
                 # We are declaring a class/module member. We know that the class/module definition code is
                 # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
                 slot = FrameReference(0)
                 r = NameReference(slot, name)
-                self._decl2ref[name] = r
-                return r
+                break
             else:
                 try:
                     idx, top = next(blocks_iter)
                 except StopIteration:
                     raise Exception("Bug in create_local!")
+
+        if cell:
+            chain.append_update(TRef(r), NewCell(), on_error)
+            r = CellReference(r)
+        self._decl2ref[name] = r
+        return r
 
     def decl2ref(self, name):
         """
@@ -1131,18 +1133,6 @@ class Spektakel2Stack(Translator):
 
         return preamble
 
-    def prepare_allocations(self, nodes, dec):
-        """
-        Analyses the AST to decide how each variable is to be allocated:
-        Variables that are used in an "inner" procedure declaration AND are not functional (i.e. might be written
-        after they have been read), will not be allocated in stack frames, but in "heap cells".
-        Note: This mechanism is designed such that procedure names and type names typically can be allocated on the
-        stack, even though they are used in "inner" scopes.
-        :param nodes: An iterable of statements that represent the code of the module.
-        :param dec: A dict mapping AST nodes to decorations.
-        """
-        # TODO: This analysis is actually in vanalysis.py . All we need here is the "cell" predicate, see docstring!
-
     def translate_module(self, nodes, dec):
         """
         Generates code for an entire module.
@@ -1153,6 +1143,9 @@ class Spektakel2Stack(Translator):
 
         # We assume that somebody put a fresh frame on the stack.
 
+        a = VariableAnalysis(Block(nodes), dec)
+        cells = set(v for v in a.variables if not a.safe_on_stack(v))
+
         block = Chain()
         entry = block
         exit = Chain()
@@ -1162,7 +1155,7 @@ class Spektakel2Stack(Translator):
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
-        self._blocks.push(BlockStack.ModuleBlock(1))
+        self._blocks.push(BlockStack.ModuleBlock(1, cells))
 
         # Import the builtin names:
         for bms in self._builtin:

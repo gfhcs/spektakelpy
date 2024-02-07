@@ -48,6 +48,7 @@ class TBuiltin(Type):
 
 TBuiltin.object = TBuiltin("object", [], VInstance)
 TBuiltin.type = TBuiltin("type", [TBuiltin.object], None)
+TBuiltin.cell = TBuiltin("cell", [TBuiltin.object], None)
 TBuiltin.ref = TBuiltin("reference", [TBuiltin.object], None)
 TBuiltin.bool = TBuiltin("bool", [TBuiltin.object], VBool)
 TBuiltin.int = TBuiltin("int", [TBuiltin.object], VInt)

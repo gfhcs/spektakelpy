@@ -1,5 +1,5 @@
 from engine.functional import Reference, Value
-from engine.functional.values import VNamespace
+from engine.functional.values import VNamespace, VCell
 from util import check_type
 from util.immutable import check_unsealed
 
@@ -301,3 +301,62 @@ class NameReference(Reference):
             raise TypeError("NameReferences can only refer to VNamespace entries!")
         return ns[self._n]
 
+
+class CellReference(Reference):
+    """
+    Wraps a Reference that points to a VCell object. The CellReference reads/writes not the *cell*, but
+    the *content* of the cell.
+    """
+
+    def __init__(self, cref):
+        """
+        Refers to cell.
+        :param cref: A Reference to a memory location at which a cell object is stored.
+        """
+        super().__init__()
+        self._cref = check_type(cref, Reference)
+
+    @property
+    def core(self):
+        """
+        The reference that points to the VCell object.
+        :return: A Reference.
+        """
+        return self._cref
+
+    def print(self, out):
+        out.write("CellReference(")
+        self._cref.print(out)
+        out.write(")")
+
+    def _seal(self):
+        self._cref.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = CellReference(self._cref)
+            clones[id(self)] = c
+            c._cref = c._cref.clone_unsealed(clones=clones)
+            return c
+
+    def hash(self):
+        return hash(self._cref) ^ 987654
+
+    def equals(self, other):
+        return isinstance(other, CellReference) and self._cref == other._cref
+
+    def write(self, tstate, mstate, value):
+        cell = self._cref.read(tstate, mstate)
+        if not isinstance(cell, VCell):
+            raise TypeError("CellReferences can only refer to VCell objects!")
+        cell.value = value
+
+    def read(self, tstate, mstate):
+        cell = self._cref.read(tstate, mstate)
+        if not isinstance(cell, VCell):
+            raise TypeError("CellReferences can only refer to VCell objects!")
+        return cell.value

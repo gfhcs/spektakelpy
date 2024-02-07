@@ -6,7 +6,7 @@ from engine.functional.reference import FieldReference, NameReference, VRef
 from util import check_type
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VAttributeError, VJumpError, VList
+    VProperty, VAttributeError, VJumpError, VList, VCell
 from ..task import TaskStatus
 from ..tasks.program import StackProgram, ProgramLocation
 from ..tasks.interaction import Interaction, InteractionState, i2s
@@ -922,6 +922,30 @@ class NewTuple(Term):
 
     def evaluate(self, tstate, mstate):
         return VTuple(*(c.evaluate(tstate, mstate) for c in self.components))
+
+
+class NewCell(Term):
+    """
+    A term that evaluates to a new VCell object.
+    """
+
+    def __init__(self):
+        """
+        Creates a NewCell term.
+        """
+        super().__init__()
+
+    def hash(self):
+        return 42
+
+    def equals(self, other):
+        return isinstance(other, NewCell)
+
+    def print(self, out):
+        out.write("NewCell()")
+
+    def evaluate(self, tstate, mstate):
+        return VCell(VNone())
 
 
 class NewList(Term):
