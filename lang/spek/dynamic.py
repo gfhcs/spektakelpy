@@ -343,7 +343,7 @@ class Spektakel2Stack(Translator):
                 # The stack frame always has the same layout for all invocations of that function/declaration,
                 # so we just add one more variable to that layout.
                 offset = top.offset
-                self._blocks[idx] = type(top)(offset + 1)
+                self._blocks[idx] = BlockStack.ModuleBlock(offset + 1, top.cells) if isinstance(top, BlockStack.ModuleBlock) else type(top)(offset + 1)
                 r = FrameReference(offset)
                 break
             elif isinstance(top, (BlockStack.ClassBlock, BlockStack.ModuleBlock)):
@@ -1181,7 +1181,7 @@ class Spektakel2Stack(Translator):
         :param spec: A ModuleSpecification to translate into a standalone program.
         :return: A Chain object.
         """
-        self._blocks.push(BlockStack.ModuleBlock(0))
+        self._blocks.push(BlockStack.ModuleBlock(0, set()))
         code = self.emit_preamble()
         on_error = Chain()
         on_error.append_pop()

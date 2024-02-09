@@ -39,12 +39,15 @@ class VariableAnalysis:
                  Note that variables will be represented by their defining AST Node, obtained via 'dec'.
         """
         if acc is None:
-            acc = {}
+            acc = set()
         if isinstance(node, Identifier):
-            acc[dec[node][1]] = True
+            try: # Using occurrence
+                acc.add(dec[node][1])
+            except KeyError: # Declaring occurrence
+                acc.add(node)
         else:
             for c in node.children:
-                self._analyse_expression(c, dec, acc)
+                self.analyse_expression(c, dec, acc)
         return acc
 
     @staticmethod
@@ -71,7 +74,7 @@ class VariableAnalysis:
         read |= rs
         nonfunctional |= (ws & read) | ns
         written |= ws
-        free |= fs - declared.keys()
+        free |= fs - declared
 
     def _analyse_statement(self, node, dec):
         """
@@ -98,39 +101,39 @@ class VariableAnalysis:
         if isinstance(node, (Pass, Break, Continue)):
             pass
         elif isinstance(node, (ExpressionStatement, Return, Raise)):
-            fs = self._analyse_expression(node, dec).keys()
+            fs = self.analyse_expression(node, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, empty, fs, empty, fs)
         elif isinstance(node, VariableDeclaration):
-            ds = set(self._analyse_expression(node.pattern, dec).keys())
+            ds = self.analyse_expression(node.pattern, dec)
             if node.expression is None:
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, empty, empty, empty, empty)
             else:
-                rs = self._analyse_expression(node.expression, dec).keys()
-                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds.keys(), rs, empty, rs)
+                rs = self.analyse_expression(node.expression, dec)
+                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, rs, empty, rs)
         elif isinstance(node, Assignment):
-            ws = self._analyse_expression(node.target, dec).keys()
-            rs = self._analyse_expression(node.value, dec).keys()
+            ws = self.analyse_expression(node.target, dec)
+            rs = self.analyse_expression(node.value, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ws, rs, ws & rs, ws | rs)
         elif isinstance(node, Block):
             for s in node.children:
                 ds, ws, rs, ns, fs = self._analyse_statement(s, dec)
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, ns, fs)
         elif isinstance(node, Conditional):
-            rs = self._analyse_expression(node.condition, dec).keys()
+            rs = self.analyse_expression(node.condition, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, empty, rs, empty, rs)
             ds1, ws1, rs1, ns1, fs1 = self._analyse_statement(node.consequence, dec)
             ds2, ws2, rs2, ns2, fs2 = self._analyse_statement(node.consequence, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds1 | ds2, ws1 | ws2, rs1 | rs2, ns1 | ns2, fs1 | fs2)
         elif isinstance(node, While):
-            rs = self._analyse_expression(node.condition, dec).keys()
+            rs = self.analyse_expression(node.condition, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, empty, rs, empty, rs)
             ds, ws, rs, ns, fs = self._analyse_statement(node.body, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, ns, fs)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ws, rs, empty, fs)
         elif isinstance(node, For):
-            rs = self._analyse_expression(node.iterable, dec).keys()
+            rs = self.analyse_expression(node.iterable, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, empty, rs, empty, rs)
-            ds = self._analyse_expression(node.pattern, dec).keys()
+            ds = self.analyse_expression(node.pattern, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, empty, empty, empty)
             ds, ws, rs, ns, fs = self._analyse_statement(node.body, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, ns, fs)
@@ -140,7 +143,7 @@ class VariableAnalysis:
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
             for h in node.handlers:
                 assert isinstance(h, Except)
-                ds = self._analyse_expression(h.identifier, dec).keys()
+                ds = self.analyse_expression(h.identifier, dec)
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, empty, empty, empty)
                 ds, ws, rs, us, fs = self._analyse_statement(h.body, dec)
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
@@ -167,7 +170,7 @@ class VariableAnalysis:
             for member in node.body:
                 dsb, wsb, rsb, nsb, fsb = self._analyse_statement(member, dec)
                 if isinstance(member, VariableDeclaration):
-                    toremove = self._analyse_expression(member.pattern, dec).keys()
+                    toremove = self.analyse_expression(member.pattern, dec)
                 elif isinstance(member, ProcedureDefinition):
                     toremove = (member.name, )
                 elif isinstance(member, PropertyDefinition):
@@ -181,7 +184,7 @@ class VariableAnalysis:
                     nsb.remove(v)
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, dsb, wsb, rsb, nsb, fsb)
         elif isinstance(node, ImportNames):
-            ds = node.aliases.values()
+            ds = set(node.aliases.values())
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, empty, empty, empty)
         elif isinstance(node, ImportSource):
             ds = {node.alias}
