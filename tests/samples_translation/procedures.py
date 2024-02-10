@@ -117,6 +117,7 @@ def geq(x, y):
         if x == y:
             return True
         x = x - 1
+    return False
 
 var x = geq(17, 12) and not geq(5, 7)
 
