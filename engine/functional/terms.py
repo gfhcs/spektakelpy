@@ -1100,8 +1100,7 @@ class NewProcedure(Term):
         """
         Creates a new procedure creation term.
         :param num_args: The number of arguments of the procedure to be created by this term.
-        :param free: An iterable of terms tha evaluate to references. These references will be read in order to
-                     copy the values of free variables of this procedure and store them as part of the procedure object.
+        :param free: An iterable of terms tha evaluate to values for the free variables of this procedure.
         :param entry: The StackProgram or the ProgramLocation representing the code to be executed by the procedure created by this term.
         """
         super().__init__(*free)

@@ -1,7 +1,7 @@
 import unittest
 
 from engine.exploration import explore, state_space, schedule_nonzeno
-from engine.functional.values import VNone
+from engine.functional.values import VNone, VCell
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.interaction import InteractionState, Interaction
@@ -120,6 +120,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         for vname, expected in expectation.items():
             found = states[-1].content.task_states[0].stack[-1][0][vname]
+            if isinstance(found, VCell):
+                found = found.value
             if expected is None:
                 self.assertTrue(isinstance(found, VNone))
             elif isinstance(expected, str):

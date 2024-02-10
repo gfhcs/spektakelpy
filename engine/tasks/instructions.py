@@ -261,8 +261,8 @@ class Push(Instruction):
             return
 
         if isinstance(location, VProcedure):
+            local = [*location.free, *local]
             location = location.entry
-            local = location.free + local
         if isinstance(location, ProgramLocation):
             frame = Frame(location.clone_unsealed(), local)
             tstate.push(frame)
@@ -375,8 +375,8 @@ class Launch(Instruction):
             return
 
         if isinstance(location, VProcedure):
+            local = [*location.free, *local]
             location = location.entry
-            local = location.free + local
         if isinstance(location, ProgramLocation):
             frame = Frame(location.clone_unsealed(), local)
             task = StackState(TaskStatus.WAITING, [frame])

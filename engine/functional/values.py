@@ -415,15 +415,15 @@ class VCell(Value):
         self._ref = check_type(ref, Value)
 
     @property
-    def contained(self):
+    def value(self):
         """
         The object contained in this cell.
         :return: A Value.
         """
         return self._ref
 
-    @contained.setter
-    def contained(self, value):
+    @value.setter
+    def value(self, value):
         check_unsealed(self)
         self._ref = check_type(value, Value)
 

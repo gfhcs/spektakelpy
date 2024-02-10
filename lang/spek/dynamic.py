@@ -39,13 +39,14 @@ class Spektakel2Stack(Translator):
         self._vanalysis = None
         self._builtin = list(builtin)
 
-    def declare_pattern(self, chain, pattern, on_error, acc=None):
+    def declare_pattern(self, chain, pattern, on_error, initialize=True, acc=None):
         """
         Statically declares new variable names for an entire pattern of names.
         Depending on the context the names will be declared as stack frame
         variables, or as a namespace entries. The new variables are recorded for the given pattern, such that they can
         easily be retrieved later.
         :param chain: The Chain to which the instructions for allocating the new variables should be appended.
+        :param initialize: Specifies if the newly allocated variable should be initialized by writing to it.
         :param on_error: The Chain to which control should be transferred if the allocation code fails.
         :param pattern: The Expression node holding the pattern expression for which to allocate new variables.
         """
@@ -54,14 +55,14 @@ class Spektakel2Stack(Translator):
             acc = []
 
         if pattern is None:
-            acc.append(self._scopes.declare(chain, None, False, on_error))
+            acc.append(self._scopes.declare(chain, None, False, on_error, initialize=initialize))
         elif isinstance(pattern, str):
-            acc.append(self._scopes.declare(chain, pattern, False, on_error))
+            acc.append(self._scopes.declare(chain, pattern, False, on_error, initialize=initialize))
         elif isinstance(pattern, Identifier):
-            acc.append(self._scopes.declare(chain, pattern, not self._vanalysis.safe_on_stack(pattern), on_error))
+            acc.append(self._scopes.declare(chain, pattern, not self._vanalysis.safe_on_stack(pattern), on_error, initialize=initialize))
         elif pattern.assignable:
             for c in pattern.children:
-                self.declare_pattern(chain, c, on_error, acc=acc)
+                self.declare_pattern(chain, c, on_error, initialize=initialize, acc=acc)
         else:
             raise TypeError("Patterns to be declared must only contain assignable nodes!")
 
@@ -454,11 +455,13 @@ class Spektakel2Stack(Translator):
         # Declare all free variables as local variables:
         tocopy = []
         for fname in self._vanalysis.free(body):
-            r = self._scopes.retrieve(dec[fname])
+            if fname in argnames:
+                continue
+            r = self._scopes.retrieve(fname)
             if isinstance(r, CellReference):
                 r = r.core
-            tocopy.append(TRef(r))
-            self.declare_pattern(entryBlock, fname, on_error)
+            tocopy.append(Read(TRef(r)))
+            self.declare_pattern(entryBlock, fname, on_error, initialize=False)
 
         # Declare the function arguments as local variables:
         for aname in argnames:
