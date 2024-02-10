@@ -64,11 +64,11 @@ def small(x):
 def even(x):
     return x % 2 == 0
     
-def increment(x):
+def increment():
     x = x + 1 
 
 if small(x) and even(x):
-    increment(x)
+    increment()
 
 await never()
 """: ((2, 1, 3), {"x": 1}),
@@ -84,11 +84,11 @@ def small(x):
 def even(x):
     return x % 2 == 0
 
-def increment(x):
+def increment():
     x = x + 1 
 
 while small(x) or even(x):
-    increment(x)
+    increment()
 
 await never()
 """: ((2, 1, 3), {"x": 43}),
