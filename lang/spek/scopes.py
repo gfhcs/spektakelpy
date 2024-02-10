@@ -137,13 +137,16 @@ class FunctionScope(Scope):
         """
         super().__init__(parent)
         self._names = dict()
+        self._offset = 0
 
     def declare(self, chain, name, cell, on_error):
-        r = FrameReference(len(self._names))
+        r = FrameReference(self._offset)
+        self._offset += 1
         if cell:
             chain.append_update(TRef(r), NewCell(), on_error)
             r = CellReference(r)
-        self._names[name] = r
+        if name is not None:
+            self._names[name] = r
         return r
 
     def retrieve(self, name):
@@ -166,11 +169,13 @@ class ClassScope(Scope):
         """
         super().__init__(parent)
         self._names = dict()
+        self._offset = 0
 
     def declare(self, chain, name, cell, on_error):
         if name is None:
             # We are declaring a local variable:
-            r = FrameReference(len(self._names))
+            r = FrameReference(self._offset)
+            self._offset += 1
         else:
             # We are declaring a class member. We know that the class/module definition code is
             # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
@@ -178,7 +183,8 @@ class ClassScope(Scope):
         if cell:
             chain.append_update(TRef(r), NewCell(), on_error)
             r = CellReference(r)
-        self._names[name] = r
+        if name is not None:
+            self._names[name] = r
         return r
 
     def retrieve(self, name):
@@ -200,11 +206,13 @@ class ModuleScope(Scope):
         """
         super().__init__(None)
         self._names = dict()
+        self._offset = 0
 
     def declare(self, chain, name, cell, on_error):
         if name is None:
             # We are declaring a local variable:
-            r = FrameReference(len(self._names))
+            r = FrameReference(self._offset)
+            self._offset += 1
         else:
             # We are declaring a module member. We know that the module definition code is
             # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
@@ -212,7 +220,8 @@ class ModuleScope(Scope):
         if cell:
             chain.append_update(TRef(r), NewCell(), on_error)
             r = CellReference(r)
-        self._names[name] = r
+        if name is not None:
+            self._names[name] = r
         return r
 
     def retrieve(self, name):
