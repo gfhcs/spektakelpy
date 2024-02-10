@@ -39,7 +39,7 @@ class Spektakel2Stack(Translator):
         self._cells = None
         self._builtin = list(builtin)
 
-    def declare_pattern(self, chain, pattern, on_error):
+    def declare_pattern(self, chain, pattern, on_error, acc=None):
         """
         Statically declares new variable names for an entire pattern of names.
         Depending on the context the names will be declared as stack frame
@@ -50,15 +50,22 @@ class Spektakel2Stack(Translator):
         :param pattern: The Expression node holding the pattern expression for which to allocate new variables.
         """
 
+        if acc is None:
+            acc = []
+
         if pattern is None:
-            self._scopes.declare(chain, None, False, on_error)
+            acc.append(self._scopes.declare(chain, None, False, on_error))
+        elif isinstance(pattern, str):
+            acc.append(self._scopes.declare(chain, pattern, False, on_error))
         elif isinstance(pattern, Identifier):
-            self._scopes.declare(chain, pattern, pattern in self._cells, on_error)
+            acc.append(self._scopes.declare(chain, pattern, pattern in self._cells, on_error))
         elif pattern.assignable:
             for c in pattern.children:
-                self.declare_pattern(chain, c, on_error)
+                self.declare_pattern(chain, c, on_error, acc=acc)
         else:
             raise TypeError("Patterns to be declared must only contain assignable nodes!")
+
+        return acc
 
     def emit_assignment(self, chain, pattern, dec, term, on_error, declaring=False):
         """
@@ -80,7 +87,7 @@ class Spektakel2Stack(Translator):
         if isinstance(pattern, Identifier):
             if not declaring:
                 pattern = dec[pattern][1]
-            r = self.decl2ref(pattern)
+            r = self._scopes.retrieve(pattern)
             chain.append_update(TRef(r), term, on_error)
             return r, chain
         elif isinstance(pattern, Tuple):
@@ -122,7 +129,7 @@ class Spektakel2Stack(Translator):
 
             a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
-            r = self.declare_pattern(chain, None, on_error)
+            r, = self.declare_pattern(chain, None, on_error)
             chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
 
             csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
@@ -181,10 +188,12 @@ class Spektakel2Stack(Translator):
             m = terms.Lookup(m, CString(a))
 
         if name is not None:
-            chain.append_update(TRef(self.declare_pattern(chain, name, on_error)), m, on_error)
+            r, = self.declare_pattern(chain, name, on_error)
+            chain.append_update(TRef(r), m, on_error)
 
         for name, member in mapping.items():
-            chain.append_update(TRef(self.declare_pattern(chain, name, on_error)), Read(Lookup(m, CString(member))), on_error)
+            r, = self.declare_pattern(chain, name, on_error)
+            chain.append_update(TRef(r), Read(Lookup(m, CString(member))), on_error)
 
         return chain
 
@@ -213,7 +222,7 @@ class Spektakel2Stack(Translator):
         noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
         call.append_guard({negate(noerror): on_error, noerror: successor}, on_error)
 
-        rv = self.declare_pattern(successor, None, on_error)
+        rv, = self.declare_pattern(successor, None, on_error)
         rr = ReturnValueReference()
         successor.append_update(TRef(rv), terms.Read(TRef(rr)), on_error)
         return Read(TRef(rv)), successor
@@ -243,11 +252,11 @@ class Spektakel2Stack(Translator):
                 raise NotImplementedError("Translation of constant expressions of type {}"
                                           " has not been implemented!".format(type(value)))
         elif isinstance(node, Identifier):
-            return Read(CTerm(self.decl2ref(dec[node][1]))), chain
+            return Read(CTerm(self._scopes.retrieve(dec[node][1]))), chain
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
-            r = self.declare_pattern(chain, None, on_error)
+            r, = self.declare_pattern(chain, None, on_error)
             chain.append_update(r, terms.LoadAttrCase(v, node.name), on_error)
 
             cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISGETTER, r)
@@ -279,7 +288,7 @@ class Spektakel2Stack(Translator):
                 args.append(v)
             callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             chain.append_launch(callee, args, on_error)
-            t = self.declare_pattern(chain, None, on_error)
+            t, = self.declare_pattern(chain, None, on_error)
             chain.append_update(t, terms.Read(ReturnValueReference()), on_error)
             return t, chain
         elif isinstance(node, Await):
@@ -293,7 +302,7 @@ class Spektakel2Stack(Translator):
             noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
             successor.append_guard({negate(noerror): on_error, noerror: successor2}, on_error)
 
-            rv = TRef(self.declare_pattern(successor2, None, on_error))
+            rv = TRef(self.declare_pattern(successor2, None, on_error)[0])
             rr = TRef(ReturnValueReference())
             successor2.append_update(rv, terms.Read(rr), on_error)
             successor2.append_update(rr, terms.CNone(), on_error)
@@ -318,7 +327,7 @@ class Spektakel2Stack(Translator):
             # Note: Like in Python, we want AND and OR to be short-circuited. This means that we require some control
             #       flow in order to possibly skip the evaluation of the right operand.
 
-            v = TRef(self.declare_pattern(chain, None, on_error))
+            v = TRef(self.declare_pattern(chain, None, on_error)[0])
             left, chain = self.translate_expression(chain, node.left, dec, on_error)
             chain.append_update(v, left, on_error)
 
@@ -591,7 +600,7 @@ class Spektakel2Stack(Translator):
             restoration = Chain()
             finally_head = Chain()
             successor = Chain()
-            exception = self.declare_pattern(body, None, on_error)
+            exception, = self.declare_pattern(body, None, on_error)
             self._scopes.push(ExceptionScope(self._scopes.top, exception, finally_head))
             self.translate_statement(body, node.body, dec, handler)
             body.append_jump(finally_head)
@@ -626,7 +635,7 @@ class Spektakel2Stack(Translator):
 
             if node.final is not None:
                 # The finally clause first stashes the current exception and return value away:
-                returnvalue = self.declare_pattern(finally_head, None, on_error)
+                returnvalue, = self.declare_pattern(finally_head, None, on_error)
                 finally_head.append_update(exception, terms.Read(ExceptionReference()), on_error)
                 finally_head.append_update(ExceptionReference(), terms.CNone(), on_error)
                 finally_head.append_update(returnvalue, terms.Read(ReturnValueReference()), on_error)
@@ -675,14 +684,14 @@ class Spektakel2Stack(Translator):
             # A property object does not have private data. It only holds the getter and the setter. Both those
             # methods take an instance as argument and then read/write that.
 
-            name = self.declare_pattern(chain, node.name, on_error)
+            name, = self.declare_pattern(chain, node.name, on_error)
             chain = chain.append_update(name, terms.NewProperty(getter, setter), on_error)
             return name, chain
 
         elif isinstance(node, ClassDefinition):
             self._scopes.push(ClassScope(self._scopes.top))
 
-            name = self.declare_pattern(chain, node.name, on_error)
+            name, = self.declare_pattern(chain, node.name, on_error)
 
             super_classes = []
             for s_expression in node.bases:
@@ -752,7 +761,7 @@ class Spektakel2Stack(Translator):
         preamble = Chain()
         panic = Chain()
 
-        d = self.declare_pattern(preamble, None, panic)
+        d, = self.declare_pattern(preamble, None, panic)
         d = AbsoluteFrameReference(0, 0, d.index)
         preamble.append_update(TRef(d), NewDict(), panic)
 
@@ -761,14 +770,14 @@ class Spektakel2Stack(Translator):
         load1 = Chain()
         load2 = Chain()
         exit = Chain()
-        l = self.declare_pattern(imp_code, None, panic)
+        l, = self.declare_pattern(imp_code, None, panic)
         imp_code.append_push(CTerm(VDict.get), [Read(TRef(d)), Read(TRef(l))], load1)
         imp_code.append_pop()
         load1.append_update(TRef(ExceptionReference()), CNone(), panic)
         load1.append_push(Read(TRef(l)), [], exit)
         error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
         load1.append_guard({error: exit, negate(error): load2}, panic)
-        h = self.declare_pattern(load2, None, panic)
+        h, = self.declare_pattern(load2, None, panic)
         load2.append_update(TRef(h), Read(TRef(ReturnValueReference())), panic)
         load2.append_push(CTerm(VDict.set), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
         load2.append_update(TRef(ReturnValueReference()), Read(TRef(h)), panic)

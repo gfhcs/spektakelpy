@@ -17,7 +17,7 @@ class Scope(ABC):
         Creates a new scope.
         :param parent: The scope inside of which this scope is created. May be None.
         """
-        self._parent = check_type(Scope, parent)
+        self._parent = parent is None or check_type(parent, Scope)
 
     @property
     def parent(self):
@@ -204,7 +204,7 @@ class ModuleScope(Scope):
     def declare(self, chain, name, cell, on_error):
         if name is None:
             # We are declaring a local variable:
-            r = FrameReference(len(self._names) + 1)
+            r = FrameReference(len(self._names))
         else:
             # We are declaring a module member. We know that the module definition code is
             # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
@@ -219,7 +219,7 @@ class ModuleScope(Scope):
         try:
             return self._names[name]
         except KeyError:
-            raise RuntimeError(f"The name '{name}' is not visible in this module!")
+            raise KeyError(f"The name '{name}' is not visible in this module!")
 
 
 class ScopeStack:
