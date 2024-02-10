@@ -203,11 +203,11 @@ class Push(Instruction):
     An instruction that pushes a new frame on the stack of the executing task.
     """
 
-    def __init__(self, entry, expressions, destination, edestination):
+    def __init__(self, entry, terms, destination, edestination):
         """
         Creates a new push instructions.
         :param entry: A Term that evaluates to either a ProgramLocation, a VProcedure, or an IntrinsicProcedure.
-        :param expressions: An iterable of Terms that determine the values for the local variables that
+        :param terms: An iterable of Terms that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
                             this instruction, as soon as the newly pushed stack frame has been popped again.
@@ -218,12 +218,12 @@ class Push(Instruction):
         """
         super().__init__()
         self._entry = check_type(entry, Term)
-        self._expressions = tuple(check_types(expressions, Term))
+        self._aterms = tuple(check_types(terms, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
     def print(self, out):
-        Push.print_proto(out, self._entry, self._expressions, self._edestination)
+        Push.print_proto(out, self._entry, self._aterms, self._edestination)
 
     @staticmethod
     def print_proto(out, entry, aexpressions, on_error):
@@ -238,12 +238,12 @@ class Push(Instruction):
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
-        return hash((self._entry, self._expressions, self._destination, self._edestination))
+        return hash((self._entry, self._aterms, self._destination, self._edestination))
 
     def equals(self, other):
         return isinstance(other, Push) \
-               and (self._entry, self._expressions, self._destination, self._edestination) \
-               == (other._entry, other._expressions, other._destination, other._edestination)
+               and (self._entry, self._aterms, self._destination, self._edestination) \
+               == (other._entry, other._aterms, other._destination, other._edestination)
 
     def enabled(self, tstate, mstate):
         return True
@@ -254,7 +254,7 @@ class Push(Instruction):
 
         try:
             location = self._entry.evaluate(tstate, mstate)
-            args = tuple(e.evaluate(tstate, mstate) for e in self._expressions)
+            local = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
             old_top.instruction_index = self._edestination
@@ -262,13 +262,14 @@ class Push(Instruction):
 
         if isinstance(location, VProcedure):
             location = location.entry
+            local = location.free + local
         if isinstance(location, ProgramLocation):
-            frame = Frame(location.clone_unsealed(), args)
+            frame = Frame(location.clone_unsealed(), local)
             tstate.push(frame)
             old_top.instruction_index = self._destination
         elif isinstance(location, IntrinsicProcedure):
             try:
-                r = location.execute(tstate, mstate, *args)
+                r = location.execute(tstate, mstate, *local)
                 tstate.returned = VNone.instance if r is None else r
             except VException as ex:
                 tstate.exception = ex
@@ -318,11 +319,11 @@ class Launch(Instruction):
     and returns its ID.
     """
 
-    def __init__(self, entry, expressions, destination, edestination):
+    def __init__(self, entry, terms, destination, edestination):
         """
         Creates a new push instructions.
         :param entry: An Expression that evaluates to either a ProgramLocation or a VProcedure.
-        :param expressions: An iterable of Expression objects that determine the values for the local variables that
+        :param terms: An iterable of Expression objects that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
                             this instruction, as soon as the newly pushed stack frame has been popped again.
@@ -331,12 +332,12 @@ class Launch(Instruction):
         """
         super().__init__()
         self._entry = check_type(entry, Term)
-        self._expressions = tuple(check_types(expressions, Term))
+        self._aterms = tuple(check_types(terms, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
     def print(self, out):
-        Launch.print_proto(out, self._entry, self._expressions, self._edestination)
+        Launch.print_proto(out, self._entry, self._aterms, self._edestination)
 
     @staticmethod
     def print_proto(out, entry, aexpressions, on_error):
@@ -351,12 +352,12 @@ class Launch(Instruction):
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
-        return hash((self._entry, self._expressions, self._destination, self._edestination))
+        return hash((self._entry, self._aterms, self._destination, self._edestination))
 
     def equals(self, other):
         return isinstance(other, Launch) \
-               and (self._entry, self._expressions, self._destination, self._edestination) \
-               == (other._entry, other._expressions, other._destination, other._edestination)
+               and (self._entry, self._aterms, self._destination, self._edestination) \
+               == (other._entry, other._aterms, other._destination, other._edestination)
 
     def enabled(self, tstate, mstate):
         return True
@@ -367,7 +368,7 @@ class Launch(Instruction):
 
         try:
             location = self._entry.evaluate(tstate, mstate)
-            args = tuple(e.evaluate(tstate, mstate) for e in self._expressions)
+            local = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
             mytop.instruction_index = self._edestination
@@ -375,8 +376,9 @@ class Launch(Instruction):
 
         if isinstance(location, VProcedure):
             location = location.entry
+            local = location.free + local
         if isinstance(location, ProgramLocation):
-            frame = Frame(location.clone_unsealed(), args)
+            frame = Frame(location.clone_unsealed(), local)
             task = StackState(TaskStatus.WAITING, [frame])
             mstate.add_task(task)
             tstate.returned = task

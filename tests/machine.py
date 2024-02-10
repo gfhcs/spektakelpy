@@ -190,7 +190,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
 
-        q = VProcedure(1, ProgramLocation(q, 0))
+        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
         p = StackProgram([Push(Read(TRef(FrameReference(0))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -217,7 +217,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
 
-        q = VProcedure(1, ProgramLocation(q, 0))
+        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
         p = StackProgram([Push(Read(TRef(FrameReference(17))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -243,7 +243,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
 
-        q = VProcedure(1, ProgramLocation(q, 0))
+        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
         p = StackProgram([Launch(Read(TRef(FrameReference(0))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -276,7 +276,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
 
-        q = VProcedure(1, ProgramLocation(q, 0))
+        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
         p = StackProgram([Launch(Read(TRef(FrameReference(17))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -688,7 +688,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop()])
 
-        p = StackProgram([Update(TRef(FrameReference(0)), NewProcedure(1, q), 1, 3),
+        p = StackProgram([Update(TRef(FrameReference(0)), NewProcedure(1, tuple(), q), 1, 3),
                           Push(Read(TRef(FrameReference(0))), [CInt(42)], 2, 3),
                           Update(TRef(FrameReference(0)), NumArgs(Read(TRef(FrameReference(0)))), 3, 3)])
 
@@ -712,7 +712,7 @@ class TestSpektakelMachine(unittest.TestCase):
         s = StackProgram([Pop()])
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
-                          Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, g), NewProcedure(2, s)), 2, 42),
+                          Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
                           Update(TRef(FrameReference(0)), NewClass("C", [CType(TBuiltin.object)], Read(TRef(FrameReference(0)))), 3, 42)])
 
         state0 = self.initialize_machine(p, 1)
@@ -731,10 +731,10 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
-        method = VProcedure(1, ProgramLocation(method, 0))
+        method = VProcedure(1, tuple(), ProgramLocation(method, 0))
 
-        g = VProcedure(1, ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
-        s = VProcedure(2, ProgramLocation(StackProgram([Pop()]), 0))
+        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
+        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop()]), 0))
         property = VProperty(g, s)
 
         members = {"method": method, "property": property}
@@ -764,10 +764,10 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
-        method = VProcedure(1, ProgramLocation(method, 0))
+        method = VProcedure(1, tuple(), ProgramLocation(method, 0))
 
-        g = VProcedure(1, ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
-        s = VProcedure(2, ProgramLocation(StackProgram([Pop()]), 0))
+        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
+        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop()]), 0))
         property = VProperty(g, s)
 
         members = {"method": method, "property": property}

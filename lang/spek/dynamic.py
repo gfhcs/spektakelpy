@@ -1,6 +1,6 @@
 from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, FrameReference, \
-    AbsoluteFrameReference
+    AbsoluteFrameReference, CellReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     CTerm, Lookup, CString, CNone
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
@@ -36,7 +36,7 @@ class Spektakel2Stack(Translator):
         """
         super().__init__()
         self._scopes = ScopeStack()
-        self._cells = None
+        self._vanalysis = None
         self._builtin = list(builtin)
 
     def declare_pattern(self, chain, pattern, on_error, acc=None):
@@ -58,7 +58,7 @@ class Spektakel2Stack(Translator):
         elif isinstance(pattern, str):
             acc.append(self._scopes.declare(chain, pattern, False, on_error))
         elif isinstance(pattern, Identifier):
-            acc.append(self._scopes.declare(chain, pattern, pattern in self._cells, on_error))
+            acc.append(self._scopes.declare(chain, pattern, not self._vanalysis.safe_on_stack(pattern), on_error))
         elif pattern.assignable:
             for c in pattern.children:
                 self.declare_pattern(chain, c, on_error, acc=acc)
@@ -451,6 +451,15 @@ class Spektakel2Stack(Translator):
 
         self._scopes.push(FunctionScope(self._scopes.top))
 
+        # Declare all free variables as local variables:
+        tocopy = []
+        for fname in self._vanalysis.free(body):
+            r = self._scopes.retrieve(dec[fname])
+            if isinstance(r, CellReference):
+                r = r.core
+            tocopy.append(TRef(r))
+            self.declare_pattern(entryBlock, fname, on_error)
+
         # Declare the function arguments as local variables:
         for aname in argnames:
             self.declare_pattern(entryBlock, aname, on_error)
@@ -461,7 +470,7 @@ class Spektakel2Stack(Translator):
 
         exitBlock.append_pop()
 
-        f = terms.NewProcedure(num_args, entryBlock.compile())
+        f = terms.NewProcedure(num_args, tocopy, entryBlock.compile())
 
         self._scopes.pop()
 
@@ -472,7 +481,7 @@ class Spektakel2Stack(Translator):
             try:
                 self._scopes.retrieve(name)
             except KeyError:
-                self._scopes.declare(chain, name, name in self._cells, on_error)
+                self._scopes.declare(chain, name, not self._vanalysis.safe_on_stack(name), on_error)
             name, chain = self.emit_assignment(chain, name, dec, f, on_error, declaring=True)
             return name, chain
 
@@ -674,7 +683,6 @@ class Spektakel2Stack(Translator):
         elif isinstance(node, ProcedureDefinition):
             _, chain = self._emit_procedure(chain, node.name, node.argnames, node.body, dec, on_error)
             return chain
-
         elif isinstance(node, PropertyDefinition):
 
             getter, chain = self._emit_procedure(chain, None, ["self"], node.getter, dec, on_error)
@@ -786,7 +794,7 @@ class Spektakel2Stack(Translator):
         self._scopes.pop()
 
         d = AbsoluteFrameReference(0, 0, 1)
-        preamble.append_update(TRef(d), CTerm(VProcedure(1, ProgramLocation(imp_code.compile(), 0))), panic)
+        preamble.append_update(TRef(d), CTerm(VProcedure(1, tuple(), ProgramLocation(imp_code.compile(), 0))), panic)
 
         return preamble
 
@@ -800,8 +808,7 @@ class Spektakel2Stack(Translator):
 
         # We assume that somebody put a fresh frame on the stack.
 
-        a = VariableAnalysis(Block(nodes), dec)
-        self._cells = set(v for v in a.variables if not a.safe_on_stack(v))
+        self._vanalysis = VariableAnalysis(Block(nodes), dec)
 
         block = Chain()
         entry = block

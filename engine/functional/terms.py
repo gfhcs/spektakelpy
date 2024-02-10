@@ -3,7 +3,7 @@ from abc import ABC
 from enum import Enum
 
 from engine.functional.reference import FieldReference, NameReference, VRef
-from util import check_type
+from util import check_type, check_types
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VAttributeError, VJumpError, VList, VCell
@@ -1096,25 +1096,34 @@ class NewProcedure(Term):
     A term that evaluates to a new VProcedure object.
     """
 
-    def __init__(self, num_args, entry):
+    def __init__(self, num_args, free, entry):
         """
         Creates a new procedure creation term.
         :param num_args: The number of arguments of the procedure to be created by this term.
+        :param free: An iterable of terms tha evaluate to references. These references will be read in order to
+                     copy the values of free variables of this procedure and store them as part of the procedure object.
         :param entry: The StackProgram or the ProgramLocation representing the code to be executed by the procedure created by this term.
         """
-        super().__init__()
+        super().__init__(*free)
         self._num_args = check_type(num_args, int)
+        self._free = check_types(free, Term)
         self._entry = check_type(entry, (ProgramLocation, StackProgram))
 
     def hash(self):
         return hash(self._num_args) ^ hash(self._entry)
 
     def equals(self, other):
-        return isinstance(other, NewProcedure) and self._num_args == other._num_args and (self._entry is other._entry or self._entry == other._entry)
+        return (isinstance(other, NewProcedure)
+                and self._num_args == other._num_args
+                and (self._entry is other._entry or self._entry == other._entry)
+                and self._free == other._free)
 
     def print(self, out):
         out.write("Procedure(")
         out.write(str(self._num_args))
+        for f in self._free:
+            out.write(", ")
+            f.print(out)
         out.write(", ")
         e = self._entry
         if isinstance(e, StackProgram):
@@ -1130,6 +1139,14 @@ class NewProcedure(Term):
         return self._num_args
 
     @property
+    def free(self):
+        """
+        An iterable of terms evaluating to values that should be part of the constructed procedure object, to represent
+        the values of free variables.
+        """
+        return self._free
+
+    @property
     def entry(self):
         """
         The StackProgram or the ProgramLocation representing the code to be executed by the procedure created by this term.
@@ -1140,7 +1157,7 @@ class NewProcedure(Term):
         e = self._entry
         if isinstance(e, StackProgram):
             e = ProgramLocation(e, 0)
-        return VProcedure(self._num_args, e)
+        return VProcedure(self._num_args, tuple(f.evaluate(tstate, mstate) for f in self._free), e)
 
 
 class NumArgs(Term):

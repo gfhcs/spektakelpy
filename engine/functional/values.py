@@ -1,5 +1,5 @@
 from engine.intrinsic import IntrinsicInstanceMethod
-from util import check_type
+from util import check_type, check_types
 from util.immutable import check_unsealed
 from . import Value
 
@@ -975,18 +975,26 @@ class VProcedure(Value):
     Represents an executable procedure.
     """
 
-    def __init__(self, num_args, entry):
+    def __init__(self, num_args, free, entry):
         """
         Creates a new procedure.
         :param num_args: The number of arguments of this procedure.
+        :param free: An iterable of values for the free variables in the procedure body.
         :param entry: A ProgramLocation that points to the entry point for this procedure.
         """
         super().__init__()
         self._num_args = check_type(num_args, int)
+        self._free = check_types(free, Value)
         self._entry = check_type(entry, ProgramLocation)
 
     def print(self, out):
-        out.write(f"Procedure({self._num_args}, {self._entry})")
+        out.write(f"Procedure({self._num_args}")
+        for f in self._free:
+            out.write(", ")
+            f.print(out)
+        out.write(", ")
+        self._entry.print(out)
+        out.write(")")
 
     @property
     def type(self):
@@ -998,6 +1006,13 @@ class VProcedure(Value):
         The number of arguments of this procedure.
         """
         return self._num_args
+
+    @property
+    def free(self):
+        """
+        An iterable of values for the free variables in the procedure body.
+        """
+        return self._free
 
     @property
     def entry(self):
@@ -1014,6 +1029,8 @@ class VProcedure(Value):
 
     def _seal(self):
         self._entry.seal()
+        for f in self._free:
+            f.seal()
 
     def clone_unsealed(self, clones=None):
         return self
