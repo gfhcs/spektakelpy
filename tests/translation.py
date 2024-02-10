@@ -267,7 +267,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_classes(self):
         """
-        Tests the creation and instantiation of classes, including inheritance and defining/calling methods.
+        Tests the creation and instantiation of classes, including inheritance and defining/calling methods, as well
+        as local types (i.e. types defined in scopes other than module level.
         """
         raise NotImplementedError()
 
