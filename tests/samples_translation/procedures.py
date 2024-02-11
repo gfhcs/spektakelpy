@@ -148,12 +148,13 @@ var odd
 def even(x):
      if x == 0:
         return True
-    return odd(x - 1)
+     return odd(x - 1)
     
-def odd(x):
+def _odd(x):
     if x == 0:
         return False
-    return even(x - 1) 
+    return even(x - 1)
+odd = _odd
 
 var x = even(4) and not even(5)
 
