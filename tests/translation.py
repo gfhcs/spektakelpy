@@ -16,6 +16,7 @@ from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.whiles import samples as whiles
 from tests.samples_translation.procedures import samples as procedures
 from tests.tools import dedent
+from samples_translation.manboy import code as code_manboy
 
 
 class TestSpektakelTranslation(unittest.TestCase):
@@ -210,6 +211,32 @@ class TestSpektakelTranslation(unittest.TestCase):
             - reassignment to procedure identifiers.
         """
         self.examine_samples(procedures)
+
+    def test_manboy(self):
+        """
+        This is the Spek version of Donald Knuth's famous "Man or boy" test.
+        """
+        def manboy(k0=10):
+            def a(k, x1, x2, x3, x4, x5):
+                def b():
+                    nonlocal k
+                    k -= 1
+                    return a(k, b, x1, x2, x3, x4)
+                return x4() + x5() if k <= 0 else b()
+
+            def one():
+                return 1
+            def minusone():
+                return -1
+            def zero():
+                return 0
+
+            return a(k0, one, minusone, minusone, one, zero)
+
+        for k0 in range(10):
+            expected = manboy(k0)
+            with self.subTest(k0=k0, expected=expected):
+                self.examine_sample(code_manboy.format(k0=k0), 2, 1, 3, result=expected)
 
     def test_async(self):
         """
