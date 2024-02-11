@@ -17,7 +17,7 @@ from tests.samples_translation.whiles import samples as whiles
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.closures import samples as closures
 from tests.tools import dedent
-from samples_translation.manboy import code as code_manboy
+from tests.samples_translation.manboy import code as code_manboy
 
 
 class TestSpektakelTranslation(unittest.TestCase):
