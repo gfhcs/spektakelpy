@@ -15,6 +15,7 @@ from tests.samples_translation.assignments import samples as assignments
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.whiles import samples as whiles
 from tests.samples_translation.procedures import samples as procedures
+from tests.samples_translation.closures import samples as closures
 from tests.tools import dedent
 from samples_translation.manboy import code as code_manboy
 
@@ -238,6 +239,14 @@ class TestSpektakelTranslation(unittest.TestCase):
             with self.subTest(k0=k0, expected=expected):
                 self.examine_sample(code_manboy.format(k0=k0), 2, 1, 3, result=expected)
 
+    def test_closures(self):
+        """
+        This tests if procedures with free variables can properly be passed around as objects, even though some
+        of the variables they use may already have been removed from the call stack. These test cases are more
+        challenging that those in test_procedures.
+        """
+        self.examine_samples(closures)
+
     def test_async(self):
         """
         Tests launching and awaiting procedures as tasks, involving Launch and Await expressions. This should also
@@ -272,6 +281,10 @@ class TestSpektakelTranslation(unittest.TestCase):
         #       The alternative would be to introduce additional instructions for the special methods, but this
         #       bloats the instruction set and does not really have any advantages.
 
+        # TODO: Repeat all while test cases here.
+
+        # TODO: Specifically test the allocation of the loop variable as a cell. See closure test cases for inspiration.
+
         raise NotImplementedError()
 
     def test_tuples(self):
@@ -299,6 +312,9 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and instantiation of classes, including inheritance and defining/calling methods, as well
         as local types (i.e. types defined in scopes other than module level.
         """
+
+        # TODO: Extend and use the samples in classes.py!
+
         raise NotImplementedError()
 
     def test_properties(self):
