@@ -97,8 +97,8 @@ class Sealable:
         :return: This object.
         """
         if not self._sealed:
-            self._seal()
             self._sealed = True
+            self._seal()
         return self
 
     @property
