@@ -929,23 +929,39 @@ class NewCell(Term):
     A term that evaluates to a new VCell object.
     """
 
-    def __init__(self):
+    def __init__(self, term=None):
         """
         Creates a NewCell term.
+        :param term: A term that is evaluated to initialize the value of the cell.
         """
-        super().__init__()
+        if term is None:
+            super().__init__()
+        else:
+            super().__init__(term)
+
+    @property
+    def term(self):
+        """
+        A term that is evaluated to initialize the value of the cell.
+        """
+        for t in self.children:
+            return t
+        return None
 
     def hash(self):
         return 42
 
     def equals(self, other):
-        return isinstance(other, NewCell)
+        return isinstance(other, NewCell) and self.term == other.term
 
     def print(self, out):
-        out.write("NewCell()")
+        out.write("NewCell(")
+        if self.term is not None:
+            self.term.print(out)
+        out.write(")")
 
     def evaluate(self, tstate, mstate):
-        return VCell(VNone())
+        return VCell(VNone() if self.term is None else self.term.evaluate(tstate, mstate))
 
 
 class NewList(Term):
