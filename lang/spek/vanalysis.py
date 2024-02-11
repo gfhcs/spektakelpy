@@ -98,7 +98,7 @@ class VariableAnalysis:
 
         empty = set()
 
-        if isinstance(node, (Pass, Break, Continue)):
+        if node is None or isinstance(node, (Pass, Break, Continue)):
             pass
         elif isinstance(node, (ExpressionStatement, Return, Raise)):
             fs = self.analyse_expression(node, dec)
@@ -122,7 +122,7 @@ class VariableAnalysis:
             rs = self.analyse_expression(node.condition, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, empty, rs, empty, rs)
             ds1, ws1, rs1, ns1, fs1 = self._analyse_statement(node.consequence, dec)
-            ds2, ws2, rs2, ns2, fs2 = self._analyse_statement(node.consequence, dec)
+            ds2, ws2, rs2, ns2, fs2 = self._analyse_statement(node.alternative, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds1 | ds2, ws1 | ws2, rs1 | rs2, ns1 | ns2, fs1 | fs2)
         elif isinstance(node, While):
             rs = self.analyse_expression(node.condition, dec)
