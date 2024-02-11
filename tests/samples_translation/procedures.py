@@ -170,13 +170,16 @@ def foo(x):
 var a = foo(42)
 
 def bar(x):
-    return foo(x) - 2
+    if x <= 0:
+        return x
+    else:
+        return foo(x - 1)
     
 foo = bar
 
 var b = foo(42)
 
 await never()
-""": ((2, 1, 3), {"a": 43, "b": 41}),
+""": ((2, 1, 3), {"a": 43, "b": 0}),
 
 }
