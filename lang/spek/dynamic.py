@@ -445,6 +445,9 @@ class Spektakel2Stack(Translator):
                  following the procedure definition can be appended.
         """
 
+        if name is not None:
+            self._scopes.declare(chain, name, not self._vanalysis.safe_on_stack(name), on_error)
+
         entryBlock = Chain()
         exitBlock = Chain()
 
@@ -480,11 +483,6 @@ class Spektakel2Stack(Translator):
         if name is None:
             return f, chain
         else:
-
-            try:
-                self._scopes.retrieve(name)
-            except KeyError:
-                self._scopes.declare(chain, name, not self._vanalysis.safe_on_stack(name), on_error)
             name, chain = self.emit_assignment(chain, name, dec, f, on_error, declaring=True)
             return name, chain
 

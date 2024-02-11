@@ -151,8 +151,9 @@ class VariableAnalysis:
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
         elif isinstance(node, ProcedureDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
-            ds = {node.name, *node.argnames, *dsb}
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb | {node.name}, rsb, nsb | wsb, fsb - {node.name, *node.argnames})
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, {node.name}, empty, empty, empty, empty)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, {*node.argnames, *dsb}, wsb | {node.name}, rsb, nsb | wsb, fsb - set(node.argnames))
+            free.add(node.name)
             self._free_in_proc |= free
         elif isinstance(node, PropertyDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.getter, dec)
