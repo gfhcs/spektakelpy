@@ -340,7 +340,7 @@ class Spektakel2Stack(Translator):
             elif node.operator == BooleanBinaryOperator.OR:
                 skip = terms.Read(v)
             else:
-                skip = terms.CBool(False)
+                raise ValueError(f"Cannot handle {node.operator}!")
 
             chain.append_guard({skip: successor, negate(skip): rest}, on_error)
 
@@ -555,16 +555,16 @@ class Spektakel2Stack(Translator):
             alternative.append_jump(successor)
             return successor
         elif isinstance(node, While):
-            head = Chain()
+            head_in = Chain()
             body = Chain()
             successor = Chain()
-            chain.append_jump(head)
-            condition, head = self.translate_expression(head, node.condition, dec, on_error)
-            head.append_guard({condition: body, negate(condition): successor}, on_error)
-            self._scopes.push(LoopScope(self._scopes.top, head, successor))
+            chain.append_jump(head_in)
+            condition, head_out = self.translate_expression(head_in, node.condition, dec, on_error)
+            head_out.append_guard({condition: body, negate(condition): successor}, on_error)
+            self._scopes.push(LoopScope(self._scopes.top, head_in, successor))
             body = self.translate_statement(body, node.body, dec, on_error)
             self._scopes.pop()
-            body.append_jump(head)
+            body.append_jump(head_in)
             return successor
         elif isinstance(node, For):
             """
