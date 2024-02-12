@@ -10,14 +10,15 @@ from engine.tasks.stack import StackState, Frame
 from lang.spek import static, modules
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
-from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.assignments import samples as assignments
-from tests.samples_translation.ifs import samples as ifs
-from tests.samples_translation.whiles import samples as whiles
-from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.closures import samples as closures
-from tests.tools import dedent
+from tests.samples_translation.expressions import samples as expressions
+from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.manboy import code as code_manboy
+from tests.samples_translation.procedures import samples as procedures
+from tests.samples_translation.tasks import samples as tasks
+from tests.samples_translation.whiles import samples as whiles
+from tests.tools import dedent
 
 
 class TestSpektakelTranslation(unittest.TestCase):
@@ -252,7 +253,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests launching and awaiting procedures as tasks, involving Launch and Await expressions. This should also
         include some infinite loops through a finite state space.
         """
-        raise NotImplementedError()
+        self.examine_samples(tasks)
 
     def test_exceptions(self):
         """
