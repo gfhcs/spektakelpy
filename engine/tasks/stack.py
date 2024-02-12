@@ -139,6 +139,7 @@ class StackState(TaskState):
         self._stack = list(check_types(stack, Frame))
         self._exception = check_type(exception, Value, allow_none=True)
         self._returned = check_type(returned, Value, allow_none=True)
+        self.status = TaskStatus.RUNNING if len(self._stack) > 0 else TaskStatus.COMPLETED
 
     def print(self, out):
         out.write("StackState(")
@@ -249,6 +250,7 @@ class StackState(TaskState):
         while True:
 
             if len(tstate.stack) == 0:
+                tstate.status = TaskStatus.COMPLETED
                 break
 
             top = tstate.stack[-1]

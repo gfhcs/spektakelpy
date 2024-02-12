@@ -20,7 +20,7 @@ if done:
 result = await task
     
 await never()
-""": ((3, 2, 3), {"result": 42, "done": True}),
+""": ((4, 3, 3), {"result": 42, "done": True}),
 
 
 }

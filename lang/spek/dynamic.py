@@ -4,7 +4,6 @@ from engine.functional.reference import ReturnValueReference, ExceptionReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     CTerm, Lookup, CString, CNone
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
-from engine.tasks.instructions import Launch
 from engine.tasks.program import ProgramLocation
 from lang.translator import Translator
 from util import check_type
@@ -283,15 +282,17 @@ class Spektakel2Stack(Translator):
             callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             return self.emit_call(chain, callee, args, on_error)
         elif isinstance(node, Launch):
+            call = node.work
             args = []
-            for a in node.arguments:
+            for a in call.arguments:
                 v, chain = self.translate_expression(chain, a, dec, on_error)
                 args.append(v)
-            callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
+            callee, chain = self.translate_expression(chain, call.callee, dec, on_error)
             chain.append_launch(callee, args, on_error)
             t, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(t, terms.Read(ReturnValueReference()), on_error)
-            return t, chain
+            t = TRef(t)
+            chain.append_update(t, terms.Read(TRef(ReturnValueReference())), on_error)
+            return Read(t), chain
         elif isinstance(node, Await):
             t, chain = self.translate_expression(chain, node.process, dec, on_error)
             successor = Chain()
