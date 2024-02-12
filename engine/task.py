@@ -36,6 +36,18 @@ class TaskState(Value, abc.ABC):
         self._status = check_type(status, TaskStatus)
 
     @property
+    @abc.abstractmethod
+    def rank(self):
+        """
+        A measure for the priority of this task: If multiple tasks are enabled for execution, those with higher
+        rank are preferred. Multiple states may have equal rank. Ranks can change during execution.
+        Note to implementers: The rank of a task is part of its state, which means that changing ranks often may
+        inflate the state space.
+        :return: A number.
+        """
+        pass
+
+    @property
     def status(self):
         """
         The status of this task.
@@ -66,3 +78,28 @@ class TaskState(Value, abc.ABC):
         """
         pass
 
+
+class RoundRobinTaskState(TaskState):
+
+    def __init__(self, *largs, **kwargs):
+        super().__init__(*largs, **kwargs)
+        self._rank = 0
+
+    @property
+    def rank(self):
+        return self._rank
+
+    @abc.abstractmethod
+    def run_before_rank(self, *largs, **kwargs):
+        """
+        This method implements TaskState.run, but is guaranteed to be followed by a rank update that puts self at
+        the end of the rank order of all RoundRobinTask objects in the given mstate.
+        """
+        pass
+
+    def run(self, mstate):
+        self.run_before_rank(mstate)
+        for t in mstate.task_states:
+            if isinstance(t, RoundRobinTaskState) and t._rank < self._rank:
+                t._rank += 1
+        self._rank = 0

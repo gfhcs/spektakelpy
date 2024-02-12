@@ -4,7 +4,7 @@ from util.immutable import Sealable, check_sealed, check_unsealed
 from util.printable import Printable
 from .program import ProgramLocation
 from ..functional import Value
-from ..task import TaskState, TaskStatus
+from ..task import TaskStatus, RoundRobinTaskState
 
 
 class Frame(Printable, Sealable):
@@ -121,7 +121,7 @@ class Frame(Printable, Sealable):
         self.set_local(index, value)
 
 
-class StackState(TaskState):
+class StackState(RoundRobinTaskState):
     """
     Models the state of a task that executes a control flow graph that may contain function calls.
     """
@@ -237,7 +237,7 @@ class StackState(TaskState):
             return False
         return i.enabled(self, mstate)
 
-    def run(self, mstate):
+    def run_before_rank(self, mstate):
         check_unsealed(self)
         tstate = self
 
