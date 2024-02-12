@@ -297,18 +297,13 @@ class Spektakel2Stack(Translator):
             t, chain = self.translate_expression(chain, node.process, dec, on_error)
             successor = Chain()
             complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, t)
-            chain.append_guard({complete: successor}, on_error)
-
-            successor = Chain()
-            successor2 = Chain()
             noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
-            successor.append_guard({negate(noerror): on_error, noerror: successor2}, on_error)
-
-            rv = TRef(self.declare_pattern(successor2, None, on_error)[0])
-            rr = TRef(ReturnValueReference())
-            successor2.append_update(rv, terms.Read(rr), on_error)
-            successor2.append_update(rr, terms.CNone(), on_error)
-            return Read(rv), successor2
+            success = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, complete, noerror)
+            failure = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, complete, negate(noerror))
+            chain.append_guard({success: successor, failure: on_error}, on_error)
+            rv = TRef(self.declare_pattern(successor, None, on_error)[0])
+            successor.append_update(rv, terms.GetReturnValue(t), on_error)
+            return Read(rv), successor
         elif isinstance(node, Projection):
             idx, chain = self.translate_expression(chain, node.index, dec, on_error)
             v, chain = self.translate_expression(chain, node.value, dec, on_error)

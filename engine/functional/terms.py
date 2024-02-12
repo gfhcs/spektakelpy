@@ -2,14 +2,14 @@ import abc
 from abc import ABC
 from enum import Enum
 
-from engine.functional.reference import FieldReference, NameReference, VRef
+from engine.functional.reference import FieldReference, NameReference
 from util import check_type, check_types
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VAttributeError, VJumpError, VList, VCell
 from ..task import TaskStatus
-from ..tasks.program import StackProgram, ProgramLocation
 from ..tasks.interaction import Interaction, InteractionState, i2s
+from ..tasks.program import StackProgram, ProgramLocation
 
 
 class CTerm(Term):
@@ -528,6 +528,40 @@ class UnaryPredicateTerm(Term):
             raise NotImplementedError()
 
         return VBool(value)
+
+
+class GetReturnValue(Term):
+    """
+    A term that reads the return value register of a specific task, not necessarily the executing one's.
+    """
+
+    def __init__(self, t):
+        """
+        Creates a new GetReturnValue term.
+        :param t: A Term evaluating to the task whose return value register should be read.
+        """
+        super().__init__(t)
+
+    def hash(self):
+        return hash(self.task) ^ 56
+
+    def equals(self, other):
+        return isinstance(other, GetReturnValue) and self.task == other.task
+
+    def print(self, out):
+        out.write("return_value(")
+        self.task.print(out)
+        out.write(")")
+
+    @property
+    def task(self):
+        """
+        A Term evaluating to the task whose return value register should be read.
+        """
+        return self.children[0]
+
+    def evaluate(self, tstate, mstate):
+        return self.task.evaluate(tstate, mstate).returned
 
 
 class ITask(Term):
