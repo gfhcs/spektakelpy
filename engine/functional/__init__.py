@@ -63,9 +63,14 @@ class EvaluationException(Exception):
 
 class Term(Immutable, Printable, abc.ABC):
     """
-    Defines the types and semantics of expressions that the virtual machine can evaluate.
-    A term is an expression the evaluation of which happens atomically and cannot cause any side effects.
-    This means that evaluation is not observable and that evaluating a term can in no way change the machine state.
+    A term is a type of expression that is evaluated atomically and functionally, meaning that intermediate states
+    of its evaluation are not semantically observable and that evaluation cannot change the machine state ever.
+    Even when evaluation should fail, an error is merely reported as an exception.
+
+    Terms can be seen as a special type of machine instruction: Instead of making the instruction set of our virtual
+    machine rather large, to support all the different ways in which computations can be combined, we keep the set of
+    proper instructions quite small and use terms whenever possible. Terms are beneficial mostly because they do not
+    change the machine state and thus can be evaluated safely without unforeseen side effects.
     """
 
     def __init__(self, *children):

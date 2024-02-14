@@ -13,7 +13,12 @@ class InstructionException(Exception):
 
 class Instruction(Printable, Immutable, abc.ABC):
     """
-    Models the smallest, atomic execution steps.
+    An instruction is the smallest possible execution step that actually changes the machine state.
+    Instructions are executed atomically, in the sense that intermediate states of its execution are not observable
+    in the semantics.
+    Instructions are very similar to the instructions that one normally finds in hardware instruction sets. However,
+    we greatly reduce the number of necessary instructions by also using Terms, which in contrast to instructions
+    are *functional* (i.e. terms can never change the machine state).
     """
 
     @staticmethod
