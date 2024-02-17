@@ -46,10 +46,6 @@ class InteractionState(TaskState):
         super().__init__(status)
         self._interaction = check_type(interaction, Interaction)
 
-    @property
-    def rank(self):
-        return -1
-
     def print(self, out):
         status = "RECEIVED" if self.status == TaskStatus.COMPLETED else "Waiting for"
         out.write(f"InteractionState({status} {i2s(self._interaction)})")
