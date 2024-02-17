@@ -1,7 +1,9 @@
-from engine.functional import Type
+from engine.functional import Type, Reference
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
-    VException, VTypeError, VJumpError, VReturnError, VBreakError
+    VException, VTypeError, VJumpError, VReturnError, VBreakError, VCell, VProcedure, VNamespace
 from engine.intrinsic import IntrinsicInstanceMethod
+from engine.task import TaskState
+from engine.tasks.program import ProgramLocation
 
 
 class TBuiltin(Type):
@@ -47,9 +49,9 @@ class TBuiltin(Type):
 
 
 TBuiltin.object = TBuiltin("object", [], VInstance)
-TBuiltin.type = TBuiltin("type", [TBuiltin.object], None)
-TBuiltin.cell = TBuiltin("cell", [TBuiltin.object], None)
-TBuiltin.ref = TBuiltin("reference", [TBuiltin.object], None)
+TBuiltin.type = TBuiltin("type", [TBuiltin.object], Type)
+TBuiltin.cell = TBuiltin("cell", [TBuiltin.object], VCell)
+TBuiltin.ref = TBuiltin("reference", [TBuiltin.object], Reference)
 TBuiltin.bool = TBuiltin("bool", [TBuiltin.object], VBool)
 TBuiltin.int = TBuiltin("int", [TBuiltin.object], VInt)
 TBuiltin.float = TBuiltin("float", [TBuiltin.object], VFloat)
@@ -62,7 +64,7 @@ TBuiltin.jump_error = TBuiltin("JumpError", [TBuiltin.exception], VJumpError)
 TBuiltin.return_error = TBuiltin("ReturnError", [TBuiltin.jump_error], VReturnError)
 TBuiltin.break_error = TBuiltin("BreakError", [TBuiltin.jump_error], VBreakError)
 TBuiltin.type_error = TBuiltin("TypeError", [TBuiltin.exception], VTypeError)
-TBuiltin.procedure = TBuiltin("procedure", [TBuiltin.object], None)
-TBuiltin.namespace = TBuiltin("namespace", [TBuiltin.object], None)
-TBuiltin.task = TBuiltin("task", [TBuiltin.object], None)
-TBuiltin.location = TBuiltin("location", [TBuiltin.object], None)
+TBuiltin.procedure = TBuiltin("procedure", [TBuiltin.object], VProcedure)
+TBuiltin.namespace = TBuiltin("namespace", [TBuiltin.object], VNamespace)
+TBuiltin.task = TBuiltin("task", [TBuiltin.object], TaskState)
+TBuiltin.location = TBuiltin("location", [TBuiltin.object], ProgramLocation)
