@@ -17,21 +17,30 @@ def schedule_all(s):
 def schedule_nonzeno(s):
     """
     A scheduler function that partially resolves nondeterminism, by the following rules:
-    1. If an internal action is scheduled, only one action is scheduled.
-    2. Interaction tasks will only be scheduled in states that do not enable any internal actions.
-    3. The NEVER interaction is ignored.
+    1. The NEVER interaction is never considered enabled.
+    2. Among all enabled tasks, only the set of tasks whose rank is maximal among the enabled tasks is considered "eligible".
+    3. If the eligible set contains no internal actions, all eligible tasks will be scheduled. Otherwise only the internal
+       action for the smallest eligible task ID will be scheduled.
     :param s: A MachineState object.
     :return: An iterable of indices, specifying which Task objects in s.task_states are eligible for being scheduled.
     """
 
+    eligible = []
+    eligible_rank = None
+
+    for idx, t in sorted(enumerate(s.task_states), key=lambda t: -t[1].rank):
+        if eligible_rank is not None and t.rank < eligible_rank:
+            break
+        if t.enabled(s):
+            eligible.append((idx, t))
+            eligible_rank = t.rank
+
     idx_internal = None
     idx_interaction = []
 
-    for idx, ss in enumerate(s.task_states):
-        if not ss.enabled(s):
-            continue
-        if isinstance(ss, InteractionState):
-            if ss.interaction == Interaction.NEVER:
+    for idx, t in enumerate(sorted(eligible, key=lambda t: t[0])):
+        if isinstance(t, InteractionState):
+            if t.interaction == Interaction.NEVER:
                 continue
             idx_interaction.append(idx)
         elif idx_internal is None or idx < idx_internal:
