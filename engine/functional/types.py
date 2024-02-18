@@ -2,8 +2,6 @@ from engine.functional import Type, Reference
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
     VException, VTypeError, VJumpError, VReturnError, VBreakError, VCell, VFuture, VProcedure, VNamespace, VFutureError
 from engine.intrinsic import IntrinsicInstanceMethod
-from engine.task import TaskState
-from engine.tasks.program import ProgramLocation
 
 
 class TBuiltin(Type):
@@ -47,6 +45,9 @@ class TBuiltin(Type):
             if isinstance(attribute, TBuiltin):
                 yield attribute
 
+
+from engine.task import TaskState
+from engine.tasks.program import ProgramLocation
 
 TBuiltin.object = TBuiltin("object", [], VInstance)
 TBuiltin.type = TBuiltin("type", [TBuiltin.object], Type)
