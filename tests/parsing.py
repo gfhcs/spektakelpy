@@ -298,12 +298,31 @@ class TestSpektakelParser(unittest.TestCase):
 
         samples = ["not (x and y) == not x or not y",  # Must not work, because the second not cannot follow the == .
                    "a, 42 = f(x)"  # Must not work because 42 is not assignable.
+                   "buffer_full().set(True)",  # Must fail because 'set' is a keyword that we use for properties.
                   ]
 
         for idx, s in enumerate(samples):
             with self.subTest(idx=idx):
                 with self.assertRaises((LexError, ParserError)):
                     parse(s)
+
+    def test_call_chain(self):
+        """
+        Tests the chaining of calls.
+        """
+
+        samples = ["buffer_full().foo(True)",
+                   ]
+
+        for idx, s in enumerate(samples):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+                self.assertEqual(len(n.children), 1)
+
+                statement = n.children[0]
+
+                self.assertIsInstance(statement, ast.ExpressionStatement)
 
     def test_assignment(self):
         """
