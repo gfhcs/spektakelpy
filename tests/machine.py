@@ -7,15 +7,15 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NumArgs, NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase
+    NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
     VBreakError, VNamespace, VStr, VProperty, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import Update, Pop, Guard, Push, Launch
-from engine.tasks.program import StackProgram, ProgramLocation
 from engine.tasks.interaction import InteractionState, Interaction
+from engine.tasks.program import StackProgram, ProgramLocation
 from engine.tasks.stack import StackState, Frame
 from util.lts import lts2str
 

@@ -1230,34 +1230,6 @@ class NewProcedure(Term):
         return VProcedure(self._num_args, tuple(f.evaluate(tstate, mstate) for f in self._free), e)
 
 
-class NumArgs(Term):
-    """
-    A term determining the number of arguments of a procedure.
-    """
-
-    def __init__(self, arg):
-        """
-        Creates a new NumArgs term.
-        :param arg: The term representing the procedure object the number of arguments of which is to be determined.
-        """
-        super().__init__(arg)
-
-    def hash(self):
-        return hash(self.children[0])
-
-    def equals(self, other):
-        return isinstance(other, NumArgs) and tuple(self.children) == tuple(other.children)
-
-    def print(self, out):
-        out.write("num_args(")
-        self.children[0].print(out)
-        out.write(")")
-
-    def evaluate(self, tstate, mstate):
-        p = self.children[0].evaluate(tstate, mstate)
-        return VInt(p.num_args)
-
-
 class NewProperty(Term):
     """
     A term that evaluates to a new VProperty object.

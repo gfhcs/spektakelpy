@@ -208,19 +208,11 @@ class Spektakel2Stack(Translator):
                  in which execution is to be continued after the call.
         """
 
-        # Make sure that the right number of arguments is being used:
-        call = Chain()
-        argc_error = Chain()
-        argc_error.append_update(TRef(ExceptionReference()), terms.NewTypeError("Wrong number of arguments for call!"), on_error)
-        argc_error.append_jump(on_error)
-        match = terms.Comparison(ComparisonOperator.EQ, terms.NumArgs(callee), terms.CInt(len(args)))
-        chain.append_guard({match: call, negate(match): argc_error}, on_error)
-
-        call.append_push(callee, args, on_error)
+        chain.append_push(callee, args, on_error)
 
         successor = Chain()
         noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
-        call.append_guard({negate(noerror): on_error, noerror: successor}, on_error)
+        chain.append_guard({negate(noerror): on_error, noerror: successor}, on_error)
 
         rv, = self.declare_pattern(successor, None, on_error)
         rr = ReturnValueReference()

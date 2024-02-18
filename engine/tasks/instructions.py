@@ -2,8 +2,8 @@ from util import check_type, check_types
 from . import InstructionException, Instruction
 from .program import ProgramLocation
 from .stack import Frame, StackState
-from ..functional import EvaluationException, Term
-from ..functional.values import VException, VProcedure, VNone
+from ..functional import EvaluationException, Term, Type
+from ..functional.values import VException, VProcedure, VNone, VTypeError
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
@@ -203,10 +203,12 @@ class Push(Instruction):
     An instruction that pushes a new frame on the stack of the executing task.
     """
 
-    def __init__(self, entry, terms, destination, edestination):
+    def __init__(self, callee, terms, destination, edestination):
         """
         Creates a new push instructions.
-        :param entry: A Term that evaluates to either a ProgramLocation, a VProcedure, or an IntrinsicProcedure.
+        :param callee: A Term that evaluates to a callable object.
+                      A callable object is either a ProgramLocation, a VProcedure, an IntrinsicProcedure,
+                      or a type.
         :param terms: An iterable of Terms that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
@@ -217,18 +219,18 @@ class Push(Instruction):
                              code reached via 'destination' must explicitly treat them.
         """
         super().__init__()
-        self._entry = check_type(entry, Term)
+        self._callee = check_type(callee, Term)
         self._aterms = tuple(check_types(terms, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
     def print(self, out):
-        Push.print_proto(out, self._entry, self._aterms, self._edestination)
+        Push.print_proto(out, self._callee, self._aterms, self._edestination)
 
     @staticmethod
-    def print_proto(out, entry, aexpressions, on_error):
+    def print_proto(out, callee, aexpressions, on_error):
         out.write("push(")
-        entry.print(out)
+        callee.print(out)
         out.write(", [")
         prefix = ""
         for e in aexpressions:
@@ -238,12 +240,12 @@ class Push(Instruction):
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
-        return hash((self._entry, self._aterms, self._destination, self._edestination))
+        return hash((self._callee, self._aterms, self._destination, self._edestination))
 
     def equals(self, other):
         return isinstance(other, Push) \
-               and (self._entry, self._aterms, self._destination, self._edestination) \
-               == (other._entry, other._aterms, other._destination, other._edestination)
+               and (self._callee, self._aterms, self._destination, self._edestination) \
+               == (other._callee, other._aterms, other._destination, other._edestination)
 
     def enabled(self, tstate, mstate):
         return True
@@ -253,23 +255,30 @@ class Push(Instruction):
         old_top = tstate.stack[-1]
 
         try:
-            location = self._entry.evaluate(tstate, mstate)
+            callee = self._callee.evaluate(tstate, mstate)
             local = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
             old_top.instruction_index = self._edestination
             return
 
-        if isinstance(location, VProcedure):
-            local = [*location.free, *local]
-            location = location.entry
-        if isinstance(location, ProgramLocation):
-            frame = Frame(location.clone_unsealed(), local)
+        if isinstance(callee, Type):
+            local = [callee.create_instance(), *local]
+            callee = callee.resolve_member("__init__")
+        if isinstance(callee, VProcedure):
+            if len(local) != callee.num_args:
+                tstate.exception = VTypeError("Wrong number of arguments for call!")
+                old_top.instruction_index = self._edestination
+                return
+            local = [*callee.free, *local]
+            callee = callee.entry
+        if isinstance(callee, ProgramLocation):
+            frame = Frame(callee.clone_unsealed(), local)
             tstate.push(frame)
             old_top.instruction_index = self._destination
-        elif isinstance(location, IntrinsicProcedure):
+        elif isinstance(callee, IntrinsicProcedure):
             try:
-                r = location.execute(tstate, mstate, *local)
+                r = callee.execute(tstate, mstate, *local)
                 tstate.returned = VNone.instance if r is None else r
             except VException as ex:
                 tstate.exception = ex
@@ -319,10 +328,10 @@ class Launch(Instruction):
     and returns its ID.
     """
 
-    def __init__(self, entry, terms, destination, edestination):
+    def __init__(self, callee, terms, destination, edestination):
         """
         Creates a new push instructions.
-        :param entry: An Expression that evaluates to either a ProgramLocation or a VProcedure.
+        :param callee: An Expression that evaluates to either a ProgramLocation or a VProcedure.
         :param terms: An iterable of Expression objects that determine the values for the local variables that
                             are to be pushed as part of the stack frame.
         :param destination: The instruction index at which execution should continue after the successful execution of
@@ -331,18 +340,18 @@ class Launch(Instruction):
                              an error.
         """
         super().__init__()
-        self._entry = check_type(entry, Term)
+        self._callee = check_type(callee, Term)
         self._aterms = tuple(check_types(terms, Term))
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
     def print(self, out):
-        Launch.print_proto(out, self._entry, self._aterms, self._edestination)
+        Launch.print_proto(out, self._callee, self._aterms, self._edestination)
 
     @staticmethod
-    def print_proto(out, entry, aexpressions, on_error):
+    def print_proto(out, callee, aexpressions, on_error):
         out.write("launch(")
-        entry.print(out)
+        callee.print(out)
         out.write(", [")
         prefix = ""
         for e in aexpressions:
@@ -352,12 +361,12 @@ class Launch(Instruction):
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
-        return hash((self._entry, self._aterms, self._destination, self._edestination))
+        return hash((self._callee, self._aterms, self._destination, self._edestination))
 
     def equals(self, other):
         return isinstance(other, Launch) \
-               and (self._entry, self._aterms, self._destination, self._edestination) \
-               == (other._entry, other._aterms, other._destination, other._edestination)
+               and (self._callee, self._aterms, self._destination, self._edestination) \
+               == (other._callee, other._aterms, other._destination, other._edestination)
 
     def enabled(self, tstate, mstate):
         return True
@@ -367,18 +376,25 @@ class Launch(Instruction):
         mytop = tstate.stack[-1]
 
         try:
-            location = self._entry.evaluate(tstate, mstate)
+            callee = self._callee.evaluate(tstate, mstate)
             local = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
             mytop.instruction_index = self._edestination
             return
 
-        if isinstance(location, VProcedure):
-            local = [*location.free, *local]
-            location = location.entry
-        if isinstance(location, ProgramLocation):
-            frame = Frame(location.clone_unsealed(), local)
+        if isinstance(callee, Type):
+            local = [callee.create_instance(), *local]
+            callee = callee.resolve_member("__init__")
+        if isinstance(callee, VProcedure):
+            if len(local) != callee.num_args:
+                tstate.exception = VTypeError("Wrong number of arguments for call!")
+                mytop.instruction_index = self._edestination
+                return
+            local = [*callee.free, *local]
+            callee = callee.entry
+        if isinstance(callee, ProgramLocation):
+            frame = Frame(callee.clone_unsealed(), local)
             task = StackState(TaskStatus.WAITING, [frame])
             mstate.add_task(task)
             tstate.returned = task
