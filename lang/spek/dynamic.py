@@ -839,7 +839,7 @@ class Spektakel2Stack(Translator):
         :param spec: A ModuleSpecification to translate into a standalone program.
         :return: A Chain object.
         """
-        self._scopes.push(ModuleScope())
+        self._scopes.push(ModuleScope(0))
         code = self.emit_preamble()
         on_error = Chain()
         on_error.append_pop()

@@ -209,13 +209,15 @@ class ModuleScope(Scope):
     """
     A scope encompassing an entire module.
     """
-    def __init__(self):
+    def __init__(self, offset=1):
         """
         Creates a new module scope.
+        :param offset: The number of stack variables that this module should assume to have been initialized *before*
+                       execution starts.
         """
         super().__init__(None)
         self._names = dict()
-        self._offset = 0
+        self._offset = offset
 
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
         if name is None:
