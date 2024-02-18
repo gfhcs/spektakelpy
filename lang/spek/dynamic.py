@@ -294,15 +294,12 @@ class Spektakel2Stack(Translator):
             chain.append_update(t, terms.Read(TRef(ReturnValueReference())), on_error)
             return Read(t), chain
         elif isinstance(node, Await):
-            t, chain = self.translate_expression(chain, node.process, dec, on_error)
+            t, chain = self.translate_expression(chain, node.awaited, dec, on_error)
             successor = Chain()
             complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, t)
-            noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
-            success = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, complete, noerror)
-            failure = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, complete, negate(noerror))
-            chain.append_guard({success: successor, failure: on_error}, on_error)
+            chain.append_guard({complete: successor}, on_error)
             rv = TRef(self.declare_pattern(successor, None, on_error)[0])
-            successor.append_update(rv, terms.GetReturnValue(t), on_error)
+            successor.append_update(rv, terms.AwaitedResult(t), on_error)
             return Read(rv), successor
         elif isinstance(node, Projection):
             idx, chain = self.translate_expression(chain, node.index, dec, on_error)

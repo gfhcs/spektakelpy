@@ -6,10 +6,11 @@ from engine.functional.reference import FieldReference, NameReference
 from util import check_type, check_types
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VAttributeError, VJumpError, VList, VCell
-from ..task import TaskStatus
+    VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture
+from ..task import TaskStatus, TaskState
 from ..tasks.interaction import Interaction, InteractionState, i2s
 from ..tasks.program import StackProgram, ProgramLocation
+from ..tasks.stack import StackState
 
 
 class CTerm(Term):
@@ -522,46 +523,66 @@ class UnaryPredicateTerm(Term):
             # Check if the type of the object is a descendant of TException:
             value = t.subtypeof(TBuiltin.exception)
         elif self._p == UnaryPredicate.ISTERMINATED:
-            # Check if the argument is a terminated task
-            value = r.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+            # Check if the argument is a completed available.
+            if isinstance(r, TaskState):
+                value = r.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+            elif isinstance(r, VFuture):
+                value = r.status != FutureStatus.UNSET
+            else:
+                raise TypeError(f"The argument evaluated to a {type(r)}, which is not supported by ISTERMINATED!")
         else:
             raise NotImplementedError()
 
         return VBool(value)
 
 
-class GetReturnValue(Term):
+class AwaitedResult(Term):
     """
-    A term that reads the return value register of a specific task, not necessarily the executing one's.
+    A term that retrieves the result computed for an awaitable object.
     """
 
     def __init__(self, t):
         """
-        Creates a new GetReturnValue term.
-        :param t: A Term evaluating to the task whose return value register should be read.
+        Creates a new AwaitedResult term.
+        :param t: A Term evaluating to the awaitable whose result should be read.
         """
         super().__init__(t)
 
     def hash(self):
-        return hash(self.task) ^ 56
+        return hash(self.awaited) ^ 56
 
     def equals(self, other):
-        return isinstance(other, GetReturnValue) and self.task == other.task
+        return isinstance(other, AwaitedResult) and self.awaited == other.awaited
 
     def print(self, out):
-        out.write("return_value(")
+        out.write("result(")
         self.task.print(out)
         out.write(")")
 
     @property
-    def task(self):
+    def awaited(self):
         """
-        A Term evaluating to the task whose return value register should be read.
+        A Term evaluating to the awaitable whose result should be read.
         """
         return self.children[0]
 
     def evaluate(self, tstate, mstate):
-        return self.task.evaluate(tstate, mstate).returned
+        a = self.awaited.evaluate(tstate, mstate)
+        if isinstance(a, StackState):
+            if isinstance(a.exception, Exception):
+                raise a.exception
+            if a.status != TaskStatus.COMPLETED:
+                raise RuntimeError("Cannot retrieve the result for a task that has not been completed!")
+            return a.returned
+        elif isinstance(a, TaskState):
+            if a.status == TaskStatus.COMPLETED:
+                return VNone.instance
+            else:
+                raise RuntimeError("Cannot retrieve the result for a task that has not been completed!")
+        elif isinstance(a, VFuture):
+            return a.result
+        else:
+            raise TypeError(f"Cannot obtain the result of a {type(a)}!")
 
 
 class ITask(Term):

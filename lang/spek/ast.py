@@ -261,24 +261,25 @@ class Launch(Expression):
 
 class Await(Expression):
     """
-    An expression that evaluates to the return value of a process, after blocking until the process terminated.
+    An expression that waits for an awaitable object, returning its result after blocking until it is available.
+    Tasks and futures are awaitable.
     """
-    def __init__(self, process, **kwargs):
+    def __init__(self, awaitable, **kwargs):
         """
-        Creates a new process launch expression.
-        :param process: An expression representing the awaited process.
+        Creates a new await expression.
+        :param awaitable: An expression representing the awaited result.
         :param kwargs: See Expression constructor.
         """
-        super().__init__(check_type(process, Expression), **kwargs)
+        super().__init__(check_type(awaitable, Expression), **kwargs)
 
     @property
     def assignable(self):
         return False
 
     @property
-    def process(self):
+    def awaited(self):
         """
-        An expression representing the awaited process.
+        An expression representing the awaited result.
         :return: An Expression object.
         """
         return self.children[0]
