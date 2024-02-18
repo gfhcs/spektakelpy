@@ -14,12 +14,13 @@ class ValidationError(Exception):
         :param mspec: The ModuleSpecification for the module the validation failure occured in.
         """
 
-        check_type(node, Node)
+        if node is not None:
+            check_type(node, Node)
 
-        if mspec is None:
-            msg = "Line {}, column {}: ".format(node.start.line + 1, node.start.column + 1) + msg
-        else:
-            msg = "{}, line {}, column {}: ".format(mspec, node.start.line + 1, node.start.column + 1) + msg
+            if mspec is None:
+                msg = "Line {}, column {}: ".format(node.start.line + 1, node.start.column + 1) + msg
+            else:
+                msg = "{}, line {}, column {}: ".format(mspec, node.start.line + 1, node.start.column + 1) + msg
 
         super().__init__(msg)
         self._node = node
