@@ -2,7 +2,7 @@ from itertools import chain
 
 from lang.spek.ast import Identifier, Pass, ExpressionStatement, Assignment, Return, Raise, Continue, Break, Block, \
     VariableDeclaration, Conditional, While, For, Try, ProcedureDefinition, PropertyDefinition, ClassDefinition, \
-    ImportNames, ImportSource, Except, Expression
+    ImportNames, ImportSource, Except, Expression, Attribute
 
 
 class VariableAnalysis:
@@ -45,6 +45,8 @@ class VariableAnalysis:
                 acc.add(dec[node][1])
             except KeyError: # Declaring occurrence
                 acc.add(node)
+        elif isinstance(node, Attribute):
+            return self.analyse_expression(node.value, dec, acc)
         else:
             for c in node.children:
                 self.analyse_expression(c, dec, acc)
