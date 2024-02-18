@@ -1261,12 +1261,19 @@ class VFuture(Value):
             c._result = self._result.clone_unsealed(clones=clones)
             return c
 
-    @IntrinsicProperty
+    @property
     def status(self):
         """
         The status of this future.
         """
         return self._status
+
+    @IntrinsicProperty
+    def done(self):
+        """
+        Indicates if a result for this future is either already available or cannot be expected anymore.
+        """
+        return self._status != FutureStatus.UNSET
 
     @IntrinsicInstanceMethod
     def cancel(self):
