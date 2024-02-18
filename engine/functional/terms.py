@@ -556,7 +556,7 @@ class AwaitedResult(Term):
 
     def print(self, out):
         out.write("result(")
-        self.task.print(out)
+        self.awaited.print(out)
         out.write(")")
 
     @property
