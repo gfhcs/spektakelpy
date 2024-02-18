@@ -1050,8 +1050,8 @@ class VProperty(Value):
         :param setter: Either None (in case of a readonly property), or the setter procedure for this property.
         """
         super().__init__()
-        self._getter = check_type(getter, VProcedure)
-        self._setter = None if setter is None else check_type(setter, VProcedure)
+        self._getter = check_type(getter, (VProcedure, IntrinsicInstanceMethod))
+        self._setter = None if setter is None else check_type(setter, (VProcedure, IntrinsicInstanceMethod))
 
     def print(self, out):
         out.write("Property(")
@@ -1091,6 +1091,35 @@ class VProperty(Value):
 
     def clone_unsealed(self, clones=None):
         return self
+
+
+class PProperty(property):
+    """
+    Like Python's property, but with the same constructor as IProperty.
+    """
+    def __init__(self, p):
+        super().__init__(fget=p.fget, fset=p.fset, fdel=p.fdel, doc=None)
+
+
+class IProperty(VProperty):
+    """
+    Like VProperty, but with the same constructor as VProperty.
+    """
+    def __init__(self, p):
+        super().__init__(IntrinsicInstanceMethod(p.fget), IntrinsicInstanceMethod(p.fset))
+
+
+class IntrinsicProperty(PProperty, IProperty):
+    """
+    A property of a Python class that can also be used as an instance property at runtime.
+    """
+
+    def __init__(self, p):
+        super().__init__(p)
+
+
+# Nobody should actually use these helper classes.
+del PProperty, IProperty
 
 
 class VInstance(Value):
@@ -1230,6 +1259,9 @@ class VFuture(Value):
         """
         return self._status
 
+    status = IntrinsicProperty(status)
+
+    @IntrinsicInstanceMethod
     def cancel(self):
         """
         Cancels this future, i.e. notifies all stakeholders that a completion of the computation it represents cannot
@@ -1275,6 +1307,8 @@ class VFuture(Value):
         self._result = check_type(value, Value)
         self._status = FutureStatus.SET
 
+    result = IntrinsicProperty(result)
+
     @property
     def exception(self):
         """
@@ -1307,6 +1341,8 @@ class VFuture(Value):
             raise VFutureError("This future has already been set!")
         self._result = check_type(value, VException)
         self._status = FutureStatus.FAILED
+
+    exception = IntrinsicProperty(exception)
 
 
 from .types import TBuiltin
