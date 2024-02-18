@@ -1097,16 +1097,16 @@ class PProperty(property):
     """
     Like Python's property, but with the same constructor as IProperty.
     """
-    def __init__(self, p):
-        super().__init__(fget=p.fget, fset=p.fset, fdel=p.fdel, doc=None)
+    def __init__(self, getter, setter):
+        super().__init__(getter, setter)
 
 
 class IProperty(VProperty):
     """
     Like VProperty, but with the same constructor as VProperty.
     """
-    def __init__(self, p):
-        super().__init__(IntrinsicInstanceMethod(p.fget), IntrinsicInstanceMethod(p.fset))
+    def __init__(self, getter, setter):
+        super().__init__(IntrinsicInstanceMethod(getter), None if setter is None else IntrinsicInstanceMethod(setter))
 
 
 class IntrinsicProperty(PProperty, IProperty):
@@ -1114,8 +1114,17 @@ class IntrinsicProperty(PProperty, IProperty):
     A property of a Python class that can also be used as an instance property at runtime.
     """
 
-    def __init__(self, p):
-        super().__init__(p)
+    def __init__(self, getter, setter=None):
+        super().__init__(getter, setter)
+
+    def intrinsic_setter(self, setter):
+        """
+        Turns this property into one that has a setter. This method is meant to be used as a setter decorator,
+        exactly like with the 'setter' attribute of ordinary Python properties.
+        :param setter: The setter to be added to this property.
+        :return: An IntrinsicProperty object.
+        """
+        return IntrinsicProperty(self.fget, setter)
 
 
 # Nobody should actually use these helper classes.
@@ -1252,14 +1261,12 @@ class VFuture(Value):
             c._result = self._result.clone_unsealed(clones=clones)
             return c
 
-    @property
+    @IntrinsicProperty
     def status(self):
         """
         The status of this future.
         """
         return self._status
-
-    status = IntrinsicProperty(status)
 
     @IntrinsicInstanceMethod
     def cancel(self):
@@ -1273,7 +1280,7 @@ class VFuture(Value):
             return True
         return False
 
-    @property
+    @IntrinsicProperty
     def result(self):
         """
         The result that was set for this future.
@@ -1292,7 +1299,7 @@ class VFuture(Value):
         else:
             raise NotImplementedError(f"Handling {self._status} as not been implemented!")
 
-    @result.setter
+    @result.intrinsic_setter
     def result(self, value):
         """
         Sets the result of this future and marks it as done.
@@ -1307,9 +1314,7 @@ class VFuture(Value):
         self._result = check_type(value, Value)
         self._status = FutureStatus.SET
 
-    result = IntrinsicProperty(result)
-
-    @property
+    @IntrinsicProperty
     def exception(self):
         """
         The exception that was set on this future.
@@ -1327,7 +1332,7 @@ class VFuture(Value):
         else:
             raise NotImplementedError(f"Handling {self._status} as not been implemented!")
 
-    @exception.setter
+    @exception.intrinsic_setter
     def exception(self, value):
         """
         Sets an exception for this future.
@@ -1341,8 +1346,6 @@ class VFuture(Value):
             raise VFutureError("This future has already been set!")
         self._result = check_type(value, VException)
         self._status = FutureStatus.FAILED
-
-    exception = IntrinsicProperty(exception)
 
 
 from .types import TBuiltin
