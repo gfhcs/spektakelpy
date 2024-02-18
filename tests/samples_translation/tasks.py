@@ -23,6 +23,11 @@ await never()
 """: ((4, 3, 3), {"result": 42, "done": True}),
 
 """
+var f = future()
+await f
+""": ((2, 1, 3), {}),
+
+"""
 from interaction import next
 
 var fbe = None
