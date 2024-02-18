@@ -31,6 +31,8 @@ class TBuiltin(Type):
         super().__init__(name, super_types, [], members)
         self._ptype = ptype
 
+        self.seal()
+
     def create_instance(self):
         return self._ptype()
 
