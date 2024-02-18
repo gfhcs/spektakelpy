@@ -45,21 +45,21 @@ def buffer_full():
 var buffer = None
 
 def produce():
-    acc = 123
+    var acc = 123
     while acc > 0:
         await next()
         await buffer_empty()
         buffer = acc % 10
-        buffer_full().set(True)
+        buffer_full().result = True
         acc = acc // 10
     
 var consumed = 0
 def consume():
     while True:    
-        await buffer_nonempty()
+        await buffer_full()
         consumed = 10 * consumed + buffer % 10
         buffer = None
-        buffer_empty().set(True)
+        buffer_empty().result = True
         
 var c = async consume()
 var p = async produce()
