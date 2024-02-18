@@ -1,14 +1,14 @@
 import abc
 
 
-class UnsealedException(RuntimeError):
+class UnsealedError(RuntimeError):
     """
     An exception that occurs when an object would have to be immutable, but is still mutable.
     """
     pass
 
 
-class SealedException(RuntimeError):
+class SealedError(RuntimeError):
     """
     An exception that occurs when an object would have to be mutable, but is actually immutable.
     """
@@ -23,7 +23,7 @@ def check_sealed(sealable):
     :return: The given sealable.
     """
     if not sealable.sealed:
-        raise UnsealedException("The object is mutable, but would have to be sealed for this operation!")
+        raise UnsealedError("The object is mutable, but would have to be sealed for this operation!")
     return sealable
 
 
@@ -35,7 +35,7 @@ def check_unsealed(sealable):
     :return: The given sealable.
     """
     if sealable.sealed:
-        raise SealedException("The object is sealed, but would have to be mutable for this operation!")
+        raise SealedError("The object is sealed, but would have to be mutable for this operation!")
     return sealable
 
 
@@ -69,8 +69,8 @@ class Sealable:
     def __hash__(self):
         try:
             check_sealed(self)
-        except UnsealedException as ex:
-            raise UnsealedException("Hashes can only be computed once the sealable object has been sealed, "
+        except UnsealedError as ex:
+            raise UnsealedError("Hashes can only be computed once the sealable object has been sealed, "
                                     "because modifying it might change its hash and thus violate invariants"
                                     " of hash-based container structures!") from ex
         return self.hash()
