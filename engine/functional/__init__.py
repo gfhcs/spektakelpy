@@ -244,6 +244,8 @@ class Type(Value):
 
             foffset += len(t._field_names)
 
+        raise AttributeError(f"{self} has no attribute '{name}'!")
+
     def create_instance(self):
         """
         Creates an instance of this type.
