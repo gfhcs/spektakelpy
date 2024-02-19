@@ -1,6 +1,7 @@
 import abc
 
 from engine.functional import Value
+from inspect import signature
 
 
 class IntrinsicException(Exception):
@@ -15,6 +16,14 @@ class IntrinsicProcedure(Value):
     Represents a procedure the execution of which is opaque to the state machine, but that can manipulate the entire
     state of the machine.
     """
+
+    @property
+    @abc.abstractmethod
+    def num_args(self):
+        """
+        The number of arguments required by this procedure.
+        """
+        pass
 
     @property
     def type(self):
@@ -52,6 +61,10 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
     def __init__(self, m):
         super().__init__()
         self._m = m
+
+    @property
+    def num_args(self):
+        return len(signature(self._m).parameters)
 
     def print(self, out):
         out.write("IntrinsicInstanceMethod(")

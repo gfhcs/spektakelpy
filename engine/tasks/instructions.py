@@ -3,7 +3,7 @@ from . import InstructionException, Instruction
 from .program import ProgramLocation
 from .stack import Frame, StackState
 from ..functional import EvaluationException, Term, Type
-from ..functional.values import VException, VProcedure, VNone, VTypeError
+from ..functional.values import VException, VProcedure, VNone, VTypeError, VInt
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
@@ -262,7 +262,7 @@ class Push(Instruction):
             old_top.instruction_index = self._edestination
             return
 
-        if isinstance(num_args, VInt) and num_args != len(args):
+        if isinstance(num_args, VInt) and int(num_args) != len(args):
             tstate.exception = VTypeError("Wrong number of arguments for call!")
             old_top.instruction_index = self._edestination
 
@@ -378,9 +378,9 @@ class Launch(Instruction):
             mytop.instruction_index = self._edestination
             return
 
-        if isinstance(num_args, VInt) and num_args != len(args):
+        if isinstance(num_args, VInt) and int(num_args) != len(args):
             tstate.exception = VTypeError("Wrong number of arguments for call!")
-            old_top.instruction_index = self._edestination
+            mytop.instruction_index = self._edestination
 
         if isinstance(callee, ProgramLocation):
             frame = Frame(callee.clone_unsealed(), [*free, *args])

@@ -518,7 +518,7 @@ class UnaryPredicateTerm(Term):
             # Check if it is a function object, a class object, or if the type of the object has a __call__ method.
             try:
                 value = t.subtypeof(TBuiltin.procedure) or isinstance(t.resolve_member("__call__"), VProcedure)
-            except KeyError:
+            except AttributeError:
                 value = False
         elif self._p == UnaryPredicate.ISEXCEPTION:
             # Check if the type of the object is a descendant of TException:

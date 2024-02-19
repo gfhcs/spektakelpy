@@ -7,7 +7,7 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase
+    NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase, Callable
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
     VBreakError, VNamespace, VStr, VProperty, VException
@@ -192,7 +192,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
-        p = StackProgram([Push(Read(TRef(FrameReference(0))), [CInt(42)], 1, 1),
+        p = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
@@ -219,7 +219,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
-        p = StackProgram([Push(Read(TRef(FrameReference(17))), [CInt(42)], 1, 1),
+        p = StackProgram([Push(Callable(Read(TRef(FrameReference(17)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
@@ -245,7 +245,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
-        p = StackProgram([Launch(Read(TRef(FrameReference(0))), [CInt(42)], 1, 1),
+        p = StackProgram([Launch(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
@@ -278,7 +278,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
-        p = StackProgram([Launch(Read(TRef(FrameReference(17))), [CInt(42)], 1, 1),
+        p = StackProgram([Launch(Callable(Read(TRef(FrameReference(17)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
@@ -297,7 +297,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the succesful execution of Intrinsic procedures.
         """
 
-        p = StackProgram([Push(Read(TRef(FrameReference(1))), [Read(TRef(FrameReference(0))), CInt(0)], 1, 1),
+        p = StackProgram([Push(Callable(Read(TRef(FrameReference(1)))), [Read(TRef(FrameReference(0))), CInt(0)], 1, 1),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 2)
@@ -318,7 +318,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the errors raised by an IntrinsicProcedure.
         """
 
-        p = StackProgram([Push(Read(TRef(FrameReference(1))), [Read(TRef(FrameReference(0)))], 1, 1),
+        p = StackProgram([Push(Callable(Read(TRef(FrameReference(1)))), [Read(TRef(FrameReference(0)))], 1, 1),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
@@ -575,8 +575,8 @@ class TestSpektakelMachine(unittest.TestCase):
                  (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, NewTypeError("Just for testing.")), VBool.true)
                  ]
 
-        for term, value in cases:
-            with self.subTest(term=term):
+        for idx, (term, value) in enumerate(cases):
+            with self.subTest(idx=idx, term=term):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
                 s0 = self.initialize_machine(p, 1)
                 s0.task_states[0].stack[0][0] = VList.append
@@ -689,8 +689,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                         Pop()])
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewProcedure(1, tuple(), q), 1, 3),
-                          Push(Read(TRef(FrameReference(0))), [CInt(42)], 2, 3),
-                          Update(TRef(FrameReference(0)), NumArgs(Read(TRef(FrameReference(0)))), 3, 3)])
+                          Push(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 2, 3)])
 
         state0 = self.initialize_machine(p, 1)
 
@@ -701,7 +700,6 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), 3)
 
         self.assertEqual(int(states[-1].content.task_states[0].returned), 43)
-        self.assertEqual(int(states[-1].content.task_states[0].stack[0][0]), 1)
 
     def test_class(self):
         """
