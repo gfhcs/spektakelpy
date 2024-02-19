@@ -2,7 +2,7 @@ from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, FrameReference, \
     AbsoluteFrameReference, CellReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    CTerm, Lookup, CString, CNone
+    CTerm, Lookup, CString, CNone, Callable
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.program import ProgramLocation
 from lang.translator import Translator
@@ -208,7 +208,7 @@ class Spektakel2Stack(Translator):
                  in which execution is to be continued after the call.
         """
 
-        chain.append_push(callee, args, on_error)
+        chain.append_push(Callable(callee), args, on_error)
 
         successor = Chain()
         noerror = terms.Comparison(ComparisonOperator.EQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
@@ -280,7 +280,7 @@ class Spektakel2Stack(Translator):
                 v, chain = self.translate_expression(chain, a, dec, on_error)
                 args.append(v)
             callee, chain = self.translate_expression(chain, call.callee, dec, on_error)
-            chain.append_launch(callee, args, on_error)
+            chain.append_launch(Callable(callee), args, on_error)
             t, = self.declare_pattern(chain, None, on_error)
             t = TRef(t)
             chain.append_update(t, terms.Read(TRef(ReturnValueReference())), on_error)
@@ -765,15 +765,15 @@ class Spektakel2Stack(Translator):
         load2 = Chain()
         exit = Chain()
         l, = self.declare_pattern(imp_code, None, panic)
-        imp_code.append_push(CTerm(VDict.get), [Read(TRef(d)), Read(TRef(l))], load1)
+        imp_code.append_push(Callable(CTerm(VDict.get)), [Read(TRef(d)), Read(TRef(l))], load1)
         imp_code.append_pop()
         load1.append_update(TRef(ExceptionReference()), CNone(), panic)
-        load1.append_push(Read(TRef(l)), [], exit)
+        load1.append_push(Callable(Read(TRef(l))), [], exit)
         error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
         load1.append_guard({error: exit, negate(error): load2}, panic)
         h, = self.declare_pattern(load2, None, panic)
         load2.append_update(TRef(h), Read(TRef(ReturnValueReference())), panic)
-        load2.append_push(CTerm(VDict.set), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
+        load2.append_push(Callable(CTerm(VDict.set)), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
         load2.append_update(TRef(ReturnValueReference()), Read(TRef(h)), panic)
         load2.append_jump(exit)
         exit.append_pop()
