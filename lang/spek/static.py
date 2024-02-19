@@ -48,7 +48,7 @@ class SpektakelValidator(Validator):
         for b in builtin:
             check_type(b, BuiltinModuleSpecification)
             for s in b.symbols:
-                self._denv[s] = b
+                self._denv[s] = (b, s)
 
         self._denv = Environment(k2v=self._denv)
         self._builtin = builtin
