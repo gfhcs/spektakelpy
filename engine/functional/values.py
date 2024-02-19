@@ -1093,29 +1093,14 @@ class VProperty(Value):
         return self
 
 
-class PProperty(property):
-    """
-    Like Python's property, but with the same constructor as IProperty.
-    """
-    def __init__(self, getter, setter):
-        super().__init__(getter, setter)
-
-
-class IProperty(VProperty):
-    """
-    Like VProperty, but with the same constructor as VProperty.
-    """
-    def __init__(self, getter, setter):
-        super().__init__(IntrinsicInstanceMethod(getter), None if setter is None else IntrinsicInstanceMethod(setter))
-
-
-class IntrinsicProperty(PProperty, IProperty):
+class IntrinsicProperty(property, VProperty):
     """
     A property of a Python class that can also be used as an instance property at runtime.
     """
 
     def __init__(self, getter, setter=None):
         super().__init__(getter, setter)
+        super(property, self).__init__(IntrinsicInstanceMethod(getter), None if setter is None else IntrinsicInstanceMethod(setter))
 
     def intrinsic_setter(self, setter):
         """
@@ -1125,10 +1110,6 @@ class IntrinsicProperty(PProperty, IProperty):
         :return: An IntrinsicProperty object.
         """
         return IntrinsicProperty(self.fget, setter)
-
-
-# Nobody should actually use these helper classes.
-del PProperty, IProperty
 
 
 class VInstance(Value):
