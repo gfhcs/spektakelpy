@@ -1,7 +1,38 @@
+from inspect import signature
+
 from engine.functional import Type, Reference
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
     VException, VTypeError, VJumpError, VReturnError, VBreakError, VCell, VFuture, VProcedure, VNamespace, VFutureError
-from engine.intrinsic import IntrinsicInstanceMethod
+from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicProcedure
+
+
+class BuiltinConstructor(IntrinsicProcedure):
+    """
+    An __init__ method of a Python class that can be used to create instances at runtime.
+    """
+
+    def __init__(self, ptype):
+        super().__init__()
+        self._ptype = ptype
+        self._num_args = len(signature(ptype.__init__).parameters) - 1
+
+    @property
+    def num_args(self):
+        return self._num_args
+
+    def print(self, out):
+        out.write("BuiltinConstructor(")
+        out.write(str(self._ptype))
+        out.write(")")
+
+    def execute(self, _, __, *args):
+        return self._ptype(*args)
+
+    def hash(self):
+        return hash(self._ptype)
+
+    def equals(self, other):
+        return isinstance(other, BuiltinConstructor) and self._ptype is other._ptype
 
 
 class TBuiltin(Type):
@@ -21,7 +52,8 @@ class TBuiltin(Type):
         """
 
         if members is None:
-            members = {}
+            members = dict()
+            members["__new__"] = BuiltinConstructor(ptype)
 
         for n in dir(ptype):
             member = getattr(ptype, n)

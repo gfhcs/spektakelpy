@@ -1,7 +1,7 @@
 import abc
+from inspect import signature
 
 from engine.functional import Value
-from inspect import signature
 
 
 class IntrinsicException(Exception):
@@ -84,31 +84,3 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         return self._m(instance, *args)
 
 
-class IntrinsicConstructor(IntrinsicProcedure):
-    """
-    An __init__ method of a Python class that can be used to create instances at runtime.
-    """
-
-    def __init__(self, c):
-        super().__init__()
-        self._c = c
-
-    def num_args(self):
-        return len(signature(self._c).parameters)
-
-    def print(self, out):
-        out.write("IntrinsicConstructor(")
-        out.write(str(self._c))
-        out.write(")")
-
-    def execute(self, tstate, mstate, instance, *args):
-        return self._c(instance, *args)
-
-    def hash(self):
-        return hash(self._c)
-
-    def equals(self, other):
-        return isinstance(other, IntrinsicInstanceMethod) and self._c is other._c
-
-    def __call__(self, *args, **kwargs):
-        return self._c(*args, **kwargs)

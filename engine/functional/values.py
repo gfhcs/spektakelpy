@@ -1,6 +1,6 @@
 from enum import Enum
 
-from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicConstructor
+from engine.intrinsic import IntrinsicInstanceMethod
 from util import check_type, check_types
 from util.immutable import check_unsealed
 from . import Value
@@ -1215,7 +1215,6 @@ class VFuture(Value):
     needs to make progress itself.
     """
 
-    @IntrinsicConstructor
     def __init__(self):
         """
         Creates a new unset future.
