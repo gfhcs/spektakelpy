@@ -7,6 +7,7 @@ from util import check_type, check_types
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture
+from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus, TaskState
 from ..tasks.interaction import Interaction, InteractionState, i2s
 from ..tasks.program import StackProgram, ProgramLocation
@@ -583,6 +584,61 @@ class AwaitedResult(Term):
             return a.result
         else:
             raise TypeError(f"Cannot obtain the result of a {type(a)}!")
+
+
+class Callable(Term):
+    """
+    A term that converts its callable argument to either a ProgramLocation or an IntrinsicProcedure,
+    which can be used with a Push or Launch instruction.
+    """
+
+    def __init__(self, t):
+        """
+        Creates a new Callable term.
+        :param t: A Term evaluating to the object that is to be converted to a callable.
+        """
+        super().__init__(t)
+
+    def hash(self):
+        return hash(self.term) ^ 784658
+
+    def equals(self, other):
+        return isinstance(other, Callable) and self.term == other.term
+
+    def print(self, out):
+        out.write("callable(")
+        self.term.print(out)
+        out.write(")")
+
+    @property
+    def term(self):
+        """
+        A Term evaluating to the object that is to be converted to a callable.
+        """
+        return self.children[0]
+
+    def evaluate(self, tstate, mstate):
+        callee = self.term.evaluate(tstate, mstate)
+
+        free = []
+        num_args = VNone.instance
+
+        while True:
+            if isinstance(callee, ProgramLocation):
+                break
+            elif isinstance(callee, IntrinsicProcedure):
+                num_args = VInt(callee.num_args)
+                break
+            elif isinstance(callee, Type):
+                callee = callee.resolve_member("__new__")
+            elif isinstance(callee, VProcedure):
+                num_args = VInt(callee.num_args)
+                free = [*callee.free, *free]
+                callee = callee.entry
+            else:
+                raise TypeError(f"Value of type {type(callee)} is not callable!")
+
+        return VTuple(callee, VTuple(*free), num_args)
 
 
 class ITask(Term):

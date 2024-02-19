@@ -255,30 +255,25 @@ class Push(Instruction):
         old_top = tstate.stack[-1]
 
         try:
-            callee = self._callee.evaluate(tstate, mstate)
-            local = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
+            callee, free, num_args = self._callee.evaluate(tstate, mstate)
+            args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
             old_top.instruction_index = self._edestination
             return
 
-        if isinstance(callee, Type):
-            local = [callee.create_instance(), *local]
-            callee = callee.resolve_member("__init__")
-        if isinstance(callee, VProcedure):
-            if len(local) != callee.num_args:
-                tstate.exception = VTypeError("Wrong number of arguments for call!")
-                old_top.instruction_index = self._edestination
-                return
-            local = [*callee.free, *local]
-            callee = callee.entry
+        if isinstance(num_args, VInt) and num_args != len(args):
+            tstate.exception = VTypeError("Wrong number of arguments for call!")
+            old_top.instruction_index = self._edestination
+
         if isinstance(callee, ProgramLocation):
-            frame = Frame(callee.clone_unsealed(), local)
+            frame = Frame(callee.clone_unsealed(), [*free, *args])
             tstate.push(frame)
             old_top.instruction_index = self._destination
         elif isinstance(callee, IntrinsicProcedure):
+            assert len(free) == 0
             try:
-                r = callee.execute(tstate, mstate, *local)
+                r = callee.execute(tstate, mstate, *args)
                 tstate.returned = VNone.instance if r is None else r
             except VException as ex:
                 tstate.exception = ex
@@ -376,25 +371,19 @@ class Launch(Instruction):
         mytop = tstate.stack[-1]
 
         try:
-            callee = self._callee.evaluate(tstate, mstate)
-            local = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
+            callee, free, num_args = self._callee.evaluate(tstate, mstate)
+            args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
             tstate.exception = VException(pexception=ee)
             mytop.instruction_index = self._edestination
             return
 
-        if isinstance(callee, Type):
-            local = [callee.create_instance(), *local]
-            callee = callee.resolve_member("__init__")
-        if isinstance(callee, VProcedure):
-            if len(local) != callee.num_args:
-                tstate.exception = VTypeError("Wrong number of arguments for call!")
-                mytop.instruction_index = self._edestination
-                return
-            local = [*callee.free, *local]
-            callee = callee.entry
+        if isinstance(num_args, VInt) and num_args != len(args):
+            tstate.exception = VTypeError("Wrong number of arguments for call!")
+            old_top.instruction_index = self._edestination
+
         if isinstance(callee, ProgramLocation):
-            frame = Frame(callee.clone_unsealed(), local)
+            frame = Frame(callee.clone_unsealed(), [*free, *args])
             task = StackState(TaskStatus.WAITING, [frame])
             mstate.add_task(task)
             tstate.returned = task
@@ -405,5 +394,3 @@ class Launch(Instruction):
             return
 
         mytop.instruction_index = self._destination
-
-
