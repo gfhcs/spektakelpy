@@ -130,11 +130,12 @@ class Spektakel2Stack(Translator):
             a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
             r, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(r, terms.StoreAttrCase(a, pattern.name), on_error)
+            tr = Read(TRef(r))
+            chain.append_update(TRef(r), terms.StoreAttrCase(a, pattern.name.name), on_error)
 
-            csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, r)
-            cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, r)
-            cupdate = ~(csetter | cexception)
+            csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, tr)
+            cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, tr)
+            cupdate = negate(terms.BooleanBinaryOperation(BooleanBinaryOperator.OR, csetter, cexception))
 
             setter = Chain()
             update = Chain()
@@ -142,13 +143,13 @@ class Spektakel2Stack(Translator):
             successor = Chain()
             chain.append_guard({csetter: setter, cupdate: update, cexception: exception}, on_error)
 
-            self.emit_call(setter, r, [term], on_error)
+            _, setter = self.emit_call(setter, Read(TRef(r)), [term], on_error)
             setter.append_jump(successor)
 
-            update.append_update(r, term, on_error)
+            update.append_update(TRef(r), term, on_error)
             update.append_jump(successor)
 
-            exception.append_update(ExceptionReference(), r, on_error)
+            exception.append_update(TRef(ExceptionReference()), tr, on_error)
             exception.append_jump(on_error)
 
             return None, successor
@@ -249,19 +250,18 @@ class Spektakel2Stack(Translator):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
             r, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(r, terms.LoadAttrCase(v, node.name), on_error)
+            chain.append_update(TRef(r), terms.LoadAttrCase(v, node.name.name), on_error)
 
-            cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISGETTER, r)
+            cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISGETTER, Read(TRef(r)))
 
             getter = Chain()
             successor = Chain()
-            chain.append_guard({cgetter: getter, ~cgetter: successor}, on_error)
+            chain.append_guard({cgetter: getter, negate(cgetter): successor}, on_error)
 
-            v, getter = self.emit_call(getter, r, [], on_error)
-            getter.append_update(r, v, on_error)
+            v, getter = self.emit_call(getter, Read(TRef(r)), [], on_error)
             getter.append_jump(successor)
 
-            return r, successor
+            return v, successor
 
             # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
             #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation

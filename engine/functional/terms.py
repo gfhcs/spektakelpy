@@ -466,6 +466,7 @@ class UnaryPredicate(Enum):
     ISCALLABLE = 0
     ISEXCEPTION = 1
     ISTERMINATED = 2
+    ISGETTER = 3
 
 
 class UnaryPredicateTerm(Term):
