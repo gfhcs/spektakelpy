@@ -2,7 +2,8 @@ from inspect import signature
 
 from engine.functional import Type, Reference
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
-    VException, VTypeError, VJumpError, VReturnError, VBreakError, VCell, VFuture, VProcedure, VNamespace, VFutureError
+    VException, VTypeError, VJumpError, VReturnError, VBreakError, VCell, VFuture, VProcedure, VNamespace, VFutureError, \
+    IntrinsicProperty
 from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicProcedure
 
 
@@ -57,7 +58,7 @@ class TBuiltin(Type):
 
         for n in dir(ptype):
             member = getattr(ptype, n)
-            if isinstance(member, IntrinsicInstanceMethod):
+            if isinstance(member, (IntrinsicInstanceMethod, IntrinsicProperty)):
                 members[n] = member
 
         super().__init__(name, super_types, [], members)
