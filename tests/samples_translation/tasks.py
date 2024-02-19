@@ -28,6 +28,14 @@ await f
 """: ((2, 1, 3), {}),
 
 """
+from interaction import never
+var f = future()
+f.result = 42
+var result = await f
+await never
+""": ((2, 1, 3), {"result": 42}),
+
+"""
 from interaction import next
 
 var fbe = None
