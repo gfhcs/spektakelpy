@@ -1,7 +1,7 @@
 import unittest
 
 from engine.exploration import explore, state_space, schedule_nonzeno
-from engine.functional.values import VNone, VCell
+from engine.functional.values import VNone, VCell, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.interaction import InteractionState, Interaction
@@ -119,7 +119,10 @@ class TestSpektakelTranslation(unittest.TestCase):
             for t in s.content.task_states:
                 if isinstance(t, StackState):
                     if not (t.exception is None or isinstance(t.exception, VNone)):
-                        raise t.exception
+                        if isinstance(t.exception, VException) and t.exception.pexception is not None:
+                            raise t.exception.pexception
+                        else:
+                            raise t.exception
 
         for vname, expected in expectation.items():
             found = states[-1].content.task_states[0].stack[-1][0][vname]
