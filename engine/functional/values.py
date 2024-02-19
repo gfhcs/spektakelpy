@@ -1258,7 +1258,8 @@ class VFuture(Value):
             c = VFuture()
             clones[id(self)] = c
             c._status = self._status
-            c._result = self._result.clone_unsealed(clones=clones)
+            if self._result is not None:
+                c._result = self._result.clone_unsealed(clones=clones)
             return c
 
     @property
