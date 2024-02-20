@@ -575,7 +575,7 @@ class AwaitedResult(Term):
                 raise a.exception
             if a.status != TaskStatus.COMPLETED:
                 raise RuntimeError("Cannot retrieve the result for a task that has not been completed!")
-            return a.returned
+            return VNone.instance if a.returned is None else a.returned
         elif isinstance(a, TaskState):
             if a.status == TaskStatus.COMPLETED:
                 return VNone.instance
