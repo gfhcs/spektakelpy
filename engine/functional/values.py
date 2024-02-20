@@ -988,6 +988,7 @@ class VProcedure(Value):
         self._num_args = check_type(num_args, int)
         self._free = check_types(free, Value)
         self._entry = check_type(entry, ProgramLocation)
+        self._eq_candidates = set()
 
     def print(self, out):
         out.write(f"Procedure({self._num_args}")
@@ -1027,7 +1028,14 @@ class VProcedure(Value):
         return hash(self._entry)
 
     def equals(self, other):
-        return id(self) == id(other)
+        if other is self or other in self._eq_candidates:
+            return True
+        if isinstance(other, VProcedure) and (self._num_args, id(self._entry)) == (other._num_args, id(other._entry)):
+            try:
+                self._eq_candidates.add(other)
+                return self.free == other.free
+            finally:
+                self._eq_candidates.remove(other)
 
     def _seal(self):
         self._entry.seal()
@@ -1035,7 +1043,15 @@ class VProcedure(Value):
             f.seal()
 
     def clone_unsealed(self, clones=None):
-        return self
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VProcedure(self._num_args, self._free, self._entry)
+            clones[id(self)] = c
+            c._free = [f.clone_unsealed(clones=clones) for f in self._free]
+            return c
 
 
 class VProperty(Value):
