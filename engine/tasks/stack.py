@@ -1,4 +1,4 @@
-from engine.functional.values import VException
+from engine.functional.values import VException, VNone
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
 from util.printable import Printable
@@ -137,8 +137,8 @@ class StackState(TaskState):
         super().__init__(status)
 
         self._stack = list(check_types(stack, Frame))
-        self._exception = check_type(exception, Value, allow_none=True)
-        self._returned = check_type(returned, Value, allow_none=True)
+        self._exception = VNone.instance if exception is None else check_type(exception, Value)
+        self._returned = VNone.instance if exception is None else check_type(returned, Value)
         self.status = TaskStatus.RUNNING if len(self._stack) > 0 else TaskStatus.COMPLETED
 
     def print(self, out):
