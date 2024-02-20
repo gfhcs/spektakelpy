@@ -925,7 +925,7 @@ class LoadAttrCase(Term):
             elif isinstance(attr, VProcedure):
                 return attr
             elif isinstance(attr, VProperty):
-                return attr.getter
+                return attr.get_procedure
             else:
                 raise TypeError(type(attr))
         except KeyError:
@@ -988,7 +988,7 @@ class StoreAttrCase(Term):
             if isinstance(attr, int):
                 return FieldReference(value, attr)
             if isinstance(attr, VProperty):
-                return attr.setter
+                return attr.set_procedure
             elif isinstance(attr, VProcedure):
                 return VTypeError("Cannot assign values to method fields!")
             else:

@@ -1055,10 +1055,10 @@ class VProperty(Value):
 
     def print(self, out):
         out.write("Property(")
-        self.getter.print(out)
-        if self.setter is not None:
+        self.get_procedure.print(out)
+        if self.set_procedure is not None:
             out.write(", ")
-            self.setter.print(out)
+            self.set_procedure.print(out)
         out.write(")")
 
     @property
@@ -1066,16 +1066,18 @@ class VProperty(Value):
         return TBuiltin.property
 
     @property
-    def getter(self):
+    def get_procedure(self):
         """
         The getter procedure for this property.
+        It is named get_procedure to distinguish it from Python's property.getter.
         """
         return self._getter
 
     @property
-    def setter(self):
+    def set_procedure(self):
         """
         Either None (in case of a readonly property), or the setter procedure for this property.
+        It is named set_procedure to distinguish it from Python's property.setter.
         """
         return self._setter
 
