@@ -58,7 +58,7 @@ def produce():
 var p = async produce()
 
 await p
-await never
+await never()
 
 """: ((10, 6, 12), {"buffer": 1}),
 
