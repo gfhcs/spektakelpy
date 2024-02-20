@@ -89,6 +89,6 @@ var p = async produce()
 await p
 await c
 
-""": ((11, 9, 6), {"consumed": 321, "buffer": None}),
+""": ((14, 10, 12), {"consumed": 321, "buffer": None}),
 
 }
