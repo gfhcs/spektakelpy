@@ -36,6 +36,14 @@ await never()
 """: ((2, 1, 3), {"result": 42}),
 
 """
+from interaction import next, never
+var done = False
+await next()
+done = True
+await never()
+""": ((4, 2, 6), {"done": True}),
+
+"""
 from interaction import next
 
 var fbe = None
