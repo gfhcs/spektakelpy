@@ -107,7 +107,6 @@ def buffer_full():
             fbf.result = True
     return fbf
 
-
 def produce():
     var acc = 123
     while acc > 0:
