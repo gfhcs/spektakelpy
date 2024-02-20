@@ -59,4 +59,17 @@ foo3()
 await never()
 """: ((2, 1, 3), {"acc": 444}),
 
+"""
+from interaction import never
+
+var flag = True
+
+def foo():
+    return never()
+
+await foo()
+flag = False
+
+""": ((2, 1, 3), {"flag": True}),
+
 }
