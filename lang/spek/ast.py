@@ -119,6 +119,9 @@ class Identifier(Expression):
         """
         return self._name
 
+    def __str__(self):
+        return f"'{self._name}'"
+
 
 class Tuple(Expression):
     """
