@@ -90,30 +90,39 @@ await never()
 from interaction import next
 
 var buffer = None
+var fbe, fbf = None, None
 
-var fbe = None
+def set_buffer(value):
+    buffer = value
+    if value is None and fbe is not None:
+        fbe.result = True
+        fbe = None
+    if value is not None and fbf is not None:
+        fbf.result = True
+        fbf = None
+
 def buffer_empty():
-    if fbe is None or fbe.done:
-        fbe = future()
-        if buffer is None:
-            fbe.result = True
-    return fbe
+    var f = future()
+    if buffer is None:
+        f.result = True
+    else:
+        fbe = f     
+    return f
     
-var fbf = None
 def buffer_full():
-    if fbf is None or fbf.done:
-        fbf = future()
-        if buffer is not None:
-            fbf.result = True
-    return fbf
+    var f = future()
+    if buffer is not None:
+        f.result = True        
+    else:
+        fbf = f
+    return f
 
 def produce():
     var acc = 123
     while acc > 0:
         await next()
         await buffer_empty()
-        buffer = acc % 10
-        buffer_full().result = True
+        set_buffer(acc % 10)
         acc = acc // 10
     
 var consumed = 0
@@ -121,9 +130,8 @@ def consume():
     while True:    
         await buffer_full()
         consumed = 10 * consumed + buffer % 10
-        buffer = None
-        buffer_empty().result = True
-        
+        set_buffer(None)
+
 var c = async consume()
 var p = async produce()
 
