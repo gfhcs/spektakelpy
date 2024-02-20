@@ -99,7 +99,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), 3)
 
         self.assertEqual(int(states[1].content.task_states[0].stack[0][0]), 42)
-        self.assertIs(states[1].content.task_states[0].exception, None)
+        self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
 
     def test_update_failure(self):
         """
@@ -205,7 +205,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), 3)
 
         self.assertEqual(int(states[1].content.task_states[0].returned), 43)
-        self.assertIs(states[1].content.task_states[0].exception, None)
+        self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
 
     def test_push_failure(self):
         """
@@ -311,7 +311,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), 3)
 
         self.assertEqual(int(states[1].content.task_states[0].returned), 42)
-        self.assertIs(states[1].content.task_states[0].exception, None)
+        self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
 
     def test_intrinsic_failure(self):
         """
