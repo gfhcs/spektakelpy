@@ -740,9 +740,9 @@ class TestSpektakelMachine(unittest.TestCase):
 
         i = c.create_instance()
 
-        cases = (("x", VNone.instance),
-                 ("method", method),
-                 ("property", g))
+        cases = (("x", VTuple(VBool.false, VNone.instance)),
+                 ("method", VTuple(VBool.false, method)),
+                 ("property", VTuple(VBool.true, g)))
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):
@@ -754,7 +754,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), 3)
 
-                self.assertIs(states[-1].content.task_states[0].stack[0][0], value)
+                self.assertEqual(states[-1].content.task_states[0].stack[0][0], value)
 
     def test_StoreAttrCase(self):
         """
