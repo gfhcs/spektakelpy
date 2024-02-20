@@ -261,7 +261,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
     def test_async_producer_consumer(self):
         """
-        This is the Spek version of Donald Knuth's famous "Man or boy" test.
+        Test a simple producer-consumer setup. This sample only works if concurrency is available.
         """
         self.examine_sample(code_producer_consumer, 14, 10, 12, consumed=321, buffer=None)
 
