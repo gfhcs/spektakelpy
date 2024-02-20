@@ -15,6 +15,7 @@ from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.manboy import code as code_manboy
+from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.whiles import samples as whiles
@@ -257,6 +258,13 @@ class TestSpektakelTranslation(unittest.TestCase):
         include some infinite loops through a finite state space.
         """
         self.examine_samples(tasks)
+
+    def test_async_producer_consumer(self):
+        """
+        This is the Spek version of Donald Knuth's famous "Man or boy" test.
+        """
+        self.examine_sample(code_producer_consumer, 14, 10, 12, consumed=321, buffer=None)
+
 
     def test_exceptions(self):
         """
