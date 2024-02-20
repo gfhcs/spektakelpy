@@ -72,9 +72,15 @@ class VariableAnalysis:
                       the newly analysed statement.
         :param fs: The free variables of the newly analysed statement.
         """
+        # We first update nonfunctional with names that had been read *before* the current statement and are written
+        # *in* the current statement. If the statement should first read *and* then write the same name, it is the
+        # responsibility of the *caller* to tell us that in ns! This is an important rule in particular for block
+        # statements, which easily can read *and* write the same name, but in an order that does not make that name
+        # non-functional. Hence the nonfunctional update as the very first update in this method.
+        nonfunctional |= (ws & read) | ns
+        # Statements usually *first* declare, *then* read, and *finally* write. Hence this order:
         declared |= ds
         read |= rs
-        nonfunctional |= (ws & read) | ns
         written |= ws
         free |= fs - declared
 
@@ -153,9 +159,14 @@ class VariableAnalysis:
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
         elif isinstance(node, ProcedureDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
+            if node.name in fsb:
+                # If this procedure is recursive, we want to make its variable name a *cell*. That's because we
+                # can easily pass the *cell* to the VProcedure constructor as a free value, solving the chicken and
+                # egg problem of having to include the procedure in its own definition.
+                nsb.add(node.name)
+                free.add(node.name)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, {node.name}, empty, empty, empty, empty)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, {*node.argnames, *dsb}, wsb | {node.name}, rsb, nsb | wsb, fsb - set(node.argnames))
-            free.add(node.name)
             self._free_in_proc |= free
         elif isinstance(node, PropertyDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.getter, dec)
