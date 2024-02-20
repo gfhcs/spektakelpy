@@ -44,6 +44,20 @@ await never()
 """: ((4, 2, 6), {"done": True}),
 
 """
+from interaction import never
+
+var buffer = False
+
+def produce():
+    buffer = True
+
+await async produce()
+await never()
+
+""": ((4, 3, 3), {"buffer": True}),
+
+
+"""
 from interaction import next, never
 
 var buffer = None
