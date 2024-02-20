@@ -46,19 +46,24 @@ await never()
 """
 from interaction import next
 
+var buffer = None
+
 var fbe = None
 def buffer_empty():
     if fbe is None or fbe.done:
         fbe = future()
+        if buffer is None:
+            fbe.result = True
     return fbe
     
 var fbf = None
 def buffer_full():
     if fbf is None or fbf.done:
         fbf = future()
+        if buffer is not None:
+            fbf.result = True
     return fbf
 
-var buffer = None
 
 def produce():
     var acc = 123
