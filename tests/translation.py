@@ -251,7 +251,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         self.examine_samples(closures)
 
-    def test_async(self):
+    def test_async_success(self):
         """
         Tests launching and awaiting procedures as tasks, involving Launch and Await expressions. This should also
         include some infinite loops through a finite state space.
@@ -261,7 +261,7 @@ class TestSpektakelTranslation(unittest.TestCase):
     def test_exceptions(self):
         """
         Test creation, raising and handling of exceptions, i.e. the constructors of exception types, Raise statements,
-        and try blocks.
+        and try blocks. These test samples also include exceptions and cance
         """
         # TODO: Insbesondere will ich für das finally folgende Fälle abtesten:
         #         If an exception occurs during execution of the try clause, the exception may be handled by an except clause. If the exception is not handled by an except clause, the exception is re-raised after the finally clause has been executed.
@@ -272,24 +272,15 @@ class TestSpektakelTranslation(unittest.TestCase):
         #         --> Insbesondere müssen Nester aus Schleifen und (mehreren) Finallys getestet werden.
         raise NotImplementedError()
 
-    def test_for(self):
+    def test_async_failure(self):
         """
-        Tests for loops, including break and continue.
+        Tests the exception handling and cancellation for tasks and futures.
         """
-
-        # TODO: Here and in many of the following test cases, we will have to use an object's interface.
-        #       This cannot be done with terms only, because terms are functional, but many of the operations in
-        #       question have side effects. So we must use instructions. The only useful instruction is
-        #       the push instruction, which can be used to call double-underscore methods. Using them might make
-        #       certain terms obsolete, which is good.
-        #       The alternative would be to introduce additional instructions for the special methods, but this
-        #       bloats the instruction set and does not really have any advantages.
-
-        # TODO: Repeat all while test cases here.
-
-        # TODO: Specifically test the allocation of the loop variable as a cell. See closure test cases for inspiration.
-
+        # TODO: Futures can fail or be cancelled, which is a simple status change for them that should raise
+        #       certain exceptions for all stakeholders of the future.
+        # TODO: Tasks should, just like futures, also be able to raise exceptions or be cancelled!
         raise NotImplementedError()
+
 
     def test_tuples(self):
         """
@@ -309,6 +300,25 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and usage of dicts, including Projection expressions and "in" expressions, including
         assignment to projection expressions.
         """
+        raise NotImplementedError()
+
+    def test_for(self):
+        """
+        Tests for loops, including break and continue.
+        """
+
+        # TODO: Here and in many of the following test cases, we will have to use an object's interface.
+        #       This cannot be done with terms only, because terms are functional, but many of the operations in
+        #       question have side effects. So we must use instructions. The only useful instruction is
+        #       the push instruction, which can be used to call double-underscore methods. Using them might make
+        #       certain terms obsolete, which is good.
+        #       The alternative would be to introduce additional instructions for the special methods, but this
+        #       bloats the instruction set and does not really have any advantages.
+
+        # TODO: Repeat all while test cases here.
+
+        # TODO: Specifically test the allocation of the loop variable as a cell. See closure test cases for inspiration.
+
         raise NotImplementedError()
 
     def test_classes(self):
