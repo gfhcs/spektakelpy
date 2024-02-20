@@ -111,10 +111,6 @@ class TestSpektakelTranslation(unittest.TestCase):
         code = dedent(code)
         states, internal, external = self.translate_explore(code)
 
-        self.assertEqual(len(states), num_states)
-        self.assertEqual(len(internal), num_internal)
-        self.assertEqual(len(external), num_external)
-
         for s in states:
             for t in s.content.task_states:
                 if isinstance(t, StackState):
@@ -123,6 +119,10 @@ class TestSpektakelTranslation(unittest.TestCase):
                             raise t.exception.pexception
                         else:
                             raise t.exception
+
+        self.assertEqual(len(states), num_states)
+        self.assertEqual(len(internal), num_internal)
+        self.assertEqual(len(external), num_external)
 
         for vname, expected in expectation.items():
             found = states[-1].content.task_states[0].stack[-1][0][vname]
