@@ -44,6 +44,16 @@ await never()
 """: ((4, 2, 6), {"done": True}),
 
 """
+from interaction import next, never
+var done = False
+def foo():
+    await next()
+    done = True
+await async foo()
+await never()
+""": ((6, 4, 6), {"done": True}),
+
+"""
 from interaction import never
 
 var buffer = False
