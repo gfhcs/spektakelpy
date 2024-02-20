@@ -2,7 +2,7 @@ from engine.functional import terms
 from engine.functional.reference import ReturnValueReference, ExceptionReference, FrameReference, \
     AbsoluteFrameReference, CellReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    CTerm, Lookup, CString, CNone, Callable
+    CTerm, Lookup, CString, CNone, Callable, CInt
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.program import ProgramLocation
 from lang.translator import Translator
@@ -252,16 +252,16 @@ class Spektakel2Stack(Translator):
             r, = self.declare_pattern(chain, None, on_error)
             chain.append_update(TRef(r), terms.LoadAttrCase(v, node.name.name), on_error)
 
-            cgetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISGETTER, Read(TRef(r)))
+            cgetter = terms.Project(Read(TRef(r)), CInt(0))
 
             getter = Chain()
             successor = Chain()
             chain.append_guard({cgetter: getter, negate(cgetter): successor}, on_error)
 
-            v, getter = self.emit_call(getter, Read(TRef(r)), [], on_error)
+            v, getter = self.emit_call(getter, terms.Project(Read(TRef(r)), CInt(1)), [], on_error)
             getter.append_jump(successor)
 
-            return v, successor
+            return terms.Project(Read(TRef(r)), CInt(1)), successor
 
             # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
             #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation

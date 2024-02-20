@@ -466,7 +466,6 @@ class UnaryPredicate(Enum):
     ISCALLABLE = 0
     ISEXCEPTION = 1
     ISTERMINATED = 2
-    ISGETTER = 3
 
 
 class UnaryPredicateTerm(Term):
@@ -878,6 +877,9 @@ class LoadAttrCase(Term):
         2. The name was found and refers to a method. The term evaluates to the method.
         3. The name was found and refers to a class variable. The term evaluates to the value of that variable.
         4. The name was not found. The term evaluation raises an exception.
+
+    In case 0, a tuple (True, getter) is returned, and in cases 1, 2 and 3 a tuple (False, value) is returned.
+
     """
 
     def __init__(self, value, name):
@@ -921,11 +923,11 @@ class LoadAttrCase(Term):
         try:
             attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
             if isinstance(attr, int):
-                return value[attr]
+                return VTuple(VBool.true, value[attr])
             elif isinstance(attr, VProcedure):
-                return attr
+                return VTuple(VBool.false, attr)
             elif isinstance(attr, VProperty):
-                return attr.get_procedure
+                return VTuple(VBool.false, attr.get_procedure)
             else:
                 raise TypeError(type(attr))
         except KeyError:
