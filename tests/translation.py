@@ -16,6 +16,7 @@ from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.manboy import code as code_manboy
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
+from tests.samples_translation.diamond import code as code_diamond
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.whiles import samples as whiles
@@ -259,12 +260,18 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         self.examine_samples(tasks)
 
+    def test_async_diamond(self):
+        """
+        Tests if two counting tasks actually create a proper interleaving diamond. Also, this test case is an example
+        of an infinite computation in a finite state space.
+        """
+        self.examine_sample(code_diamond, 15, 11, 12)
+
     def test_async_producer_consumer(self):
         """
         Test a simple producer-consumer setup. This sample only works if concurrency is available.
         """
         self.examine_sample(code_producer_consumer, 14, 10, 12, consumed=321, buffer=None)
-
 
     def test_exceptions(self):
         """
