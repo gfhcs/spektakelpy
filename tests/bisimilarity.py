@@ -1,7 +1,7 @@
 import unittest
 
 from state_space.equivalence import reduce, reach_wbisim, reach_sbisim, reach_ocong, reach_cached, isomorphic
-from state_space.lts import State, LTS
+from state_space.lts import State, LTS, Transition
 
 
 class TestBisimilarity(unittest.TestCase):
@@ -36,11 +36,41 @@ class TestBisimilarity(unittest.TestCase):
             with self.subTest(type=r2s[id(reachable)]):
                 self.examine_example(lts_in, reachable, reduced_expected)
 
-    def test_minimal(self):
+    def test_minimal1(self):
         """
-        Tests reduction of the minimal LTS.
+        Tests reduction of a minimal LTS.
         """
 
         lts = LTS(State(None))
 
         self.examine_multiple(lts, (reach_wbisim, lts), (reach_sbisim, lts), (reach_ocong, lts))
+
+    def test_minimal2(self):
+        """
+        Tests reduction of a minimal LTS.
+        """
+
+        s0 = State(None)
+        s0.add_transition(Transition(None, s0))
+        lts1 = LTS(State(None))
+
+        lts2 = LTS(State(None))
+
+        self.examine_multiple(lts1, (reach_sbisim, lts1), (reach_ocong, lts1))
+
+
+    def test_small1(self):
+        """
+        Tests reduction of a small LTS.
+        """
+
+        s0, s1, s2 = [State(None) for _ in range(3)]
+        s0.add_transition(Transition(None, s1))
+        s1.add_transition(Transition("a", s2))
+        lts = LTS(s0)
+
+        s0, s1 = [State(None) for _ in range(2)]
+        s0.add_transition(Transition("a", s1))
+        reduced = LTS(s0)
+
+        self.examine_multiple(lts, (reach_wbisim, reduced), (reach_sbisim, lts), (reach_ocong, lts))
