@@ -193,7 +193,7 @@ def equivalence(reachable, *ltss):
 
 def reduce(lts, reachable):
     """
-    Computes the smallest LTS that is equivalent to the given one under the specified bisimilarity.
+    Computes a smaller LTS, that is equivalent to the given one under the specified bisimilarity.
     :param lts: The LTS that is to be reduced.
     :param reachable: A procedure that accepts a state and a transition label as arguments and enumerates all the states
                       that are considered 'reachable' from the given state, emulating the given transition label.
@@ -208,7 +208,7 @@ def reduce(lts, reachable):
     s2idx = {id(s): idx for idx, partition in enumerate(partitions) for s in partition}
 
     for state, partition in zip(states, partitions):
-        for label, tidx in {(t.label, s2idx[t.target]) for s in partition for t in s.transitions}:
+        for label, tidx in {(t.label, s2idx[id(t.target)]) for s in partition for t in s.transitions}:
             state.add_transition(Transition(label, states[tidx]))
 
     return LTS(states[s2idx[id(lts.initial)]])
