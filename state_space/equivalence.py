@@ -112,7 +112,7 @@ def refine(relation, reachable):
 
     # We randomize the order in which we iterate over sets, hoping to find good splitters more quickly:
     def permute(l):
-        return random.sample(l, k=len(relation))
+        return random.sample(l, k=len(l))
 
     s2p = {id(state): partition for partition in relation for state in partition}
 
@@ -164,16 +164,15 @@ def equivalence(reachable, *ltss):
              set into equivalence classes.
     """
 
+    # Create an initial partitioning, by state content:
     relation = dict()
-
     agenda = [lts.initial for lts in ltss]
     reached = set()
-
     while len(agenda) > 0:
         s = agenda.pop()
-        if s in reached:
+        if id(s) in reached:
             continue
-        reached.add(s)
+        reached.add(id(s))
 
         try:
             partition = relation[s.content]
@@ -182,6 +181,10 @@ def equivalence(reachable, *ltss):
             relation[s.content] = partition
 
         partition.append(s)
+
+        for t in s.transitions:
+            agenda.append(t.target)
+    del reached
 
     relation = list(relation.values())
     refine(relation, reachable)
@@ -208,7 +211,7 @@ def reduce(lts, reachable):
         for label, tidx in {(t.label, s2idx[t.target]) for s in partition for t in s.transitions}:
             state.add_transition(Transition(label, states[tidx]))
 
-    return LTS(states[s2idx[lts.initial]])
+    return LTS(states[s2idx[id(lts.initial)]])
 
 
 def isomorphic(lts1, lts2):
@@ -256,7 +259,7 @@ def isomorphic(lts1, lts2):
 
     for permutation in itertools.product(*pright):
         # Check if the bijection arising from this permutation fulfills the requirements of isomorphy:
-        bijection = {id(l): (l, r) for l, r in zip(left, itertools.chain(permutation))}
+        bijection = {id(l): (l, r) for l, r in zip(left, itertools.chain(*permutation))}
         try:
             for l, r in bijection.values():
                 if len(l.transitions) != len(r.transitions):
