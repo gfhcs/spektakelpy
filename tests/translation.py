@@ -1,6 +1,7 @@
 import unittest
 
-from engine.exploration import explore, state_space, schedule_nonzeno
+from engine.exploration import explore, schedule_nonzeno
+from state_space.lts import state_space
 from engine.functional.values import VNone, VCell, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -49,7 +50,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Computes the state space of the default machine for the given StackProgram.
         :param p: The StackProgram for which to explore the state space.
-        :param s0: The initial MachineState for the exploration. If this is omitted, self.initialize_machine will be called.
+        :param s0: The initial MachineState for the state_space. If this is omitted, self.initialize_machine will be called.
         :return: A tuple (lts, states, internal, external), where lts is an LTS, and states contains all the states
                  of this LTS, whereas 'internal' and 'external' contain all the internal transitions and interaction
                  transitions respectively.

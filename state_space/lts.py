@@ -142,3 +142,42 @@ def lts2str(lts):
 
                 output.write(tname)
                 agenda.append(t.target)
+
+
+def state_space(transitions):
+    """
+    Assembles a set of transitions into a labelled-transition-system.
+    :param transitions: An iterable of tuples (s, es), where es is an iterable of pairs (idx, s'), where idx is the index
+     of the task in s the execution of which transforms s into s'. es comprises *all* pairs with this property.
+    :return: An LTS object. The initial state of this LTS will be the origin of the very first transition enumerated
+    in 'transitions'.
+    """
+
+    states = {}
+    s0 = None
+
+    for s, es in transitions:
+        try:
+            origin = states[s]
+        except KeyError:
+            origin = State(s)
+            states[s] = origin
+            if s0 is None:
+                s0 = origin
+
+        for idx, t in es:
+            try:
+                destination = states[t]
+            except KeyError:
+                destination = State(t)
+                states[t] = destination
+
+            origin.add_transition(Transition(idx, destination))
+
+    # We're doing it here because not all states might be enumerated as origins (i.e. if they don't have outgoing
+    # transitions).
+    for s in states.values():
+        s.seal()
+
+    assert s0 is not None
+    return LTS(s0)
