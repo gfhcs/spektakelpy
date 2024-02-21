@@ -1,3 +1,4 @@
+import itertools
 import random
 
 from state_space.lts import LTS, State, Transition
@@ -149,21 +150,23 @@ def refine(relation, reachable):
             return
 
 
-def equivalence(lts, reachable):
+def equivalence(reachable, *ltss):
     """
-    Computes the equivalence relation on the states of an LTS that is a bisimulation according
+    Computes the equivalence relation on the states of multiple LTSs that is a bisimulation according
     to the given reachability predicate.
     This procedure does take state content into account!
-    :param lts: An LTS.
+    :param ltss: A number of LTSs.
     :param reachable: A procedure that accepts a state and a transition label as arguments and enumerates all the states
                       that are considered 'reachable' from the given state, emulating the given transition label.
                       It is up to the caller to decide on the exact meaning of "emulating". The caller can use this
                       parameter to select strong bisimilarity, observational congruence, or weak bisimilarity.
+    :return: A list of lists of states, encoding a partitioning of the set of all states in all LTSs
+             set into equivalence classes.
     """
 
     relation = dict()
 
-    agenda = [lts.initial]
+    agenda = [lts.initial for lts in ltss]
     reached = set()
 
     while len(agenda) > 0:
@@ -196,7 +199,7 @@ def reduce(lts, reachable):
     :return: An LTS.
     """
 
-    partitions = equivalence(lts, reachable)
+    partitions = equivalence(reachable, lts)
     states = [State(p[0].content) for p in partitions]
 
     s2idx = {id(s): idx for idx, partition in enumerate(partitions) for s in partition}
@@ -206,3 +209,64 @@ def reduce(lts, reachable):
             state.add_transition(Transition(label, states[tidx]))
 
     return LTS(states[s2idx[lts.initial]])
+
+
+def isomorphic(lts1, lts2):
+
+    # First traverse both LTS's, collecting all states and counting transitions:
+    states, nts = [], []
+    for lts in (lts1, lts2):
+        agenda = [lts.initial]
+        reached = set()
+        num_transitions = 0
+        while len(agenda) > 0:
+            s = agenda.pop()
+            if s in reached:
+                continue
+            reached.add(id(s))
+            num_transitions += len(s.transitions)
+            agenda.extend((t.target for t in s.transitions))
+        states.append(reached)
+        nts.append(num_transitions)
+
+    states1, states2 = states
+    num_transitions1, num_transitions2 = nts
+    if len(states1) != len(states2) or num_transitions1 != num_transitions2:
+        return False
+    del states, nts, num_transitions1, num_transitions2
+
+    # Now get a strong bisimilarity relation as a start:
+    relation = equivalence(reach_sbisim, lts1, lts2)
+
+    # We now enumerate all possible ways of refining the relation into a bijection between the LTSs:
+    left, pright = [], []
+    for partition in relation:
+        p1, p2 = [], []
+        for s in partition:
+            (p1 if id(s) in states1 else p2).append(s)
+        if len(p1) != len(p2):
+            # Gereon suspects that if this case never arises, we can already safely conclude that the LTSs are
+            # in fact isomorphic, i.e. that there must be *some* bijection that works.
+            return False
+        left.extend(p1)
+        pright.append(itertools.permutations(p2))
+
+    class InvalidBijection(Exception):
+        pass
+
+    for permutation in itertools.product(*pright):
+        # Check if the bijection arising from this permutation fulfills the requirements of isomorphy:
+        bijection = {id(l): (l, r) for l, r in zip(left, itertools.chain(permutation))}
+        try:
+            for l, r in bijection.values():
+                if len(l.transitions) != len(r.transitions):
+                    raise InvalidBijection()
+                for tl in l.transitions:
+                    if not any(tl.label == tr.label and bijection[id(tl.target)][1] is tr.target for tr in r.transitions):
+                        raise InvalidBijection()
+        except InvalidBijection:
+            continue
+        else:
+            return True
+
+    return False
