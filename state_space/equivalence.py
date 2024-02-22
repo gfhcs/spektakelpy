@@ -38,9 +38,9 @@ def reach_wbisim(state, label):
     while len(agenda) > 0:
         s, seen_label = agenda.pop()
 
-        if s in reached:
+        if (s, seen_label) in reached:
             continue
-        reached.add(s)
+        reached.add((s, seen_label))
 
         if label is None or seen_label:
             yield s
