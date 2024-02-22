@@ -295,6 +295,75 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         self.examine_sample(code_producer_consumer, 14, 10, 12, consumed=321, buffer=None)
 
+    def test_async_pseuco_twofirecracker(self):
+        """
+        A spek implementation of the "TwoFireCracker" example from pseuco.com.
+        The CCS code is:
+
+            Match := strike?. MatchOnFire
+            MatchOnFire := light!. MatchOnFire + extinguish!.0
+            TwoFireCracker := light?. (bang!. 0 | bang!. 0)
+
+            (Match | TwoFireCracker) \ {light} // this is the initial process
+
+        """
+
+        # TODO: Have one more meaningful interaction in the 'interactions' package, such that we can alias
+        #       the interactions as the code sample does.
+
+        # TODO: Explore the state space of the sample. For each edge, check the identity of the task that caused it
+        #       and adjust the label.
+
+        # TODO: Examine the following test sample and make sure that its state space is bisimilar to
+        #       the one that pseuco.com produces (see bisimilarity test suite).
+
+        raise NotImplementedError()
+
+        """       
+        from interactions import next, prev, tick, somoetherinteraction
+        
+        var strike, bang, extinguish, go_on = next, prev, tick, somoetherinteraction
+        
+        var laf, lpf = future(), future()
+        
+        def light_active():
+            laf.result = True
+            await lpf
+            lpf = future()
+            
+        def light_passive():
+            await laf
+            lpf.result = True
+            laf = future()
+            
+        def choice(a, b):
+            var f = future()
+            def wait(x, value):
+                await x()
+                if not f.done:
+                    f.result = value  
+            async wait(a, True)
+            async wait(b, False)            
+            return f
+        
+        def match():        
+            await strike()
+            while await choice(go_on, extinguish):
+                await async light_active()
+            
+        def two_firecracker():
+            await async light_passive()
+            await bang()
+            await bang()
+                
+        var m = async match()
+        var c = async two_firecracker()
+        
+        await m
+        await c
+
+        """
+
     def test_exceptions(self):
         """
         Test creation, raising and handling of exceptions, i.e. the constructors of exception types, Raise statements,
