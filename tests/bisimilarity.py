@@ -1,6 +1,6 @@
 import unittest
 
-from state_space.equivalence import reduce, reach_wbisim, reach_sbisim, reach_ocong, reach_cached, isomorphic
+from state_space.equivalence import reduce, reach_wbisim, reach_sbisim, reach_ocong, reach_cached, isomorphic, bisimilar
 from state_space.lts import State, LTS, Transition
 
 
@@ -22,6 +22,7 @@ class TestBisimilarity(unittest.TestCase):
         """
 
         lts_out = reduce(lts_in, reach_cached(reachable), remove_internal_loops=remove_internal_loops)
+        self.assertTrue(bisimilar(lts_in, reduced_expected))
         self.assertTrue(isomorphic(lts_out, reduced_expected))
 
     def examine_multiple(self, lts_in, *r2e):

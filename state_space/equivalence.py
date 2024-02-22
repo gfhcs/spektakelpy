@@ -207,6 +207,26 @@ def bisimulation(reachable, *ltss):
     return relation
 
 
+def bisimilar(reachable, *ltss):
+    """
+    Decides if a number of LTSs are pairwise bisimilar to each other.
+    This procedure does take state content into account!
+    :param ltss: A number of LTSs.
+    :param reachable: A procedure that accepts a state and a transition label as arguments and enumerates all the states
+                      that are considered 'reachable' from the given state, emulating the given transition label.
+                      It is up to the caller to decide on the exact meaning of "emulating". The caller can use this
+                      parameter to select strong bisimilarity, observational congruence, or weak bisimilarity.
+    :return: A boolean value indicating if the LTSs are pairwise bisimilar.
+    """
+
+    try:
+        bisimulation(reachable, *ltss)
+    except BisimulationError:
+        return False
+    else:
+        return True
+
+
 def reduce(lts, reachable, remove_internal_loops=False):
     """
     Computes a smaller LTS, that is equivalent to the given one under the specified bisimilarity.
@@ -233,8 +253,6 @@ def reduce(lts, reachable, remove_internal_loops=False):
     return LTS(states[s2idx[lts.initial]].seal())
 
 
-# TODO: The test suite should *test* isomorphic, but not use it to inspect results,
-#  as it is building on the thing we want to test!
 def isomorphic(lts1, lts2):
 
     # First traverse both LTS's, collecting all states and counting transitions:
