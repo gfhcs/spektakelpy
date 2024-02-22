@@ -167,7 +167,20 @@ class TestBisimilarity(unittest.TestCase):
         s0.add_transition(Transition(None, s0))
         lts2 = LTS(s0.seal())
 
+        s0, = [State(None) for _ in range(1)]
+        s0.add_transition(Transition("a", s0))
+        lts3 = LTS(s0.seal())
+
+        s0, s1 = [State(None) for _ in range(2)]
+        s0.add_transition(Transition(None, s1))
+        s1.add_transition(Transition("a", s0))
+        s1.add_transition(Transition(None, s0))
+        lts4 = LTS(s0.seal())
+
         self.examine_multiple(lts1,
-                              (reach_wbisim, lts2, True),
+                              (reach_wbisim, lts3, True),
                               (reach_sbisim, lts2, False),
-                              (reach_ocong, lts2, True))
+                              (reach_ocong, lts2, False)
+                              )
+
+        self.examine_multiple(lts4, (reach_ocong, lts2, True))
