@@ -112,3 +112,23 @@ class TestBisimilarity(unittest.TestCase):
                               (reach_wbisim, lts2, False),
                               (reach_sbisim, lts2, False),
                               (reach_ocong, lts2, False))
+
+    def test_small3(self):
+        """
+        Tests reduction of a small LTS.
+        """
+
+        s0, s1, s2 = [State(None) for _ in range(3)]
+        s0.add_transition(Transition("a", s1))
+        s0.add_transition(Transition("b", s2))
+        lts1 = LTS(s0.seal())
+
+        s0, s1 = [State(None) for _ in range(2)]
+        s0.add_transition(Transition("a", s1))
+        s0.add_transition(Transition("b", s1))
+        lts2 = LTS(s0.seal())
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, True),
+                              (reach_ocong, lts2, True))
