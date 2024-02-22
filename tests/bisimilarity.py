@@ -44,7 +44,7 @@ class TestBisimilarity(unittest.TestCase):
         Tests reduction of a minimal LTS.
         """
 
-        lts = LTS(State(None))
+        lts = LTS(State(None).seal())
 
         self.examine_multiple(lts, (reach_wbisim, True, lts), (reach_sbisim, False, lts), (reach_ocong, False, lts))
 
@@ -55,9 +55,9 @@ class TestBisimilarity(unittest.TestCase):
 
         s0 = State(None)
         s0.add_transition(Transition(None, s0))
-        lts1 = LTS(State(None))
+        lts1 = LTS(s0.seal())
 
-        lts2 = LTS(State(None))
+        lts2 = LTS(State(None).seal())
 
         self.examine_multiple(lts1, (reach_sbisim, False, lts1), (reach_ocong, False, lts1))
 
@@ -69,10 +69,10 @@ class TestBisimilarity(unittest.TestCase):
         s0, s1, s2 = [State(None) for _ in range(3)]
         s0.add_transition(Transition(None, s1))
         s1.add_transition(Transition("a", s2))
-        lts = LTS(s0)
+        lts = LTS(s0.seal())
 
         s0, s1 = [State(None) for _ in range(2)]
         s0.add_transition(Transition("a", s1))
-        reduced = LTS(s0)
+        reduced = LTS(s0.seal())
 
         self.examine_multiple(lts, (reach_wbisim, True, reduced), (reach_sbisim, False, lts), (reach_ocong, False, lts))

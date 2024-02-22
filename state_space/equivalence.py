@@ -38,9 +38,9 @@ def reach_wbisim(state, label):
     while len(agenda) > 0:
         s, seen_label = agenda.pop()
 
-        if id(s) in reached:
+        if s in reached:
             continue
-        reached.add(id(s))
+        reached.add(s)
 
         if label is None or seen_label:
             yield s
@@ -83,7 +83,7 @@ def reach_cached(reachable):
     cache = dict()
 
     def cached(state, label):
-        key = (id(state), label)
+        key = (state, label)
         try:
             return cache[key]
         except KeyError:
@@ -114,9 +114,7 @@ def refine(relation, reachable):
     def permute(l):
         return random.sample(l, k=len(l))
 
-    # TODO: Implement equality on states as reference identity! This simplifies the bisimilarity code!
-
-    s2p = {id(state): partition for partition in relation for state in partition}
+    s2p = {state: partition for partition in relation for state in partition}
 
     while True:
         try:
@@ -127,11 +125,11 @@ def refine(relation, reachable):
                     assert isinstance(s, State)
                     for t in permute(s.transitions):
                         assert isinstance(t, Transition)
-                        pt = s2p[id(t.target)]
+                        pt = s2p[t.target]
                         pos, neg = [], []
 
                         for ss in permute(p):
-                            if any((s2p[id(tt)] is pt) for tt in reachable(ss, t.label)):
+                            if any((s2p[tt] is pt) for tt in reachable(ss, t.label)):
                                 pos.append(ss)
                             else:
                                 neg.append(ss)
@@ -141,9 +139,9 @@ def refine(relation, reachable):
                             relation.insert(pidx, neg)
                             relation.insert(pidx, pos)
                             for state in pos:
-                                s2p[id(state)] = pos
+                                s2p[state] = pos
                             for state in neg:
-                                s2p[id(state)] = neg
+                                s2p[state] = neg
                             raise RefinedException()
 
             # TODO: Have this procedure *yield* every time a partition gets split! This is useful for callers who might want to stop early!
@@ -177,9 +175,9 @@ def equivalence(reachable, *ltss):
     reached = set()
     while len(agenda) > 0:
         s = agenda.pop()
-        if id(s) in reached:
+        if s in reached:
             continue
-        reached.add(id(s))
+        reached.add(s)
 
         try:
             partition = relation[s.content]
@@ -217,14 +215,14 @@ def reduce(lts, reachable, remove_internal_loops=False):
     partitions = equivalence(reachable, lts)
     states = [State(p[0].content) for p in partitions]
 
-    s2idx = {id(s): idx for idx, partition in enumerate(partitions) for s in partition}
+    s2idx = {s: idx for idx, partition in enumerate(partitions) for s in partition}
 
     for state, partition in zip(states, partitions):
-        for label, tidx in {(t.label, s2idx[id(t.target)]) for s in partition for t in s.transitions}:
+        for label, tidx in {(t.label, s2idx[t.target]) for s in partition for t in s.transitions}:
             if not (remove_internal_loops and state is states[tidx]):
                 state.add_transition(Transition(label, states[tidx]))
 
-    return LTS(states[s2idx[id(lts.initial)]])
+    return LTS(states[s2idx[lts.initial]].seal())
 
 
 # TODO: The test suite should *test* isomorphic, but not use it to inspect results,
@@ -239,9 +237,9 @@ def isomorphic(lts1, lts2):
         num_transitions = 0
         while len(agenda) > 0:
             s = agenda.pop()
-            if id(s) in reached:
+            if s in reached:
                 continue
-            reached.add(id(s))
+            reached.add(s)
             num_transitions += len(s.transitions)
             agenda.extend((t.target for t in s.transitions))
         states.append(reached)
@@ -261,7 +259,7 @@ def isomorphic(lts1, lts2):
     for partition in relation:
         p1, p2 = [], []
         for s in partition:
-            (p1 if id(s) in states1 else p2).append(s)
+            (p1 if s in states1 else p2).append(s)
         if len(p1) != len(p2):
             # Gereon suspects that if this case never arises, we can already safely conclude that the LTSs are
             # in fact isomorphic, i.e. that there must be *some* bijection that works.
@@ -274,13 +272,13 @@ def isomorphic(lts1, lts2):
 
     for permutation in itertools.product(*pright):
         # Check if the bijection arising from this permutation fulfills the requirements of isomorphy:
-        bijection = {id(l): (l, r) for l, r in zip(left, itertools.chain(*permutation))}
+        bijection = {l: (l, r) for l, r in zip(left, itertools.chain(*permutation))}
         try:
             for l, r in bijection.values():
                 if len(l.transitions) != len(r.transitions):
                     raise InvalidBijection()
                 for tl in l.transitions:
-                    if not any(tl.label == tr.label and bijection[id(tl.target)][1] is tr.target for tr in r.transitions):
+                    if not any(tl.label == tr.label and bijection[tl.target][1] is tr.target for tr in r.transitions):
                         raise InvalidBijection()
         except InvalidBijection:
             continue

@@ -1,9 +1,13 @@
 from util import check_type
+from util.immutable import Sealable, Immutable, check_sealed
 
 
-class State:
+class State(Sealable):
     """
     A state in a labelled transition system.
+    The equality of states is *reference* equality, i.e. even though two State instance may have the same content,
+    they will still not be considered equal. If the content of a State is Sealable, the Sealable members of the State
+    will take that into account.
     """
 
     def __init__(self, content):
@@ -11,23 +15,47 @@ class State:
         Creates a new LTS state.
         :param content: An object with which this state should be decorated.
         """
+        super().__init__()
         self._content = content
         self._transitions = []
+
+    def hash(self):
+        return id(self)
+
+    def equals(self, other):
+        return self is other
+
+    def _seal(self):
+        if isinstance(self._content, Sealable):
+            self._content.seal()
+        self._transitions = tuple(t.seal() for t in self._transitions)
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = State(self._content)
+            clones[id(self)] = c
+            if isinstance(self._content, Sealable):
+                c._content = self._content.clone_unsealed(clones=clones)
+            c._transitions = [t.clone_unsealed(clones=clones) for t in self._transitions]
+            return c
 
     def add_transition(self, t):
         """
         Adds a transition from this state to some other state.
         :param t: The transition to add.
+        :return: A bool indicating if the given transition was actually added to the state (True), or already present
+                 before (False).
         """
         if not isinstance(self._transitions, list):
             raise RuntimeError("This state has already been sealed and can therefor not be extended by more transitions!")
+        if t in self._transitions:
+            return False
         self._transitions.append(check_type(t, Transition))
-
-    def seal(self):
-        """
-        Makes this state immutable, i.e. prevents the addition of transitions originating from it.
-        """
-        self._transitions = tuple(self._transitions)
+        return True
 
     @property
     def content(self):
@@ -45,18 +73,47 @@ class State:
         return tuple(self._transitions)
 
 
-class Transition:
+class Transition(Sealable):
     """
     A directed, labelled edge leading into a target state in a labelled transition system.
+    Equality of Trnasitions is implemented as equality of componentes, i.e. two Transitions objects will be considered
+    equal if and only if their labels and target states match (the latter are implemented via Reference quality!).
+    If the label of a Transition is Sealable, the Sealable members of the Transition will take that into account.
     """
+
     def __init__(self, label, target):
         """
         Creates a new transition
         :param label: An object that labels this edge.
         :param target: The state this edge leads into.
         """
+        super().__init__()
         self._label = label
         self._target = check_type(target, State)
+
+    def hash(self):
+        return hash(self._target, self._label)
+
+    def equals(self, other):
+        return isinstance(other, Transition) and (self._target, self._label) == (other._target, other._label)
+
+    def _seal(self):
+        self._target.seal()
+        if isinstance(self._label, Sealable):
+            self._label.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = Transition(self._label, self._target)
+            clones[id(self)] = c
+            if isinstance(self._label, Sealable):
+                c._label = self._label.clone_unsealed(clones=clones)
+            c._target = self._target.clone_unsealed(clones=clones)
+            return c
 
     @property
     def label(self):
@@ -73,7 +130,7 @@ class Transition:
         return self._target
 
 
-class LTS:
+class LTS(Immutable):
     """
     An object of this type represents a "labelled transition system", i.e. a set of states that are interconnected by
     directed edges with labels.
@@ -86,7 +143,13 @@ class LTS:
         """
 
         super().__init__()
-        self._s0 = s0
+        self._s0 = check_sealed(s0)
+
+    def hash(self):
+        return hash(self._s0)
+
+    def equals(self, other):
+        return isinstance(other, LTS) and self._s0 == other._s0
 
     @property
     def initial(self):
