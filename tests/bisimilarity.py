@@ -59,7 +59,7 @@ class TestBisimilarity(unittest.TestCase):
 
         lts2 = LTS(State(None).seal())
 
-        self.examine_multiple(lts1, (reach_sbisim, False, lts1), (reach_ocong, False, lts1))
+        self.examine_multiple(lts1, (reach_wbisim, True, lts2), (reach_sbisim, False, lts1), (reach_ocong, False, lts1))
 
     def test_small1(self):
         """
