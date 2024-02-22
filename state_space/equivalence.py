@@ -175,8 +175,6 @@ def bisimulation(reachable, *ltss):
              set into equivalence classes.
     """
 
-    # TODO: Factor out an iterator over all the states of an LTS and use it everywhere!
-
     # Create an initial partitioning, by state content:
     relation = dict()
     agenda = [(idx, lts.initial) for idx, lts in enumerate(ltss)]
