@@ -38,9 +38,9 @@ def reach_wbisim(state, label):
     while len(agenda) > 0:
         s, seen_label = agenda.pop()
 
-        if s in reached:
+        if id(s) in reached:
             continue
-        reached.add(s)
+        reached.add(id(s))
 
         if label is None or seen_label:
             yield s
@@ -224,7 +224,7 @@ def isomorphic(lts1, lts2):
         num_transitions = 0
         while len(agenda) > 0:
             s = agenda.pop()
-            if s in reached:
+            if id(s) in reached:
                 continue
             reached.add(id(s))
             num_transitions += len(s.transitions)
