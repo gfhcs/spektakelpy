@@ -75,4 +75,4 @@ class TestBisimilarity(unittest.TestCase):
         s0.add_transition(Transition("a", s1))
         reduced = LTS(s0)
 
-        self.examine_multiple(lts, (reach_wbisim, True, lts), (reach_sbisim, False, lts), (reach_ocong, False, lts))
+        self.examine_multiple(lts, (reach_wbisim, True, reduced), (reach_sbisim, False, lts), (reach_ocong, False, lts))
