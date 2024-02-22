@@ -105,6 +105,9 @@ def refine(relation, reachable):
                       that are considered 'reachable' from the given state, emulating the given transition label.
                       It is up to the caller to decide on the exact meaning of "emulating". The caller can use this
                       parameter to select strong bisimilarity, observational congruence, or weak bisimilarity.
+    :return: A generator. Every time a partition of states is split, this generator enumerates the pair of
+             subpartitions that resulted from the split. The caller may decide to stop querying the generator after
+             a split, in which case no further splits will be conducted.
     """
 
     class RefinedException(Exception):
@@ -142,14 +145,20 @@ def refine(relation, reachable):
                                 s2p[state] = pos
                             for state in neg:
                                 s2p[state] = neg
+                            yield pos, neg
                             raise RefinedException()
-
-            # TODO: Have this procedure *yield* every time a partition gets split! This is useful for callers who might want to stop early!
 
         except RefinedException:
             continue
         else:
             return
+
+
+class BisimulationError(Exception):
+    """
+    An error that is raised when an attempt to construct a bisimulation fails.
+    """
+    pass
 
 
 def bisimulation(reachable, *ltss):
@@ -170,13 +179,13 @@ def bisimulation(reachable, *ltss):
 
     # Create an initial partitioning, by state content:
     relation = dict()
-    agenda = [lts.initial for lts in ltss]
-    reached = set()
+    agenda = [(idx, lts.initial) for idx, lts in enumerate(ltss)]
+    states = dict()
     while len(agenda) > 0:
-        s = agenda.pop()
-        if s in reached:
+        idx, s = agenda.pop()
+        if s in states:
             continue
-        reached.add(s)
+        states[s] = idx
 
         try:
             partition = relation[s.content]
@@ -187,14 +196,16 @@ def bisimulation(reachable, *ltss):
         partition.append(s)
 
         for t in s.transitions:
-            agenda.append(t.target)
-    del reached
+            agenda.append((idx, t.target))
 
     relation = list(relation.values())
-    refine(relation, reachable)
-    # TODO: After every subdivision that is yielded by 'refine' (see TODO above),
-    # check if one of the given LTS is missing in that subdivision. If so, raise an exception
-    # indicating that there is no equivalence relation.
+    # Iteratively refine the partitioning:
+    for new_partitions in refine(relation, reachable):
+        # If one of the new partitions does not contain states from *all* LTSs, there can be no bisimulation:
+        for p in new_partitions:
+            if len(p) < len(ltss) or len(set(states[s] for s in p)) < len(ltss):
+                raise BisimulationError("No bisimulation exists for the given LTSs!")
+
     return relation
 
 
