@@ -252,3 +252,51 @@ class TestBisimilarity(unittest.TestCase):
             self.assertTrue(isomorphic(lts1, lts2))
             self.assertTrue(isomorphic(lts2, lts1))
             self.assertTrue(isomorphic(lts2, lts2))
+
+    def test_tau_maze(self):
+        """
+        Tests the reduction of a large made of tau transitions.
+        """
+
+        def connect(sa, sb):
+            sa.add_transition(Transition(None, sb))
+
+        s0, s1, s2, s3, s4, s5, s6, s7, s8, s9 = [State(None) for _ in range(10)]
+        s6.add_transition(Transition("a", s3))
+        connect(s0, s1)
+        connect(s1, s2)
+        connect(s1, s3)
+        connect(s1, s4)
+        connect(s4, s2)
+        connect(s5, s5)
+        connect(s4, s1)
+        connect(s3, s6)
+        connect(s5, s3)
+        connect(s9, s8)
+        connect(s2, s8)
+        connect(s8, s9)
+        connect(s7, s8)
+        connect(s7, s2)
+        connect(s7, s5)
+        connect(s1, s7)
+        connect(s4, s5)
+        connect(s9, s7)
+        connect(s6, s6)
+
+        lts1 = LTS(s0.seal())
+
+        s0, = [State(None) for _ in range(1)]
+        s0.add_transition(Transition("a", s0))
+        lts2 = LTS(s0.seal())
+
+        s0, = [State(None) for _ in range(1)]
+        s0.add_transition(Transition("a", s0))
+        s0.add_transition(Transition(None, s0))
+        lts3 = LTS(s0.seal())
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, False),
+                              (reach_ocong, lts2, False),
+                              (reach_ocong, lts3, True)
+                              )
