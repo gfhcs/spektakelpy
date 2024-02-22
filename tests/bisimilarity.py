@@ -213,3 +213,36 @@ class TestBisimilarity(unittest.TestCase):
                               (reach_ocong, lts2, False),
                               (reach_ocong, lts3, False)
                               )
+
+    def test_isomorphy(self):
+        """
+        Tests reduction of a small LTS. This test case is made for emphasizing on the correctness of isomorphy:
+        The isomorphy bijection is one of many possible bijections between state spaces.
+        """
+
+        s0, s1, s2, s3, s4, s5 = [State(None) for _ in range(6)]
+        s0.add_transition(Transition(None, s1))
+        s0.add_transition(Transition(None, s2))
+        s1.add_transition(Transition(None, s3))
+        s2.add_transition(Transition(None, s4))
+        s3.add_transition(Transition(None, s5))
+        s4.add_transition(Transition(None, s5))
+        lts1 = LTS(s0.seal())
+
+        s0, s1, s2, s3, s4, s5 = [State(None) for _ in range(6)]
+        s0.add_transition(Transition(None, s1))
+        s0.add_transition(Transition(None, s2))
+        s1.add_transition(Transition(None, s4))
+        s2.add_transition(Transition(None, s3))
+        s3.add_transition(Transition(None, s5))
+        s4.add_transition(Transition(None, s5))
+        lts2 = LTS(s0.seal())
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, lts1, True),
+                              (reach_sbisim, lts1, True),
+                              (reach_ocong, lts1, True),
+                              (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, True),
+                              (reach_ocong, lts2, True),
+                              )
