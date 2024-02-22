@@ -152,10 +152,9 @@ def refine(relation, reachable):
             return
 
 
-# TODO: Rename 'equivalence' to 'bisimulation'.
-def equivalence(reachable, *ltss):
+def bisimulation(reachable, *ltss):
     """
-    Computes the equivalence relation on the states of multiple LTSs that is a bisimulation according
+    Computes the coarsest equivalence relation on the states of multiple LTSs that is a bisimulation according
     to the given reachability predicate.
     This procedure does take state content into account!
     :param ltss: A number of LTSs.
@@ -212,7 +211,7 @@ def reduce(lts, reachable, remove_internal_loops=False):
     :return: An LTS.
     """
 
-    partitions = equivalence(reachable, lts)
+    partitions = bisimulation(reachable, lts)
     states = [State(p[0].content) for p in partitions]
 
     s2idx = {s: idx for idx, partition in enumerate(partitions) for s in partition}
@@ -252,7 +251,7 @@ def isomorphic(lts1, lts2):
     del states, nts, num_transitions1, num_transitions2
 
     # Now get a strong bisimilarity relation as a start:
-    relation = equivalence(reach_sbisim, lts1, lts2)
+    relation = bisimulation(reach_sbisim, lts1, lts2)
 
     # We now enumerate all possible ways of refining the relation into a bijection between the LTSs:
     left, pright = [], []
