@@ -247,7 +247,7 @@ def reduce(lts, reachable, remove_internal_loops=False):
 
     for state, partition in zip(states, partitions):
         for label, tidx in {(t.label, s2idx[t.target]) for s in partition for t in s.transitions}:
-            if not (remove_internal_loops and state is states[tidx]):
+            if not (remove_internal_loops and label is None and state is states[tidx]):
                 state.add_transition(Transition(label, states[tidx]))
 
     return LTS(states[s2idx[lts.initial]].seal())
@@ -270,6 +270,7 @@ def isomorphic(lts1, lts2):
             agenda.extend((t.target for t in s.transitions))
         states.append(reached)
         nts.append(num_transitions)
+        del agenda, reached, num_transitions
 
     states1, states2 = states
     num_transitions1, num_transitions2 = nts
