@@ -178,12 +178,18 @@ def bisimulation(reachable, *ltss):
     # Create an initial partitioning, by state content:
     relation = dict()
     agenda = [(idx, lts.initial) for idx, lts in enumerate(ltss)]
-    states = dict()
+    owners = dict()
     while len(agenda) > 0:
         idx, s = agenda.pop()
-        if s in states:
+
+        try:
+            os = owners[s]
+        except KeyError:
+            os = []
+            owners[s] = os
+        if idx in os:
             continue
-        states[s] = idx
+        os.append(idx)
 
         try:
             partition = relation[s.content]
@@ -198,10 +204,10 @@ def bisimulation(reachable, *ltss):
 
     relation = list(relation.values())
     # Iteratively refine the partitioning:
-    for new_partitions in refine(relation, reachable):
+    for new_partitions in itertools.chain([relation], refine(relation, reachable)):
         # If one of the new partitions does not contain states from *all* LTSs, there can be no bisimulation:
         for p in new_partitions:
-            if len(p) < len(ltss) or len(set(states[s] for s in p)) < len(ltss):
+            if len(set(idx for s in p for idx in owners[s])) < len(ltss):
                 raise BisimulationError("No bisimulation exists for the given LTSs!")
 
     return relation
