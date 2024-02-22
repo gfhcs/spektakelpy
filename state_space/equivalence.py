@@ -114,6 +114,8 @@ def refine(relation, reachable):
     def permute(l):
         return random.sample(l, k=len(l))
 
+    # TODO: Implement equality on states as reference identity! This simplifies the bisimilarity code!
+
     s2p = {id(state): partition for partition in relation for state in partition}
 
     while True:
@@ -144,12 +146,15 @@ def refine(relation, reachable):
                                 s2p[id(state)] = neg
                             raise RefinedException()
 
+            # TODO: Have this procedure *yield* every time a partition gets split! This is useful for callers who might want to stop early!
+
         except RefinedException:
             continue
         else:
             return
 
 
+# TODO: Rename 'equivalence' to 'bisimulation'.
 def equivalence(reachable, *ltss):
     """
     Computes the equivalence relation on the states of multiple LTSs that is a bisimulation according
@@ -163,6 +168,8 @@ def equivalence(reachable, *ltss):
     :return: A list of lists of states, encoding a partitioning of the set of all states in all LTSs
              set into equivalence classes.
     """
+
+    # TODO: Factor out an iterator over all the states of an LTS and use it everywhere!
 
     # Create an initial partitioning, by state content:
     relation = dict()
@@ -188,6 +195,9 @@ def equivalence(reachable, *ltss):
 
     relation = list(relation.values())
     refine(relation, reachable)
+    # TODO: After every subdivision that is yielded by 'refine' (see TODO above),
+    # check if one of the given LTS is missing in that subdivision. If so, raise an exception
+    # indicating that there is no equivalence relation.
     return relation
 
 
@@ -214,6 +224,8 @@ def reduce(lts, reachable):
     return LTS(states[s2idx[id(lts.initial)]])
 
 
+# TODO: The test suite should *test* isomorphic, but not use it to inspect results,
+#  as it is building on the thing we want to test!
 def isomorphic(lts1, lts2):
 
     # First traverse both LTS's, collecting all states and counting transitions:
