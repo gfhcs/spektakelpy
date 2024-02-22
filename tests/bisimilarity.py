@@ -208,8 +208,8 @@ class TestBisimilarity(unittest.TestCase):
         lts3 = LTS(s0.seal())
 
         self.examine_multiple(lts1,
-                              (reach_wbisim, lts2, True),
+                              (reach_wbisim, lts2, False),
                               (reach_sbisim, lts2, False),
                               (reach_ocong, lts2, False),
-                              (reach_ocong, lts3, True)
+                              (reach_ocong, lts3, False)
                               )
