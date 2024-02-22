@@ -266,6 +266,27 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests if two counting tasks actually create a proper interleaving diamond. Also, this test case is an example
         of an infinite computation in a finite state space.
         """
+
+        # Actually, based on sketching out the state space on paper, I would expect 15 states, 11 internal transitions
+        # and 12 external transitions.
+        # However, the state space turns out to be considerably larger. This might of course be due to a bug.
+        # But just as well it can be explained by the code generation allocating local variables, such as for
+        # the await expressions, that are 'None' in a first iteration will briefly be used and are then actually dead,
+        # but nevertheless *keep* their new, now useless values, until they are written in a subsequent iteration.
+        # This means: Code generation creates local variables with a short liveness period. These not only make states
+        # themselves larger, but also prevent states from comparing equal, because these variables retain different
+        # values while they are not live anymore. We should NOT fix this problem in code generation, because that
+        # would be difficult to program, make the translation code a lot more complex and at the end of the day would
+        # not anyway not catch all cases of such variables. Instead, one should implement a combination of
+        # SCCP and liveness analysis, on the basis of SSA form. Getting out of SSA during register allocation would
+        # then make sure that we use a minimal number of local variables, reusing dead stack frame slots, or at least
+        # overwriting them with None.
+        # Since we did not want to open the can labelled "Static analysis and transformation" at an early stage of
+        # development (i.e. before event the language translation was fully tested for correctness, and thus
+        # before we could verify that this problem even has a significant impact in practise), we have started to use
+        # bisimilarity tests here, which, despite state spaces having hard-to-predict shapes, verify that *behavior*
+        # is equivalent to what we expect.
+
         self.examine_sample(code_diamond, 15, 11, 12)
 
     def test_async_producer_consumer(self):
