@@ -9,36 +9,45 @@ class TestBisimilarity(unittest.TestCase):
     This class contains test cases for our bisimilarity utility procedures.
     """
 
-    def examine_example(self, lts_in, reachable, reduced_expected, remove_internal_loops):
+    def examine_example(self, lts_in, reachable, lts_reference, positive, remove_internal_loops):
         """
-        Reduces an LTS according to some bismilarity definition and compares the result to the expected one.
-        :param lts_in: The LTS to reduce.
-        :param reachable: The 'reachable' procedure to use, defining the type of bisimilarity according to which
-                          the LTS is to be reduced.
-        :param reduced_expected: The LTS that we expect the reduction result to be isomorphic to.
-        :param remove_internal_loops: Specifies if the resulting LTS should not contain any internal transitions leading
-                                  from a state back into the same state.
+        Assesses the equivalence of two LTS's under a given bisimilarity definition.
+        :param lts_in: The LTS to examine.
+        :param reachable: The 'reachable' procedure to use, defining a type of bisimilarity.
+        :param lts_reference: The LTS to which lts_in should be compared.
+        :param positive: Whether we expect the LTS's to be equivalent (True), or not equivalent (False).
+        :param remove_internal_loops: Specifies if reduction of LTSs should remove internal transitions leading from
+                                      a state back into the same state.
 
         """
 
-        lts_out = reduce(lts_in, reach_cached(reachable), remove_internal_loops=remove_internal_loops)
-        self.assertTrue(bisimilar(lts_in, reduced_expected))
-        self.assertTrue(isomorphic(lts_out, reduced_expected))
+        lts_reduced = reduce(lts_in, reach_cached(reachable), remove_internal_loops=remove_internal_loops)
+
+        b = bisimilar(reachable, lts_in, lts_reference)
+        i = isomorphic(lts_reduced, lts_reference)
+
+        if positive:
+            self.assertTrue(b, msg="Bisimilarity was expected, but not found!")
+            self.assertTrue(i, msg="Isomorphy was expected, but not found!")
+        else:
+            self.assertFalse(b, msg="Bisimilarity was not expected, but found!")
+            self.assertFalse(i, msg="Isomorphy was not expected, but found!")
 
     def examine_multiple(self, lts_in, *r2e):
         """
         Reduces an LTS according to multiple bisimilarity definitions and compares results to expectations.
         :param lts_in: The LTS to reduce.
-        :param r2e: An iterable of pairs (reachable, remove_internal_loops, reduced_expected), to be used for calling self.examine_example.
+        :param r2e: An iterable of tuples (reachable, reference, positive), to be used for calling self.examine_example.
         """
 
-        r2s = {id(reach_wbisim): "weak",
-               id(reach_sbisim): "strong",
-               id(reach_ocong): "ocong"}
+        r2s = {id(reach_wbisim): ("weak", True),
+               id(reach_sbisim): ("strong", False),
+               id(reach_ocong): ("ocong", False)}
 
-        for reachable, remove_internal_loops, reduced_expected in r2e:
-            with self.subTest(type=r2s[id(reachable)]):
-                self.examine_example(lts_in, reachable, reduced_expected, remove_internal_loops=remove_internal_loops)
+        for reachable, reference, positive in r2e:
+            type, remove_internal_loops = r2s[id(reachable)]
+            with self.subTest(msg=f"{type}: {'yes' if positive else 'no'}"):
+                self.examine_example(lts_in, reachable, reference, positive, remove_internal_loops=remove_internal_loops)
 
     def test_minimal1(self):
         """
@@ -47,7 +56,7 @@ class TestBisimilarity(unittest.TestCase):
 
         lts = LTS(State(None).seal())
 
-        self.examine_multiple(lts, (reach_wbisim, True, lts), (reach_sbisim, False, lts), (reach_ocong, False, lts))
+        self.examine_multiple(lts, (reach_wbisim, lts, True), (reach_sbisim, lts, True), (reach_ocong, lts, True))
 
     def test_minimal2(self):
         """
@@ -60,7 +69,7 @@ class TestBisimilarity(unittest.TestCase):
 
         lts2 = LTS(State(None).seal())
 
-        self.examine_multiple(lts1, (reach_wbisim, True, lts2), (reach_sbisim, False, lts1), (reach_ocong, False, lts1))
+        self.examine_multiple(lts1, (reach_wbisim, lts2, True), (reach_sbisim, lts2, False), (reach_ocong, lts2, False))
 
     def test_small1(self):
         """
@@ -76,4 +85,7 @@ class TestBisimilarity(unittest.TestCase):
         s0.add_transition(Transition("a", s1))
         reduced = LTS(s0.seal())
 
-        self.examine_multiple(lts, (reach_wbisim, True, reduced), (reach_sbisim, False, lts), (reach_ocong, False, lts))
+        self.examine_multiple(lts,
+                              (reach_wbisim, reduced, True),
+                              (reach_sbisim, reduced, False),
+                              (reach_ocong, reduced, False))
