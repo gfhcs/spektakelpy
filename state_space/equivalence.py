@@ -292,7 +292,10 @@ def isomorphic(lts1, lts2):
     for partition in relation:
         p1, p2 = [], []
         for s in partition:
-            (p1 if s in states1 else p2).append(s)
+            if s in states1:
+                p1.append(s)
+            if s in states2:
+                p2.append(s)
         if len(p1) != len(p2):
             # Gereon suspects that if this case never arises, we can already safely conclude that the LTSs are
             # in fact isomorphic, i.e. that there must be *some* bijection that works.
