@@ -4,6 +4,10 @@ from state_space.equivalence import reduce, reach_wbisim, reach_sbisim, reach_oc
 from state_space.lts import State, LTS, Transition
 
 
+def edge(sa, sb, label=None):
+    sa.add_transition(Transition(label, sb))
+
+
 class TestBisimilarity(unittest.TestCase):
     """
     This class contains test cases for our bisimilarity utility procedures.
@@ -306,9 +310,6 @@ class TestBisimilarity(unittest.TestCase):
         Tests bisimilarity on a state space derived from the 'diamond' translation test case.
         """
 
-        def edge(sa, sb, label=None):
-            sa.add_transition(Transition(label, sb))
-
         def interaction(s, sp, sn):
             edge(s, sp, "prev")
             edge(s, sn, "next")
@@ -365,4 +366,48 @@ class TestBisimilarity(unittest.TestCase):
                               (reach_ocong, lts2, False),
                               (reach_sbisim, lts3, False),
                               (reach_ocong, lts3, False),
+                              )
+
+    def test_twofirecracker(self):
+        """
+        Tests bisimilarity on the "TwoFireCracker" example from pseuco.com.
+        """
+
+        # lts is the original, unreduced state space that pseuco.com derives via CCS semantics:
+        s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10 = [State(None) for _ in range(11)]
+        edge(s0, s1, "strike?")
+        edge(s1, s2, "extinguish!")
+        edge(s1, s3)
+        edge(s3, s4, "bang!")
+        edge(s4, s5, "extinguish!")
+        edge(s5, s6, "bang!")
+        edge(s3, s7, "bang!")
+        edge(s7, s8, "extinguish!")
+        edge(s8, s6, "bang!")
+        edge(s3, s10, "extinguish!")
+        edge(s4, s9, "bang!")
+        edge(s7, s9, "bang!")
+        edge(s9, s6, "extinguish!")
+        edge(s10, s8, "bang!")
+        edge(s10, s5, "bang!")
+        lts1 = LTS(s0.seal())
+
+        # lts is the reduced state space produced by pseuco.com:
+        s0, s1, s2, s3, s4, s5, s6, s7 = [State(None) for _ in range(8)]
+        edge(s0, s6, "strike?")
+        edge(s1, s2, "extinguish!")
+        edge(s3, s1, "bang!")
+        edge(s3, s5, "extinguish!")
+        edge(s4, s5, "bang!")
+        edge(s5, s2, "bang!")
+        edge(s6, s7, None)
+        edge(s6, s2, "extinguish!")
+        edge(s7, s4, "extinguish!")
+        edge(s7, s3, "bang!")
+        lts2 = LTS(s0.seal())
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, True),
+                              (reach_ocong, lts2, True),
                               )
