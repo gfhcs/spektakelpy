@@ -239,10 +239,16 @@ class TestBisimilarity(unittest.TestCase):
         lts2 = LTS(s0.seal())
 
         self.examine_multiple(lts1,
-                              (reach_wbisim, lts1, True),
-                              (reach_sbisim, lts1, True),
-                              (reach_ocong, lts1, True),
-                              (reach_wbisim, lts2, True),
-                              (reach_sbisim, lts2, True),
-                              (reach_ocong, lts2, True),
+                              (reach_wbisim, reduce(lts1, reach_wbisim, remove_internal_loops=True), True),
+                              (reach_sbisim, reduce(lts1, reach_sbisim), True),
+                              (reach_ocong, reduce(lts1, reach_ocong), True),
+                              (reach_wbisim, reduce(lts2, reach_wbisim, remove_internal_loops=True), True),
+                              (reach_sbisim, reduce(lts2, reach_sbisim), True),
+                              (reach_ocong, reduce(lts2, reach_ocong), True),
                               )
+
+        with self.subTest(msg="isomorphy"):
+            self.assertTrue(isomorphic(lts1, lts1))
+            self.assertTrue(isomorphic(lts1, lts2))
+            self.assertTrue(isomorphic(lts2, lts1))
+            self.assertTrue(isomorphic(lts2, lts2))
