@@ -201,7 +201,7 @@ def equivalence(reachable, *ltss):
     return relation
 
 
-def reduce(lts, reachable):
+def reduce(lts, reachable, remove_internal_loops=False):
     """
     Computes a smaller LTS, that is equivalent to the given one under the specified bisimilarity.
     :param lts: The LTS that is to be reduced.
@@ -209,6 +209,8 @@ def reduce(lts, reachable):
                       that are considered 'reachable' from the given state, emulating the given transition label.
                       It is up to the caller to decide on the exact meaning of "emulating". The caller can use this
                       parameter to select strong bisimilarity, observational congruence, or weak bisimilarity.
+    :param remove_internal_loops: Specifies if the resulting LTS should not contain any internal transitions leading
+                                  from a state back into the same state.
     :return: An LTS.
     """
 
@@ -219,7 +221,8 @@ def reduce(lts, reachable):
 
     for state, partition in zip(states, partitions):
         for label, tidx in {(t.label, s2idx[id(t.target)]) for s in partition for t in s.transitions}:
-            state.add_transition(Transition(label, states[tidx]))
+            if not (remove_internal_loops and state is states[tidx]):
+                state.add_transition(Transition(label, states[tidx]))
 
     return LTS(states[s2idx[id(lts.initial)]])
 
