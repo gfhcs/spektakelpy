@@ -300,3 +300,69 @@ class TestBisimilarity(unittest.TestCase):
                               (reach_ocong, lts2, False),
                               (reach_ocong, lts3, True)
                               )
+
+    def test_medium(self):
+        """
+        Tests bisimilarity on a state space derived from the 'diamond' translation test case.
+        """
+
+        def edge(sa, sb, label=None):
+            sa.add_transition(Transition(label, sb))
+
+        def interaction(s, sp, sn):
+            edge(s, sp, "prev")
+            edge(s, sn, "next")
+            edge(s, s, "tick")
+
+        s0, s11, s1, s2, s3, s7 = [State("00") for _ in range(6)]
+        s4, s6, s14 = [State("10") for _ in range(3)]
+        s5, s9, s13 = [State("01") for _ in range(3)]
+        s10, s8, s12 = [State("11") for _ in range(3)]
+        edge(s0, s1)
+        edge(s1, s2)
+        edge(s2, s3)
+        interaction(s3, s4, s5)
+        edge(s4, s6)
+        interaction(s6, s7, s8)
+        edge(s7, s3)
+        edge(s8, s12)
+        edge(s5, s9)
+        interaction(s9, s10, s11)
+        edge(s10, s12)
+        edge(s11, s3)
+        interaction(s12, s13, s14)
+        edge(s13, s9)
+        edge(s14, s6)
+        lts1 = LTS(s0.seal())
+
+        s0 = State("00")
+        s1 = State("10")
+        s2 = State("01")
+        s3 = State("11")
+        interaction(s0, s1, s2)
+        interaction(s1, s0, s3)
+        interaction(s2, s3, s0)
+        interaction(s3, s2, s1)
+        lts2 = LTS(s0.seal())
+
+        s0 = State("00")
+        s1 = State("10")
+        s2 = State("01")
+        s3 = State("11")
+        interaction(s0, s1, s2)
+        interaction(s1, s0, s3)
+        interaction(s2, s3, s0)
+        interaction(s3, s2, s1)
+        edge(s0, s0)
+        edge(s1, s1)
+        edge(s2, s2)
+        edge(s3, s3)
+        lts3 = LTS(s0.seal())
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, False),
+                              (reach_ocong, lts2, False),
+                              (reach_sbisim, lts3, False),
+                              (reach_ocong, lts3, False),
+                              )
