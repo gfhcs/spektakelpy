@@ -373,7 +373,7 @@ class TestBisimilarity(unittest.TestCase):
         Tests bisimilarity on the "TwoFireCracker" example from pseuco.com.
         """
 
-        # lts is the original, unreduced state space that pseuco.com derives via CCS semantics:
+        # lts1 is the original, unreduced state space that pseuco.com derives via CCS semantics:
         s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10 = [State(None) for _ in range(11)]
         edge(s0, s1, "strike?")
         edge(s1, s2, "extinguish!")
@@ -392,7 +392,7 @@ class TestBisimilarity(unittest.TestCase):
         edge(s10, s5, "bang!")
         lts1 = LTS(s0.seal())
 
-        # lts is the reduced state space produced by pseuco.com:
+        # lts2 is the reduced state space produced by pseuco.com:
         s0, s1, s2, s3, s4, s5, s6, s7 = [State(None) for _ in range(8)]
         edge(s0, s6, "strike?")
         edge(s1, s2, "extinguish!")
@@ -410,4 +410,33 @@ class TestBisimilarity(unittest.TestCase):
                               (reach_wbisim, lts2, True),
                               (reach_sbisim, lts2, True),
                               (reach_ocong, lts2, True),
+                              )
+
+    def test_protocol_with_acknowledgement(self):
+        """
+        Tests bisimilarity on the "Protocol with Acknowledgement" example from pseuco.com.
+        """
+
+        # lts1 is the original, unreduced state space that pseuco.com derives via CCS semantics:
+        s0, s1, s2, s3, s4, s5, s6, s7 = [State(None) for _ in range(8)]
+        edge(s0, s1, "put?")
+        edge(s1, s2)
+        edge(s2, s3)
+        edge(s3, s4, "get?")
+        edge(s4, s5)
+        edge(s5, s6)
+        edge(s6, s7, "put?")
+        edge(s7, s2)
+        lts1 = LTS(s0.seal())
+
+        # lts is the reduced state space produced by pseuco.com:
+        s0, s1 = [State(None) for _ in range(2)]
+        edge(s0, s1, "put?")
+        edge(s1, s0, "get?")
+        lts2 = LTS(s0.seal())
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, False),
+                              (reach_ocong, lts2, False),
                               )
