@@ -429,7 +429,7 @@ class TestBisimilarity(unittest.TestCase):
         edge(s7, s2)
         lts1 = LTS(s0.seal())
 
-        # lts is the reduced state space produced by pseuco.com:
+        # lts2 is the reduced state space produced by pseuco.com:
         s0, s1 = [State(None) for _ in range(2)]
         edge(s0, s1, "put?")
         edge(s1, s0, "get?")
@@ -437,6 +437,50 @@ class TestBisimilarity(unittest.TestCase):
 
         self.examine_multiple(lts1,
                               (reach_wbisim, lts2, True),
+                              (reach_sbisim, lts2, False),
+                              (reach_ocong, lts2, False),
+                              )
+
+    def test_value_passing_protocol(self):
+        """
+        Tests bisimilarity on the "Value Passing Protocol" example from pseuco.com.
+        """
+
+        def train(*indices):
+            for idx1, idx2 in zip(indices, indices[1:]):
+                edge(states[idx1], states[idx2])
+
+        # lts1 is the original, unreduced state space that pseuco.com derives via CCS semantics:
+        states = [State(None) for _ in range(38)]
+        train(0, 1, 2, 3, 4, 5, 6, 2, 7)
+        edge(states[7], states[8], "get!(2)")
+        train(8, 9, 10, 11, 12, 13, 14, 15, 11)
+        train(12, 16)
+        edge(states[16], states[17], "get!(4)")
+        train(17, 18, 19, 20, 21, 22)
+        train(21, 23, 24, 25, 20)
+        edge(states[22], states[26], "get!(2)")
+        train(26, 27, 28, 29, 30, 31)
+        train(30, 32, 33, 34, 29)
+        edge(states[31], states[35], "get!(8)")
+        train(35, 36, 37)
+        lts1 = LTS(states[0].seal())
+
+        # lts2 is the reduced state space produced by pseuco.com.
+        s0, s1, s2, s3, s4 = [State(None) for _ in range(5)]
+        edge(s0, s2, "get!(4)")
+        edge(s1, s0, "get!(2)")
+        edge(s1, s1)
+        edge(s2, s3, "get!(2)")
+        edge(s3, s4, "get!(8)")
+        lts2 = LTS(s1.seal())
+
+        # pseuco.com seems to compute weak bisimilarity quotients without removing tau "ears",
+        # which would make our isomorphy check fail, correctly. Hence, we further reduce pseuco.com's solution
+        # by removing tau ears:
+
+        self.examine_multiple(lts1,
+                              (reach_wbisim, reduce(lts2, reach_wbisim, remove_internal_loops=True), True),
                               (reach_sbisim, lts2, False),
                               (reach_ocong, lts2, False),
                               )
