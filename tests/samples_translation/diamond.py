@@ -12,7 +12,7 @@ def count(n, i, sidx):
         c = (c + 1) % n
         state = state + c * 10 ** sidx
 
-var c1, c2 = async count(n, next, 1), async count(n, prev, 0)
+var c1, c2 = async count(n, next, 0), async count(n, prev, 1)
 
 # These never terminate:
 await c1

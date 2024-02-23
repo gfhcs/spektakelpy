@@ -120,8 +120,8 @@ class TestSpektakelTranslation(unittest.TestCase):
                       (projected) state instantaneously and a number of internal transitions is required after the
                       interaction in order to update the internal state. In order for bisimulation to work out, though,
                       the state labels would have to be changed immediately, which we achieve by step 3.
-        :param project: The name of the global variable the value of which states should be projected to before
-                        checking bisimilarity. If this value is omitted, all state content will simply be discarded.
+        :param project: A procedure that takes VM states and maps them to LTS state labels, which are taken into account
+                        when checking for bisimilarity. If this value is omitted, all state content will simply be discarded.
         :param expectation: A dict mapping variable names to expected values.
         """
         code = dedent(code)
@@ -156,6 +156,11 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         if bisim is not None:
 
+            if project is None:
+                project = lambda s: None
+            def p(s):
+                return State(project(s.content))
+
             internal, external = (set(id(t) for t in ts) for ts in (internal, external))
 
             zeno = State(None).seal()
@@ -174,9 +179,6 @@ class TestSpektakelTranslation(unittest.TestCase):
 
                     succ = succ.transitions[0].target
                 return succ
-
-            def p(state):
-                return State(None if project is None else state.content.task_states[0].stack[-1][0][project])
 
             initial = follow_taus(sp.initial)
             agenda = [initial]
@@ -366,21 +368,24 @@ class TestSpektakelTranslation(unittest.TestCase):
         # is equivalent to what we expect.
 
         def interaction(s, sp, sn):
-            s.add_transition(Transition("prev", sp))
-            s.add_transition(Transition("next", sn))
-            s.add_transition(Transition("tick", s))
+            s.add_transition(Transition("PREV", sp))
+            s.add_transition(Transition("NEXT", sn))
+            s.add_transition(Transition("TICK", s))
 
-        s0 = State("00")
-        s1 = State("10")
-        s2 = State("01")
-        s3 = State("11")
+        s0 = State(0)
+        s1 = State(10)
+        s2 = State(1)
+        s3 = State(11)
         interaction(s0, s1, s2)
         interaction(s1, s0, s3)
         interaction(s2, s3, s0)
         interaction(s3, s2, s1)
         reduced = LTS(s0.seal())
 
-        self.examine_sample(code_diamond, None, None, None, bisim=reduced, project="state")
+        def p(state):
+            return int(state.task_states[0].stack[-1][0]['state'].value)
+
+        self.examine_sample(code_diamond, None, None, None, bisim=reduced, project=p)
 
     def test_async_producer_consumer(self):
         """

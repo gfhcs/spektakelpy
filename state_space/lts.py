@@ -183,7 +183,7 @@ def lts2str(lts):
                 if v:
                     continue
             except KeyError:
-                sname = f"state{sidx}"
+                sname = f"state{sidx}({s.content})"
                 sidx += 1
 
             visited[id(s)] = (True, sname)
@@ -199,7 +199,7 @@ def lts2str(lts):
                 try:
                     _, tname = visited[id(t.target)]
                 except KeyError:
-                    tname = f"state{sidx}"
+                    tname = f"state{sidx}({t.target.content})"
                     visited[id(t.target)] = (False, tname)
                     sidx += 1
 
