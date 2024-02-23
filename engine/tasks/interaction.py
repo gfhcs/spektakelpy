@@ -14,6 +14,11 @@ class Interaction(Enum):
     TICK = 0
     NEXT = 1
     PREV = 2
+    SUSPEND = 3
+    RESUME = 4
+
+
+num_interactions_possible = len(Interaction) - 1
 
 
 def i2s(i):

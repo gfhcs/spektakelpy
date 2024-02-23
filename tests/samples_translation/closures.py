@@ -1,3 +1,5 @@
+from engine.tasks.interaction import num_interactions_possible
+
 samples = {
 
 """
@@ -11,7 +13,7 @@ def foo(x):
 var result = foo(42)(1)
 
 await never()
-""": ((2, 1, 3), {"result": 43}),
+""": ((2, 1, num_interactions_possible), {"result": 43}),
 
 
 """
@@ -32,7 +34,7 @@ z()
 b()
 
 await never()
-""": ((2, 1, 3), {"acc": 12}),
+""": ((2, 1, num_interactions_possible), {"acc": 12}),
 
 """
 from interaction import never
@@ -57,7 +59,7 @@ foo2()
 foo3()
 
 await never()
-""": ((2, 1, 3), {"acc": 444}),
+""": ((2, 1, num_interactions_possible), {"acc": 444}),
 
 """
 from interaction import never
@@ -70,6 +72,6 @@ def foo():
 await foo()
 flag = False
 
-""": ((2, 1, 3), {"flag": True}),
+""": ((2, 1, num_interactions_possible), {"flag": True}),
 
 }

@@ -15,7 +15,7 @@ from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBo
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks.instructions import Update, Pop, Guard, Push, Launch
-from engine.tasks.interaction import InteractionState, Interaction
+from engine.tasks.interaction import InteractionState, Interaction, num_interactions_possible
 from engine.tasks.program import StackProgram, ProgramLocation
 from engine.tasks.stack import StackState, Frame
 from state_space.lts import lts2str
@@ -33,15 +33,9 @@ class TestSpektakelMachine(unittest.TestCase):
         :param num_fvars: The number of variables to allocate on the initial stack frame.
         :return: A MachineState object.
         """
-
         frames = [Frame(ProgramLocation(p, 0), [VNone.instance] * num_fvars)]
-
         m = StackState(TaskStatus.RUNNING, frames)
-
-        isymbols = [Interaction.NEXT, Interaction.PREV, Interaction.TICK]
-        istates = (InteractionState(i) for i in isymbols)
-
-        return MachineState([m, *istates])
+        return MachineState([m, *(InteractionState(i) for i in Interaction if i != Interaction.NEVER)])
 
     def explore(self, p, s0=None):
         """
@@ -97,7 +91,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[1].content.task_states[0].stack[0][0]), 42)
         self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
@@ -134,7 +128,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
     def test_guard_failure(self):
         """
@@ -149,7 +143,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
@@ -163,7 +157,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(len(states[0].content.task_states[0].stack), 1)
         self.assertEqual(len(states[1].content.task_states[0].stack), 0)
@@ -203,7 +197,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[1].content.task_states[0].returned), 43)
         self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
@@ -230,7 +224,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
@@ -256,7 +250,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 3)
         self.assertEqual(len(internal), 2)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsNot(states[1].content.task_states[0].returned, None)
         t = states[1].content.task_states[0].returned
@@ -289,7 +283,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
@@ -309,7 +303,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[1].content.task_states[0].returned), 42)
         self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
@@ -330,7 +324,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
@@ -362,7 +356,7 @@ class TestSpektakelMachine(unittest.TestCase):
         s0 = self.initialize_machine(p, 1)
         _, states, internal, external = self.explore(p, s0)
 
-        self.assertEqual(24, len(external))
+        self.assertEqual(8 * num_interactions_possible, len(external))
         self.assertEqual(8, len(internal))
         self.assertEqual(16, len(states))
 
@@ -402,7 +396,7 @@ class TestSpektakelMachine(unittest.TestCase):
         # print(lts2str(lts))
 
         self.assertEqual(7, len(states))
-        self.assertEqual(9, len(external))
+        self.assertEqual(3 * num_interactions_possible, len(external))
         self.assertEqual(4, len(internal))
 
     def test_CInt(self):
@@ -675,7 +669,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], VNamespace)
 
@@ -698,7 +692,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[-1].content.task_states[0].returned), 43)
 
@@ -720,7 +714,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
-        self.assertEqual(len(external), 3)
+        self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], Type)
 
@@ -753,7 +747,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
-                self.assertEqual(len(external), 3)
+                self.assertEqual(len(external), num_interactions_possible)
 
                 self.assertEqual(states[-1].content.task_states[0].stack[0][0], value)
 
@@ -786,7 +780,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
-                self.assertEqual(len(external), 3)
+                self.assertEqual(len(external), num_interactions_possible)
 
                 if isinstance(value, type):
                     self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], value)

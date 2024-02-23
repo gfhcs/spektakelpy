@@ -7,7 +7,7 @@ from state_space.lts import state_space, Transition, State, LTS
 from engine.functional.values import VNone, VCell, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
-from engine.tasks.interaction import InteractionState, Interaction
+from engine.tasks.interaction import InteractionState, Interaction, num_interactions_possible, i2s
 from engine.tasks.program import ProgramLocation
 from engine.tasks.stack import StackState, Frame
 from lang.spek import static, modules
@@ -38,15 +38,9 @@ class TestSpektakelTranslation(unittest.TestCase):
         :param num_fvars: The number of variables to allocate on the initial stack frame.
         :return: A MachineState object.
         """
-
         frames = [Frame(ProgramLocation(p, 0), [VNone.instance] * num_fvars)]
-
         m = StackState(TaskStatus.RUNNING, frames)
-
-        isymbols = [Interaction.NEXT, Interaction.PREV, Interaction.TICK, Interaction.NEVER]
-        istates = (InteractionState(i) for i in isymbols)
-
-        return MachineState([m, *istates])
+        return MachineState([m, *(InteractionState(i) for i in Interaction)])
 
     def explore(self, p, s0=None):
         """
@@ -235,7 +229,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests if the empty program is executed successfully.
         """
-        self.examine_sample("# Just some empty program.", 2, 1, 3)
+        self.examine_sample("# Just some empty program.", 2, 1, num_interactions_possible)
 
     def test_assignment_simple(self):
         """
@@ -250,7 +244,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         await never()
         """
 
-        self.examine_sample(program, 2, 1, 3, y=4754)
+        self.examine_sample(program, 2, 1, num_interactions_possible, y=4754)
 
     def test_expressions(self):
         """
@@ -269,7 +263,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         pass
         """
 
-        self.examine_sample(program, 2, 1, 3)
+        self.examine_sample(program, 2, 1, num_interactions_possible)
 
     def test_assignments(self):
         """
@@ -324,7 +318,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         for k0 in range(10):
             expected = manboy(k0)
             with self.subTest(k0=k0, expected=expected):
-                self.examine_sample(code_manboy.format(k0=k0), 2, 1, 3, result=expected)
+                self.examine_sample(code_manboy.format(k0=k0), 2, 1, num_interactions_possible, result=expected)
 
     def test_closures(self):
         """
@@ -370,7 +364,9 @@ class TestSpektakelTranslation(unittest.TestCase):
         def interaction(s, sp, sn):
             s.add_transition(Transition("PREV", sp))
             s.add_transition(Transition("NEXT", sn))
-            s.add_transition(Transition("TICK", s))
+            for i in Interaction:
+                if i not in (Interaction.PREV, Interaction.NEXT, Interaction.NEVER):
+                    s.add_transition(Transition(i2s(i), s))
 
         s0 = State(0)
         s1 = State(10)
@@ -391,7 +387,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Test a simple producer-consumer setup. This sample only works if concurrency is available.
         """
-        self.examine_sample(code_producer_consumer, 14, 10, 12, consumed=321, buffer=None)
+        self.examine_sample(code_producer_consumer, 14, 10, 4 * num_interactions_possible, consumed=321, buffer=None)
 
     def test_async_pseuco_twofirecracker(self):
         """

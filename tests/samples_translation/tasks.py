@@ -1,3 +1,5 @@
+from engine.tasks.interaction import num_interactions_possible
+
 samples = {
 
 """
@@ -20,12 +22,12 @@ if done:
 result = await task
     
 await never()
-""": ((4, 3, 3), {"result": 42, "done": True}),
+""": ((4, 3, num_interactions_possible), {"result": 42, "done": True}),
 
 """
 var f = future()
 await f
-""": ((2, 1, 3), {}),
+""": ((2, 1, num_interactions_possible), {}),
 
 """
 from interaction import never
@@ -33,7 +35,7 @@ var f = future()
 f.result = 42
 var result = await f
 await never()
-""": ((2, 1, 3), {"result": 42}),
+""": ((2, 1, num_interactions_possible), {"result": 42}),
 
 """
 from interaction import next, never
@@ -41,7 +43,7 @@ var done = False
 await next()
 done = True
 await never()
-""": ((4, 2, 6), {"done": True}),
+""": ((4, 2, 2 * num_interactions_possible), {"done": True}),
 
 """
 from interaction import next, never
@@ -51,7 +53,7 @@ def foo():
     done = True
 await async foo()
 await never()
-""": ((6, 4, 6), {"done": True}),
+""": ((6, 4, 2 * num_interactions_possible), {"done": True}),
 
 """
 from interaction import never
@@ -64,7 +66,7 @@ def produce():
 await async produce()
 await never()
 
-""": ((4, 3, 3), {"buffer": True}),
+""": ((4, 3, num_interactions_possible), {"buffer": True}),
 
 
 """
@@ -84,6 +86,6 @@ var p = async produce()
 await p
 await never()
 
-""": ((10, 6, 12), {"buffer": 1}),
+""": ((10, 6, 4 * num_interactions_possible), {"buffer": 1}),
 
 }

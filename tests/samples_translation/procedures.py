@@ -1,3 +1,5 @@
+from engine.tasks.interaction import num_interactions_possible
+
 samples = {
 
 
@@ -10,7 +12,7 @@ def foo():
 var x = foo()
 
 await never()
-""": ((2, 1, 3), {"x": 42}),
+""": ((2, 1, num_interactions_possible), {"x": 42}),
 
 """
 from interaction import never
@@ -21,7 +23,7 @@ def foo(x):
 var x = foo(42)
 
 await never()
-""": ((2, 1, 3), {"x": 43}),
+""": ((2, 1, num_interactions_possible), {"x": 43}),
 
 
 """
@@ -36,7 +38,7 @@ def bar(x):
 var x = bar(bar(foo(42) - bar(42)))
 
 await never()
-""": ((2, 1, 3), {"x": 0}),
+""": ((2, 1, num_interactions_possible), {"x": 0}),
 
 """
 from interaction import never
@@ -50,7 +52,7 @@ foo()
 foo()
 
 await never()
-""": ((2, 1, 3), {"x": 44}),
+""": ((2, 1, num_interactions_possible), {"x": 44}),
 
 
 """
@@ -71,7 +73,7 @@ if small(x) and even(x):
     increment()
 
 await never()
-""": ((2, 1, 3), {"x": 1}),
+""": ((2, 1, num_interactions_possible), {"x": 1}),
 
 """
 from interaction import never
@@ -91,7 +93,7 @@ while small(x) or even(x):
     increment()
 
 await never()
-""": ((2, 1, 3), {"x": 43}),
+""": ((2, 1, num_interactions_possible), {"x": 43}),
 
 """
 from interaction import never
@@ -107,7 +109,7 @@ def foo(x):
 var x = foo(42) and not foo(43)
 
 await never()
-""": ((2, 1, 3), {"x": True}),
+""": ((2, 1, num_interactions_possible), {"x": True}),
 
 """
 from interaction import never
@@ -122,7 +124,7 @@ def geq(x, y):
 var x = geq(17, 12) and not geq(5, 7)
 
 await never()
-""": ((2, 1, 3), {"x": True}),
+""": ((2, 1, num_interactions_possible), {"x": True}),
 
 """
 from interaction import never
@@ -139,7 +141,7 @@ def geq(x, y):
 var x = geq(17, 12) and not geq(5, 7)
 
 await never()
-""": ((2, 1, 3), {"x": True}),
+""": ((2, 1, num_interactions_possible), {"x": True}),
 
 """
 from interaction import never
@@ -159,7 +161,7 @@ odd = _odd
 var x = even(4) and not even(5)
 
 await never()
-""": ((2, 1, 3), {"x": True}),
+""": ((2, 1, num_interactions_possible), {"x": True}),
 
 """
 from interaction import never
@@ -180,6 +182,6 @@ foo = bar
 var b = foo(42)
 
 await never()
-""": ((2, 1, 3), {"a": 43, "b": 0}),
+""": ((2, 1, num_interactions_possible), {"a": 43, "b": 0}),
 
 }

@@ -7,9 +7,9 @@ from engine.functional.reference import ReturnValueReference
 from engine.functional.terms import TRef, CTerm, CString, ITask
 from engine.functional.types import TBuiltin
 from engine.functional.values import VProcedure
-from engine.tasks.instructions import Update, Pop, Guard
+from engine.tasks.instructions import Update, Pop
+from engine.tasks.interaction import Interaction, i2s
 from engine.tasks.program import StackProgram, ProgramLocation
-from engine.tasks.interaction import Interaction
 from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
@@ -222,10 +222,7 @@ def build_default_finder(roots):
     """
     ffinder = FileFinder(roots)
 
-    symbols = {"next": Interaction.NEXT,
-               "tick": Interaction.TICK,
-               "prev": Interaction.PREV,
-               "never": Interaction.NEVER}
+    symbols = {i2s(i).lower(): i for i in Interaction}
 
     procedures = {}
     r = TRef(ReturnValueReference())

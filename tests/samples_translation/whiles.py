@@ -1,3 +1,5 @@
+from engine.tasks.interaction import num_interactions_possible
+
 samples = {
 
 """
@@ -8,7 +10,7 @@ while x < 10:
     x = x + 1
 
 await never()
-""": ((2, 1, 3), {"x": 10}),
+""": ((2, 1, num_interactions_possible), {"x": 10}),
 
 
 """
@@ -19,7 +21,7 @@ while x < 0:
     x = x + 1
 
 await never()
-""": ((2, 1, 3), {"x": 1}),
+""": ((2, 1, num_interactions_possible), {"x": 1}),
 
 
 """
@@ -35,7 +37,7 @@ while x < 10:
     x = x + 1
 
 await never()
-""": ((2, 1, 3), {"x": 11}),
+""": ((2, 1, num_interactions_possible), {"x": 11}),
 
 """
 from interaction import never
@@ -49,7 +51,7 @@ while x < 10:
     x = x + 1
 
 await never()
-""": ((2, 1, 3), {"x": 2}),
+""": ((2, 1, num_interactions_possible), {"x": 2}),
 
 
 }

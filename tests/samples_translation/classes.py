@@ -1,3 +1,5 @@
+from engine.tasks.interaction import num_interactions_possible
+
 samples = {
 
 
@@ -16,6 +18,6 @@ def foo():
 result = foo()()
 
 await never()
-""": ((2, 1, 3), {}),
+""": ((2, 1,  num_interactions_possible), {}),
 
 }

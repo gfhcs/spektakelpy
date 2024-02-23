@@ -1,3 +1,5 @@
+from engine.tasks.interaction import num_interactions_possible
+
 samples = {
 
 
@@ -9,7 +11,7 @@ if x % 2 == 0:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -19,7 +21,7 @@ if x % 2 == 0:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": 43, "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": 43, "y": "done"}),
 
 
 """
@@ -32,7 +34,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -44,7 +46,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "odd", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "odd", "y": "done"}),
 
 """
 from interaction import never
@@ -58,7 +60,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -72,7 +74,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "odd", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "odd", "y": "done"}),
 
 """
 from interaction import never
@@ -86,7 +88,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "one", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "one", "y": "done"}),
 
 
 
@@ -104,7 +106,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "even", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "even", "y": "done"}),
 
 """
 from interaction import never
@@ -120,7 +122,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "odd", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "odd", "y": "done"}),
 
 """
 from interaction import never
@@ -137,7 +139,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "one", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "one", "y": "done"}),
 
 """
 from interaction import never
@@ -154,7 +156,7 @@ else:
 var y = "done"
 
 await never()
-""": ((2, 1, 3), {"x": "three", "y": "done"}),
+""": ((2, 1, num_interactions_possible), {"x": "three", "y": "done"}),
 
 
 }
