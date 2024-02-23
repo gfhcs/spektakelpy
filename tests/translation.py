@@ -419,7 +419,7 @@ class TestSpektakelTranslation(unittest.TestCase):
                     s.add_transition(Transition(i2s(j), s))
 
         # This is similar to the reduced state space produced by pseuco.com:
-        s0, s1, s2, s3, s4, s5, s6, s7 = [State(None) for _ in range(8)]
+        s0, s1, s2, s3, s4, s5, s6, s7 = [State(idx) for idx in range(8)]
         edges(s0, "strike?", s6)
         edges(s1, "extinguish!", s2)
         edges(s2)
