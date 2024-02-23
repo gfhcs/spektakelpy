@@ -354,7 +354,22 @@ class TestSpektakelTranslation(unittest.TestCase):
         # bisimilarity tests here, which, despite state spaces having hard-to-predict shapes, verify that *behavior*
         # is equivalent to what we expect.
 
-        self.examine_sample(code_diamond, 15, 11, 12)
+        def interaction(s, sp, sn):
+            s.add_transition(Transition("prev", sp))
+            s.add_transition(Transition("next", sn))
+            s.add_transition(Transition("tick", s))
+
+        s0 = State("00")
+        s1 = State("10")
+        s2 = State("01")
+        s3 = State("11")
+        interaction(s0, s1, s2)
+        interaction(s1, s0, s3)
+        interaction(s2, s3, s0)
+        interaction(s3, s2, s1)
+        reduced = LTS(s0.seal())
+
+        self.examine_sample(code_diamond, None, None, None, bisimilar=reduced, project="state")
 
     def test_async_producer_consumer(self):
         """
