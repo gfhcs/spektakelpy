@@ -158,11 +158,20 @@ class TestSpektakelTranslation(unittest.TestCase):
 
             internal, external = (set(id(t) for t in ts) for ts in (internal, external))
 
+            zeno = State(None).seal()
+
             def follow_taus(state):
                 succ = state
+                seen_state = False
                 while any(id(t) in internal for t in succ.transitions):
                     # We assume: If a state has an internal transition, then this transition is the *only* transition.
                     assert len(succ.transitions) == 1
+
+                    if succ is state:
+                        if seen_state:
+                            return zeno
+                        seen_state = True
+
                     succ = succ.transitions[0].target
                 return succ
 
@@ -180,6 +189,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
                 if done:
                     continue
+
+                s2p[s] = (ss, True)
 
                 # Any proper state that makes it into the agenda must not have any internal transitions:
                 assert not any(id(t) in internal for t in s.transitions)
@@ -369,7 +380,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         interaction(s3, s2, s1)
         reduced = LTS(s0.seal())
 
-        self.examine_sample(code_diamond, None, None, None, bisimilar=reduced, project="state")
+        self.examine_sample(code_diamond, None, None, None, bisim=reduced, project="state")
 
     def test_async_producer_consumer(self):
         """
