@@ -399,7 +399,7 @@ class TestSpektakelMachine(unittest.TestCase):
         s0.task_states[0].stack[0][1] = VNone.instance
         lts, states, internal, external = self.explore(p, s0)
 
-        print(lts2str(lts))
+        # print(lts2str(lts))
 
         self.assertEqual(7, len(states))
         self.assertEqual(9, len(external))
