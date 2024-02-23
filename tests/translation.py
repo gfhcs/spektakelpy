@@ -1,7 +1,9 @@
 import unittest
 
 from engine.exploration import explore, schedule_nonzeno
-from state_space.lts import state_space
+from engine.tasks import interaction
+from state_space.equivalence import bisimilar, reach_wbisim
+from state_space.lts import state_space, Transition, State, LTS
 from engine.functional.values import VNone, VCell, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
@@ -85,9 +87,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         :exception ParserError: If the given string was not a syntactically correct Spektakel program.
         :param sample: The code to lex, parse and validate, as a string.
         :param roots: The file system roots that should be searched for modules to be imported.
-        :return: A tuple (node, env, dec, err), where node is the AST representing the code, env is an environment mapping
-                 names to their declarations, dec is a mapping of refering nodes to their referents and err is an iterable
-                 of ValidationErrors.
+        :return: A return value from self.explore.
         """
         finder, builtin = modules.build_default_finder([] if roots is None else roots)
         v = static.SpektakelValidator(finder, builtin)
@@ -97,11 +97,9 @@ class TestSpektakelTranslation(unittest.TestCase):
         program = translator.translate(SpekStringModuleSpecification(sample, v, builtin))
         program = program.compile()
 
-        _, states, internal, external = self.explore(program, self.initialize_machine(program, 2))
+        return self.explore(program, self.initialize_machine(program, 2))
 
-        return states, internal, external
-
-    def examine_sample(self, code, num_states, num_internal, num_external, **expectation):
+    def examine_sample(self, code, num_states, num_internal, num_external, bisim=None, project=None, **expectation):
         """
         Translates and executes a code sample, in order to examine the final state.
         This procedure will make a test fail if the translation and execution of the code does not meet expectations.
@@ -109,10 +107,25 @@ class TestSpektakelTranslation(unittest.TestCase):
         :param num_states: The number of observable states for the program.
         :param num_internal: The number of observable internal transitions for the program.
         :param num_external: The number of observable external transitions for the program.
+        :param bisim: If an LTS is given there, the preprocessed state space of the sample will be checked for weak
+                      bisimilarity to that LTS. Preprocessing does the following:
+                      1. All state content will be projected to the value of one global variable.
+                      2. Interaction transition labels will be set to the string names of the respective interaction.
+                      3. All internal transitions will be eliminated, by discarding the transition itself and replacing
+                         the start state of each such transition by its end state. This operation is repeated until
+                         no internal transitions remain.
+
+                      Step 3 works because a state that has internal transitions enabled can only have exactly one
+                      such transition enabled. Step 3 is necessary because external interactions do not change
+                      (projected) state instantaneously and a number of internal transitions is required after the
+                      interaction in order to update the internal state. In order for bisimulation to work out, though,
+                      the state labels would have to be changed immediately, which we achieve by step 3.
+        :param project: The name of the global variable the value of which states should be projected to before
+                        checking bisimilarity. If this value is omitted, all state content will simply be discarded.
         :param expectation: A dict mapping variable names to expected values.
         """
         code = dedent(code)
-        states, internal, external = self.translate_explore(code)
+        sp, states, internal, external = self.translate_explore(code)
 
         for s in states:
             for t in s.content.task_states:
@@ -123,9 +136,12 @@ class TestSpektakelTranslation(unittest.TestCase):
                         else:
                             raise t.exception
 
-        self.assertEqual(len(states), num_states)
-        self.assertEqual(len(internal), num_internal)
-        self.assertEqual(len(external), num_external)
+        if num_states is not None:
+            self.assertEqual(len(states), num_states)
+        if num_internal is not None:
+            self.assertEqual(len(internal), num_internal)
+        if num_external is not None:
+            self.assertEqual(len(external), num_external)
 
         for vname, expected in expectation.items():
             found = states[-1].content.task_states[0].stack[-1][0][vname]
@@ -137,6 +153,57 @@ class TestSpektakelTranslation(unittest.TestCase):
                 self.assertEqual(found.string, expected)
             else:
                 self.assertEqual((type(expected))(found), expected)
+
+        if bisim is not None:
+
+            internal, external = (set(id(t) for t in ts) for ts in (internal, external))
+
+            def follow_taus(state):
+                succ = state
+                while any(id(t) in internal for t in succ.transitions):
+                    # We assume: If a state has an internal transition, then this transition is the *only* transition.
+                    assert len(succ.transitions) == 1
+                    succ = succ.transitions[0].target
+                return succ
+
+            def p(state):
+                return State(None if project is None else state.content.task_states[0].stack[-1][0][project])
+
+            initial = follow_taus(sp.initial)
+            agenda = [initial]
+            s2p = {initial: (p(initial), False)}
+
+            while len(agenda) > 0:
+                s = agenda.pop()
+
+                ss, done = s2p[s]
+
+                if done:
+                    continue
+
+                # Any proper state that makes it into the agenda must not have any internal transitions:
+                assert not any(id(t) in internal for t in s.transitions)
+
+                # Now look at all successor states and replace them by their tau chain ends:
+                for t in s.transitions:
+                    # Turn the external transition followed by the tau chain into one simple transition:
+                    target = follow_taus(t.target)
+                    try:
+                        sss, sdone = s2p[target]
+                    except KeyError:
+                        sss = p(target)
+                        s2p[target] = (sss, False)
+                        sdone = False
+
+                    task = s.content.task_states[t.label]
+                    assert isinstance(task, InteractionState)
+                    ss.add_transition(Transition(interaction.i2s(task.interaction), sss))
+                    if not sdone:
+                        agenda.append(target)
+
+            sp_processed = LTS(s2p[initial][0].seal())
+
+            self.assertTrue(bisimilar(reach_wbisim, sp_processed, bisim))
 
     def examine_samples(self, samples):
         """
