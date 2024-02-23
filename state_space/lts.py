@@ -159,6 +159,24 @@ class LTS(Immutable):
         return self._s0
 
 
+def transitions(lts):
+    """
+    Enumerates all transitions of an LTS.
+    :param lts: An LTS.
+    :return: A generator of pairs (s, t), where s is a state in the given LTS and t is one of its outgoing transitions.
+    """
+    reached = set()
+    agenda = [lts.initial]
+    while len(agenda) > 0:
+        s = agenda.pop()
+        if s in reached:
+            continue
+        reached.add(s)
+        for t in s.transitions:
+            yield (s, t)
+            agenda.append(t.target)
+
+
 def lts2str(lts):
     """
     Denotes an LTS by a string. This is mostly for debugging purposes.
@@ -167,44 +185,47 @@ def lts2str(lts):
     """
     import io
 
+    snames = {}
+
+    def name(s):
+        try:
+            return snames[s]
+        except KeyError:
+            n = f"state{len(snames)}({s.content})"
+            snames[s] = n
+            return n
+
     prefix = ""
-    sidx = 0
     with io.StringIO() as output:
-        agenda = [lts.initial]
-        visited = {}
-        while True:
-            try:
-                s = agenda.pop()
-            except IndexError:
-                return output.getvalue()
+        for s, t in transitions(lts):
+            output.write(f"{prefix}{name(s)} --{t.label}--> {name(t.target)}")
+            prefix = "\n"
+        return output.getvalue()
 
+
+def lts2dot(lts):
+    """
+    Formats an LTS in DOT language, suitable as input to graphviz. This is mostly for debugging purposes.
+    :param lts: The LTS to format for DOT.
+    :return: A string.
+    """
+    import io
+
+    with io.StringIO() as output:
+        sids = {}
+        def identifier(s):
             try:
-                v, sname = visited[id(s)]
-                if v:
-                    continue
+                return sids[s]
             except KeyError:
-                sname = f"state{sidx}({s.content})"
-                sidx += 1
-
-            visited[id(s)] = (True, sname)
-
-            for t in s.transitions:
-                output.write(prefix)
-                prefix = "\n"
-                output.write(sname)
-                output.write(" --")
-                output.write(str(t.label))
-                output.write("--> ")
-
-                try:
-                    _, tname = visited[id(t.target)]
-                except KeyError:
-                    tname = f"state{sidx}({t.target.content})"
-                    visited[id(t.target)] = (False, tname)
-                    sidx += 1
-
-                output.write(tname)
-                agenda.append(t.target)
+                sid = f"{len(sids)}"
+                sids[s] = sid
+                output.write(f"\n\t{sid}[label=\"{s.content}\"]")
+                return sid
+        output.write("digraph G {")
+        for s, t in transitions(lts):
+            output.write(f"\n\t\t{identifier(s)}->{identifier(t.target)}[label=\"{t.label}\"];")
+        output.write("\n}")
+        return output.getvalue()
 
 
 def state_space(transitions):
