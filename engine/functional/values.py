@@ -1273,7 +1273,7 @@ class VFuture(Value):
         """
         Indicates if a result for this future is either already available or cannot be expected anymore.
         """
-        return self._status != FutureStatus.UNSET
+        return VBool.from_bool(self._status != FutureStatus.UNSET)
 
     @IntrinsicInstanceMethod
     def cancel(self):
@@ -1284,8 +1284,8 @@ class VFuture(Value):
         """
         if self._status == FutureStatus.UNSET:
             self._status = FutureStatus.CANCELLED
-            return True
-        return False
+            return VBool.true
+        return VBool.false
 
     @IntrinsicProperty
     def result(self):
