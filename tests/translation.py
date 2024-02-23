@@ -1,27 +1,28 @@
 import unittest
 
 from engine.exploration import explore, schedule_nonzeno
-from engine.tasks import interaction
-from state_space.equivalence import bisimilar, reach_wbisim
-from state_space.lts import state_space, Transition, State, LTS
 from engine.functional.values import VNone, VCell, VException
 from engine.machine import MachineState
 from engine.task import TaskStatus
+from engine.tasks import interaction
 from engine.tasks.interaction import InteractionState, Interaction, num_interactions_possible, i2s
 from engine.tasks.program import ProgramLocation
 from engine.tasks.stack import StackState, Frame
 from lang.spek import static, modules
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
+from state_space.equivalence import bisimilar, reach_wbisim
+from state_space.lts import state_space, Transition, State, LTS
 from tests.samples_translation.assignments import samples as assignments
 from tests.samples_translation.closures import samples as closures
+from tests.samples_translation.diamond import code as code_diamond
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.manboy import code as code_manboy
-from tests.samples_translation.producer_consumer import code as code_producer_consumer
-from tests.samples_translation.diamond import code as code_diamond
 from tests.samples_translation.procedures import samples as procedures
+from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.tasks import samples as tasks
+from tests.samples_translation.twofirecracker import code as code_twofirecracker
 from tests.samples_translation.whiles import samples as whiles
 from tests.tools import dedent
 
@@ -402,61 +403,37 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         """
 
-        # TODO: Have one more meaningful interaction in the 'interactions' package, such that we can alias
-        #       the interactions as the code sample does.
+        a2i = {"strike?": Interaction.NEXT,
+               "bang!": Interaction.PREV,
+               "extinguish!": Interaction.TICK,
+               None: Interaction.RESUME}
 
-        # TODO: Explore the state space of the sample. For each edge, check the identity of the task that caused it
-        #       and adjust the label.
+        def edges(s, *es):
+            noloop = {Interaction.NEVER}
+            for action, target in zip(es[::2], es[1::2]):
+                i = a2i[action]
+                s.add_transition(Transition(i2s(i), target))
+                noloop.add(i)
+            for j in Interaction:
+                if j not in noloop:
+                    s.add_transition(Transition(i2s(j), s))
 
-        # TODO: Examine the following test sample and make sure that its state space is bisimilar to
-        #       the one that pseuco.com produces (see bisimilarity test suite).
+        # This is similar to the reduced state space produced by pseuco.com:
+        s0, s1, s2, s3, s4, s5, s6, s7 = [State(None) for _ in range(8)]
+        edges(s0, "strike?", s6)
+        edges(s1, "extinguish!", s2)
+        edges(s2)
+        edges(s3, "bang!", s1, "extinguish!", s5)
+        edges(s4, "bang!", s5)
+        edges(s5, "bang!", s2)
+        edges(s6, None, s7, "extinguish!", s2)
+        edges(s7, "extinguish!", s4, "bang!", s3)
+        reduced = LTS(s0.seal())
 
-        raise NotImplementedError()
+        def p(state):
+            return int(state.task_states[0].stack[-1][0]['state'].value)
 
-        """       
-        from interactions import next, prev, tick, somoetherinteraction
-        
-        var strike, bang, extinguish, go_on = next, prev, tick, somoetherinteraction
-        
-        var laf, lpf = future(), future()
-        
-        def light_active():
-            laf.result = True
-            await lpf
-            lpf = future()
-            
-        def light_passive():
-            await laf
-            lpf.result = True
-            laf = future()
-            
-        def choice(a, b):
-            var f = future()
-            def wait(x, value):
-                await x()
-                if not f.done:
-                    f.result = value  
-            async wait(a, True)
-            async wait(b, False)            
-            return f
-        
-        def match():        
-            await strike()
-            while await choice(go_on, extinguish):
-                await async light_active()
-            
-        def two_firecracker():
-            await async light_passive()
-            await bang()
-            await bang()
-                
-        var m = async match()
-        var c = async two_firecracker()
-        
-        await m
-        await c
-
-        """
+        self.examine_sample(code_twofirecracker, None, None, None, bisim=reduced, project=p)
 
     def test_exceptions(self):
         """
