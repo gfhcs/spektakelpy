@@ -30,6 +30,13 @@ await f
 """: ((2, 1, num_interactions_possible), {}),
 
 """
+var f = future()
+f.result = True
+var x = f.done
+""": ((2, 1, num_interactions_possible), {"x": True}),
+
+
+"""
 from interaction import never
 var f = future()
 f.result = 42

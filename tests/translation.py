@@ -458,7 +458,6 @@ class TestSpektakelTranslation(unittest.TestCase):
         # TODO: Tasks should, just like futures, also be able to raise exceptions or be cancelled!
         raise NotImplementedError()
 
-
     def test_tuples(self):
         """
         Tests the creation and usage of tuples, including Projection expressions and "in" expressions
