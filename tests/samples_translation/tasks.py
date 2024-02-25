@@ -27,7 +27,8 @@ await never()
 """
 var f = future()
 await f
-""": ((2, 1, num_interactions_possible), {}),
+var x = True
+""": ((2, 1, num_interactions_possible), {"x": True}),
 
 """
 var f = future()
