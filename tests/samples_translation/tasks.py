@@ -32,10 +32,11 @@ var x = False
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
 """
+from interaction import never
 var f = future()
-f.result = True
 var x = f.done
-""": ((2, 1, num_interactions_possible), {"x": True}),
+await never()
+""": ((2, 1, num_interactions_possible), {"x": False}),
 
 
 """
