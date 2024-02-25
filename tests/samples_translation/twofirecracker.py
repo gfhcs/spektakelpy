@@ -1,5 +1,5 @@
 code = """  
-from interaction import next, prev, tick, resume
+from interaction import next, prev, tick, resume, never
 
 var strike, bang, extinguish, go_on = next, prev, tick, resume
 
@@ -62,4 +62,5 @@ var c = async two_firecracker()
 
 await m
 await c
+await never()
 """
