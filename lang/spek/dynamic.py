@@ -250,18 +250,23 @@ class Spektakel2Stack(Translator):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
             r, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(TRef(r), terms.LoadAttrCase(v, node.name.name), on_error)
+            r = TRef(r)
+            chain.append_update(r, terms.LoadAttrCase(v, node.name.name), on_error)
 
-            cgetter = terms.Project(Read(TRef(r)), CInt(0))
+            cgetter = terms.Project(Read(r), CInt(0))
 
-            getter = Chain()
+            getter, dvalue = Chain(), Chain()
             successor = Chain()
-            chain.append_guard({cgetter: getter, negate(cgetter): successor}, on_error)
+            chain.append_guard({cgetter: getter, negate(cgetter): dvalue}, on_error)
 
-            v, getter = self.emit_call(getter, terms.Project(Read(TRef(r)), CInt(1)), [v], on_error)
+            v, getter = self.emit_call(getter, terms.Project(Read(r), CInt(1)), [v], on_error)
+            getter.append_update(r, v, on_error)
             getter.append_jump(successor)
 
-            return terms.Project(Read(TRef(r)), CInt(1)), successor
+            dvalue.append_update(r, terms.Project(Read(r), CInt(1)), on_error)
+            dvalue.append_jump(successor)
+
+            return Read(r), successor
 
             # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
             #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
