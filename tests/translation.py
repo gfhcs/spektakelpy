@@ -209,6 +209,11 @@ class TestSpektakelTranslation(unittest.TestCase):
 
             sp_processed = LTS(s2p[initial][0].seal())
 
+            # print("Expected:")
+            # print(lts2dot(bisim))
+            # print("Explored:")
+            # print(lts2dot(sp_processed))
+
             self.assertTrue(bisimilar(reach_wbisim, sp_processed, bisim))
 
     def examine_samples(self, samples):
