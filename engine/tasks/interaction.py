@@ -27,6 +27,8 @@ def i2s(i):
     :param i: An Interaction value.
     :return: A string.
     """
+    if i is None:
+        return ""
     r = str(i)
     return r[r.index(".") + 1:]
 
