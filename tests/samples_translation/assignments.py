@@ -65,4 +65,13 @@ var (((x, y), z), )
 await never()
 """: ((2, 1, num_interactions_possible), {"x": 1, "y": 2, "z": 3}),
 
+
+"""
+from interaction import never
+var x, y = 1, 2
+x, y = y, x
+await never()
+""": ((2, 1, num_interactions_possible), {"x": 2, "y": 1}),
+
+
 }
