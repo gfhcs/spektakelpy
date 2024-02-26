@@ -10,8 +10,8 @@ def choice(a, b, c):
         if not f.done:
             f.result = value  
     async wait(a, 0)
-    async wait(b, 1)            
-    async wait(b, 2)            
+    async wait(b, 1)
+    async wait(c, 2)
     return f
 
 def turn(idx):
