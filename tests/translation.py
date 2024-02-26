@@ -438,6 +438,30 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         self.examine_sample(code_twofirecracker, None, None, None, bisim=reduced, project=p)
 
+    def test_future_equality(self):
+        """
+        A simple test to make sure that futures are NOT considered equal just because of their content.
+        """
+
+        def edges(s, *es):
+            noloop = {Interaction.NEVER}
+            for i, target in zip(es[::2], es[1::2]):
+                s.add_transition(Transition(i2s(i), target))
+                noloop.add(i)
+            for j in Interaction:
+                if j not in noloop:
+                    s.add_transition(Transition(i2s(j), s))
+
+        s0, s1 = State((True, False)), State((False, True))
+        edges(s0, Interaction.TICK, s1)
+        reduced = LTS(s0.seal())
+
+        def p(state):
+            counter, y, z = (state.task_states[0].stack[-1][0][v] for v in ("counter", "y", "z"))
+            return int(counter) < 1, z is not y
+
+        self.examine_sample(code_future_equality, None, None, None, bisim=reduced, project=p)
+
     def test_async_philosophers_deadlock(self):
         """
         An implementation of the famous "Dining philosophers" problem: 3 philosophers pick up first the spoon to their
