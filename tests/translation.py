@@ -24,6 +24,7 @@ from tests.samples_translation.producer_consumer import code as code_producer_co
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.twofirecracker import code as code_twofirecracker
 from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
+from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.whiles import samples as whiles
 from tests.tools import dedent
 
@@ -452,14 +453,16 @@ class TestSpektakelTranslation(unittest.TestCase):
                 if j not in noloop:
                     s.add_transition(Transition(i2s(j), s))
 
-        s0, s1 = State((True, False)), State((False, True))
+        s0, s1, s2, s3 = State((False, False, False, True)), State((False, False, True, False)), State((False, True, False, False)), State((True, False, False, False))
         edges(s0, Interaction.TICK, s1)
-        edges(s1, Interaction.TICK, s0)
+        edges(s1, Interaction.TICK, s2)
+        edges(s2, Interaction.TICK, s3)
+        edges(s3)
         reduced = LTS(s0.seal())
 
         def p(state):
-            counter, y, z = (state.task_states[0].stack[-1][0][v] for v in ("counter", "y", "z"))
-            return int(counter) < 1, z is not y
+            v, w, x, y, z = (state.task_states[0].stack[-1][0][v] for v in "vwxyz")
+            return v is w, w is x, x is y, y is z
 
         self.examine_sample(code_future_equality, None, None, None, bisim=reduced, project=p)
 

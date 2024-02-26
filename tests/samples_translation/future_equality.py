@@ -1,15 +1,15 @@
 code = """  
 from interaction import tick, never
 
+var v = future()
+var w = future()
 var x = future()
 var y = future()
 var z = y
 
-var counter = 0
-while counter < 1 or z is not y:
+while v is not w:  
     await tick()
-    x, y = y, x
-    counter = (counter + 1) % 2
+    v, w, x, y, z = w, x, y, z, v
     
 await never()
 """
