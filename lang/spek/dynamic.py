@@ -343,7 +343,10 @@ class Spektakel2Stack(Translator):
             for c in node.children:
                 r, chain = self.translate_expression(chain, c, dec, on_error)
                 cs.append(r)
-            return terms.NewTuple(*cs), chain
+
+            v = TRef(self.declare_pattern(chain, None, on_error)[0])
+            chain.append_update(v, terms.NewTuple(*cs), on_error)
+            return terms.Read(v), chain
         else:
             raise NotImplementedError()
 
