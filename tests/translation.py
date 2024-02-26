@@ -23,6 +23,7 @@ from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.twofirecracker import code as code_twofirecracker
+from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
 from tests.samples_translation.whiles import samples as whiles
 from tests.tools import dedent
 
@@ -434,6 +435,94 @@ class TestSpektakelTranslation(unittest.TestCase):
             return int(state.task_states[0].stack[-1][0]['state'].value)
 
         self.examine_sample(code_twofirecracker, None, None, None, bisim=reduced, project=p)
+
+    def test_async_philosophers_deadlock(self):
+        """
+        An implementation of the famous "Dining philosophers" problem: 3 philosophers pick up first the spoon to their
+        left, then the spoon to their right. This can lead to deadlocks.
+        """
+
+        l2i = {0: Interaction.NEXT,
+               1: Interaction.PREV,
+               2: Interaction.RESUME,
+               None: None}
+
+        steps = ["", "awaiting_left", "has_left", "awaiting_right", "eating", "has_right"]
+
+        def status2content(status):
+            return " | ".join(steps[i] for i in status)
+
+        status0 = (0, 0, 0)
+        state0 = State(status2content(status0))
+        agenda = [status0]
+        status2state = {status0: (state0, False)}
+
+        while len(agenda) > 0:
+            status = agenda.pop()
+            state, completed = status2state[status]
+            if completed:
+                continue
+
+            status2state[status] = (state, True)
+
+            for idx in range(3):
+                step = status[idx]
+                lbl = idx
+                if step == 0:
+                    if status[(idx - 1) % 3] in (0, 1, 2, 3):
+                        step = 2
+                    else:
+                        step = 1
+                elif step == 1:
+                    if status[(idx - 1) % 3] in (0, 1, 2, 3):
+                        lbl = None
+                        step = 2
+                elif step == 2:
+                    if status[(idx + 1) % 3] in (0, 1, 5):
+                        step = 4
+                    else:
+                        step = 3
+                elif step == 3:
+                    if status[(idx + 1) % 3] in (0, 1, 5):
+                        lbl = None
+                        step = 4
+                elif step == 4:
+                    step = 5
+                elif step == 5:
+                    step = 0
+
+                status_target = (*status[:idx], step, *status[idx + 1:])
+                try:
+                    target, _ = status2state[status_target]
+                except KeyError:
+                    target = State(status2content(status_target))
+                    agenda.append(status_target)
+                    status2state[status_target] = (target, False)
+
+                i = l2i[lbl]
+                state.add_transition(Transition(i2s(i), target))
+
+        found_deadlock = False
+        for state, _ in status2state.values():
+            noloop = {i2s(Interaction.NEVER), *(t.label for t in state.transitions)}
+            for j in Interaction:
+                s = i2s(j)
+                if s not in noloop:
+                    state.add_transition(Transition(s, state))
+            found_deadlock |= all(t.target is state for t in state.transitions)
+
+        assert found_deadlock
+        reduced = LTS(state0.seal())
+
+        def p(state):
+            def s2i(s):
+                i = steps.index(s)
+                assert i >= 0
+                return i
+
+            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.string)) for idx in range(3)))
+
+        self.examine_sample(code_philosophers_deadlock, None, None, None, bisim=reduced, project=p)
 
     def test_exceptions(self):
         """
