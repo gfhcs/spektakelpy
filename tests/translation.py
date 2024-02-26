@@ -155,7 +155,7 @@ class TestSpektakelTranslation(unittest.TestCase):
             if project is None:
                 project = lambda s: None
             def p(s):
-                return State(project(s.content))
+                return State(None if s.content is None else project(s.content))
 
             internal, external = (set(id(t) for t in ts) for ts in (internal, external))
 
@@ -163,16 +163,13 @@ class TestSpektakelTranslation(unittest.TestCase):
 
             def follow_taus(state):
                 succ = state
-                seen_state = False
+                seen = set()
                 while any(id(t) in internal for t in succ.transitions):
                     # We assume: If a state has an internal transition, then this transition is the *only* transition.
                     assert len(succ.transitions) == 1
-
-                    if succ is state:
-                        if seen_state:
-                            return zeno
-                        seen_state = True
-
+                    if succ in seen:
+                        return zeno
+                    seen.add(succ)
                     succ = succ.transitions[0].target
                 return succ
 
