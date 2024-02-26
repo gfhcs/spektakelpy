@@ -454,6 +454,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         s0, s1 = State((True, False)), State((False, True))
         edges(s0, Interaction.TICK, s1)
+        edges(s1, Interaction.TICK, s0)
         reduced = LTS(s0.seal())
 
         def p(state):
