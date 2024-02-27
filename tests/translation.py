@@ -17,14 +17,15 @@ from tests.samples_translation.assignments import samples as assignments
 from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.diamond import code as code_diamond
 from tests.samples_translation.expressions import samples as expressions
+from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.manboy import code as code_manboy
+from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.tasks import samples as tasks
+from tests.samples_translation.turns import code as code_turns
 from tests.samples_translation.twofirecracker import code as code_twofirecracker
-from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
-from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.whiles import samples as whiles
 from tests.tools import dedent
 
@@ -465,6 +466,32 @@ class TestSpektakelTranslation(unittest.TestCase):
             return v is w, w is x, x is y, y is z
 
         self.examine_sample(code_future_equality, None, None, None, bisim=reduced, project=p)
+
+    def test_async_turns(self):
+        """
+        Two players taking turns nondeterministically. This is a reduced variant of the dining philosophers, aimed
+        at studying certain bugs more easily.
+        """
+
+        def edges(s, *es):
+            noloop = {Interaction.NEVER}
+            for i, target in zip(es[::2], es[1::2]):
+                s.add_transition(Transition(i2s(i), target))
+                noloop.add(i)
+            for j in Interaction:
+                if j not in noloop:
+                    s.add_transition(Transition(i2s(j), s))
+
+        ww, wp, pw = State((False, False)), State((False, True)), State((True, False))
+        edges(ww, Interaction.NEXT, pw, Interaction.PREV, wp)
+        edges(pw, Interaction.TICK, ww)
+        edges(wp, Interaction.TICK, ww)
+        reduced = LTS(ww.seal())
+
+        def p(state):
+            return tuple(bool(state.task_states[0].stack[-1][0][v].value) for v in ("s0", "s1"))
+
+        self.examine_sample(code_turns, None, None, None, bisim=reduced, project=p)
 
     def test_async_philosophers_deadlock(self):
         """
