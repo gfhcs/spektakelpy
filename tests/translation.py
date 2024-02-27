@@ -14,6 +14,7 @@ from lang.spek.modules import SpekStringModuleSpecification
 from state_space.equivalence import bisimilar, reach_wbisim
 from state_space.lts import state_space, Transition, State, LTS
 from tests.samples_translation.assignments import samples as assignments
+from tests.samples_translation.choice import code as code_choice
 from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.diamond import code as code_diamond
 from tests.samples_translation.expressions import samples as expressions
@@ -492,6 +493,33 @@ class TestSpektakelTranslation(unittest.TestCase):
             return tuple(bool(state.task_states[0].stack[-1][0][v].value) for v in ("s0", "s1"))
 
         self.examine_sample(code_turns, None, None, None, bisim=reduced, project=p)
+
+    def test_async_choice(self):
+        """
+        Similar to test_async_turns, but nondeterministic choice is implemented differently, and both players are
+        allowed to play at the same time.
+        """
+
+        def edges(s, *es):
+            noloop = {Interaction.NEVER}
+            for i, target in zip(es[::2], es[1::2]):
+                s.add_transition(Transition(i2s(i), target))
+                noloop.add(i)
+            for j in Interaction:
+                if j not in noloop:
+                    s.add_transition(Transition(i2s(j), s))
+
+        ww, wp, pw, pp = State((False, False)), State((False, True)), State((True, False)), State((True, True))
+        edges(ww, Interaction.NEXT, pw, Interaction.PREV, wp)
+        edges(pw, Interaction.NEXT, ww, Interaction.PREV, pp)
+        edges(wp, Interaction.NEXT, pp, Interaction.PREV, ww)
+        edges(pp, Interaction.NEXT, wp, Interaction.PREV, pw)
+        reduced = LTS(ww.seal())
+
+        def p(state):
+            return tuple(bool(state.task_states[0].stack[-1][0][v].value) for v in ("s0", "s1"))
+
+        self.examine_sample(code_choice, None, None, None, bisim=reduced, project=p)
 
     def test_async_philosophers_deadlock(self):
         """
