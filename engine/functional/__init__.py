@@ -215,10 +215,10 @@ class Type(Value):
         return TBuiltin.type
 
     def hash(self):
-        return hash(id(self))
+        return id(self)
 
     def equals(self, other):
-        return id(self) == id(other)
+        return self is other
 
     def bequals(self, other, bijection):
         return self is other

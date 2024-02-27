@@ -47,6 +47,7 @@ class Sealable:
     def __init__(self):
         super().__init__()
         self._sealed = False
+        self._hash = None
 
     @abc.abstractmethod
     def hash(self):
@@ -73,10 +74,12 @@ class Sealable:
             raise UnsealedError("Hashes can only be computed once the sealable object has been sealed, "
                                     "because modifying it might change its hash and thus violate invariants"
                                     " of hash-based container structures!") from ex
-        return self.hash()
+        if self._hash is None:
+            self._hash = self.hash()
+        return self._hash
 
     def __eq__(self, other):
-        return self.equals(other)
+        return self is other or hash(self) == hash(other) and self.equals(other)
 
     def __ne__(self, other):
         return not self.equals(other)

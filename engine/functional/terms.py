@@ -202,7 +202,7 @@ class UnaryOperation(Term):
         self._op = check_type(op, UnaryOperator)
 
     def hash(self):
-        return hash(self._op) ^ hash(self.operand)
+        return hash(self._op)
 
     def equals(self, other):
         return isinstance(other, UnaryOperation) and self._op == other._op and self.operand == other.operand
@@ -253,7 +253,7 @@ class BinaryTerm(Term, ABC):
         self._op = check_type(op, Enum)
 
     def hash(self):
-        return hash(self._op) ^ hash(tuple(self.children))
+        return hash(self._op)
 
     def equals(self, other):
         return isinstance(other, BinaryTerm) and self._op == other._op and tuple(self.children) == tuple(other.children)
@@ -483,7 +483,7 @@ class UnaryPredicateTerm(Term):
         self._p = check_type(p, UnaryPredicate)
 
     def hash(self):
-        return hash(self._p) ^ hash(self.operand)
+        return hash(self._p)
 
     def equals(self, other):
         return isinstance(other, UnaryPredicateTerm) and self._p == other._p and self.operand == other.operand
@@ -655,7 +655,7 @@ class ITask(Term):
         self._s = check_type(s, Interaction)
 
     def hash(self):
-        return hash(self._s)
+        return hash(self._s) ^ 986573
 
     def equals(self, other):
         return isinstance(other, ITask) and self._s == other._s
@@ -698,7 +698,7 @@ class IsInstance(Term):
         super().__init__(check_type(value, Term), check_type(types, Term))
 
     def hash(self):
-        return hash(tuple(self.children))
+        return hash(self.types)
 
     def equals(self, other):
         return isinstance(other, IsInstance) and tuple(self.children) == tuple(other.children)
@@ -754,7 +754,7 @@ class Read(Term):
         super().__init__(r)
 
     def hash(self):
-        return hash(self.reference)
+        return hash(self.reference) ^ 890245
 
     def equals(self, other):
         return isinstance(other, Read) and tuple(self.children) == tuple(other.children)
@@ -791,7 +791,7 @@ class Project(Term):
         super().__init__(check_type(tuple, Term), check_type(index, Term))
 
     def hash(self):
-        return hash(tuple(self.children))
+        return hash(self.index)
 
     def equals(self, other):
         return isinstance(other, Project) and tuple(self.children) == tuple(other.children)
@@ -835,7 +835,7 @@ class Lookup(Term):
         super().__init__(check_type(namespace, Term), check_type(name, Term))
 
     def hash(self):
-        return hash(tuple(self.children))
+        return hash(self.name)
 
     def equals(self, other):
         return isinstance(other, Lookup) and tuple(self.children) == tuple(other.children)
@@ -1012,7 +1012,7 @@ class NewTuple(Term):
         super().__init__(*comps)
 
     def hash(self):
-        return hash(tuple(self.children))
+        return len(self.children)
 
     def equals(self, other):
         return isinstance(other, NewTuple) and tuple(self.children) == tuple(other.children)
@@ -1090,7 +1090,7 @@ class NewList(Term):
         super().__init__()
 
     def hash(self):
-        return 42
+        return 43
 
     def equals(self, other):
         return isinstance(other, NewList)
@@ -1142,7 +1142,7 @@ class NewJumpError(Term):
         self._etype = etype
 
     def hash(self):
-        return hash(self._etype)
+        return 87543
 
     def equals(self, other):
         return isinstance(other, NewJumpError) and self._etype is other._etype
@@ -1239,7 +1239,7 @@ class NewProcedure(Term):
         self._entry = check_type(entry, (ProgramLocation, StackProgram))
 
     def hash(self):
-        return hash(self._num_args) ^ hash(self._entry)
+        return len(self._num_args) ^ hash(self._entry)
 
     def equals(self, other):
         return (isinstance(other, NewProcedure)

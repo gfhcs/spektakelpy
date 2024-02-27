@@ -75,7 +75,7 @@ class Frame(Value):
 
     def hash(self):
         check_sealed(self)
-        return hash((self._location, self._local_values))
+        return len(self._local_values)
 
     def bequals(self, other, bijection):
         try:
@@ -231,7 +231,7 @@ class StackState(TaskState):
 
     def hash(self):
         check_sealed(self)
-        return hash((self._stack, self._exception, self._returned))
+        return len(self._stack)
 
     def bequals(self, other, bijection):
         try:

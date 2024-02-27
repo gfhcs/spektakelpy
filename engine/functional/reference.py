@@ -82,7 +82,7 @@ class FrameReference(Reference):
         return self
 
     def hash(self):
-        return hash(self._index)
+        return self._index
 
     def bequals(self, other, bijection):
         return isinstance(other, FrameReference) and self._index == other._index
@@ -196,7 +196,7 @@ class ExceptionReference(Reference):
         return self
 
     def hash(self):
-        return 0
+        return 1
 
     def bequals(self, other, bijection):
         return isinstance(other, ExceptionReference)
@@ -242,7 +242,7 @@ class FieldReference(Reference):
             return c
 
     def hash(self):
-        return hash((self._v, self._fidx))
+        return self._fidx
 
     def bequals(self, other, bijection):
         try:
@@ -292,7 +292,7 @@ class NameReference(Reference):
             return c
 
     def hash(self):
-        return hash(self._ns) ^ hash(self._n)
+        return hash(self._n)
 
     def bequals(self, other, bijection):
         try:

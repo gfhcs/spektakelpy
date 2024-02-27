@@ -185,7 +185,7 @@ class VInt(Value):
         return TBuiltin.int
 
     def hash(self):
-        return hash(self._value)
+        return self._value
 
     def bequals(self, other, bijection):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
@@ -496,7 +496,7 @@ class VTuple(Value):
         return TBuiltin.tuple
 
     def hash(self):
-        return hash(self._comps)
+        return len(self._comps)
 
     def bequals(self, other, bijection):
         # Python can actually tell tuples apart by their identity!
@@ -623,7 +623,7 @@ class VList(Value):
         return TBuiltin.list
 
     def hash(self):
-        return hash(tuple(self._items))
+        return len(self)
 
     def bequals(self, other, bijection):
         try:
@@ -864,7 +864,7 @@ class VException(Value, Exception):
             a.seal()
 
     def hash(self):
-        return hash((self._msg, *self._args))
+        return hash((self._msg, len(self._args)))
 
     def bequals(self, other, bijection):
         try:
@@ -1072,7 +1072,7 @@ class VProcedure(Value):
         return self._entry
 
     def hash(self):
-        return hash(self._entry)
+        return self._num_args ^ len(self._free)
 
     def bequals(self, other, bijection):
         try:
@@ -1147,7 +1147,7 @@ class VProperty(Value):
         return self._setter
 
     def hash(self):
-        return hash((self._getter, self._setter))
+        return id(self)
 
     def bequals(self, other, bijection):
         return self is other
@@ -1208,7 +1208,7 @@ class VInstance(Value):
         return self._c
 
     def hash(self):
-        return hash((self._c, *self._fields))
+        return hash(self._c) ^ 42
 
     def bequals(self, other, bijection):
         try:

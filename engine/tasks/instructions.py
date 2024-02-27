@@ -41,7 +41,7 @@ class Update(Instruction):
         return True
 
     def hash(self):
-        return hash((self._ref, self._term, self._destination, self._edestination))
+        return -1
 
     def equals(self, other):
         return isinstance(other, Update) \
@@ -148,10 +148,7 @@ class Guard(Instruction):
         return self._edestination
 
     def hash(self):
-        h = hash(self._edestination)
-        for e, d in self._alternatives.items():
-            h ^= hash((e, d))
-        return h
+        return len(self._alternatives)
 
     def equals(self, other):
         if not (isinstance(other, Guard) and self._edestination == other._edestination and
@@ -240,7 +237,7 @@ class Push(Instruction):
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
-        return hash((self._callee, self._aterms, self._destination, self._edestination))
+        return -2
 
     def equals(self, other):
         return isinstance(other, Push) \
@@ -305,7 +302,7 @@ class Pop(Instruction):
         out.write("pop")
 
     def hash(self):
-        return 0
+        return -3
 
     def equals(self, other):
         return isinstance(other, Pop)
@@ -356,7 +353,7 @@ class Launch(Instruction):
         out.write(f"])\ton_error: {on_error}")
 
     def hash(self):
-        return hash((self._callee, self._aterms, self._destination, self._edestination))
+        return -4
 
     def equals(self, other):
         return isinstance(other, Launch) \

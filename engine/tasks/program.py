@@ -29,7 +29,7 @@ class StackProgram(Printable, Immutable):
             i.print(out)
 
     def hash(self):
-        return hash(self._instructions)
+        return len(self._instructions)
 
     def equals(self, other):
         return isinstance(other, StackProgram) and self._instructions == other._instructions
@@ -86,7 +86,7 @@ class ProgramLocation(Immutable, Value):
 
     def hash(self):
         check_sealed(self)
-        return hash((self._program, self._index))
+        return self._index
 
     def bequals(self, other, bijection):
         return isinstance(other, ProgramLocation) and (self._index, self._program) == (other._index, other._program)
