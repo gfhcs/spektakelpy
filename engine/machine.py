@@ -1,13 +1,18 @@
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
 from util.printable import Printable
+from .functional import Value
 from .task import TaskState
 
 
-class MachineState(Printable, Sealable):
+class MachineState(Value):
     """
     Represents the state of a virtual machine that is executing tasks.
     """
+
+    @property
+    def type(self):
+        raise NotImplementedError("MachineStates should be visible for machine programs!")
 
     def __init__(self, task_states):
         """
@@ -48,9 +53,15 @@ class MachineState(Printable, Sealable):
             h ^= hash(s)
         return h
 
-    def equals(self, other):
-        return isinstance(other, MachineState) \
-               and frozenset(self._tstates) == frozenset(other._tstates)
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, MachineState)
+                    and len(self._tstates) == len(other._tstates)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._tstates, other._tstates))
 
     @property
     def task_states(self):

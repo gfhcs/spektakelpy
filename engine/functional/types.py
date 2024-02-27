@@ -32,7 +32,7 @@ class BuiltinConstructor(IntrinsicProcedure):
     def hash(self):
         return hash(self._ptype)
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, BuiltinConstructor) and self._ptype is other._ptype
 
 

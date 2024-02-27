@@ -18,7 +18,7 @@ class VNone(Value):
     def hash(self):
         return 0
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, VNone)
 
     def _seal(self):
@@ -68,7 +68,7 @@ class VBool(Value):
     def hash(self):
         return hash(self._value)
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
 
     def _seal(self):
@@ -187,7 +187,7 @@ class VInt(Value):
     def hash(self):
         return hash(self._value)
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
 
     def _seal(self):
@@ -288,7 +288,7 @@ class VFloat(Value):
     def hash(self):
         return hash(self._value)
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
 
     def _seal(self):
@@ -378,8 +378,12 @@ class VStr(Value):
     def hash(self):
         return hash(self._value)
 
-    def equals(self, other):
-        return isinstance(other, VStr) and self._value == other._value
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, VStr) and self._value == other._value
 
     def _seal(self):
         pass
@@ -444,8 +448,12 @@ class VCell(Value):
     def hash(self):
         return hash(self._ref) ^ 47
 
-    def equals(self, other):
-        return isinstance(other, VCell) and self._ref == other._ref
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, VCell) and self._ref.bequals(other._ref, bijection)
 
     def _seal(self):
         self._ref.seal()
@@ -490,8 +498,16 @@ class VTuple(Value):
     def hash(self):
         return hash(self._comps)
 
-    def equals(self, other):
-        return isinstance(other, VTuple) and self._comps == other._comps
+    def bequals(self, other, bijection):
+        # Python can actually tell tuples apart by their identity!
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VTuple)
+                    and len(self._comps) == len(other._comps)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._comps, other._comps))
 
     def _seal(self):
         for c in self._comps:
@@ -609,8 +625,15 @@ class VList(Value):
     def hash(self):
         return hash(tuple(self._items))
 
-    def equals(self, other):
-        return isinstance(other, VList) and self._items == other._items
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VList)
+                    and len(self._items) == len(other._items)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._items, other._items))
 
     def _seal(self):
         for c in self._items:
@@ -738,13 +761,21 @@ class VDict(Value):
     def hash(self):
         return hash(len(self))
 
-    def equals(self, other):
-        if not isinstance(other, VDict) or len(self) != len(other):
-            return False
-        for k, v in self._items.items():
-            if other._items[k] != v:
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VDict)
+                    and len(self._items) == len(other._items)):
                 return False
-        return True
+            for k, v in self._items.items():
+                try:
+                    if not v.bequals(other._items[k], bijection):
+                        return False
+                except KeyError:
+                    return False
+            return True
 
     def _seal(self):
         for k, v in self._items.items():
@@ -835,8 +866,17 @@ class VException(Value, Exception):
     def hash(self):
         return hash((self._msg, *self._args))
 
-    def equals(self, other):
-        return isinstance(other, type(self)) and (self._msg, *self._args) == (other._msg, *other._args) and self._pexception is other._pexception
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, type(self))
+                    and len(self._args) == len(other._args)
+                    and self._msg == other._msg
+                    and self._pexception is other._pexception):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._args, other._args))
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -934,13 +974,21 @@ class VNamespace(Value):
     def hash(self):
         return hash(len(self))
 
-    def equals(self, other):
-        if not isinstance(other, VNamespace) or len(self) != len(other):
-            return False
-        for k, v in self._m.items():
-            if other._m[k] != v:
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VNamespace)
+                    and len(self._m) == len(other._m)):
                 return False
-        return True
+            for k, v in self._m.items():
+                try:
+                    if not v.bequals(other._m[k], bijection):
+                        return False
+                except KeyError:
+                    return False
+            return True
 
     def _seal(self):
         for v in self._m.values():
@@ -988,7 +1036,6 @@ class VProcedure(Value):
         self._num_args = check_type(num_args, int)
         self._free = check_types(free, Value)
         self._entry = check_type(entry, ProgramLocation)
-        self._eq_candidates = set()
 
     def print(self, out):
         out.write(f"Procedure({self._num_args}")
@@ -1027,15 +1074,17 @@ class VProcedure(Value):
     def hash(self):
         return hash(self._entry)
 
-    def equals(self, other):
-        if other is self or other in self._eq_candidates:
-            return True
-        if isinstance(other, VProcedure) and (self._num_args, id(self._entry)) == (other._num_args, id(other._entry)):
-            try:
-                self._eq_candidates.add(other)
-                return self.free == other.free
-            finally:
-                self._eq_candidates.remove(other)
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VProcedure)
+                    and self._num_args == other._num_args
+                    and len(self._free) == len(other._free)
+                    and self._entry.bequals(other._entry, bijection)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._free, other._free))
 
     def _seal(self):
         self._entry.seal()
@@ -1100,8 +1149,8 @@ class VProperty(Value):
     def hash(self):
         return hash((self._getter, self._setter))
 
-    def equals(self, other):
-        return id(self) == id(other)
+    def bequals(self, other, bijection):
+        return self is other
 
     def _seal(self):
         self._getter.seal()
@@ -1161,8 +1210,16 @@ class VInstance(Value):
     def hash(self):
         return hash((self._c, *self._fields))
 
-    def equals(self, other):
-        return isinstance(other, VInstance) and self._c == other._c and tuple(self._fields) == tuple(other._fields)
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VInstance)
+                    and len(self._fields) == len(other._fields)
+                    and self._c.bequals(other._c, bijection)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._fields, other._fields))
 
     def _seal(self):
         self._c.seal()
@@ -1220,7 +1277,7 @@ class VFuture(Value):
         """
         super().__init__()
         self._status = FutureStatus.UNSET
-        self._result = None
+        self._result = VNone.instance
 
     def _print_status(self):
         return {FutureStatus.UNSET: "unset",
@@ -1241,8 +1298,12 @@ class VFuture(Value):
     def hash(self):
         return hash(self._status)
 
-    def equals(self, other):
-        return isinstance(other, VFuture) and (self._status, self._result) == (other._status, other._result)
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, VFuture) and self._status == other._status and self._result.bequals(other._result, bijection)
 
     def _seal(self):
         if self._result is not None:

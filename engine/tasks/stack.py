@@ -7,7 +7,7 @@ from ..functional import Value
 from ..task import TaskState, TaskStatus
 
 
-class Frame(Printable, Sealable):
+class Frame(Value):
     """
     Represents a set of local variables and a pointer to the next machine instruction to execute.
     """
@@ -23,6 +23,10 @@ class Frame(Printable, Sealable):
 
         self._location = check_type(location, ProgramLocation)
         self._local_values = list(check_types(local_values, Value))
+
+    @property
+    def type(self):
+        raise NotImplementedError("Stack frames and their types are supposed to not be visible for machine programs!")
 
     def __len__(self):
         return len(self._local_values)
@@ -73,10 +77,16 @@ class Frame(Printable, Sealable):
         check_sealed(self)
         return hash((self._location, self._local_values))
 
-    def equals(self, other):
-        return isinstance(other, Frame) and self._location == other._location \
-               and len(self._local_values) == len(other._local_values) \
-               and all(x == y for x, y in zip(self._local_values, other._local_values))
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, Frame)
+                    and len(self._local_values) == len(other._local_values)
+                    and self._location.bequals(other._location, bijection)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._local_values, other._local_values))
 
     @property
     def program(self):
@@ -223,9 +233,17 @@ class StackState(TaskState):
         check_sealed(self)
         return hash((self._stack, self._exception, self._returned))
 
-    def equals(self, other):
-        return isinstance(other, StackState) \
-               and (self._stack, self._exception, self._returned) == (other._stack, other._exception, other._returned)
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, StackState)
+                    and len(self._stack) == len(other._stack)
+                    and self._exception.bequals(other._exception, bijection)
+                    and self._returned.bequals(other._returned, bijection)):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._stack, other._stack))
 
     def enabled(self, mstate):
         if len(self.stack) == 0:

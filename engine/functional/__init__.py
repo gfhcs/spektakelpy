@@ -19,6 +19,33 @@ class Value(Sealable, Printable, abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def bequals(self, other, bijection):
+        """
+        Decides whether a machine program could tell this value apart from another value.
+        This method must be compatible with self.hash, i.e. if this method returns True, we must have
+        self.hash() == other.hash().
+        This procedure is used to compare machine states to one another: We must be able to tell whether two objects
+        representing machine states are actually representing the *same* machine state, even though their Python
+        identities are truly different. This is why a bijection from sub-value references in one object to sub-value
+        references in the other object needs to be built up. Only in that way can we decide equality of Values that
+        the machine could tell apart by their identities.
+        :param other: Another Value.
+        :param bijection: A mapping from ID's s of Values to ID's e of Values.
+                  If bijection[id(s)] = id(e), the sub-value s of self is considered indistinguishable
+                  from the sub-value e of other.
+                  The mapping must not contain Values that are only distinguishable by content, because in that case,
+                  multiple Value objects of different identity can be indistinguishable, which cannot be represented
+                  in a bijection.
+                  The mapping must contain all sub values of self and other that are distinguishable by identity.
+                  self.bequals must *extend* the mapping accordingly, i.e. it may only *add* keys.
+        :return: A boolean value indicating if any machine program could distinguish self from other.
+        """
+        pass
+
+    def equals(self, other):
+        return self.bequals(other, {})
+
 
 class Reference(Value, abc.ABC):
     """
@@ -192,6 +219,9 @@ class Type(Value):
 
     def equals(self, other):
         return id(self) == id(other)
+
+    def bequals(self, other, bijection):
+        return self is other
 
     def _seal(self):
         pass

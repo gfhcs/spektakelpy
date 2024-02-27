@@ -88,5 +88,5 @@ class ProgramLocation(Immutable, Value):
         check_sealed(self)
         return hash((self._program, self._index))
 
-    def equals(self, other):
-        return isinstance(other, ProgramLocation) and (self._program, self._index) == (other._program, other._index)
+    def bequals(self, other, bijection):
+        return isinstance(other, ProgramLocation) and (self._index, self._program) == (other._index, other._program)

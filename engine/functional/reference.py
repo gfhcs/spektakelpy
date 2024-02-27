@@ -37,8 +37,12 @@ class VRef(Reference):
     def hash(self):
         return hash(self._value)
 
-    def equals(self, other):
-        return isinstance(other, VRef) and self._value == other._value
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, VRef) and self._value.bequals(other, bijection)
 
     def write(self, tstate, mstate, value):
         raise RuntimeError("Cannot write to a VRef!")
@@ -80,7 +84,7 @@ class FrameReference(Reference):
     def hash(self):
         return hash(self._index)
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, FrameReference) and self._index == other._index
 
     def write(self, tstate, mstate, value):
@@ -124,7 +128,7 @@ class AbsoluteFrameReference(Reference):
     def hash(self):
         return hash((self._taskid, self._offset, self._index))
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, AbsoluteFrameReference) and (self._taskid, self._offset, self._index) == (other._taskid, other._offset, other._index)
 
     def write(self, tstate, mstate, value):
@@ -160,7 +164,7 @@ class ReturnValueReference(Reference):
     def hash(self):
         return 0
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, ReturnValueReference)
 
     def write(self, tstate, mstate, value):
@@ -194,7 +198,7 @@ class ExceptionReference(Reference):
     def hash(self):
         return 0
 
-    def equals(self, other):
+    def bequals(self, other, bijection):
         return isinstance(other, ExceptionReference)
 
     def write(self, tstate, mstate, value):
@@ -240,8 +244,12 @@ class FieldReference(Reference):
     def hash(self):
         return hash((self._v, self._fidx))
 
-    def equals(self, other):
-        return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v == other._v
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v.bequals(other._v, bijection)
 
     def write(self, tstate, mstate, value):
         self._v[self._fidx] = check_type(value, Value)
@@ -286,8 +294,12 @@ class NameReference(Reference):
     def hash(self):
         return hash(self._ns) ^ hash(self._n)
 
-    def equals(self, other):
-        return isinstance(other, NameReference) and self._n == other._n and self._ns == other._ns
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, NameReference) and self._n == other._n and self._ns.bequals(other._ns, bijection)
 
     def write(self, tstate, mstate, value):
         ns = self._ns.read(tstate, mstate)
@@ -346,8 +358,8 @@ class CellReference(Reference):
     def hash(self):
         return hash(self._cref) ^ 987654
 
-    def equals(self, other):
-        return isinstance(other, CellReference) and self._cref == other._cref
+    def bequals(self, other, bijection):
+        return isinstance(other, CellReference) and self._cref.bequals(other._cref, bijection)
 
     def write(self, tstate, mstate, value):
         cell = self._cref.read(tstate, mstate)

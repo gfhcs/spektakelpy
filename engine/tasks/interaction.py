@@ -94,7 +94,12 @@ class InteractionState(TaskState):
         check_sealed(self)
         return hash((self.status, self._interaction))
 
-    def equals(self, other):
-        return isinstance(other, InteractionState) \
-               and (self._interaction, self.status) == (other._interaction, other.status)
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            if isinstance(other, InteractionState) and (self._interaction, self.status) == (other._interaction, other.status):
+                bijection[id(self)] = id(other)
+                return True
+            return False
 
