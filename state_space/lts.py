@@ -52,8 +52,6 @@ class State(Sealable):
         """
         if not isinstance(self._transitions, list):
             raise RuntimeError("This state has already been sealed and can therefor not be extended by more transitions!")
-        if t in self._transitions:
-            return False
         self._transitions.append(check_type(t, Transition))
         return True
 

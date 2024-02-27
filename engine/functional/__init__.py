@@ -181,6 +181,7 @@ class Type(Value):
         from engine.intrinsic import IntrinsicProcedure
 
         super().__init__()
+        self.seal()
         self._name = check_type(name, str)
         self._super_types = tuple(check_type(t, Type) for t in super_types)
         self._field_names = field_names
