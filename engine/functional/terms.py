@@ -432,8 +432,8 @@ class Comparison(BinaryTerm):
                    ComparisonOperator.ISNOT: "is not"}[self._op])
 
     def evaluate(self, tstate, mstate):
-        left = self.left.evaluate(tstate, mstate)
-        right = self.right.evaluate(tstate, mstate)
+        left = self.left.evaluate(tstate, mstate).seal()
+        right = self.right.evaluate(tstate, mstate).seal()
 
         if self.operator == ComparisonOperator.EQ:
             return VBool.from_bool(left == right)
