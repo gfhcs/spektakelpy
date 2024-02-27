@@ -475,7 +475,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_ArithmeticBinaryOperation(self):
 
@@ -497,7 +497,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_BooleanBinaryOperation(self):
 
@@ -520,7 +520,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_Comparison(self):
 
@@ -609,7 +609,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 s0.task_states[0].stack[0][0] = VInt(42)
                 _, states, _, _ = self.explore(p, s0)
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_new(self):
         """
@@ -629,7 +629,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_namespace1(self):
         """
@@ -650,7 +650,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 s0.task_states[0].stack[0][0] = ns
                 _, states, _, _ = self.explore(p, s0)
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_namespace2(self):
         """
@@ -749,7 +749,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), num_interactions_possible)
 
-                self.assertEqual(states[-1].content.task_states[0].stack[0][0], value)
+                self.assertEqual(states[-1].content.task_states[0].stack[0][0], value.seal())
 
     def test_StoreAttrCase(self):
         """
