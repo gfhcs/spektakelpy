@@ -82,7 +82,7 @@ class Sealable:
         return self is other or hash(self) == hash(other) and self.equals(other)
 
     def __ne__(self, other):
-        return not self.equals(other)
+        return not self.__eq__(other)
 
     @abc.abstractmethod
     def _seal(self):
