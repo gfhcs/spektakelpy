@@ -151,6 +151,18 @@ class StackState(TaskState):
         self._returned = VNone.instance if exception is None else check_type(returned, Value)
         self.status = TaskStatus.RUNNING if len(self._stack) > 0 else TaskStatus.COMPLETED
 
+    def dequeue(self, mstate):
+        """
+        Removes this task from a machine state. This does not invalidate the task, but prevents it from ever
+        being scheduled again.
+        :param mstate: The MachineState to remove this task from.
+        """
+        for idx, t in enumerate(mstate.task_states):
+            if t is self:
+                mstate.remove_task(idx)
+                return
+        raise ValueError("Could not find the StackState in the given MachineState!")
+
     def print(self, out):
         out.write("StackState(")
         prefix = ""
@@ -269,6 +281,7 @@ class StackState(TaskState):
 
             if len(tstate.stack) == 0:
                 tstate.status = TaskStatus.COMPLETED
+                self.dequeue(mstate)
                 break
 
             top = tstate.stack[-1]
@@ -279,6 +292,7 @@ class StackState(TaskState):
                 from . import InstructionException
                 self.exception = VException(pexception=InstructionException("Instruction index invalid, don't know how to continue."))
                 tstate.status = TaskStatus.FAILED
+                self.dequeue(mstate)
                 break
 
             if i.enabled(tstate, mstate):
