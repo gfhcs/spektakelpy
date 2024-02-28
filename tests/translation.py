@@ -394,7 +394,34 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Test a simple producer-consumer setup. This sample only works if concurrency is available.
         """
-        self.examine_sample(code_producer_consumer, 14, 10, 4 * num_interactions_possible, consumed=321, buffer=None)
+
+        def edges(s, *es):
+            noloop = {Interaction.NEVER}
+            for i, target in zip(es[::2], es[1::2]):
+                s.add_transition(Transition(i2s(i), target))
+                noloop.add(i)
+            for j in Interaction:
+                if j not in noloop:
+                    s.add_transition(Transition(i2s(j), s))
+
+        # This is similar to the reduced state space produced by pseuco.com:
+        s0, s1, s2, s3 = [State(consumed) for consumed in (0, 3, 32, 321)]
+        edges(s0, Interaction.NEXT, s1)
+        edges(s1, Interaction.NEXT, s2)
+        edges(s2, Interaction.NEXT, s3)
+        edges(s3)
+        reduced = LTS(s0.seal())
+
+        def p(state):
+
+            tasks = [t for t in state.task_states if isinstance(t, StackState)]
+
+            try:
+                return int(tasks[0].stack[-1][0]['consumed'].value)
+            except:
+                raise
+
+        self.examine_sample(code_producer_consumer, None, None, None, bisim=reduced, project=p)
 
     def test_async_pseuco_twofirecracker(self):
         """

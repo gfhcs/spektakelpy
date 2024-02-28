@@ -280,7 +280,7 @@ class StackState(TaskState):
         while True:
 
             if len(tstate.stack) == 0:
-                tstate.status = TaskStatus.COMPLETED
+                tstate.status = TaskStatus.FAILED if isinstance(self.exception, VException) else TaskStatus.COMPLETED
                 self.dequeue(mstate)
                 break
 
