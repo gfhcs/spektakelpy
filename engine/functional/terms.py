@@ -925,8 +925,8 @@ class LoadAttrCase(Term):
             attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
             if isinstance(attr, int):
                 return VTuple(VBool.false, value[attr])
-            elif isinstance(attr, VProcedure):
-                return VTuple(VBool.false, attr)
+            elif isinstance(attr, (VProcedure, IntrinsicProcedure)):
+                return VTuple(VBool.true, attr)
             elif isinstance(attr, VProperty):
                 return VTuple(VBool.true, attr.get_procedure)
             else:
