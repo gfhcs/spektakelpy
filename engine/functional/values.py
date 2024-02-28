@@ -899,13 +899,41 @@ class VTypeError(VException):
         return TBuiltin.type_error
 
 
+class VCancellationError(VException):
+    """
+    Raised inside a task when it is cancelled.
+    """
+
+    def __init__(self, initial):
+        """
+        Creates a new cancellation error.
+        :param initial: Specifies if this cancellation error is to be set by TaskState.cancel, before the task had
+        a chance to react to its cancellation. The first instruction to encounter an initial error will replace it
+        by a non-initial one.
+        """
+        super().__init__("Task was cancelled!")
+        self._initial = initial
+
+    @property
+    def initial(self):
+        """
+        Indicates if this is the initial error that was set by TaskState.cancel before the task had a chance to
+        handle the error.
+        """
+        return self._initial
+
+    @property
+    def type(self):
+        return TBuiltin.cancellation_error
+
+
 class VJumpError(VException):
     """
     Raised a control flow jump is executed.
     """
     @property
     def type(self):
-        return TBuiltin.jump_exception
+        return TBuiltin.jump_error
 
 
 class VReturnError(VJumpError):

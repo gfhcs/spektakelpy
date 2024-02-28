@@ -152,7 +152,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the execution of Pop instructions.
         """
 
-        p = StackProgram([Pop()])
+        p = StackProgram([Pop(42)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         self.assertEqual(len(states), 2)
@@ -166,7 +166,7 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the errors raised by failing execution of the Update instruction.
         """
-        p = StackProgram([Pop(), Pop()])
+        p = StackProgram([Pop(42), Pop(42)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p))
 
         self.assertEqual(len(states), 2)
@@ -183,7 +183,7 @@ class TestSpektakelMachine(unittest.TestCase):
         q = StackProgram([Update(TRef(ReturnValueReference()),
                                  ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
-                                        Pop()])
+                                        Pop(42)])
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
@@ -210,7 +210,7 @@ class TestSpektakelMachine(unittest.TestCase):
         q = StackProgram([Update(TRef(ReturnValueReference()),
                                  ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
-                                        Pop()])
+                                        Pop(42)])
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
@@ -269,7 +269,7 @@ class TestSpektakelMachine(unittest.TestCase):
         q = StackProgram([Update(TRef(ReturnValueReference()),
                                  ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
-                                        Pop()])
+                                        Pop(42)])
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
@@ -686,7 +686,7 @@ class TestSpektakelMachine(unittest.TestCase):
         q = StackProgram([Update(TRef(ReturnValueReference()),
                                  ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
-                                        Pop()])
+                                        Pop(42)])
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewProcedure(1, tuple(), q), 1, 3),
                           Push(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 2, 3),
@@ -707,8 +707,8 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of class-related terms.
         """
 
-        g = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
-        s = StackProgram([Pop()])
+        g = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
+        s = StackProgram([Pop(42)])
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
                           Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
@@ -728,11 +728,11 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of LoadAttrCase terms.
         """
-        method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
+        method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
         method = VProcedure(1, tuple(), ProgramLocation(method, 0))
 
-        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
-        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop()]), 0))
+        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)]), 0))
+        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop(42)]), 0))
         property = VProperty(g, s)
 
         members = {"method": method, "property": property}
@@ -760,11 +760,11 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of StoreAttrCase terms.
         """
-        method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
+        method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
         method = VProcedure(1, tuple(), ProgramLocation(method, 0))
 
-        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()]), 0))
-        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop()]), 0))
+        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)]), 0))
+        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop(42)]), 0))
         property = VProperty(g, s)
 
         members = {"method": method, "property": property}

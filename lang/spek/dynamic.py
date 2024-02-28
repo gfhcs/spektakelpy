@@ -372,7 +372,7 @@ class Spektakel2Stack(Translator):
 
         # We made it to the function level without hitting an exception block.
         chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
-        chain.append_pop()
+        chain.append_pop(on_error)
 
         return chain
 
@@ -464,10 +464,10 @@ class Spektakel2Stack(Translator):
             self.declare_pattern(entryBlock, aname, on_error, initialize=False, cellify=not self._vanalysis.safe_on_stack(aname))
 
         bodyBlock = self.translate_statement(entryBlock, body, dec, exitBlock)
-        bodyBlock.append_pop()
+        bodyBlock.append_pop(exitBlock)
         del bodyBlock
 
-        exitBlock.append_pop()
+        exitBlock.append_pop(exitBlock)
 
         f = terms.NewProcedure(num_args, tocopy, entryBlock.compile())
 
@@ -707,7 +707,7 @@ class Spektakel2Stack(Translator):
             chain = self.translate_statement(chain, node.body, dec, on_error)
 
             chain = chain.append_update(name, terms.NewClass(super_classes, terms.Read(FrameReference(0))), on_error)
-            chain = chain.append_pop()
+            chain = chain.append_pop(on_error)
 
             self._scopes.pop()
 
@@ -774,7 +774,7 @@ class Spektakel2Stack(Translator):
         exit = Chain()
         l, = self.declare_pattern(imp_code, None, panic)
         imp_code.append_push(Callable(CTerm(VDict.get)), [Read(TRef(d)), Read(TRef(l))], load1)
-        imp_code.append_pop()
+        imp_code.append_pop(panic)
         load1.append_update(TRef(ExceptionReference()), CNone(), panic)
         load1.append_push(Callable(Read(TRef(l))), [], exit)
         error = terms.Comparison(ComparisonOperator.NEQ, terms.Read(TRef(ExceptionReference())), terms.CNone())
@@ -784,7 +784,7 @@ class Spektakel2Stack(Translator):
         load2.append_push(Callable(CTerm(VDict.set)), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
         load2.append_update(TRef(ReturnValueReference()), Read(TRef(h)), panic)
         load2.append_jump(exit)
-        exit.append_pop()
+        exit.append_pop(panic)
         self._scopes.pop()
 
         d = AbsoluteFrameReference(0, 0, 1)
@@ -826,8 +826,8 @@ class Spektakel2Stack(Translator):
         # Return the namespace. The preamble will store it somewhere.
         block.append_update(TRef(ReturnValueReference()), terms.Read(TRef(FrameReference(0))), exit)
 
-        block.append_pop()
-        exit.append_pop()
+        block.append_pop(exit)
+        exit.append_pop(exit)
 
         self._scopes.pop()
 
@@ -842,7 +842,7 @@ class Spektakel2Stack(Translator):
         self._scopes.push(ModuleScope(0))
         code = self.emit_preamble()
         on_error = Chain()
-        on_error.append_pop()
+        on_error.append_pop(on_error)
         self.emit_import(code, spec, [],  None,{}, on_error)
         self._scopes.pop()
         return code

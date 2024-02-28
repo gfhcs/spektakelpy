@@ -527,7 +527,7 @@ class UnaryPredicateTerm(Term):
         elif self._p == UnaryPredicate.ISTERMINATED:
             # Check if the argument is a completed available.
             if isinstance(r, TaskState):
-                value = r.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+                value = r.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)
             elif isinstance(r, VFuture):
                 value = r.status != FutureStatus.UNSET
             else:

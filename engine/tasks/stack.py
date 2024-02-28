@@ -1,4 +1,4 @@
-from engine.functional.values import VException, VNone
+from engine.functional.values import VException, VNone, VCancellationError
 from util import check_type, check_types
 from util.immutable import Sealable, check_sealed, check_unsealed
 from util.printable import Printable
@@ -151,6 +151,12 @@ class StackState(TaskState):
         self._returned = VNone.instance if exception is None else check_type(returned, Value)
         self.status = TaskStatus.RUNNING if len(self._stack) > 0 else TaskStatus.COMPLETED
 
+    def cancel(self):
+        if self.status in (TaskStatus.CANCELLED, TaskStatus.COMPLETED, TaskStatus.FAILED):
+            return
+        self.status = TaskStatus.CANCELLED
+        self._exception = VCancellationError(True)
+
     def dequeue(self, mstate):
         """
         Removes this task from a machine state. This does not invalidate the task, but prevents it from ever
@@ -271,7 +277,8 @@ class StackState(TaskState):
         check_unsealed(self)
         tstate = self
 
-        tstate.status = TaskStatus.RUNNING
+        if tstate.status != TaskStatus.CANCELLED:
+            tstate.status = TaskStatus.RUNNING
         progress = False
 
         # A task is not supposed to yield control unless it really has to.
@@ -280,7 +287,8 @@ class StackState(TaskState):
         while True:
 
             if len(tstate.stack) == 0:
-                tstate.status = TaskStatus.FAILED if isinstance(self.exception, VException) else TaskStatus.COMPLETED
+                if tstate.status != TaskStatus.CANCELLED:
+                    tstate.status = TaskStatus.FAILED if isinstance(self.exception, VException) else TaskStatus.COMPLETED
                 self.dequeue(mstate)
                 break
 
@@ -301,6 +309,7 @@ class StackState(TaskState):
             else:
                 if not progress:
                     raise RuntimeError("This task was not enabled and thus should not have been run!")
-                tstate.status = TaskStatus.WAITING
+                if tstate.status != TaskStatus.CANCELLED:
+                    tstate.status = TaskStatus.WAITING
                 break
 

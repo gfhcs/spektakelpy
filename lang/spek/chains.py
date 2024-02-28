@@ -1,6 +1,7 @@
 from engine.functional import terms
 from engine.tasks.instructions import Push, Launch, Guard, Update, Pop
 from engine.tasks.program import StackProgram
+from util import check_type
 from util.printable import Printable
 
 
@@ -134,14 +135,17 @@ class Chain(Printable):
         self._proto.append((Push, entry, aexpressions, on_error))
         self._targets.add(on_error)
 
-    def append_pop(self):
+    def append_pop(self, on_error):
         """
         Appends a prototype of a Pop instruction to this chain.
         The chain cannot be continued after a pop instruction.
+        :param on_error: The chain to jump to if the instruction causes an error.
         """
         self._assert_continuable()
-        self._proto.append((Pop, ))
+        check_type(on_error, Chain)
+        self._proto.append((Pop, on_error))
         self._can_continue = False
+        self._targets.add(on_error)
 
     def append_launch(self, entry, aexpressions, on_error):
         """
@@ -185,31 +189,29 @@ class Chain(Printable):
                                  # exactly at the recorded offsets.
             for t, *args in c._proto:
 
-                if t is Pop:
-                    instructions.append(Pop())
-
+                *args, on_error = args
+                if on_error is None:
+                    on_error = -1
                 else:
-                    *args, on_error = args
-                    if on_error is None:
-                        on_error = -1
-                    else:
-                        on_error = entries[on_error]
+                    on_error = entries[on_error]
 
-                    if t is Update:
-                        ref, expression = args
-                        instructions.append(Update(ref, expression, offset + 1, on_error))
-                    elif t is Guard:
-                        alternatives, = args
-                        instructions.append(Guard({condition: entries[chain] for condition, chain in alternatives.items()}, on_error))
-                    elif t is Push:
-                        entry, expressions = args
-                        instructions.append(Push(entry, expressions, offset + 1, on_error))
-                    elif t is Launch:
-                        entry, expressions = args
-                        instructions.append(Launch(entry, expressions, offset + 1, on_error))
-                    else:
-                        raise NotImplementedError("Bug in Chain.compile: The instruction type {} "
-                                                  "has not been taken into account for compilation yet!".format(t))
+                if t is Update:
+                    ref, expression = args
+                    instructions.append(Update(ref, expression, offset + 1, on_error))
+                elif t is Guard:
+                    alternatives, = args
+                    instructions.append(Guard({condition: entries[chain] for condition, chain in alternatives.items()}, on_error))
+                elif t is Push:
+                    entry, expressions = args
+                    instructions.append(Push(entry, expressions, offset + 1, on_error))
+                elif t is Launch:
+                    entry, expressions = args
+                    instructions.append(Launch(entry, expressions, offset + 1, on_error))
+                elif t is Pop:
+                    instructions.append(Pop(on_error))
+                else:
+                    raise NotImplementedError("Bug in Chain.compile: The instruction type {} "
+                                              "has not been taken into account for compilation yet!".format(t))
                 offset += 1
 
             if c._can_continue:

@@ -3,6 +3,7 @@ import abc
 from enum import Enum
 
 from engine.functional import Value
+from engine.intrinsic import IntrinsicInstanceMethod
 from util import check_type
 from util.immutable import check_unsealed
 
@@ -15,6 +16,7 @@ class TaskStatus(Enum):
     RUNNING = 1    # Task is currently being computed and changing the state.
     COMPLETED = 2  # Task has finished successfully.
     FAILED = 3     # Task has failed.
+    CANCELLED = 4  # Task has been cancelled.
 
 
 class TaskState(Value, abc.ABC):
@@ -34,6 +36,11 @@ class TaskState(Value, abc.ABC):
         """
         super().__init__()
         self._status = check_type(status, TaskStatus)
+
+    @IntrinsicInstanceMethod
+    @abc.abstractmethod
+    def cancel(self):
+        raise NotImplementedError()
 
     @property
     def status(self):

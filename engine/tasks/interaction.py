@@ -53,6 +53,9 @@ class InteractionState(TaskState):
         super().__init__(status)
         self._interaction = check_type(interaction, Interaction)
 
+    def cancel(self):
+        raise RuntimeError("InteractionState tasks cannot be cancelled!")
+
     def print(self, out):
         status = "RECEIVED" if self.status == TaskStatus.COMPLETED else "Waiting for"
         out.write(f"InteractionState({status} {i2s(self._interaction)})")

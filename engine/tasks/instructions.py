@@ -3,7 +3,7 @@ from . import InstructionException, Instruction
 from .program import ProgramLocation
 from .stack import Frame, StackState
 from ..functional import EvaluationException, Term, Type
-from ..functional.values import VException, VProcedure, VNone, VTypeError, VInt
+from ..functional.values import VException, VProcedure, VNone, VTypeError, VInt, VCancellationError
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
@@ -77,8 +77,15 @@ class Update(Instruction):
         return self._edestination
 
     def execute(self, tstate, mstate):
+
         top = tstate.stack[-1]
         top.instruction_index = self._destination
+
+        if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
+            tstate.exception = VCancellationError(False)
+            top.instruction_index = self._edestination
+            return
+
         try:
             ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
@@ -165,14 +172,19 @@ class Guard(Instruction):
         return True
 
     def enabled(self, tstate, mstate):
-        return any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys())
+        return (isinstance(tstate.exception, VCancellationError) and tstate.exception.initial or
+                any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys()))
 
     def execute(self, tstate, mstate):
 
-        enabled = False
-
         top = tstate.stack[-1]
 
+        if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
+            tstate.exception = VCancellationError(False)
+            top.instruction_index = self._edestination
+            return
+
+        enabled = False
         for e, d in self._alternatives.items():
 
             try:
@@ -251,6 +263,11 @@ class Push(Instruction):
 
         old_top = tstate.stack[-1]
 
+        if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
+            tstate.exception = VCancellationError(False)
+            old_top.instruction_index = self._edestination
+            return
+
         try:
             callee, free, num_args = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
@@ -291,8 +308,13 @@ class Pop(Instruction):
     An instruction that pops the top-most frame from the stack.
     """
 
-    def __init__(self):
+    def __init__(self, edestination):
+        """
+        :param edestination: The instruction index at which execution should continue in case this instruction causes
+                     an error.
+        """
         super().__init__()
+        self._edestination = check_type(edestination, int)
 
     def print(self, out):
         Pop.print_proto(out)
@@ -311,6 +333,10 @@ class Pop(Instruction):
         return True
 
     def execute(self, tstate, mstate):
+        if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
+            tstate.exception = VCancellationError(False)
+            tstate.stack[-1].instruction_index = self._edestination
+            return
         tstate.pop()
 
 
@@ -366,6 +392,11 @@ class Launch(Instruction):
     def execute(self, tstate, mstate):
 
         mytop = tstate.stack[-1]
+
+        if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
+            tstate.exception = VCancellationError(False)
+            mytop.instruction_index = self._edestination
+            return
 
         try:
             callee, free, num_args = self._callee.evaluate(tstate, mstate)

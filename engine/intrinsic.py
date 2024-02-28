@@ -61,6 +61,7 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
     def __init__(self, m):
         super().__init__()
         self._m = m
+        self.__isabstractmethod__ = getattr(m, '__isabstractmethod__', False)
 
     @property
     def num_args(self):
