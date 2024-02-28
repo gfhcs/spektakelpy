@@ -23,9 +23,9 @@ class Chain(Printable):
         if not (self._can_continue == other._can_continue and len(self._proto) == len(other._proto)):
             return False
         try:
-            return bijection[self] is other
+            return bijection[id(self)] is other
         except KeyError:
-            bijection[self] = other
+            bijection[id(self)] = other
             for (t1, *args1), (t2, *args2) in zip(self._proto, other._proto):
                 if t1 is not t2 or len(args1) != len(args2):
                     return False
