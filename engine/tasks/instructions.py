@@ -391,3 +391,52 @@ class Launch(Instruction):
             return
 
         mytop.instruction_index = self._destination
+
+
+class Inspect(Instruction):
+    """
+    An instruction that does not modify the machine state, other than advancing the instruction pointer.
+    This instruction can be used to inspect machine states that would otherwise not be observable.
+    This instruction is meant for debugging.
+    """
+
+    def __init__(self, i, destination):
+        """
+        Creates a new Inspect instruction.
+        :param i: A procedure accepting the current TaskState and MachineState at the time of execution of this
+                  instruction as arguments. Both are sealed.
+        :param destination: The index of the instruction that is to be executed after this one.
+        """
+        super().__init__()
+        self._i = i
+        self._destination = destination
+
+    @property
+    def destination(self):
+        """
+        The index of the instruction that is to be executed after this one was executed successfully.
+        """
+        return self._destination
+
+    def print(self, out):
+        Inspect.print_proto(out)
+
+    @staticmethod
+    def print_proto(out):
+        out.write("inspect")
+
+    def hash(self):
+        return -1000
+
+    def equals(self, other):
+        return isinstance(other, Inspect) and self._i is other._i
+
+    def enabled(self, tstate, mstate):
+        return True
+
+    def execute(self, tstate, mstate):
+        clones = {}
+        ctstate, cmstate = (v.clone_unsealed(clones=clones).seal() for v in (tstate, mstate))
+        top = tstate.stack[-1]
+        top.instruction_index = self._destination
+        return self._i(ctstate, cmstate)
