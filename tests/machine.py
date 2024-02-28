@@ -145,7 +145,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), num_interactions_possible)
 
-        self.assertIsNot(states[1].content.task_states[0].exception, None)
+        self.assertTrue(all(not isinstance(t, StackState) for t in states[1].content.task_states))
 
     def test_pop_success(self):
         """
@@ -160,7 +160,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(len(states[0].content.task_states[0].stack), 1)
-        self.assertEqual(len(states[1].content.task_states[0].stack), 0)
+        self.assertTrue(all(not isinstance(t, StackState) for t in states[-1].content.task_states))
 
     def test_pop_failure(self):
         """
@@ -173,7 +173,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
 
         self.assertEqual(len(states[0].content.task_states[0].stack), 1)
-        self.assertEqual(len(states[1].content.task_states[0].stack), 0)
+        self.assertTrue(all(not isinstance(t, StackState) for t in states[-1].content.task_states))
 
     def test_push_success(self):
         """
@@ -236,7 +236,7 @@ class TestSpektakelMachine(unittest.TestCase):
         q = StackProgram([Update(TRef(ReturnValueReference()),
                                  ArithmeticBinaryOperation(ArithmeticBinaryOperator.PLUS,
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
-                                        Pop()])
+                          Guard({}, 1)])
 
         q = VProcedure(1, tuple(), ProgramLocation(q, 0))
 
@@ -253,7 +253,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), num_interactions_possible)
 
         self.assertIsNot(states[1].content.task_states[0].returned, None)
-        t = states[1].content.task_states[0].returned
+        t = states[-1].content.task_states[0].returned
         idx = None
         for idx, tt in enumerate(states[1].content.task_states):
             if tt is t:
@@ -404,23 +404,20 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CInt terms.
         """
 
-        p = StackProgram([Update(TRef(FrameReference(0)), CInt(42), 1, 1)])
+        p = StackProgram([Update(TRef(FrameReference(0)), CInt(42), 1, 1),
+                                  Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
-
         result = states[-1].content.task_states[0].stack[0][0]
-
         self.assertEqual(42, int(result))
 
     def test_CFloat(self):
         """
         Tests the successful evaluation of CFloat terms.
         """
-
-        p = StackProgram([Update(TRef(FrameReference(0)), CFloat(3.1415926), 1, 1)])
+        p = StackProgram([Update(TRef(FrameReference(0)), CFloat(3.1415926), 1, 1),
+                                  Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
-
         result = states[-1].content.task_states[0].stack[0][0]
-
         self.assertEqual(3.1415926, float(result))
 
     def test_CBool(self):
@@ -428,11 +425,11 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CFloat terms.
         """
 
-        p = StackProgram([Update(TRef(FrameReference(0)), CBool(False), 1, 1)])
+
+        p = StackProgram([Update(TRef(FrameReference(0)), CBool(False), 1, 1),
+                                  Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
-
         result = states[-1].content.task_states[0].stack[0][0]
-
         self.assertEqual(False, float(result))
 
     def test_CNone(self):
@@ -440,7 +437,8 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of CFloat terms.
         """
 
-        p = StackProgram([Update(TRef(FrameReference(0)), CNone(), 1, 1)])
+        p = StackProgram([Update(TRef(FrameReference(0)), CNone(), 1, 1),
+                          Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
         result = states[-1].content.task_states[0].stack[0][0]
@@ -451,12 +449,10 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of CFloat terms.
         """
-
-        p = StackProgram([Update(TRef(FrameReference(0)), CString("Hello World"), 1, 1)])
+        p = StackProgram([Update(TRef(FrameReference(0)), CString("Hello World"), 1, 1),
+                                  Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
-
         result = states[-1].content.task_states[0].stack[0][0]
-
         self.assertEqual("Hello World", result.string)
 
     def test_UnaryOperation(self):
@@ -472,7 +468,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value.seal(), result)
@@ -494,7 +491,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value.seal(), result)
@@ -517,7 +515,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value.seal(), result)
@@ -552,7 +551,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -572,7 +572,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for idx, (term, value) in enumerate(cases):
             with self.subTest(idx=idx, term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
                 s0.task_states[0].stack[0][0] = VList.append
                 _, states, _, _ = self.explore(p, s0)
@@ -590,10 +591,11 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
-                self.assertEqual(value, result)
+                self.assertEqual(value.seal(), result)
 
     def test_Read(self):
         """
@@ -604,7 +606,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
                 s0.task_states[0].stack[0][0] = VInt(42)
                 _, states, _, _ = self.explore(p, s0)
@@ -626,7 +629,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value.seal(), result)
@@ -635,13 +639,13 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of namespace-related terms.
         """
-
         cases = [(IsInstance(NewNamespace(), CType(TBuiltin.namespace)), VBool.true),
                  (Read(Lookup(TRef(FrameReference(0)), CString("hello"))), VInt(42))]
 
         for term, value in cases:
             with self.subTest(term=term):
-                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1)])
+                p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
+                                  Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
 
                 ns = VNamespace()
@@ -660,7 +664,8 @@ class TestSpektakelMachine(unittest.TestCase):
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
                           Update(Lookup(TRef(FrameReference(0)), CString("x")), CInt(42), 2, 42),
                           Update(Lookup(TRef(FrameReference(0)), CString("y")), CInt(4711), 3, 42),
-                          Update(TRef(FrameReference(0)), Read(TRef(FrameReference(0))), 4, 42)]
+                          Update(TRef(FrameReference(0)), Read(TRef(FrameReference(0))), 4, 42),
+                          Guard({}, 1)]
                          )
 
         state0 = self.initialize_machine(p, 1)
@@ -684,7 +689,8 @@ class TestSpektakelMachine(unittest.TestCase):
                                         Pop()])
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewProcedure(1, tuple(), q), 1, 3),
-                          Push(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 2, 3)])
+                          Push(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 2, 3),
+                          Guard({}, 2)])
 
         state0 = self.initialize_machine(p, 1)
 
@@ -706,7 +712,8 @@ class TestSpektakelMachine(unittest.TestCase):
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
                           Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
-                          Update(TRef(FrameReference(0)), NewClass("C", [CType(TBuiltin.object)], Read(TRef(FrameReference(0)))), 3, 42)])
+                          Update(TRef(FrameReference(0)), NewClass("C", [CType(TBuiltin.object)], Read(TRef(FrameReference(0)))), 3, 42),
+                          Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
 
@@ -715,14 +722,12 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), num_interactions_possible)
-
         self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], Type)
 
     def test_LoadAttrCase(self):
         """
         Tests the successful evaluation of LoadAttrCase terms.
         """
-
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
         method = VProcedure(1, tuple(), ProgramLocation(method, 0))
 
@@ -741,21 +746,20 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):
-                p = StackProgram([Update(TRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 42, 42)])
+                p = StackProgram([Update(TRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 1, 42),
+                                  Guard({}, 1)])
 
                 _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), num_interactions_possible)
-
                 self.assertEqual(states[-1].content.task_states[0].stack[0][0], value.seal())
 
     def test_StoreAttrCase(self):
         """
         Tests the successful evaluation of StoreAttrCase terms.
         """
-
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop()])
         method = VProcedure(1, tuple(), ProgramLocation(method, 0))
 
@@ -774,18 +778,20 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):
-                p = StackProgram([Update(TRef(FrameReference(0)), StoreAttrCase(CTerm(i), identifier), 42, 42)])
+                p = StackProgram([Update(TRef(FrameReference(0)), StoreAttrCase(CTerm(i), identifier), 1, 42),
+                                  Guard({}, 1)])
 
                 _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), num_interactions_possible)
+                result = states[-1].content.task_states[0].stack[0][0]
 
                 if isinstance(value, type):
-                    self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], value)
+                    self.assertIsInstance(result, value)
                 else:
-                    self.assertIs(states[-1].content.task_states[0].stack[0][0], value)
+                    self.assertIs(result, value)
 
 
 
