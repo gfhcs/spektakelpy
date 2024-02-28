@@ -5,12 +5,17 @@ var p1, p2 = next, prev
 
 def choice(a, b):
     var f = future()
+    var pa, pb
     def wait(x, value):
         await x()
         if not f.done:
-            f.result = value  
-    async wait(a, 0)
-    async wait(b, 1)
+            f.result = value
+            if value == 0:
+                pb.cancel()
+            elif value == 1:
+                pa.cancel()
+    pa = async wait(a, 0)
+    pb = async wait(b, 1)
     return f
 
 def turn(idx):
