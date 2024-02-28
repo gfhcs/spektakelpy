@@ -1343,6 +1343,7 @@ class VFuture(Value):
         be expected anymore. If the future is not UNSET anymore, calling this method does not change state.
         :return: True, if this method actually changed the state of the future, otherwise False.
         """
+        check_unsealed(self)
         if self._status == FutureStatus.UNSET:
             self._status = FutureStatus.CANCELLED
             return VBool.true
