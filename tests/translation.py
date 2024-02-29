@@ -1,7 +1,7 @@
 import unittest
 
 from engine.exploration import explore, schedule_nonzeno
-from engine.functional.values import VNone, VCell, VException
+from engine.functional.values import VNone, VCell, VException, VCancellationError
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks import interaction
@@ -131,7 +131,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         for s in states:
             for t in s.content.task_states:
                 if isinstance(t, StackState):
-                    if not (t.exception is None or isinstance(t.exception, VNone)):
+                    if not (t.exception is None or isinstance(t.exception, (VNone, VCancellationError))):
                         if isinstance(t.exception, VException) and t.exception.pexception is not None:
                             raise t.exception.pexception
                         else:
