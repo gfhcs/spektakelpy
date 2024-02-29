@@ -926,6 +926,29 @@ class VCancellationError(VException):
     def type(self):
         return TBuiltin.cancellation_error
 
+    def hash(self):
+        return hash(self._initial)
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, VCancellationError)
+                    and self._initial == other._initial):
+                return False
+            return all(a.bequals(b, bijection) for a, b in zip(self._args, other._args))
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VCancellationError(self._initial)
+            clones[id(self)] = c
+            return c
+
 
 class VJumpError(VException):
     """
