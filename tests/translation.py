@@ -14,6 +14,7 @@ from lang.spek.modules import SpekStringModuleSpecification
 from state_space.equivalence import bisimilar, reach_wbisim
 from state_space.lts import state_space, Transition, State, LTS
 from tests.samples_translation.assignments import samples as assignments
+from tests.samples_translation.exceptions import samples as exceptions
 from tests.samples_translation.choice import code as code_choice
 from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.diamond import code as code_diamond
@@ -736,16 +737,14 @@ class TestSpektakelTranslation(unittest.TestCase):
     def test_exceptions(self):
         """
         Test creation, raising and handling of exceptions, i.e. the constructors of exception types, Raise statements,
-        and try blocks. These test samples also include exceptions and cance
+        and try blocks. In particular, this test case is covering the following rules from the Python documentation:
+        If an exception occurs during execution of the try clause, the exception may be handled by an except clause. If the exception is not handled by an except clause, the exception is re-raised after the finally clause has been executed.
+        An exception could occur during execution of an except clause. Again, the exception is re-raised after the finally clause has been executed.
+        If the finally clause executes a break, continue or return statement, exceptions are not re-raised.
+        If the try statement reaches a break, continue or return statement, the finally clause will execute just prior to the break, continue or return statement’s execution.
+        If a finally clause includes a return statement, the returned value will be the one from the finally clause’s return statement, not the value from the try clause’s return statement.
         """
-        # TODO: Insbesondere will ich für das finally folgende Fälle abtesten:
-        #         If an exception occurs during execution of the try clause, the exception may be handled by an except clause. If the exception is not handled by an except clause, the exception is re-raised after the finally clause has been executed.
-        #         An exception could occur during execution of an except or else clause. Again, the exception is re-raised after the finally clause has been executed.
-        #         If the finally clause executes a break, continue or return statement, exceptions are not re-raised.
-        #         If the try statement reaches a break, continue or return statement, the finally clause will execute just prior to the break, continue or return statement’s execution.
-        #         If a finally clause includes a return statement, the returned value will be the one from the finally clause’s return statement, not the value from the try clause’s return statement.
-        #         --> Insbesondere müssen Nester aus Schleifen und (mehreren) Finallys getestet werden.
-        raise NotImplementedError()
+        self.examine_samples(exceptions)
 
     def test_async_failure(self):
         """
@@ -754,6 +753,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         # TODO: Futures can fail or be cancelled, which is a simple status change for them that should raise
         #       certain exceptions for all stakeholders of the future.
         # TODO: Tasks should, just like futures, also be able to raise exceptions or be cancelled!
+        # TODO: Awaiting a future or task that fails or is cancelled should raise the appropriate exception!
         raise NotImplementedError()
 
     def test_tuples(self):
