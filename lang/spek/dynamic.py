@@ -585,7 +585,7 @@ class Spektakel2Stack(Translator):
             element, body = self.emit_call(body, callee, [], stopper)
 
             s = terms.IsInstance(terms.Read(ExceptionReference()), TStopIteration.instance)
-            stopper.append_guard({s: successor, ~s: on_error}, on_error)
+            stopper.append_guard({s: successor, negate(s): on_error}, on_error)
             successor.append_update(ExceptionReference(), terms.CNone(), on_error)
 
             t, head = self.translate_expression(chain, element, dec, on_error)
@@ -617,7 +617,7 @@ class Spektakel2Stack(Translator):
                 hc = Chain()
                 handler, t = self.translate_expression(handler, h.type, dec, finally_head)
                 match = terms.IsInstance(exception, t)
-                handler.append_guard({match: hc, ~match: sc}, finally_head)
+                handler.append_guard({match: hc, negate(match): sc}, finally_head)
 
                 # FIXME: The following line looks so nonsensical that I did not even bother to adjust it to the
                 #        fact that _decl2ref was factored out into ScopeStack...
