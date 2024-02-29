@@ -51,7 +51,7 @@ def put_s3():
     f3 = None
     
     
-var s0, s1, s2
+var s0, s1, s2 = "", "", ""
 def setstate(idx, step):
     if idx == 0:
         s0 = step
