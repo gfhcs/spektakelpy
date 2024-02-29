@@ -40,7 +40,9 @@ class TaskState(Value, abc.ABC):
     @IntrinsicInstanceMethod
     @abc.abstractmethod
     def cancel(self):
-        raise NotImplementedError()
+        if self.cancel is TaskState.cancel:
+            raise NotImplementedError("This procedure must be overriden by subclasses!")
+        return self.cancel()
 
     @property
     def status(self):
