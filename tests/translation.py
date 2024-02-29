@@ -605,7 +605,15 @@ class TestSpektakelTranslation(unittest.TestCase):
                 elif step == 5:
                     step = 0
 
-                status_target = (*status[:idx], step, *status[idx + 1:])
+                status_target = [*status[:idx], step, *status[idx + 1:]]
+
+                # At this stage, internal actions could replace the status before it can be observed:
+                for jdx in range(3):
+                    if status_target[jdx] == 1 and status_target[jdx - 1] not in (4, 5) \
+                    or status_target[jdx] == 3 and status_target[(jdx + 1) % len(status_target)] not in (2, 3, 4):
+                        status_target[jdx] += 1
+
+                status_target = tuple(status_target)
                 try:
                     target, _ = status2state[status_target]
                 except KeyError:
