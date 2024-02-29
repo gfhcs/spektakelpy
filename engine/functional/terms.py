@@ -2,13 +2,14 @@ import abc
 from abc import ABC
 from enum import Enum
 
-from engine.functional.reference import FieldReference, NameReference
+from engine.functional.reference import FieldReference, NameReference, FrameReference
 from util import check_type, check_types
 from . import Reference, EvaluationException, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus, TaskState
+from ..tasks.instructions import Pop, Push
 from ..tasks.interaction import Interaction, InteractionState, i2s
 from ..tasks.program import StackProgram, ProgramLocation
 from ..tasks.stack import StackState
@@ -926,9 +927,13 @@ class LoadAttrCase(Term):
             if isinstance(attr, int):
                 return VTuple(VBool.false, value[attr])
             elif isinstance(attr, (VProcedure, IntrinsicProcedure)):
-                return VTuple(VBool.true, attr)
+                num_args = attr.num_args - 1
+                aterms = [Read(TRef(FrameReference(1))), *(Read(TRef(FrameReference(2 + idx))) for idx in range(num_args))]
+                call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), aterms, 1, 1), Pop(1)])
+                return VTuple(VBool.false, VProcedure(num_args, [attr, value], ProgramLocation(call, 0)))
             elif isinstance(attr, VProperty):
-                return VTuple(VBool.true, attr.get_procedure)
+                call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), [Read(TRef(FrameReference(1)))], 1, 1), Pop(1)])
+                return VTuple(VBool.true, VProcedure(0, [attr.get_procedure, value], ProgramLocation(call, 0)))
             else:
                 raise TypeError(type(attr))
         except KeyError:

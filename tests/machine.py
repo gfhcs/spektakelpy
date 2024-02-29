@@ -8,7 +8,7 @@ from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, Arit
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
     NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
-    NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase, Callable
+    NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase, Callable, Project
 from engine.functional.types import TBuiltin
 from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
     VBreakError, VNamespace, VStr, VProperty, VException
@@ -740,21 +740,28 @@ class TestSpektakelMachine(unittest.TestCase):
 
         i = c.create_instance()
 
-        cases = (("x", VTuple(VBool.false, VNone.instance)),
-                 ("method", VTuple(VBool.false, method)),
-                 ("property", VTuple(VBool.true, g)))
+        cases = (("x", (True, VBool.false, VNone.instance)),
+                 ("method", (False, VBool.false, VInt(42))),
+                 ("property", (False, VBool.true, VInt(42))))
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):
-                p = StackProgram([Update(TRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 1, 42),
-                                  Guard({}, 1)])
+
+                direct, v1, v2 = value
+                p = [Update(TRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 1, 42)]
+
+                if not direct:
+                    p.append(Push(Callable(Project(Read(TRef(FrameReference(0))), CInt(1))), [], len(p) + 1, 42))
+                    p.append(Update(TRef(FrameReference(0)), NewTuple(Project(Read(TRef(FrameReference(0))), CInt(0)), Read(TRef(ReturnValueReference()))), len(p) + 1, 42))
+
+                p = StackProgram([*p, Guard({}, len(p))])
 
                 _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
 
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), num_interactions_possible)
-                self.assertEqual(states[-1].content.task_states[0].stack[0][0], value.seal())
+                self.assertEqual(states[-1].content.task_states[0].stack[0][0], VTuple(v1, v2).seal())
 
     def test_StoreAttrCase(self):
         """
