@@ -1001,8 +1001,8 @@ class StoreAttrCase(Term):
                 return VTypeError("Cannot assign values to method fields!")
             else:
                 raise TypeError(type(attr))
-        except KeyError:
-            return VAttributeError()
+        except AttributeError:
+            return VAttributeError(f"{value} has no attribute '{self.name}'!")
 
 
 class NewTuple(Term):
