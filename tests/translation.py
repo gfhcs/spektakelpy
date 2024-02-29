@@ -126,6 +126,8 @@ class TestSpektakelTranslation(unittest.TestCase):
         code = dedent(code)
         sp, states, internal, external = self.translate_explore(code)
 
+        # print(lts2dot(sp))
+
         for s in states:
             for t in s.content.task_states:
                 if isinstance(t, StackState):

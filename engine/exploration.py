@@ -64,6 +64,7 @@ def explore(mstate, scheduler=schedule_all):
     agenda = [mstate]
 
     while len(agenda) > 0:
+        # print(len(agenda), len(visited))
         s = agenda.pop()
         if s in visited:
             continue
