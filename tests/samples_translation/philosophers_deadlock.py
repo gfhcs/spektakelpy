@@ -3,56 +3,52 @@ from interaction import next, prev, resume, never
 
 var p1, p2, p3 = next, prev, resume
 
-def choice(a, b, c):
-    var f = future()
-    def wait(x, value):
-        await x()
-        if not f.done:
-            f.result = value  
-    async wait(a, 0)
-    async wait(b, 1)
-    async wait(c, 2)
-    return f
-
 def turn(idx):
-    while (await choice(p1, p2, p3)) != idx:
-        pass
+    if idx == 0:
+        return p1()
+    elif idx == 1:
+        return p2()
+    elif idx == 2:
+        return p3()
 
-var f1 = future()
-f1.result = True
+var f1 = None
 def get_s1():
-    if f1.done:
-        var spoon = f1
+    if f1 is None:
         f1 = future()
+        var spoon = future()
+        spoon.result = True
         return spoon
     else:
         return f1
 def put_s1():
     f1.result = True
+    f1 = None
 
-var f2 = future()
-f2.result = True
+var f2 = None
 def get_s2():
-    if f2.done:
-        var spoon = f2
+    if f2 is None:
         f2 = future()
+        var spoon = future()
+        spoon.result = True
         return spoon
     else:
         return f2
 def put_s2():
     f2.result = True
-
-var f3 = future()
-f3.result = True
+    f2 = None
+    
+var f3 = None
 def get_s3():
-    if f3.done:
-        var spoon = f3
+    if f3 is None:
         f3 = future()
+        var spoon = future()
+        spoon.result = True
         return spoon
     else:
         return f3
 def put_s3():
     f3.result = True
+    f3 = None
     
     
 var s0, s1, s2
