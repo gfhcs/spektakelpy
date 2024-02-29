@@ -22,6 +22,7 @@ from tests.samples_translation.future_equality import code as code_future_equali
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.manboy import code as code_manboy
 from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
+from tests.samples_translation.philosophers_nodeadlock import code as code_philosophers_nodeadlock
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.tasks import samples as tasks
@@ -645,6 +646,92 @@ class TestSpektakelTranslation(unittest.TestCase):
             return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.string)) for idx in range(3)))
 
         self.examine_sample(code_philosophers_deadlock, None, None, None, bisim=reduced, project=p)
+
+    def test_async_philosophers_nodeadlock(self):
+        """
+        Similar to test_async_philosophers_deadlock, but this time the philosophers get both spoons at once, i.e.
+        there cannot be any deadlocks anymore.
+        """
+
+        l2i = {0: Interaction.NEXT,
+               1: Interaction.PREV,
+               2: Interaction.RESUME,
+               None: None}
+
+        steps = ["", "awaiting_both", "eating", "has_right"]
+
+        def status2content(status):
+            return " | ".join(steps[i] for i in status)
+
+        status0 = (0, 0, 0)
+        state0 = State(status2content(status0))
+        agenda = [status0]
+        status2state = {status0: (state0, False)}
+
+        while len(agenda) > 0:
+            status = agenda.pop()
+            state, completed = status2state[status]
+            if completed:
+                continue
+
+            status2state[status] = (state, True)
+
+            for idx in range(3):
+                step = status[idx]
+                lbl = idx
+                if step == 0:
+                    if status[(idx - 1) % 3] in (0, 1) and status[(idx + 1) % 3] in (0, 1, 3):
+                        step = 2
+                    else:
+                        step = 1
+                elif step == 1:
+                    if status[(idx - 1) % 3] in (0, 1) and status[(idx + 1) % 3] in (0, 1, 3):
+                        lbl = None
+                        step = 2
+                elif step == 2:
+                    step = 3
+                elif step == 3:
+                    step = 0
+
+                status_target = [*status[:idx], step, *status[idx + 1:]]
+
+                # At this stage, internal actions could replace the status before it can be observed:
+                for jdx in range(3):
+                    if status_target[jdx] == 1 and status_target[(jdx - 1) % 3] in (0, 1) and status_target[(jdx + 1) % 3] in (0, 1, 3):
+                        status_target[jdx] += 1
+
+                status_target = tuple(status_target)
+                try:
+                    target, _ = status2state[status_target]
+                except KeyError:
+                    target = State(status2content(status_target))
+                    agenda.append(status_target)
+                    status2state[status_target] = (target, False)
+
+                i = l2i[lbl]
+                state.add_transition(Transition(i2s(i), target))
+
+        found_deadlock = False
+        for state, _ in status2state.values():
+            noloop = {i2s(Interaction.NEVER), *(t.label for t in state.transitions)}
+            for j in Interaction:
+                s = i2s(j)
+                if s not in noloop:
+                    state.add_transition(Transition(s, state))
+            found_deadlock |= all(t.target is state for t in state.transitions)
+
+        assert not found_deadlock
+        reduced = LTS(state0.seal())
+
+        def p(state):
+            def s2i(s):
+                i = steps.index(s)
+                assert i >= 0
+                return i
+
+            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.string)) for idx in range(3)))
+
+        self.examine_sample(code_philosophers_nodeadlock, None, None, None, bisim=reduced, project=p)
 
     def test_exceptions(self):
         """
