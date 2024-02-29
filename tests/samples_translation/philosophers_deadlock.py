@@ -13,43 +13,43 @@ def turn(idx):
 
 var f1 = None
 def get_s1():
-    if f1 is None:
-        f1 = future()
-        var spoon = future()
-        spoon.result = True
-        return spoon
-    else:
-        return f1
+    if f1 is not None:
+        await f1
+    f1 = future()
+    var spoon = future()
+    spoon.result = True
+    return spoon
+    
 def put_s1():
     f1.result = True
     f1 = None
 
 var f2 = None
 def get_s2():
-    if f2 is None:
-        f2 = future()
-        var spoon = future()
-        spoon.result = True
-        return spoon
-    else:
-        return f2
+    if f2 is not None:
+        await f2
+    f2 = future()
+    var spoon = future()
+    spoon.result = True
+    return spoon
+    
 def put_s2():
     f2.result = True
     f2 = None
-    
+
 var f3 = None
 def get_s3():
-    if f3 is None:
-        f3 = future()
-        var spoon = future()
-        spoon.result = True
-        return spoon
-    else:
-        return f3
+    if f3 is not None:
+        await f3
+    f3 = future()
+    var spoon = future()
+    spoon.result = True
+    return spoon
+    
 def put_s3():
     f3.result = True
     f3 = None
-    
+
     
 var s0, s1, s2 = "", "", ""
 def setstate(idx, step):
