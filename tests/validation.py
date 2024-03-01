@@ -39,9 +39,8 @@ class TestSpektakelValidator(unittest.TestCase):
         :param err: An iterable of the errors that were found.
         """
 
-        msg = "Expected {} errors, but got {}:\n{}".format(expected_count,
-                                                           len(err),
-                                                           "\n".join((str(e) for e in err)))
+        es = "\n".join((str(e) for e in err))
+        msg = f"Expected {expected_count} errors, but got {len(err)}:\n{es}"
         self.assertEqual(expected_count, len(err), msg=msg)
 
     def assertNoErrors(self, err):
