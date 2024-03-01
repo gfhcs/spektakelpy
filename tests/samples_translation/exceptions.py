@@ -177,9 +177,130 @@ except TypeError as te:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True, "y": True}),
 
-# TODO:
-#   If the finally clause executes a break, continue or return statement, exceptions are not re-raised.
-#   If the try statement reaches a break, continue or return statement, the finally clause will execute just prior to the break, continue or return statement’s execution.
-#   If a finally clause includes a return statement, the returned value will be the one from the finally clause’s return statement, not the value from the try clause’s return statement.
+
+"""
+from interaction import never
+
+var x = False
+
+def foo(x):    
+    try:
+        return x / 2
+    finally:
+        return x is not None
+
+try:
+    x = foo("hello")
+except:
+    x = False
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True}),
+
+"""
+from interaction import never
+
+var x = True
+
+try:
+    while True:
+        try:
+            raise Exception("This should not be re-raised, because the finally clause executes a break!")
+        finally:
+            break
+except:
+    x = False
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True}),
+
+
+"""
+from interaction import never
+
+var x = True
+
+try:
+    var i = 0
+    while i < 3:
+        try:
+            i = i + 1
+            raise Exception("This should not be re-raised, because the finally clause executes a continue!")
+        finally:
+            continue
+except:
+    x = False
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True}),
+
+
+
+"""
+from interaction import never
+
+var x = False
+
+var i = 42
+
+def increment():
+    i = i + 1
+    return i
+
+def foo(x):    
+    try:
+        return increment()
+    finally:
+        i = 0
+
+var r = foo()
+
+await never()
+""": ((2, 1, num_interactions_possible), {"r": 43, "i": 0}),
+
+"""
+from interaction import never
+
+var x = False
+
+while True:
+    try:
+        break
+    finally:
+        x = True
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True}),
+
+
+"""
+from interaction import never
+
+var i = 0
+while i % 2 == 0 and i < 5 and i < 10:
+    try:
+        i = i + 1
+        continue
+    finally:
+        i = i + 1
+
+await never()
+""": ((2, 1, num_interactions_possible), {"i": 10}),
+
+
+
+"""
+from interaction import never
+
+def foo(x):    
+    try:
+        return False
+    finally:
+        return True
+
+var x = foo(42)
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True}),
 
 }
