@@ -760,6 +760,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests the creation and usage of tuples, including Projection expressions and "in" expressions
         """
+        # TODO: Test len
         raise NotImplementedError()
 
     def test_lists(self):
@@ -767,6 +768,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and usage of lists, including Projection expressions and "in" expressions,
         assignment to projection expressions.
         """
+        # TODO: Test len
         raise NotImplementedError()
 
     def test_dicts(self):
@@ -774,6 +776,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and usage of dicts, including Projection expressions and "in" expressions, including
         assignment to projection expressions.
         """
+        # TODO: Test len
         raise NotImplementedError()
 
     def test_for(self):
@@ -790,7 +793,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         #       bloats the instruction set and does not really have any advantages.
 
         # TODO: Repeat all while test cases here.
-
+        # TODO: Test next.
         # TODO: Specifically test the allocation of the loop variable as a cell. See closure test cases for inspiration.
 
         raise NotImplementedError()

@@ -3,6 +3,7 @@ import os.path
 from io import StringIO
 
 from engine.functional import terms
+from engine.functional.procedures import PBuiltin
 from engine.functional.reference import ReturnValueReference
 from engine.functional.terms import TRef, CTerm, CString, ITask
 from engine.functional.types import TBuiltin
@@ -230,10 +231,12 @@ def build_default_finder(roots):
         p = StackProgram([Update(r, ITask(symbol), 1, 42), Pop(42)])
         procedures[name] = VProcedure(0, tuple(), ProgramLocation(p, 0))
 
-    types = {t.name: t for t in TBuiltin.instances}
+    names = {t.name: t for t in TBuiltin.instances}
+    for f in PBuiltin.instances:
+        names[f.name] = f
 
     interaction = BuiltinModuleSpecification("interaction", procedures)
-    builtin = BuiltinModuleSpecification("<builtin>", types)
+    builtin = BuiltinModuleSpecification("<builtin>", names)
 
     bfinder = BuiltinModuleFinder({mspec.name: mspec for mspec in [interaction, builtin]})
 
