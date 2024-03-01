@@ -135,13 +135,6 @@ from interaction import never
 
 var x, y, z = False, False, False
 
-def foo(i):
-    try:
-        bar(i)
-    except TypeError:
-        x = True
-        raise
-
 def bar(i):
     try:
         return i % 2 == 0
@@ -149,6 +142,13 @@ def bar(i):
         return
     finally:
         y = True
+
+def foo(i):
+    try:
+        bar(i)
+    except TypeError:
+        x = True
+        raise
     
 try:
     foo("hello")
