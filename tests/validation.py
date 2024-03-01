@@ -296,8 +296,8 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "   print(\"No idea\")")
 
         self.assertEqual(len(env_in), len(env_out))
-        self.assertErrors(15, err)
-        self.assertEqual(6, len(dec))
+        self.assertErrors(9, err)
+        self.assertEqual(12, len(dec))
 
     def test_var(self):
         """
