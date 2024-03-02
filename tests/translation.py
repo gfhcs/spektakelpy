@@ -154,6 +154,11 @@ class TestSpektakelTranslation(unittest.TestCase):
                 self.assertTrue(isinstance(found, VNone))
             elif isinstance(expected, str):
                 self.assertEqual(found.string, expected)
+            elif isinstance(expected, VException):
+                clones = {}
+                found = found.clone_unsealed(clones).seal()
+                expected = expected.clone_unsealed(clones).seal()
+                self.assertEqual(found, expected)
             else:
                 self.assertEqual((type(expected))(found), expected)
 

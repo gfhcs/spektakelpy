@@ -821,7 +821,9 @@ class VException(Value, Exception):
         """
         super(Value, self).__init__()
         super(Exception, self).__init__(message)
-        self._msg = check_type(message, (str, VStr), allow_none=True)
+        if isinstance(message, str):
+            message = VStr(message)
+        self._msg = check_type(message, VStr, allow_none=True)
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
@@ -860,6 +862,7 @@ class VException(Value, Exception):
         return self._pexception
 
     def _seal(self):
+        self._msg.seal()
         for a in self._args:
             a.seal()
 
