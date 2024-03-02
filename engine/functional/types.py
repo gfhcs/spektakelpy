@@ -16,7 +16,7 @@ class BuiltinConstructor(IntrinsicProcedure):
         super().__init__()
         self._ptype = ptype
         s = signature(ptype.__init__)
-        self._num_args = sum(1 for n, p in s.parameters.items() if n != "self" and p.kind == Parameter.POSITIONAL_ONLY)
+        self._num_args = sum(1 for n, p in s.parameters.items() if n != "self" and p.kind == Parameter.POSITIONAL_OR_KEYWORD)
 
     @property
     def num_args(self):
