@@ -298,7 +298,7 @@ class StackState(TaskState):
                 i = top.program[top.instruction_index]
             except IndexError:
                 from . import InstructionException
-                self.exception = VException(pexception=InstructionException("Instruction index invalid, don't know how to continue."))
+                self.exception = VException("Failed to execute instruction!", pexception=InstructionException("Instruction index invalid, don't know how to continue."))
                 tstate.status = TaskStatus.FAILED
                 self.dequeue(mstate)
                 break

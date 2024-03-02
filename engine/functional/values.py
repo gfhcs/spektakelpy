@@ -812,7 +812,7 @@ class VException(Value, Exception):
     The base type for all exceptions.
     """
 
-    def __init__(self, message=None, *args, pexception=None):
+    def __init__(self, message, *args, pexception=None):
         """
         Creates a new exception
         :param message: The message for this exception.
@@ -821,7 +821,7 @@ class VException(Value, Exception):
         """
         super(Value, self).__init__()
         super(Exception, self).__init__(message)
-        self._msg = check_type(message, str, allow_none=True)
+        self._msg = check_type(message, (str, VStr), allow_none=True)
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
@@ -963,6 +963,10 @@ class VReturnError(VJumpError):
     """
     Raised a return statement is executed.
     """
+
+    def __init__(self):
+        super().__init__("A procedure return is being executed!")
+
     @property
     def type(self):
         return TBuiltin.return_error
@@ -972,6 +976,10 @@ class VBreakError(VJumpError):
     """
     Raised a break statement is executed.
     """
+
+    def __init__(self):
+        super().__init__("An escape from a loop is being executed!")
+
     @property
     def type(self):
         return TBuiltin.break_error
@@ -981,6 +989,10 @@ class VContinueError(VJumpError):
     """
     Raised a continue statement is executed.
     """
+
+    def __init__(self):
+        super().__init__("A remainder of a loop body is being skipped!")
+
     @property
     def type(self):
         return TBuiltin.continue_exception

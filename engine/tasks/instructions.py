@@ -90,14 +90,14 @@ class Update(Instruction):
             ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
         except Exception as ee:
-            tstate.exception = VException(pexception=ee)
+            tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
             top.instruction_index = self._edestination
             return
 
         try:
             ref.write(tstate, mstate, value)
         except Exception as ex:
-            tstate.exception = VException(pexception=ex)
+            tstate.exception = VException("Failed to write to reference!", pexception=ex)
             top.instruction_index = self._edestination
 
 
@@ -190,13 +190,13 @@ class Guard(Instruction):
             try:
                 r = bool(e.evaluate(tstate, mstate))
             except EvaluationException as ee:
-                tstate.exception = VException(pexception=ee)
+                tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
                 top.instruction_index = self._edestination
                 return
 
             if r:
                 if enabled:
-                    tstate.exception = VException(pexception=InstructionException("More than one of the expressions of this guard expression"
+                    tstate.exception = VException("Failed to evaluate guard!", pexception=InstructionException("More than one of the expressions of this guard expression"
                                                             " are true. This is not allowed, because tasks must be"
                                                             " fully determenistic!"))
                     top.instruction_index = self._edestination
@@ -272,7 +272,7 @@ class Push(Instruction):
             callee, free, num_args = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
-            tstate.exception = VException(pexception=ee)
+            tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
             old_top.instruction_index = self._edestination
             return
 
@@ -293,12 +293,12 @@ class Push(Instruction):
                 tstate.exception = ex
                 old_top.instruction_index = self._edestination
             except Exception as ex:
-                tstate.exception = VException(pexception=ex)
+                tstate.exception = VException("Failed to execute intrinsic procedure!", pexception=ex)
                 old_top.instruction_index = self._edestination
             else:
                 old_top.instruction_index = self._destination
         else:
-            tstate.exception = VException(pexception=InstructionException("The expression determining the initial program location for the"
+            tstate.exception = VException("Failed to execute instruction!", pexception=InstructionException("The expression determining the initial program location for the"
                                                     " new stack frame is neither a ProgramLocation nor an Intrinsic function!"))
             old_top.instruction_index = self._edestination
 
@@ -402,7 +402,7 @@ class Launch(Instruction):
             callee, free, num_args = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except EvaluationException as ee:
-            tstate.exception = VException(pexception=ee)
+            tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
             mytop.instruction_index = self._edestination
             return
 
@@ -416,7 +416,7 @@ class Launch(Instruction):
             mstate.add_task(task)
             tstate.returned = task
         else:
-            tstate.exception = VException(pexception=InstructionException("The expression determining the initial program location for the"
+            tstate.exception = VException("Failed to execute instruction!", pexception=InstructionException("The expression determining the initial program location for the"
                                                     " new stack frame is not a proper program location!"))
             mytop.instruction_index = self._edestination
             return

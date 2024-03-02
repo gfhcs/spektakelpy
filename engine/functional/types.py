@@ -1,4 +1,4 @@
-from inspect import signature
+from inspect import signature, Parameter
 
 from engine.functional import Type, Reference
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
@@ -15,7 +15,8 @@ class BuiltinConstructor(IntrinsicProcedure):
     def __init__(self, ptype):
         super().__init__()
         self._ptype = ptype
-        self._num_args = len(signature(ptype.__init__).parameters) - 1
+        s = signature(ptype.__init__)
+        self._num_args = sum(1 for n, p in s.parameters.items() if n != "self" and p.kind == Parameter.POSITIONAL_ONLY)
 
     @property
     def num_args(self):
