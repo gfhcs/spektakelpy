@@ -303,4 +303,91 @@ var x = foo(42)
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+
+"""
+from interaction import never
+
+var x, y = False, None
+
+try:
+    try:
+        raise Exception("Hello world")
+    except:
+        x = True
+        raise
+except Exception as ex:
+    y = ex
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True, "y": VException("Hello world")}),
+
+
+"""
+from interaction import never
+
+var x = None
+
+try:
+    try:
+        raise Exception("Hello world")
+    except:
+        if x is None:
+            x = 0
+        raise
+    finally:
+        if x == 0:
+            x = 1
+except Exception as ex:
+    if x == 1:
+        x = 2
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": 2}),
+
+
+
+"""
+from interaction import never
+
+var x = None
+
+try:
+    try:
+        x = 0
+    except:
+        if x == 0:
+            x = 0
+        raise Exception("Hello world!")
+    finally:
+        if x == 0:
+            x = 1
+except Exception as ex:
+    if x == 1:
+        x = 2
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": 2}),
+
+
+
+"""
+from interaction import never
+
+var x = None
+
+try:
+    try:
+        raise Exception("A")
+    except Exception as ex1:
+        try:
+            raise Exception("B")
+        except Exception as ex2:
+            raise ex1
+except Exception as ex:
+    x = ex
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": VException("A")}),
+
+
 }
