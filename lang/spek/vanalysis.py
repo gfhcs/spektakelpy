@@ -147,16 +147,22 @@ class VariableAnalysis:
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, ns, fs)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ws, rs, empty, fs)
         elif isinstance(node, Try):
-            ds, ws, rs, us, fs = self._analyse_statement(node.body, dec)
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, *self._analyse_statement(node.body, dec))
+            dse, wse, rse, nse, fse = empty, empty, empty, empty, empty
             for h in node.handlers:
                 assert isinstance(h, Except)
-                ds = self.analyse_expression(h.identifier, dec)
-                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, empty, empty, empty)
-                ds, ws, rs, us, fs = self._analyse_statement(h.body, dec)
-                VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
-            ds, ws, rs, us, fs = self._analyse_statement(node.final, dec)
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, us, fs)
+                dsh, wsh, rsh, nsh, fsh = empty, empty, empty, empty, empty
+                if h.identifier is not None:
+                    ds = self.analyse_expression(h.identifier, dec)
+                    VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, ds, ds, empty, empty, empty)
+                VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, *self._analyse_statement(h.body, dec))
+                dse |= dsh
+                wse |= wsh
+                rse |= rsh
+                nse |= nsh
+                fse |= fsh
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, dse, wse, rse, nse, fse)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, *self._analyse_statement(node.final, dec))
         elif isinstance(node, ProcedureDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.body, dec)
             if node.name in fsb:
