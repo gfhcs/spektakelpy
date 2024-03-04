@@ -1019,7 +1019,7 @@ class VContinueError(VJumpError):
 
     @property
     def type(self):
-        return TBuiltin.continue_exception
+        return TBuiltin.continue_error
 
 
 class VAttributeError(VException):
