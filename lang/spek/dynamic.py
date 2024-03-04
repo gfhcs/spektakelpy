@@ -370,17 +370,18 @@ class Spektakel2Stack(Translator):
         if chain is None:
             chain = Chain()
 
+        eref = TRef(ExceptionReference())
         # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
-                chain.append_update(ExceptionReference(), terms.NewJumpError(VReturnError), on_error=on_error)
+                chain.append_update(eref, terms.NewJumpError(VReturnError), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return chain
             elif isinstance(scope, FunctionScope):
                 break
 
         # We made it to the function level without hitting an exception block.
-        chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
+        chain.append_update(eref, terms.CNone(), on_error=on_error)
         chain.append_pop(on_error)
 
         return chain
@@ -396,14 +397,15 @@ class Spektakel2Stack(Translator):
         if chain is None:
             chain = Chain()
 
+        eref = TRef(ExceptionReference())
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
-                chain.append_update(TRef(ExceptionReference()), terms.NewJumpError(VBreakError), on_error=on_error)
+                chain.append_update(eref, terms.NewJumpError(VBreakError), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return Chain()
             elif isinstance(scope, LoopScope):
-                chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
+                chain.append_update(eref, terms.CNone(), on_error=on_error)
                 chain.append_jump(scope.successor_chain)
                 return Chain()
 
@@ -421,14 +423,15 @@ class Spektakel2Stack(Translator):
         if chain is None:
             chain = Chain()
 
+        eref = TRef(ExceptionReference())
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
-                chain.append_update(TRef(ExceptionReference()), terms.NewJumpError(VContinueError), on_error=on_error)
+                chain.append_update(eref, terms.NewJumpError(VContinueError), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return Chain()
             elif isinstance(scope, LoopScope):
-                chain.append_update(TRef(ExceptionReference()), terms.CNone(), on_error=on_error)
+                chain.append_update(eref, terms.CNone(), on_error=on_error)
                 chain.append_jump(scope.head_chain)
                 return Chain()
 
