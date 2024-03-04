@@ -617,7 +617,7 @@ class Spektakel2Stack(Translator):
             exception, = self.declare_pattern(body, None, on_error)
             exception = TRef(exception)
             self._scopes.push(ExceptionScope(self._scopes.top, exception, finally_head))
-            self.translate_statement(body, node.body, dec, handler)
+            body = self.translate_statement(body, node.body, dec, handler)
             body.append_jump(finally_head)
 
             # As the very first step, the exception variable of the task is cleared:
