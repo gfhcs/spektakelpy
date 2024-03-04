@@ -608,17 +608,14 @@ class Spektakel2Stack(Translator):
             body.append_jump(body)
             return successor
         elif isinstance(node, Try):
-
-            body = Chain()
             handler = Chain()
             restoration = Chain()
             finally_head = Chain()
             successor = Chain()
-            exception, = self.declare_pattern(body, None, on_error)
-            exception = TRef(exception)
+            exception = TRef(self.declare_pattern(handler, None, on_error)[0])
             self._scopes.push(ExceptionScope(self._scopes.top, exception, finally_head))
-            body = self.translate_statement(body, node.body, dec, handler)
-            body.append_jump(finally_head)
+            chain = self.translate_statement(chain, node.body, dec, handler)
+            chain.append_jump(finally_head)
 
             # As the very first step, the exception variable of the task is cleared:
             eref = TRef(ExceptionReference())
