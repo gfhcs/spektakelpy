@@ -937,10 +937,7 @@ class VCancellationError(VException):
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
-            if not (isinstance(other, VCancellationError)
-                    and self._initial == other._initial):
-                return False
-            return all(a.bequals(b, bijection) for a, b in zip(self._args, other._args))
+            return isinstance(other, VCancellationError) and self._initial == other._initial
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -957,9 +954,33 @@ class VJumpError(VException):
     """
     Raised a control flow jump is executed.
     """
+
+    def __init__(self, msg):
+        super.__init__(msg)
+
     @property
     def type(self):
         return TBuiltin.jump_error
+
+    def hash(self):
+        return hash(self._msg)
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, type(self)) and self.message == other.message
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = type(self)(self.message)
+            clones[id(self)] = c
+            return c
 
 
 class VReturnError(VJumpError):
