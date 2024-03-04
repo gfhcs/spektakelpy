@@ -291,7 +291,7 @@ await never()
 from interaction import never
 
 var i = 0
-while i % 2 == 0 and i < 5 and i < 10:
+while i % 2 == 0 and i < 5:
     try:
         i = i + 1
         continue
@@ -299,7 +299,7 @@ while i % 2 == 0 and i < 5 and i < 10:
         i = i + 1
 
 await never()
-""": ((2, 1, num_interactions_possible), {"i": 10}),
+""": ((2, 1, num_interactions_possible), {"i": 6}),
 
 
 # 19
