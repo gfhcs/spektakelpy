@@ -305,14 +305,25 @@ class TestSpektakelValidator(unittest.TestCase):
         Tests the validation of 'try' statements, making sure that certain patterns are invalid.
         """
 
+        sample0 = """
+        try:
+            pass
+        except:
+            raise
+        """
+
         sample1 = """
+        raise
+        """
+
+        sample2 = """
         try:
             raise
         except:
             pass
         """
 
-        sample2 = """
+        sample3 = """
         try:
             pass
         except:
@@ -321,10 +332,10 @@ class TestSpektakelValidator(unittest.TestCase):
             raise
         """
 
-        for idx, s in enumerate((sample1, sample2)):
+        for idx, s in enumerate((sample0, sample1, sample2, sample3)):
             with self.subTest(idx=idx):
                 node, env_in, env_out, dec, err = validate(dedent(s))
-                self.assertErrors(1, err)
+                self.assertErrors(0 if idx == 0 else 1, err)
 
     def test_var(self):
         """
