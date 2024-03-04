@@ -3,6 +3,7 @@ from engine.functional.reference import ReturnValueReference, ExceptionReference
     AbsoluteFrameReference, CellReference
 from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     CTerm, Lookup, CString, CNone, Callable, CInt
+from engine.functional.types import TBuiltin
 from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
 from engine.tasks.program import ProgramLocation
 from lang.translator import Translator
@@ -20,6 +21,13 @@ from ..modules import ModuleSpecification
 
 def negate(bexp):
     return terms.UnaryOperation(UnaryOperator.NOT, bexp)
+
+
+class JumpEmissionError(Exception):
+    """
+    This error indicates that emitting machine code for a jump statement is not possible.
+    """
+    pass
 
 
 class Spektakel2Stack(Translator):
@@ -399,7 +407,7 @@ class Spektakel2Stack(Translator):
                 chain.append_jump(scope.successor_chain)
                 return Chain()
 
-        raise AssertionError("This code location must never be reached,"
+        raise JumpEmissionError("This code location must never be reached,"
                              " because break statements cannot be emitted outside loops!")
 
     def emit_continue(self, on_error, chain=None):
@@ -424,8 +432,8 @@ class Spektakel2Stack(Translator):
                 chain.append_jump(scope.head_chain)
                 return Chain()
 
-        raise AssertionError("This code location must never be reached,"
-                             " because break statements cannot be emitted outside loops!")
+        raise JumpEmissionError("This code location must never be reached,"
+                             " because continue statements cannot be emitted outside loops!")
 
     def _emit_procedure(self, chain, name, argnames, body, dec, on_error):
         """
@@ -607,6 +615,7 @@ class Spektakel2Stack(Translator):
             finally_head = Chain()
             successor = Chain()
             exception, = self.declare_pattern(body, None, on_error)
+            exception = TRef(exception)
             self._scopes.push(ExceptionScope(self._scopes.top, exception, finally_head))
             self.translate_statement(body, node.body, dec, handler)
             body.append_jump(finally_head)
@@ -619,13 +628,16 @@ class Spektakel2Stack(Translator):
             for h in node.handlers:
                 sc = Chain()
                 hc = Chain()
-                handler, t = self.translate_expression(handler, h.type, dec, finally_head)
-                match = terms.IsInstance(exception, t)
-                handler.append_guard({match: hc, negate(match): sc}, finally_head)
+                if h.type is None:
+                    handler.append_jump(hc)
+                else:
+                    t, handler = self.translate_expression(handler, h.type, dec, finally_head)
+                    match = terms.IsInstance(Read(exception), t)
+                    handler.append_guard({match: hc, negate(match): sc}, finally_head)
 
-                # FIXME: The following line looks so nonsensical that I did not even bother to adjust it to the
-                #        fact that _decl2ref was factored out into ScopeStack...
-                self._decl2ref[h] = exception
+                if h.identifier is not None:
+                    hex, = self.declare_pattern(hc, h.identifier, on_error)
+                    hc.append_update(TRef(hex), Read(exception), on_error)
                 hc = self.translate_statement(hc, h.body, dec, finally_head)
                 hc.append_jump(finally_head)
 
@@ -640,17 +652,19 @@ class Spektakel2Stack(Translator):
 
             self._scopes.pop()
 
+            r = TRef(ReturnValueReference())
+
             if node.final is not None:
                 # The finally clause first stashes the current exception and return value away:
-                returnvalue, = self.declare_pattern(finally_head, None, on_error)
+                returnvalue = TRef(self.declare_pattern(finally_head, None, on_error)[0])
                 finally_head.append_update(exception, terms.Read(eref), on_error)
                 finally_head.append_update(eref, terms.CNone(), on_error)
-                finally_head.append_update(returnvalue, terms.Read(ReturnValueReference()), on_error)
-                finally_head.append_update(ReturnValueReference(), terms.CNone(), on_error)
+                finally_head.append_update(returnvalue, terms.Read(r), on_error)
+                finally_head.append_update(r, terms.CNone(), on_error)
                 # Then it executes its body:
                 finally_foot = self.translate_statement(finally_head, node.final, dec, on_error)
                 # Then it restores the stashed exception and return value:
-                finally_foot.append_update(ReturnValueReference(), terms.Read(returnvalue), on_error)
+                finally_foot.append_update(r, terms.Read(returnvalue), on_error)
                 finally_foot.append_update(eref, terms.Read(exception), on_error)
                 finally_foot.append_update(returnvalue, terms.CNone(), on_error)
             else:
@@ -658,18 +672,25 @@ class Spektakel2Stack(Translator):
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(eref)
-            condition_return = terms.IsInstance(e, types.TReturnException())
-            condition_break = terms.IsInstance(e, types.TBreakException())
-            condition_continue = terms.IsInstance(e, types.TContinueException())
+            condition_return = terms.IsInstance(e, CTerm(TBuiltin.return_error))
+            condition_break = terms.IsInstance(e, CTerm(TBuiltin.break_error))
+            condition_continue = terms.IsInstance(e, CTerm(TBuiltin.continue_error))
 
-            condition_exception = terms.IsInstance(e, types.TException()) & ~condition_break & ~condition_continue & ~condition_return
-            condition_termination = terms.Comparison(ComparisonOperator.IS, e, terms.CNone)
-            finally_foot.append_guard({condition_termination: successor,
-                                       condition_return: self.emit_return(on_error),
-                                       condition_break: self.emit_break(on_error),
-                                       condition_continue: self.emit_continue(on_error),
-                                       condition_exception: on_error,
-                                       }, on_error)
+            condition_exception = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, terms.IsInstance(e, CTerm(TBuiltin.exception)),
+                                                         terms.BooleanBinaryOperation(terms.BooleanBinaryOperator.AND, negate(condition_break),
+                                                                                terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, negate(condition_continue), negate(condition_return))))
+            condition_termination = terms.Comparison(ComparisonOperator.IS, e, terms.CNone())
+
+            alternatives = {condition_termination: successor,
+                            condition_exception: on_error}
+            for c, e in ((condition_return, self.emit_return),
+                         (condition_break, self.emit_break),
+                         (condition_continue, self.emit_continue)):
+                try:
+                    alternatives[c] = e(on_error)
+                except JumpEmissionError:
+                    continue
+            finally_foot.append_guard(alternatives, on_error)
 
             return successor
         elif isinstance(node, VariableDeclaration):

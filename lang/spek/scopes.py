@@ -17,7 +17,7 @@ class Scope(ABC):
         Creates a new scope.
         :param parent: The scope inside of which this scope is created. May be None.
         """
-        self._parent = parent is None or check_type(parent, Scope)
+        self._parent = check_type(parent, Scope, allow_none=True)
 
     @property
     def parent(self):

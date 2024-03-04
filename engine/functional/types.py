@@ -3,7 +3,7 @@ from inspect import signature, Parameter
 from engine.functional import Type, Reference
 from engine.functional.values import VInstance, VBool, VInt, VFloat, VStr, VTuple, VList, VDict, \
     VException, VTypeError, VJumpError, VReturnError, VBreakError, VCell, VFuture, VProcedure, VNamespace, VFutureError, \
-    IntrinsicProperty, VNone, VAttributeError
+    IntrinsicProperty, VNone, VAttributeError, VContinueError
 from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicProcedure
 
 
@@ -103,6 +103,7 @@ TBuiltin.jump_error = TBuiltin("JumpError", [TBuiltin.exception], VJumpError)
 TBuiltin.cancellation = TBuiltin("CancellationError", [TBuiltin.exception], VException)
 TBuiltin.return_error = TBuiltin("ReturnError", [TBuiltin.jump_error], VReturnError)
 TBuiltin.break_error = TBuiltin("BreakError", [TBuiltin.jump_error], VBreakError)
+TBuiltin.continue_error = TBuiltin("ContinueError", [TBuiltin.jump_error], VContinueError)
 TBuiltin.type_error = TBuiltin("TypeError", [TBuiltin.exception], VTypeError)
 TBuiltin.future_error = TBuiltin("FutureError", [TBuiltin.exception], VFutureError)
 TBuiltin.attribute_error = TBuiltin("AttributeError", [TBuiltin.exception], VAttributeError)
