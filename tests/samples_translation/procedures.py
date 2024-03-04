@@ -1,3 +1,4 @@
+from engine.functional.values import VAttributeError
 from engine.tasks.interaction import num_interactions_possible
 
 samples = {
@@ -183,5 +184,16 @@ var b = foo(42)
 
 await never()
 """: ((2, 1, num_interactions_possible), {"a": 43, "b": 0}),
+
+"""
+from interaction import never
+
+def foo():
+    return AttributeError("Test")
+
+var x = foo()
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": VAttributeError("Test")}),
 
 }
