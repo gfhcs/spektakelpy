@@ -5,6 +5,7 @@ from io import StringIO
 from examples import paths as example_paths
 from lang.modules import ModuleSpecification
 from lang.spek import syntax, static, modules
+from tests.tools import dedent
 
 
 def validate(sample, env=None, roots=None):
@@ -260,7 +261,7 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertErrors(4, err)
         self.assertEqual(7, len(dec))
 
-    def test_try(self):
+    def test_try1(self):
         """
         Tests the validation of 'try' statements.
         """
@@ -298,6 +299,32 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertEqual(len(env_in), len(env_out))
         self.assertErrors(9, err)
         self.assertEqual(12, len(dec))
+
+    def test_try_neg(self):
+        """
+        Tests the validation of 'try' statements, making sure that certain patterns are invalid.
+        """
+
+        sample1 = """
+        try:
+            raise
+        except:
+            pass
+        """
+
+        sample2 = """
+        try:
+            pass
+        except:
+            pass
+        finally:
+            raise
+        """
+
+        for idx, s in enumerate((sample1, sample2)):
+            with self.subTest(idx=idx):
+                node, env_in, env_out, dec, err = validate(dedent(s))
+                self.assertErrors(1, err)
 
     def test_var(self):
         """
