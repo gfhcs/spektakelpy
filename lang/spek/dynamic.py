@@ -515,19 +515,20 @@ class Spektakel2Stack(Translator):
             self.emit_return(on_error, chain)
             return Chain()
         elif isinstance(node, Raise):
+            eref = TRef(ExceptionReference())
             if node.value is None:
                 found = False
                 # Walk over the block stack ("outwards") to find the exception block this re-raise is contained in.
                 for scope in self._scopes:
                     if isinstance(scope, ExceptionScope):
-                        chain.append_update(ExceptionReference(), terms.Read(scope.exception_reference), on_error=on_error)
+                        chain.append_update(eref, terms.Read(scope.exception_reference), on_error=on_error)
                         found = True
                 if not found:
                     raise AssertionError(
                         "A raise statement without an expression should not occur outside a try block!")
             else:
                 e, chain = self.translate_expression(chain, node.value, dec, on_error)
-                chain.append_update(ExceptionReference(), e, on_error)
+                chain.append_update(eref, e, on_error)
             chain.append_jump(on_error)
             return Chain()
         elif isinstance(node, Break):
@@ -585,9 +586,10 @@ class Spektakel2Stack(Translator):
             callee, body = self.translate_expression(body, Attribute(iterator, "__next__"), dec, on_error)
             element, body = self.emit_call(body, callee, [], stopper)
 
-            s = terms.IsInstance(terms.Read(ExceptionReference()), TStopIteration.instance)
+            eref = TRef(ExceptionReference())
+            s = terms.IsInstance(terms.Read(eref), TStopIteration.instance)
             stopper.append_guard({s: successor, negate(s): on_error}, on_error)
-            successor.append_update(ExceptionReference(), terms.CNone(), on_error)
+            successor.append_update(eref, terms.CNone(), on_error)
 
             t, head = self.translate_expression(chain, element, dec, on_error)
             _, head = self.emit_assignment(head, node.pattern, dec, t, on_error)
@@ -610,8 +612,9 @@ class Spektakel2Stack(Translator):
             body.append_jump(finally_head)
 
             # As the very first step, the exception variable of the task is cleared:
-            handler.append_update(exception, terms.Read(ExceptionReference()), on_error)
-            handler.append_update(ExceptionReference(), terms.CNone(), on_error)
+            eref = TRef(ExceptionReference())
+            handler.append_update(exception, terms.Read(eref), on_error)
+            handler.append_update(eref, terms.CNone(), on_error)
 
             for h in node.handlers:
                 sc = Chain()
@@ -631,7 +634,7 @@ class Spektakel2Stack(Translator):
             # If none of the handlers apply, restore the exception variable and jump to the finally:
             handler.append_jump(restoration)
 
-            restoration.append_update(ExceptionReference(), terms.Read(exception), on_error)
+            restoration.append_update(eref, terms.Read(exception), on_error)
             restoration.append_update(exception, terms.CNone(), on_error)
             restoration.append_jump(finally_head)
 
@@ -640,21 +643,21 @@ class Spektakel2Stack(Translator):
             if node.final is not None:
                 # The finally clause first stashes the current exception and return value away:
                 returnvalue, = self.declare_pattern(finally_head, None, on_error)
-                finally_head.append_update(exception, terms.Read(ExceptionReference()), on_error)
-                finally_head.append_update(ExceptionReference(), terms.CNone(), on_error)
+                finally_head.append_update(exception, terms.Read(eref), on_error)
+                finally_head.append_update(eref, terms.CNone(), on_error)
                 finally_head.append_update(returnvalue, terms.Read(ReturnValueReference()), on_error)
                 finally_head.append_update(ReturnValueReference(), terms.CNone(), on_error)
                 # Then it executes its body:
                 finally_foot = self.translate_statement(finally_head, node.final, dec, on_error)
                 # Then it restores the stashed exception and return value:
                 finally_foot.append_update(ReturnValueReference(), terms.Read(returnvalue), on_error)
-                finally_foot.append_update(ExceptionReference(), terms.Read(exception), on_error)
+                finally_foot.append_update(eref, terms.Read(exception), on_error)
                 finally_foot.append_update(returnvalue, terms.CNone(), on_error)
             else:
                 finally_foot = finally_head
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
-            e = terms.Read(ExceptionReference())
+            e = terms.Read(eref)
             condition_return = terms.IsInstance(e, types.TReturnException())
             condition_break = terms.IsInstance(e, types.TBreakException())
             condition_continue = terms.IsInstance(e, types.TContinueException())
