@@ -627,8 +627,8 @@ class TestSpektakelMachine(unittest.TestCase):
                  (IsInstance(NewTypeError("Just a test."), CType(TBuiltin.type_error)), VBool.true)
                  ]
 
-        for term, value in cases:
-            with self.subTest(term=term):
+        for idx, (term, value) in enumerate(cases):
+            with self.subTest(idx=idx, term=term):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
                                   Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
