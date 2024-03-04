@@ -69,6 +69,8 @@ try:
     raise Exception("This brings the task down!")
 except Exception as ex:
     x = isinstance(ex, Exception)
+finally:
+    pass
 
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
