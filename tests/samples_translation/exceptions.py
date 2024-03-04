@@ -3,30 +3,35 @@ from engine.tasks.interaction import num_interactions_possible
 
 samples = {
 
+# 0
 """
 from interaction import never
 var x = Exception("Hello world!")
 await never()
 """: ((2, 1, num_interactions_possible), {"x": VException("Hello world!")}),
 
+# 1
 """
 from interaction import never
 var x = TypeError("Hello world!")
 await never()
 """: ((2, 1, num_interactions_possible), {"x": VTypeError("Hello world!")}),
 
+# 2
 """
 from interaction import never
 var x = isinstance(TypeError("Hello world!"), Exception)
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 3
 """
 from interaction import never
 raise Exception("This brings the task down!")
 await never()
 """: ((2, 1, num_interactions_possible), {}),
 
+# 4
 """
 from interaction import never
 
@@ -40,6 +45,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 5
 """
 from interaction import never
 
@@ -54,6 +60,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 6
 """
 from interaction import never
 
@@ -66,6 +73,7 @@ except Exception as ex:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 7
 """
 from interaction import never
 
@@ -80,7 +88,7 @@ finally:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
-
+# 8
 """
 from interaction import never
 
@@ -96,6 +104,7 @@ finally:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 9
 """
 from interaction import never
 
@@ -112,7 +121,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
-
+# 10
 """
 from interaction import never
 
@@ -129,7 +138,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True, "i": 11}),
 
-
+# 11
 """
 from interaction import never
 
@@ -158,6 +167,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True, "y": True, "z": True}),
 
+# 12
 """
 from interaction import never
 
@@ -177,7 +187,7 @@ except TypeError as te:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True, "y": True}),
 
-
+# 13
 """
 from interaction import never
 
@@ -197,6 +207,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 14
 """
 from interaction import never
 
@@ -214,7 +225,7 @@ except:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
-
+# 15
 """
 from interaction import never
 
@@ -235,7 +246,7 @@ await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
 
-
+# 16
 """
 from interaction import never
 
@@ -258,6 +269,7 @@ var r = foo()
 await never()
 """: ((2, 1, num_interactions_possible), {"r": 43, "i": 0}),
 
+# 17
 """
 from interaction import never
 
@@ -272,7 +284,7 @@ while True:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
-
+# 18
 """
 from interaction import never
 
@@ -288,7 +300,7 @@ await never()
 """: ((2, 1, num_interactions_possible), {"i": 10}),
 
 
-
+# 19
 """
 from interaction import never
 
@@ -303,7 +315,7 @@ var x = foo(42)
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
-
+# 20
 """
 from interaction import never
 
@@ -321,7 +333,7 @@ except Exception as ex:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True, "y": VException("Hello world")}),
 
-
+# 21
 """
 from interaction import never
 
@@ -345,7 +357,7 @@ await never()
 """: ((2, 1, num_interactions_possible), {"x": 2}),
 
 
-
+# 22
 """
 from interaction import never
 
@@ -369,7 +381,7 @@ await never()
 """: ((2, 1, num_interactions_possible), {"x": 2}),
 
 
-
+# 23
 """
 from interaction import never
 
