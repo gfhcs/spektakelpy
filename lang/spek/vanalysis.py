@@ -148,13 +148,16 @@ class VariableAnalysis:
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ws, rs, empty, fs)
         elif isinstance(node, Try):
             VariableAnalysis._update(declared, written, read, nonfunctional, free, *self._analyse_statement(node.body, dec))
-            dse, wse, rse, nse, fse = empty, empty, empty, empty, empty
+            dse, wse, rse, nse, fse = (set() for _ in range(5))
             for h in node.handlers:
                 assert isinstance(h, Except)
-                dsh, wsh, rsh, nsh, fsh = empty, empty, empty, empty, empty
+                dsh, wsh, rsh, nsh, fsh = (set() for _ in range(5))
                 if h.identifier is not None:
                     ds = self.analyse_expression(h.identifier, dec)
                     VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, ds, ds, empty, empty, empty)
+                if h.type is not None:
+                    rs = self.analyse_expression(h.type, dec)
+                    VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, empty, empty, rs, empty, empty)
                 VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, *self._analyse_statement(h.body, dec))
                 dse |= dsh
                 wse |= wsh
