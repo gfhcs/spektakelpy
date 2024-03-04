@@ -174,8 +174,7 @@ class TestSpektakelValidator(unittest.TestCase):
         Tests the validation of raise statements.
         """
 
-        node, env_in, env_out, dec, err = validate("raise # Should work.\n"
-                                           "def f(x):\n"
+        node, env_in, env_out, dec, err = validate("def f(x):\n"
                                            "    return x\n"
                                            "raise f() # This *should* work outside a catch block!\n"
                                            "try:\n"

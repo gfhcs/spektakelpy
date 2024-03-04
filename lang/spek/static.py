@@ -11,6 +11,7 @@ class ValidationKey(Enum):
     LEVEL = 0
     LOOP = 1
     PROC = 2
+    EXCEPT = 4
 
 
 class Level(Enum):
@@ -44,7 +45,7 @@ class SpektakelValidator(Validator):
         self._finder = finder
         self.__t2v = {"True": True, "False": False, "None": None}
 
-        self._denv = {ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.PROC: None}
+        self._denv = {ValidationKey.LEVEL: Level.GLOBAL, ValidationKey.LOOP: None, ValidationKey.EXCEPT: None, ValidationKey.PROC: None}
         for b in builtin:
             check_type(b, BuiltinModuleSpecification)
             for s in b.symbols:
@@ -223,7 +224,10 @@ class SpektakelValidator(Validator):
             else:
                 dec[node] = env[ValidationKey.PROC]
         elif isinstance(node, Raise):
-            if node.value is not None:
+            if node.value is None:
+                if env[ValidationKey.EXCEPT] is None:
+                    err.append(ValidationError(f"'raise' statements without an exception are only valid inside except clauses!", node, mspec))
+            else:
                 self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, (Break, Continue)):
             if env[ValidationKey.LOOP] is None:
@@ -265,7 +269,7 @@ class SpektakelValidator(Validator):
                     self.validate_expression(h.type, env, dec=dec, err=err, mspec=mspec)
                 if h.identifier is not None:
                     henv = self._declare(h, h.identifier, henv)
-                self.validate_statement(h.body, henv, dec=dec, err=err, mspec=mspec)
+                self.validate_statement(h.body, henv.adjoin({ValidationKey.EXCEPT: node}), dec=dec, err=err, mspec=mspec)
             if node.final is not None:
                 self.validate_statement(node.final, env, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] == Level.CLASS:
