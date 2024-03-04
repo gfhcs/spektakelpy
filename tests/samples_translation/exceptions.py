@@ -129,7 +129,7 @@ var i = 0
 var x = False
 try:
     while True:
-        i = i + x
+        i = i + 1
         if i > 10:
             raise Exception("To big!")
 except:
