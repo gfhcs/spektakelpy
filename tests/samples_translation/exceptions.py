@@ -380,7 +380,7 @@ except Exception as ex:
         x = 2
 
 await never()
-""": ((2, 1, num_interactions_possible), {"x": 2}),
+""": ((2, 1, num_interactions_possible), {"x": 1}),
 
 
 # 23
