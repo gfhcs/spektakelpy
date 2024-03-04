@@ -370,7 +370,12 @@ class Spektakel2Stack(Translator):
         if chain is None:
             chain = Chain()
 
+        # First reset the exception register. This is useful because we may call this procedure *after*
+        # a finally clause, in cases where the finally clause gets entered because of a return statement. In those cases
+        # the exception stored in the register is artificial and should not surface:
         eref = TRef(ExceptionReference())
+        chain.append_update(eref, CNone(), on_error=on_error)
+
         # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
@@ -397,17 +402,21 @@ class Spektakel2Stack(Translator):
         if chain is None:
             chain = Chain()
 
+        # First reset the exception register. This is useful because we may call this procedure *after*
+        # a finally clause, in cases where the finally clause gets entered because of a continue statement.
+        # In those cases the exception stored in the register is artificial and should not surface:
         eref = TRef(ExceptionReference())
+        chain.append_update(eref, CNone(), on_error=on_error)
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
                 chain.append_update(eref, terms.NewJumpError(VBreakError), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
-                return Chain()
+                return chain
             elif isinstance(scope, LoopScope):
                 chain.append_update(eref, terms.CNone(), on_error=on_error)
                 chain.append_jump(scope.successor_chain)
-                return Chain()
+                return chain
 
         raise JumpEmissionError("This code location must never be reached,"
                              " because break statements cannot be emitted outside loops!")
@@ -423,17 +432,21 @@ class Spektakel2Stack(Translator):
         if chain is None:
             chain = Chain()
 
+        # First reset the exception register. This is useful because we may call this procedure *after*
+        # a finally clause, in cases where the finally clause gets entered because of a return statement. In those cases
+        # the exception stored in the register is artificial and should not surface:
         eref = TRef(ExceptionReference())
+        chain.append_update(eref, CNone(), on_error=on_error)
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
                 chain.append_update(eref, terms.NewJumpError(VContinueError), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
-                return Chain()
+                return chain
             elif isinstance(scope, LoopScope):
                 chain.append_update(eref, terms.CNone(), on_error=on_error)
                 chain.append_jump(scope.head_chain)
-                return Chain()
+                return chain
 
         raise JumpEmissionError("This code location must never be reached,"
                              " because continue statements cannot be emitted outside loops!")
@@ -543,9 +556,11 @@ class Spektakel2Stack(Translator):
             chain.append_jump(on_error)
             return Chain()
         elif isinstance(node, Break):
-            return self.emit_break(on_error, chain)
+            self.emit_break(on_error, chain)
+            return Chain()
         elif isinstance(node, Continue):
-            return self.emit_continue(on_error, chain)
+            self.emit_continue(on_error, chain)
+            return Chain()
         elif isinstance(node, Conditional):
             consequence = Chain()
             alternative = Chain()
