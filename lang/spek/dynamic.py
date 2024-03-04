@@ -391,6 +391,34 @@ class Spektakel2Stack(Translator):
 
         return chain
 
+    def emit_raise(self, value, dec, on_error, chain=None):
+        """
+        Emits code for a break statement.
+        :param chain: The chain to emit the code to. If this is omitted, a new chain will be created.
+        :param on_error: The chain to jump to in case of an error.
+        :return: Either the given chain, or the newly created one (if no chain was given).
+        """
+
+        if chain is None:
+            chain = Chain()
+
+        eref = TRef(ExceptionReference())
+        if value is None:
+            # Walk over the block stack ("outwards") to find the exception block this re-raise is contained in.
+            for scope in self._scopes:
+                if isinstance(scope, ExceptionScope):
+                    chain.append_update(eref, terms.Read(scope.exception_reference), on_error=on_error)
+                    chain.append_jump(scope.finally_chain)
+                    return chain
+
+            raise JumpEmissionError("This code location must never be reached,"
+                                    " because raise statements without an expression should only appear in except clauses!")
+        else:
+            e, chain = self.translate_expression(chain, value, dec, on_error)
+            chain.append_update(eref, e, on_error)
+            chain.append_jump(on_error)
+            return chain
+
     def emit_break(self, on_error, chain=None):
         """
         Emits code for a break statement.
@@ -539,21 +567,7 @@ class Spektakel2Stack(Translator):
             self.emit_return(on_error, chain)
             return Chain()
         elif isinstance(node, Raise):
-            eref = TRef(ExceptionReference())
-            if node.value is None:
-                found = False
-                # Walk over the block stack ("outwards") to find the exception block this re-raise is contained in.
-                for scope in self._scopes:
-                    if isinstance(scope, ExceptionScope):
-                        chain.append_update(eref, terms.Read(scope.exception_reference), on_error=on_error)
-                        found = True
-                if not found:
-                    raise AssertionError(
-                        "A raise statement without an expression should not occur outside a try block!")
-            else:
-                e, chain = self.translate_expression(chain, node.value, dec, on_error)
-                chain.append_update(eref, e, on_error)
-            chain.append_jump(on_error)
+            self.emit_raise(node.value, dec, on_error, chain)
             return Chain()
         elif isinstance(node, Break):
             self.emit_break(on_error, chain)
