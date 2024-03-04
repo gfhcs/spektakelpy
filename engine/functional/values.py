@@ -956,7 +956,7 @@ class VJumpError(VException):
     """
 
     def __init__(self, msg):
-        super.__init__(msg)
+        super().__init__(msg)
 
     @property
     def type(self):
@@ -978,7 +978,7 @@ class VJumpError(VException):
         try:
             return clones[id(self)]
         except KeyError:
-            c = type(self)(self.message)
+            c = type(self)()
             clones[id(self)] = c
             return c
 
