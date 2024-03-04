@@ -157,7 +157,7 @@ class VariableAnalysis:
                     VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, ds, ds, empty, empty, empty)
                 if h.type is not None:
                     rs = self.analyse_expression(h.type, dec)
-                    VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, empty, empty, rs, empty, empty)
+                    VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, empty, empty, rs, empty, rs)
                 VariableAnalysis._update(dsh, wsh, rsh, nsh, fsh, *self._analyse_statement(h.body, dec))
                 dse |= dsh
                 wse |= wsh
