@@ -68,7 +68,7 @@ except CancellationError:
     y = True
 
 await never()
-""": ((3, 2, 2 * num_interactions_possible), {"x": True, "y": True}),
+""": ((6, 4, 2 * num_interactions_possible), {"x": True, "y": True}),
 
 
 # 3

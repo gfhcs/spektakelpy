@@ -6,7 +6,7 @@ from engine.functional.reference import FieldReference, NameReference, FrameRefe
 from util import check_type, check_types
 from . import Reference, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture, VRuntimeError
+    VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture, VRuntimeError, VCancellationError
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus, TaskState
 from ..tasks.instructions import Pop, Push
@@ -584,6 +584,8 @@ class AwaitedResult(Term):
     def evaluate(self, tstate, mstate):
         a = self.awaited.evaluate(tstate, mstate)
         if isinstance(a, StackState):
+            if isinstance(a.exception, VCancellationError) and a.exception.initial:
+                raise VCancellationError(initial=False, msg="The awaited task has been cancelled!")
             if isinstance(a.exception, Exception):
                 raise a.exception
             if a.status != TaskStatus.COMPLETED:
