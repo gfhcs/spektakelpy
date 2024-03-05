@@ -152,13 +152,13 @@ def bar(i):
     except AttributeError:
         return
     finally:
-        y = True
+        x = True
 
 def foo(i):
     try:
         bar(i)
     except TypeError:
-        x = True
+        y = True
         raise
     
 try:
