@@ -907,15 +907,17 @@ class VCancellationError(VException):
     Raised inside a task when it is cancelled.
     """
 
-    def __init__(self, initial):
+    def __init__(self, initial, msg=None):
         """
         Creates a new cancellation error.
         :param initial: Specifies if this cancellation error is to be set by TaskState.cancel, before the task had
         a chance to react to its cancellation. The first instruction to encounter an initial error will replace it
         by a non-initial one.
         """
-        super().__init__("Task was cancelled!")
-        self._initial = initial
+        if msg is None:
+            msg = "Cancellation!"
+        super().__init__(msg)
+        self._initial = check_type(initial, bool)
 
     @property
     def initial(self):
@@ -930,14 +932,14 @@ class VCancellationError(VException):
         return TBuiltin.cancellation_error
 
     def hash(self):
-        return hash(self._initial)
+        return hash(self._initial) ^ hash(self.message)
 
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
-            return isinstance(other, VCancellationError) and self._initial == other._initial
+            return isinstance(other, VCancellationError) and self._initial == other._initial and self.message == other.message
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -945,7 +947,7 @@ class VCancellationError(VException):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VCancellationError(self._initial)
+            c = VCancellationError(self._initial, msg=self.message)
             clones[id(self)] = c
             return c
 
@@ -1468,7 +1470,7 @@ class VFuture(Value):
         elif self._status == FutureStatus.SET:
             return self._result
         elif self._status == FutureStatus.CANCELLED:
-            raise VFutureError("Cannot retrieve the result for a future that has been cancelled!")
+            raise VCancellationError(initial=False, msg="Cannot retrieve the result for a future that has been cancelled!")
         elif self._status == FutureStatus.FAILED:
             raise self._result
         else:

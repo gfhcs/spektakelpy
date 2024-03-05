@@ -6,7 +6,7 @@ from engine.functional.reference import FieldReference, NameReference, FrameRefe
 from util import check_type, check_types
 from . import Reference, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture
+    VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture, VRuntimeError
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus, TaskState
 from ..tasks.instructions import Pop, Push

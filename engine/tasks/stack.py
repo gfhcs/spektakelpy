@@ -155,7 +155,7 @@ class StackState(TaskState):
         if self.status in (TaskStatus.CANCELLED, TaskStatus.COMPLETED, TaskStatus.FAILED):
             return
         self.status = TaskStatus.CANCELLED
-        self._exception = VCancellationError(True)
+        self._exception = VCancellationError(True, "Task was cancelled!")
 
     def dequeue(self, mstate):
         """

@@ -92,7 +92,7 @@ class Update(Instruction):
         top.instruction_index = self._destination
 
         if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
-            tstate.exception = VCancellationError(False)
+            tstate.exception = VCancellationError(False, "Task was cancelled!")
             top.instruction_index = self._edestination
             return
 
@@ -196,7 +196,7 @@ class Guard(Instruction):
         top = tstate.stack[-1]
 
         if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
-            tstate.exception = VCancellationError(False)
+            tstate.exception = VCancellationError(False, "Task was cancelled!")
             top.instruction_index = self._edestination
             return
 
@@ -280,7 +280,7 @@ class Push(Instruction):
         old_top = tstate.stack[-1]
 
         if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
-            tstate.exception = VCancellationError(False)
+            tstate.exception = VCancellationError(False, "Task was cancelled!")
             old_top.instruction_index = self._edestination
             return
 
@@ -348,7 +348,7 @@ class Pop(Instruction):
 
     def execute(self, tstate, mstate):
         if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
-            tstate.exception = VCancellationError(False)
+            tstate.exception = VCancellationError(False, "Task was cancelled!")
             tstate.stack[-1].instruction_index = self._edestination
             return
         tstate.pop()
@@ -408,7 +408,7 @@ class Launch(Instruction):
         mytop = tstate.stack[-1]
 
         if isinstance(tstate.exception, VCancellationError) and tstate.exception.initial:
-            tstate.exception = VCancellationError(False)
+            tstate.exception = VCancellationError(False, "Task was cancelled!")
             mytop.instruction_index = self._edestination
             return
 
