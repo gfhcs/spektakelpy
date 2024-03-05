@@ -448,4 +448,44 @@ await never()
 """: ((2, 1, num_interactions_possible), {"x": True, "y": True, "z": True}),
 
 
+# 26
+"""
+from interaction import never
+
+var x, y, z = True, False, False
+
+try:
+    try:
+        raise Exception("A")
+        x = False
+    finally:
+        y = True
+except:
+    z = True
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True, "y": True, "z": True}),
+
+
+# 27
+"""
+from interaction import never
+
+var x, y, z, w = True, False, False, False
+
+try:
+    try:
+        raise Exception("A")
+        x = False
+    except:
+        y = True
+        raise TypeError("B")
+    finally:
+        z = True
+except TypeError:
+    w = True
+    
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True, "y": True, "z": True, "w": True}),
+
 }
