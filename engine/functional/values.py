@@ -1031,6 +1031,15 @@ class VAttributeError(VException):
         return TBuiltin.attribute_error
 
 
+class VReferenceError(VException):
+    """
+    Raised when accessing a Reference has failed.
+    """
+    @property
+    def type(self):
+        return TBuiltin.reference_error
+
+
 class VNamespace(Value):
     """
     A mapping from names to objects.

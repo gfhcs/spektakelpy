@@ -1,5 +1,5 @@
 from engine.functional import Reference, Value
-from engine.functional.values import VNamespace, VCell
+from engine.functional.values import VNamespace, VCell, VReferenceError, VTypeError
 from util import check_type
 from util.immutable import check_unsealed
 
@@ -45,7 +45,7 @@ class VRef(Reference):
             return isinstance(other, VRef) and self._value.bequals(other, bijection)
 
     def write(self, tstate, mstate, value):
-        raise RuntimeError("Cannot write to a VRef!")
+        raise VReferenceError("Cannot write to a VRef!")
 
     def read(self, tstate, mstate):
         return self._value
@@ -88,13 +88,20 @@ class FrameReference(Reference):
         return isinstance(other, FrameReference) and self._index == other._index
 
     def write(self, tstate, mstate, value):
+        # It is assumed that no exceptions are possible here, because calling Reference.write only happens during
+        # execution of instructions, which in turn only happens when there still is a stack frame. Any exceptions
+        # here thus point at implementation bugs of the virtual machine and should NOT be presented as "legitimate"
+        # VException objects!
         frame = tstate.stack[-1]
         if len(frame) < self._index + 1:
             frame.resize(self._index + 1)
         frame[self._index] = value
 
     def read(self, tstate, mstate):
-        return tstate.stack[-1][self._index]
+        try:
+            return tstate.stack[-1][self._index]
+        except IndexError as ex:
+            raise VReferenceError(f"Could not read entry {self._index} from top stack frame!") from ex
 
 
 class AbsoluteFrameReference(Reference):
@@ -132,13 +139,19 @@ class AbsoluteFrameReference(Reference):
         return isinstance(other, AbsoluteFrameReference) and (self._taskid, self._offset, self._index) == (other._taskid, other._offset, other._index)
 
     def write(self, tstate, mstate, value):
-        frame = mstate.task_states[self._taskid].stack[self._offset]
+        try:
+            frame = mstate.task_states[self._taskid].stack[self._offset]
+        except IndexError as ex:
+            raise VReferenceError(f"Failed to retrieve stack frame {self._offset} in task {self._taskid}!") from ex
         if len(frame) < self._index + 1:
             frame.resize(self._index + 1)
         frame[self._index] = value
 
     def read(self, tstate, mstate):
-        return mstate.task_states[self._taskid].stack[self._offset][self._index]
+        try:
+            return mstate.task_states[self._taskid].stack[self._offset][self._index]
+        except IndexError as ex:
+            raise VReferenceError(f"Failed to retrieve entry {self._index} of stack frame {self._offset} in task {self._taskid}!") from ex
 
 
 class ReturnValueReference(Reference):
@@ -304,13 +317,13 @@ class NameReference(Reference):
     def write(self, tstate, mstate, value):
         ns = self._ns.read(tstate, mstate)
         if not isinstance(ns, VNamespace):
-            raise TypeError("NameReferences can only refer to VNamespace entries!")
+            raise VTypeError("NameReferences can only refer to VNamespace entries!")
         ns[self._n] = value
 
     def read(self, tstate, mstate):
         ns = self._ns.read(tstate, mstate)
         if not isinstance(ns, VNamespace):
-            raise TypeError("NameReferences can only refer to VNamespace entries!")
+            raise VTypeError("NameReferences can only refer to VNamespace entries!")
         return ns[self._n]
 
 
@@ -364,11 +377,11 @@ class CellReference(Reference):
     def write(self, tstate, mstate, value):
         cell = self._cref.read(tstate, mstate)
         if not isinstance(cell, VCell):
-            raise TypeError("CellReferences can only refer to VCell objects!")
+            raise VTypeError("CellReferences can only refer to VCell objects!")
         cell.value = value
 
     def read(self, tstate, mstate):
         cell = self._cref.read(tstate, mstate)
         if not isinstance(cell, VCell):
-            raise TypeError("CellReferences can only refer to VCell objects!")
+            raise VTypeError("CellReferences can only refer to VCell objects!")
         return cell.value
