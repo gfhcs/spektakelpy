@@ -228,14 +228,17 @@ class UnaryOperation(Term):
 
     def evaluate(self, tstate, mstate):
         r = self.operand.evaluate(tstate, mstate)
-        if self._op == UnaryOperator.NOT:
-            return VBool(not bool(r))
-        elif self._op == UnaryOperator.INVERT:
-            return ~r
-        elif self._op == UnaryOperator.MINUS:
-            return -r
-        else:
-            raise NotImplementedError()
+        try:
+            if self._op == UnaryOperator.NOT:
+                return VBool(not bool(r))
+            elif self._op == UnaryOperator.INVERT:
+                return ~r
+            elif self._op == UnaryOperator.MINUS:
+                return -r
+            else:
+                raise NotImplementedError()
+        except TypeError as tex:
+            raise VTypeError(f"Cannot apply {self._op} on value of type {r.type}!") from tex
 
 
 class BinaryTerm(Term, ABC):
@@ -354,7 +357,7 @@ class ArithmeticBinaryOperation(BinaryTerm):
             else:
                 raise NotImplementedError()
         except TypeError as te:
-            raise VTypeError(str(te), pexception=te)
+            raise VTypeError(f"Cannot apply {self.operator} on arguments of type ({left.type}, {right.type})") from te
 
 
 class BooleanBinaryOperator(Enum):
@@ -385,12 +388,15 @@ class BooleanBinaryOperation(BinaryTerm):
     def evaluate(self, tstate, mstate):
         left = self.left.evaluate(tstate, mstate)
 
-        if self.operator == BooleanBinaryOperator.AND:
-            return left and self.right.evaluate(tstate, mstate)
-        elif self.operator == BooleanBinaryOperator.OR:
-            return left or self.right.evaluate(tstate, mstate)
-        else:
-            raise NotImplementedError()
+        try:
+            if self.operator == BooleanBinaryOperator.AND:
+                return left and self.right.evaluate(tstate, mstate)
+            elif self.operator == BooleanBinaryOperator.OR:
+                return left or self.right.evaluate(tstate, mstate)
+            else:
+                raise NotImplementedError()
+        except TypeError as te:
+            raise VTypeError(f"Cannot apply {self.operator} on arguments of type ({left.type}, {self.right.evaluate(tstate, mstate)})") from te
 
 
 class ComparisonOperator(Enum):
@@ -439,29 +445,32 @@ class Comparison(BinaryTerm):
         left = self.left.evaluate(tstate, mstate)
         right = self.right.evaluate(tstate, mstate)
 
-        if self.operator in (ComparisonOperator.EQ, ComparisonOperator.NEQ):
-            clones = {}
-            left, right = (x.clone_unsealed(clones=clones).seal() for x in (left, right))
-            equal = left.equals(right)
-            return VBool.from_bool(equal if self.operator == ComparisonOperator.EQ else not equal)
-        elif self.operator == ComparisonOperator.LESS:
-            return VBool.from_bool(left < right)
-        elif self.operator == ComparisonOperator.LESSOREQUAL:
-            return VBool.from_bool(left <= right)
-        elif self.operator == ComparisonOperator.GREATER:
-            return VBool.from_bool(left > right)
-        elif self.operator == ComparisonOperator.GREATEROREQUAL:
-            return VBool.from_bool(left >= right)
-        elif self.operator == ComparisonOperator.IN:
-            return VBool.from_bool(left in right)
-        elif self.operator == ComparisonOperator.NOTIN:
-            return VBool.from_bool(left not in right)
-        elif self.operator == ComparisonOperator.IS:
-            return VBool.from_bool(left is right)
-        elif self.operator == ComparisonOperator.ISNOT:
-            return VBool.from_bool(left is not right)
-        else:
-            raise NotImplementedError()
+        try:
+            if self.operator in (ComparisonOperator.EQ, ComparisonOperator.NEQ):
+                clones = {}
+                left, right = (x.clone_unsealed(clones=clones).seal() for x in (left, right))
+                equal = left.equals(right)
+                return VBool.from_bool(equal if self.operator == ComparisonOperator.EQ else not equal)
+            elif self.operator == ComparisonOperator.LESS:
+                return VBool.from_bool(left < right)
+            elif self.operator == ComparisonOperator.LESSOREQUAL:
+                return VBool.from_bool(left <= right)
+            elif self.operator == ComparisonOperator.GREATER:
+                return VBool.from_bool(left > right)
+            elif self.operator == ComparisonOperator.GREATEROREQUAL:
+                return VBool.from_bool(left >= right)
+            elif self.operator == ComparisonOperator.IN:
+                return VBool.from_bool(left in right)
+            elif self.operator == ComparisonOperator.NOTIN:
+                return VBool.from_bool(left not in right)
+            elif self.operator == ComparisonOperator.IS:
+                return VBool.from_bool(left is right)
+            elif self.operator == ComparisonOperator.ISNOT:
+                return VBool.from_bool(left is not right)
+            else:
+                raise NotImplementedError()
+        except TypeError as te:
+            raise VTypeError(f"Cannot apply {self.operator} on arguments of type ({left.type}, {self.right.evaluate(tstate, mstate)})") from te
 
 
 class UnaryPredicate(Enum):
@@ -523,7 +532,7 @@ class UnaryPredicateTerm(Term):
             # Check if it is a function object, a class object, or if the type of the object has a __call__ method.
             try:
                 value = t.subtypeof(TBuiltin.procedure) or isinstance(t.resolve_member("__call__"), VProcedure)
-            except AttributeError:
+            except VAttributeError:
                 value = False
         elif self._p == UnaryPredicate.ISEXCEPTION:
             # Check if the type of the object is a descendant of TException:
@@ -535,7 +544,7 @@ class UnaryPredicateTerm(Term):
             elif isinstance(r, VFuture):
                 value = r.status != FutureStatus.UNSET
             else:
-                raise TypeError(f"The argument evaluated to a {type(r)}, which is not supported by ISTERMINATED!")
+                raise VTypeError(f"The argument evaluated to a {type(r)}, which is not supported by ISTERMINATED!")
         else:
             raise NotImplementedError()
 
@@ -578,17 +587,17 @@ class AwaitedResult(Term):
             if isinstance(a.exception, Exception):
                 raise a.exception
             if a.status != TaskStatus.COMPLETED:
-                raise RuntimeError("Cannot retrieve the result for a task that has not been completed!")
+                raise VRuntimeError("Cannot retrieve the result for a task that has not been completed!")
             return VNone.instance if a.returned is None else a.returned
         elif isinstance(a, TaskState):
             if a.status == TaskStatus.COMPLETED:
                 return VNone.instance
             else:
-                raise RuntimeError("Cannot retrieve the result for a task that has not been completed!")
+                raise VRuntimeError("Cannot retrieve the result for a task that has not been completed!")
         elif isinstance(a, VFuture):
             return a.result
         else:
-            raise TypeError(f"Cannot obtain the result of a {type(a)}!")
+            raise VTypeError(f"Cannot obtain the result of a {type(a)}!")
 
 
 class Callable(Term):
@@ -641,7 +650,7 @@ class Callable(Term):
                 free = [*callee.free, *free]
                 callee = callee.entry
             else:
-                raise TypeError(f"Value of type {type(callee)} is not callable!")
+                raise VTypeError(f"Value of type {type(callee)} is not callable!")
 
         return VTuple(callee, VTuple(*free), num_args)
 
@@ -743,7 +752,7 @@ class IsInstance(Term):
                     return VBool(True)
             return VBool(False)
         else:
-            raise TypeError()
+            raise VTypeError("isinstance(() arg 2 must be a type or tuple of types.")
 
 
 class Read(Term):
@@ -775,11 +784,9 @@ class Read(Term):
 
     def evaluate(self, tstate, mstate):
         r = self.reference.evaluate(tstate, mstate)
-        assert isinstance(r, Reference)
-        try:
-            return r.read(tstate, mstate)
-        except Exception as ex:
-            raise EvaluationException("Failed to read from reference!") from ex
+        if not isinstance(r, Reference):
+            raise VTypeError(f"The 'Read' operator cannot be applied to a {r.type}!")
+        return r.read(tstate, mstate)
 
 
 class Project(Term):
@@ -824,7 +831,10 @@ class Project(Term):
     def evaluate(self, tstate, mstate):
         t = self.tuple.evaluate(tstate, mstate)
         i = self.index.evaluate(tstate, mstate)
-        return t[i]
+        try:
+            return t[i]
+        except TypeError as tex:
+            raise VTypeError(str(tex)) from tex
 
 
 class Lookup(Term):
@@ -868,7 +878,10 @@ class Lookup(Term):
     def evaluate(self, tstate, mstate):
         namespace = self.namespace.evaluate(tstate, mstate)
         name = self.name.evaluate(tstate, mstate)
-        return NameReference(namespace, str(name))
+        try:
+            return NameReference(namespace, str(name))
+        except TypeError as tex:
+            raise VTypeError(str(tex)) from tex
 
 
 class LoadAttrCase(Term):
@@ -925,22 +938,19 @@ class LoadAttrCase(Term):
         value = self.value.evaluate(tstate, mstate)
         t = value.type
 
-        try:
-            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
-            if isinstance(attr, int):
-                return VTuple(VBool.false, value[attr])
-            elif isinstance(attr, (VProcedure, IntrinsicProcedure)):
-                num_args = attr.num_args - 1
-                aterms = [Read(TRef(FrameReference(1))), *(Read(TRef(FrameReference(2 + idx))) for idx in range(num_args))]
-                call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), aterms, 1, 1), Pop(1)])
-                return VTuple(VBool.false, VProcedure(num_args, [attr, value], ProgramLocation(call, 0)))
-            elif isinstance(attr, VProperty):
-                call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), [Read(TRef(FrameReference(1)))], 1, 1), Pop(1)])
-                return VTuple(VBool.true, VProcedure(0, [attr.get_procedure, value], ProgramLocation(call, 0)))
-            else:
-                raise TypeError(type(attr))
-        except KeyError:
-            return VAttributeError()
+        attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+        if isinstance(attr, int):
+            return VTuple(VBool.false, value[attr])
+        elif isinstance(attr, (VProcedure, IntrinsicProcedure)):
+            num_args = attr.num_args - 1
+            aterms = [Read(TRef(FrameReference(1))), *(Read(TRef(FrameReference(2 + idx))) for idx in range(num_args))]
+            call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), aterms, 1, 1), Pop(1)])
+            return VTuple(VBool.false, VProcedure(num_args, [attr, value], ProgramLocation(call, 0)))
+        elif isinstance(attr, VProperty):
+            call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), [Read(TRef(FrameReference(1)))], 1, 1), Pop(1)])
+            return VTuple(VBool.true, VProcedure(0, [attr.get_procedure, value], ProgramLocation(call, 0)))
+        else:
+            raise TypeError(type(attr))
 
 
 class StoreAttrCase(Term):
@@ -994,18 +1004,15 @@ class StoreAttrCase(Term):
         value = self.value.evaluate(tstate, mstate)
         t = value.type
 
-        try:
-            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
-            if isinstance(attr, int):
-                return FieldReference(value, attr)
-            if isinstance(attr, VProperty):
-                return attr.set_procedure
-            elif isinstance(attr, VProcedure):
-                return VTypeError("Cannot assign values to method fields!")
-            else:
-                raise TypeError(type(attr))
-        except AttributeError:
-            return VAttributeError(f"{value} has no attribute '{self.name}'!")
+        attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+        if isinstance(attr, int):
+            return FieldReference(value, attr)
+        if isinstance(attr, VProperty):
+            return attr.set_procedure
+        elif isinstance(attr, VProcedure):
+            return VTypeError("Cannot assign values to method fields!")
+        else:
+            raise TypeError(type(attr))
 
 
 class NewTuple(Term):
@@ -1422,6 +1429,6 @@ class NewClass(Term):
             elif isinstance(member, VNone):
                 field_names.append(name)
             else:
-                raise EvaluationException("Encountered an unexpected entry in a namespace to be used for class creation!")
+                raise VRuntimeError("Encountered an unexpected entry in a namespace to be used for class creation!")
 
         return Type(self._name, ss, field_names, members)

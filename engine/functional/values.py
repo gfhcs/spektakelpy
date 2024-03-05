@@ -1040,6 +1040,16 @@ class VReferenceError(VException):
         return TBuiltin.reference_error
 
 
+class VRuntimeError(VException):
+    """
+    Raised when an error occurs at VM runtime, for logical reasons that cannot be described by another
+    exception type.
+    """
+    @property
+    def type(self):
+        return TBuiltin.runtime_error
+
+
 class VNamespace(Value):
     """
     A mapping from names to objects.

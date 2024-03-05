@@ -117,7 +117,7 @@ class Term(Immutable, Printable, abc.ABC):
         state. Any references to task-local variables will be interpreted with respect to this task state.
         :param mstate: The machine state that this expression is to be evaluated in. It must contain the given task
         state.
-        :exception EvaluationException: If evaluation fails for a semantic reason.
+        :exception VException: If evaluation fails for a semantic reason.
         :return: An object representing the value that evaluation resulted in.
         """
         pass
@@ -260,6 +260,7 @@ class Type(Value):
         Retrieves the type member of the given name, by searching the entire method resolution order of this type.
         :param name: The name of the member to retrieve.
         :return: Either an integer representing an instance field, or a VProcedure object, or a VProperty object.
+        :exception VAttributeError: If no member with the given name could be found.
         """
 
         foffset = 0
@@ -275,7 +276,8 @@ class Type(Value):
 
             foffset += len(t._field_names)
 
-        raise AttributeError(f"{self} has no attribute '{name}'!")
+        from engine.functional.values import VAttributeError
+        raise VAttributeError(f"{self} has no attribute '{name}'!")
 
     def create_instance(self):
         """
