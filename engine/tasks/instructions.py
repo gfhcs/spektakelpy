@@ -8,6 +8,16 @@ from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 
 
+def pack_exception(e, msg=None):
+    """
+    Wraps Python exceptions in VExceptions, but forwards VExceptions unmodified.
+    :param e: The Exception object to (potentially) wrap.
+    :param msg: The message to use for the VException, unless e is already a VException.
+    :return: A VException object.
+    """
+    return e if isinstance(e, VException) else VException(str(e) if msg is None else msg)
+
+
 class Update(Instruction):
     """
     An instruction that updates a part of the machine state.
@@ -89,15 +99,15 @@ class Update(Instruction):
         try:
             ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
-        except Exception as ee:
-            tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
+        except Exception as e:
+            tstate.exception = pack_exception(e, msg="Failed to evaluate expression")
             top.instruction_index = self._edestination
             return
 
         try:
             ref.write(tstate, mstate, value)
-        except Exception as ex:
-            tstate.exception = VException("Failed to write to reference!", pexception=ex)
+        except Exception as e:
+            tstate.exception = pack_exception(e, msg="Failed to write to reference!")
             top.instruction_index = self._edestination
 
 
@@ -189,8 +199,8 @@ class Guard(Instruction):
 
             try:
                 r = bool(e.evaluate(tstate, mstate))
-            except EvaluationException as ee:
-                tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
+            except Exception as e:
+                tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
                 top.instruction_index = self._edestination
                 return
 
@@ -271,14 +281,15 @@ class Push(Instruction):
         try:
             callee, free, num_args = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
-        except EvaluationException as ee:
-            tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
+        except Exception as e:
+            tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
             old_top.instruction_index = self._edestination
             return
 
         if isinstance(num_args, VInt) and int(num_args) != len(args):
             tstate.exception = VTypeError("Wrong number of arguments for call!")
             old_top.instruction_index = self._edestination
+            return
 
         if isinstance(callee, ProgramLocation):
             frame = Frame(callee.clone_unsealed(), [*free, *args])
@@ -289,11 +300,8 @@ class Push(Instruction):
             try:
                 r = callee.execute(tstate, mstate, *args)
                 tstate.returned = VNone.instance if r is None else r
-            except VException as ex:
-                tstate.exception = ex
-                old_top.instruction_index = self._edestination
-            except Exception as ex:
-                tstate.exception = VException("Failed to execute intrinsic procedure!", pexception=ex)
+            except Exception as e:
+                tstate.exception = pack_exception(e, msg="Failed to execute intrinsic procedure!")
                 old_top.instruction_index = self._edestination
             else:
                 old_top.instruction_index = self._destination
@@ -401,14 +409,15 @@ class Launch(Instruction):
         try:
             callee, free, num_args = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
-        except EvaluationException as ee:
-            tstate.exception = VException("Failed to evaluate expression!", pexception=ee)
+        except Exception as e:
+            tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
             mytop.instruction_index = self._edestination
             return
 
         if isinstance(num_args, VInt) and int(num_args) != len(args):
             tstate.exception = VTypeError("Wrong number of arguments for call!")
             mytop.instruction_index = self._edestination
+            return
 
         if isinstance(callee, ProgramLocation):
             frame = Frame(callee.clone_unsealed(), [*free, *args])

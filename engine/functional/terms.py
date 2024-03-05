@@ -336,22 +336,25 @@ class ArithmeticBinaryOperation(BinaryTerm):
         left = self.left.evaluate(tstate, mstate)
         right = self.right.evaluate(tstate, mstate)
 
-        if self.operator == ArithmeticBinaryOperator.PLUS:
-            return left + right
-        elif self.operator == ArithmeticBinaryOperator.MINUS:
-            return left - right
-        elif self.operator == ArithmeticBinaryOperator.TIMES:
-            return left * right
-        elif self.operator == ArithmeticBinaryOperator.OVER:
-            return left / right
-        elif self.operator == ArithmeticBinaryOperator.INTOVER:
-            return left // right
-        elif self.operator == ArithmeticBinaryOperator.MODULO:
-            return left % right
-        elif self.operator == ArithmeticBinaryOperator.POWER:
-            return left ** right
-        else:
-            raise NotImplementedError()
+        try:
+            if self.operator == ArithmeticBinaryOperator.PLUS:
+                return left + right
+            elif self.operator == ArithmeticBinaryOperator.MINUS:
+                return left - right
+            elif self.operator == ArithmeticBinaryOperator.TIMES:
+                return left * right
+            elif self.operator == ArithmeticBinaryOperator.OVER:
+                return left / right
+            elif self.operator == ArithmeticBinaryOperator.INTOVER:
+                return left // right
+            elif self.operator == ArithmeticBinaryOperator.MODULO:
+                return left % right
+            elif self.operator == ArithmeticBinaryOperator.POWER:
+                return left ** right
+            else:
+                raise NotImplementedError()
+        except TypeError as te:
+            raise VTypeError(str(te), pexception=te)
 
 
 class BooleanBinaryOperator(Enum):
