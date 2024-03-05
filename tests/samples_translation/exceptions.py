@@ -260,7 +260,7 @@ def increment():
     i = i + 1
     return i
 
-def foo(x):    
+def foo():    
     try:
         return increment()
     finally:
