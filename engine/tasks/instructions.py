@@ -182,8 +182,14 @@ class Guard(Instruction):
         return True
 
     def enabled(self, tstate, mstate):
-        return (isinstance(tstate.exception, VCancellationError) and tstate.exception.initial or
-                any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys()))
+        try:
+            return (isinstance(tstate.exception, VCancellationError) and tstate.exception.initial or
+                    any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys()))
+        except Exception:
+            # If the enabledness check fails, we want to make the error surface, but we are not allowed to change
+            # state. This is why we instead return True, such that the instruction can be executed, leading to the
+            # enabledness check failing a second time, in a context in which state *can* be changed.
+            return True
 
     def execute(self, tstate, mstate):
 
