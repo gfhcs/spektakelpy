@@ -81,13 +81,6 @@ class Reference(Value, abc.ABC):
         pass
 
 
-class EvaluationException(Exception):
-    """
-    Raised when the evaluation of a term fails.
-    """
-    pass
-
-
 class Term(Immutable, Printable, abc.ABC):
     """
     A term is a type of expression that is evaluated atomically and functionally, meaning that intermediate states

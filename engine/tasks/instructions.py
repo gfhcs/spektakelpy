@@ -2,8 +2,8 @@ from util import check_type, check_types
 from . import InstructionException, Instruction
 from .program import ProgramLocation
 from .stack import Frame, StackState
-from ..functional import EvaluationException, Term, Type
-from ..functional.values import VException, VProcedure, VNone, VTypeError, VInt, VCancellationError
+from ..functional import Term
+from ..functional.values import VException, VNone, VTypeError, VInt, VCancellationError
 from ..intrinsic import IntrinsicProcedure
 from ..task import TaskStatus
 

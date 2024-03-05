@@ -4,7 +4,7 @@ from enum import Enum
 
 from engine.functional.reference import FieldReference, NameReference, FrameReference
 from util import check_type, check_types
-from . import Reference, EvaluationException, Term, Value, Type
+from . import Reference, Term, Value, Type
 from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
     VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture
 from ..intrinsic import IntrinsicProcedure
