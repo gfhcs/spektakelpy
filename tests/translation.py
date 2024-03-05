@@ -14,10 +14,11 @@ from lang.spek.modules import SpekStringModuleSpecification
 from state_space.equivalence import bisimilar, reach_wbisim
 from state_space.lts import state_space, Transition, State, LTS
 from tests.samples_translation.assignments import samples as assignments
-from tests.samples_translation.exceptions import samples as exceptions
+from tests.samples_translation.async_failures import samples as async_failures
 from tests.samples_translation.choice import code as code_choice
 from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.diamond import code as code_diamond
+from tests.samples_translation.exceptions import samples as exceptions
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.ifs import samples as ifs
@@ -755,11 +756,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests the exception handling and cancellation for tasks and futures.
         """
-        # TODO: Futures can fail or be cancelled, which is a simple status change for them that should raise
-        #       certain exceptions for all stakeholders of the future.
-        # TODO: Tasks should, just like futures, also be able to raise exceptions or be cancelled!
-        # TODO: Awaiting a future or task that fails or is cancelled should raise the appropriate exception!
-        raise NotImplementedError()
+        self.examine_samples(async_failures)
 
     def test_tuples(self):
         """
