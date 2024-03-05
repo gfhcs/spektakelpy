@@ -91,6 +91,6 @@ except Exception as ex:
     y = ex
 
 await never()
-""": ((3, 2, 2 * num_interactions_possible), {"x": True, "y": VException("Crash!")}),
+""": ((6, 4, 2 * num_interactions_possible), {"x": True, "y": VException("Crash!")}),
 
 }
