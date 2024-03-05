@@ -1052,6 +1052,15 @@ class VRuntimeError(VException):
         return TBuiltin.runtime_error
 
 
+class VIndexError(VException):
+    """
+    Spek equivalent of Python's IndexError.
+    """
+    @property
+    def type(self):
+        return TBuiltin.index_error
+
+
 class VNamespace(Value):
     """
     A mapping from names to objects.
