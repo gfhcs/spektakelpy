@@ -403,5 +403,49 @@ except Exception as ex:
 await never()
 """: ((2, 1, num_interactions_possible), {"x": VException("A")}),
 
+# 24
+"""
+from interaction import never
+
+var x, y, z = True, False, True
+
+def foo():
+    try:
+        raise Exception("Hello World")
+        x = False
+    finally:
+        y = True
+        return
+
+try:
+    foo()
+except:
+    z = False
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True, "y": True, "z": True}),
+
+
+# 25
+"""
+from interaction import never
+
+var x, y, z = True, False, False
+
+def foo():
+    try:
+        raise Exception("Hello World")
+        x = False
+    finally:
+        y = True
+
+try:
+    foo()
+except:
+    z = True
+
+await never()
+""": ((2, 1, num_interactions_possible), {"x": True, "y": True, "z": True}),
+
 
 }
