@@ -832,11 +832,12 @@ class Project(Term):
 
     def evaluate(self, tstate, mstate):
         t = self.tuple.evaluate(tstate, mstate)
+        if not isinstance(t, VTuple):
+            raise VTypeError(f"Projection terms only work with tuples not {t.type}!")
         i = self.index.evaluate(tstate, mstate)
-        try:
-            return t[i]
-        except TypeError as tex:
-            raise VTypeError(str(tex)) from tex
+        if not isinstance(i, VInt):
+            raise VTypeError(f"Projection terms only accept integer indices, not {i.type}!")
+        return t[i]
 
 
 class Lookup(Term):
