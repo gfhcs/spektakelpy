@@ -1,7 +1,7 @@
 import unittest
 
 from engine.exploration import explore, schedule_nonzeno
-from engine.functional.values import VNone, VCell, VException, VCancellationError
+from engine.functional.values import VNone, VCell, VException, VCancellationError, VTuple, VStr
 from engine.machine import MachineState
 from engine.task import TaskStatus
 from engine.tasks import interaction
@@ -102,6 +102,33 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         return self.explore(program, self.initialize_machine(program, 2))
 
+    def assertVEqual(self, v, p):
+        """
+        Decides if a Spek object and a Python object are to be considered equal.
+        :param v: An object of type Value.
+        :param p: A Python object.
+        :return: A corresponding Python object.
+        """
+
+        if isinstance(v, VNone):
+            self.assertIsNone(p)
+        elif isinstance(v, VStr):
+            self.assertEqual(v.string, p)
+        elif isinstance(v, VException):
+            clones = {}
+            found = v.clone_unsealed(clones).seal()
+            expected = p.clone_unsealed(clones).seal()
+            self.assertEqual(found, expected)
+        elif isinstance(v, VTuple):
+            self.assertIsInstance(p, tuple)
+            self.assertEqual(len(v), len(p))
+            for a, b in zip(v, p):
+                self.assertVEqual(a, b)
+        elif isinstance(v, VCell):
+            self.assertVEqual(v.value, p)
+        else:
+            self.assertEqual((type(p))(v), p)
+
     def examine_sample(self, code, num_states, num_internal, num_external, bisim=None, project=None, **expectation):
         """
         Translates and executes a code sample, in order to examine the final state.
@@ -150,19 +177,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         for vname, expected in expectation.items():
             found = states[-1].content.task_states[0].stack[-1][0][vname]
-            if isinstance(found, VCell):
-                found = found.value
-            if expected is None:
-                self.assertTrue(isinstance(found, VNone))
-            elif isinstance(expected, str):
-                self.assertEqual(found.string, expected)
-            elif isinstance(expected, VException):
-                clones = {}
-                found = found.clone_unsealed(clones).seal()
-                expected = expected.clone_unsealed(clones).seal()
-                self.assertEqual(found, expected)
-            else:
-                self.assertEqual((type(expected))(found), expected)
+            self.assertVEqual(found, expected)
 
         if bisim is not None:
 
