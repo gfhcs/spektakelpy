@@ -111,4 +111,20 @@ x = (3, 3) in x
 await never()
 """: ((2, 1, num_interactions_possible), {"x": True}),
 
+# 14
+"""
+from interaction import never
+var x = (object(), object()) == (object(), object())
+await never()
+""": ((2, 1, num_interactions_possible), {"x": False}),
+
+
+# 15
+"""
+from interaction import never
+var x = (future(), future()) == (future(), future())
+await never()
+""": ((2, 1, num_interactions_possible), {"x": False}),
+
+
 }
