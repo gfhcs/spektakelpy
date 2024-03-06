@@ -131,8 +131,9 @@ class SpektakelParser(Parser):
         :return: An Expression node.
         """
         components = []
-        is_tuple = False
+        comma = False
         _, _, start = lexer.peek()
+
         while True:
             t, s, p = lexer.peek()
             if (t == KW and s in (")", "=", "in")) or t == NL:
@@ -140,21 +141,16 @@ class SpektakelParser(Parser):
             components.append(cls.parse_expression(lexer))
             if lexer.seeing(keyword(",")):
                 lexer.read()
-                is_tuple = True
+                comma = True
             else:
                 break
 
         _, _, end = lexer.peek()
 
-        if is_tuple:
-            if len(components) > 0:
-                start = components[0].start
-                end = components[-1].end
-            return Tuple(*components, start=start, end=end)
+        if len(components) == 1:
+            return Tuple(*components, start=start, end=end) if comma else components[0]
         else:
-            assert len(components) == 1
-            return components[0]
-
+            return Tuple(*components, start=start, end=end)
 
     @classmethod
     def _parse_simple_expression(cls, lexer):

@@ -23,6 +23,10 @@ def foo():
 """
 def foo():
     return 42,
-""": ast.ProcedureDefinition
-
+""": ast.ProcedureDefinition,
+"""
+def foo():
+    var x = ()
+    return x,
+""": ast.ProcedureDefinition,
 }
