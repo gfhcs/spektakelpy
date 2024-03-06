@@ -77,13 +77,3 @@ def builtin_isinstance(tstate, mstate, x, types):
         types = (types, )
     t = x.type
     return VBool.from_bool(any(t.subtypeof(s) for s in types))
-
-
-@builtin("len")
-def builtin_isinstance(tstate, mstate, collection):
-    raise NotImplementedError("This procedure should in general push a stack frame for collection.__len__!")
-
-
-@builtin("next")
-def builtin_isinstance(tstate, mstate, iterator):
-    raise NotImplementedError("This procedure should in general push a stack frame for iterator.__next__!")
