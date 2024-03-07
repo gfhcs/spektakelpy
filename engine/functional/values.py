@@ -1,11 +1,13 @@
 from enum import Enum
 
-from engine.intrinsic import IntrinsicInstanceMethod
+from engine.intrinsic import IntrinsicInstanceMethod, IntrinsicConstructor
 from util import check_type, check_types
 from util.immutable import check_unsealed
 from . import Value
+from .types import TBuiltin, builtin_type
 
 
+@builtin_type("none", [TBuiltin.object])
 class VNone(Value):
     """
     Equivalent of Python's 'None'.
@@ -43,6 +45,7 @@ class VNone(Value):
 VNone.instance = VNone()
 
 
+@builtin_type("bool", [TBuiltin.object])
 class VBool(Value):
     """
     Equivalent to Python's bool.
@@ -177,6 +180,7 @@ def p2s(x):
         raise TypeError(f"p2s cannot convert values of Pyton type {type(x)}!")
 
 
+@builtin_type("int", [TBuiltin.object])
 class VInt(Value):
     """
     Equivalent to Python's int.
@@ -284,6 +288,7 @@ class VInt(Value):
         return VInt(self._value ** other._value)
 
 
+@builtin_type("float", [TBuiltin.object])
 class VFloat(Value):
     """
     Equivalent to Python's float.
@@ -376,6 +381,7 @@ class VFloat(Value):
         return VFloat(self._value ** other._value)
 
 
+@builtin_type("str", [TBuiltin.object])
 class VStr(Value):
     """
     Equivalent to Python's str.
@@ -437,6 +443,7 @@ class VStr(Value):
         return VBool.from_bool(self._value >= other._value)
 
 
+@builtin_type("cell", [TBuiltin.object])
 class VCell(Value):
     """
     An object that references another object.
@@ -506,6 +513,7 @@ class VCell(Value):
             return c
 
 
+@builtin_type("tuple", TBuiltin.object)
 class VTuple(Value):
     """
     Equivalent to Python's tuples.
@@ -514,6 +522,11 @@ class VTuple(Value):
     def __init__(self, *components):
         super().__init__()
         self._comps = tuple(check_type(c, Value) for c in components)
+
+    @staticmethod
+    @IntrinsicConstructor
+    def convert(iterable):
+        return VTuple(*iterable)
 
     def print(self, out):
         out.write("(")
@@ -590,6 +603,7 @@ class VTuple(Value):
         return VBool.from_bool(self._comps >= other._comps)
 
 
+@builtin_type("list", [TBuiltin.object])
 class VList(Value):
     """
     Equivalent to Python's lists.
@@ -728,6 +742,7 @@ class VList(Value):
         return VBool.from_bool(self._items >= other._items)
 
 
+@builtin_type("dict", [TBuiltin.object])
 class VDict(Value):
     """
     Equivalent to Python's dicts.
@@ -874,6 +889,7 @@ class VDict(Value):
         self.set(key, value)
 
 
+@builtin_type("Exception", [TBuiltin.object])
 class VException(Value, Exception):
     """
     The base type for all exceptions.
@@ -966,6 +982,7 @@ class VException(Value, Exception):
             return c
 
 
+@builtin_type("TypeError", [TBuiltin.exception])
 class VTypeError(VException):
     """
     Raised when an inappropriate type is encountered.
@@ -975,6 +992,7 @@ class VTypeError(VException):
         return TBuiltin.type_error
 
 
+@builtin_type("CancellationError", [TBuiltin.exception])
 class VCancellationError(VException):
     """
     Raised inside a task when it is cancelled.
@@ -1021,6 +1039,7 @@ class VCancellationError(VException):
             return c
 
 
+@builtin_type("JumpError", [TBuiltin.exception])
 class VJumpError(VException):
     """
     Raised a control flow jump is executed.
@@ -1047,6 +1066,7 @@ class VJumpError(VException):
             return c
 
 
+@builtin_type("ReturnError", [TBuiltin.jump_error])
 class VReturnError(VJumpError):
     """
     Raised a return statement is executed.
@@ -1060,6 +1080,7 @@ class VReturnError(VJumpError):
         return TBuiltin.return_error
 
 
+@builtin_type("BreakError", [TBuiltin.jump_error])
 class VBreakError(VJumpError):
     """
     Raised a break statement is executed.
@@ -1073,6 +1094,7 @@ class VBreakError(VJumpError):
         return TBuiltin.break_error
 
 
+@builtin_type("ContinueError", [TBuiltin.jump_error])
 class VContinueError(VJumpError):
     """
     Raised a continue statement is executed.
@@ -1086,6 +1108,7 @@ class VContinueError(VJumpError):
         return TBuiltin.continue_error
 
 
+@builtin_type("AttributeError", [TBuiltin.exception])
 class VAttributeError(VException):
     """
     Raised when an attribute cannot be resolved.
@@ -1095,6 +1118,7 @@ class VAttributeError(VException):
         return TBuiltin.attribute_error
 
 
+@builtin_type("ReferenceError", [TBuiltin.exception])
 class VReferenceError(VException):
     """
     Raised when accessing a Reference has failed.
@@ -1104,6 +1128,7 @@ class VReferenceError(VException):
         return TBuiltin.reference_error
 
 
+@builtin_type("RuntimeError", [TBuiltin.exception])
 class VRuntimeError(VException):
     """
     Raised when an error occurs at VM runtime, for logical reasons that cannot be described by another
@@ -1114,6 +1139,7 @@ class VRuntimeError(VException):
         return TBuiltin.runtime_error
 
 
+@builtin_type("IndexError", [TBuiltin.exception])
 class VIndexError(VException):
     """
     Spek equivalent of Python's IndexError.
@@ -1123,6 +1149,7 @@ class VIndexError(VException):
         return TBuiltin.index_error
 
 
+@builtin_type("namespace", [TBuiltin.object])
 class VNamespace(Value):
     """
     A mapping from names to objects.
@@ -1205,6 +1232,7 @@ class VNamespace(Value):
         self._m[str(check_type(key, (str, VStr)))] = check_type(value, Value)
 
 
+@builtin_type("procedure", [TBuiltin.object])
 class VProcedure(Value):
     """
     Represents an executable procedure.
@@ -1376,6 +1404,7 @@ class IntrinsicProperty(property, VProperty):
         return IntrinsicProperty(self.fget, setter)
 
 
+@builtin_type("object", [])
 class VInstance(Value):
     """
     An instance of a user-defined class.
@@ -1457,6 +1486,7 @@ class FutureStatus(Enum):
     CANCELLED = 3 # The future has been cancelled.
 
 
+@builtin_type("FutureError", [TBuiltin.exception])
 class VFutureError(VException):
     """
     Raised when the state of a Future does not allow an operation.
@@ -1466,6 +1496,7 @@ class VFutureError(VException):
         return TBuiltin.future_error
 
 
+@builtin_type("future", [TBuiltin.object])
 class VFuture(Value):
     """
     An object that represents a computation result that is not available yet.
@@ -1626,5 +1657,4 @@ class VFuture(Value):
         self._status = FutureStatus.FAILED
 
 
-from .types import TBuiltin
 from ..tasks.program import ProgramLocation

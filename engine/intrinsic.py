@@ -1,5 +1,5 @@
 import abc
-from inspect import signature
+from inspect import signature, Parameter
 
 from engine.functional import Value
 
@@ -91,3 +91,42 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         return self._m(instance, *args)
 
 
+class IntrinsicConstructor(IntrinsicProcedure):
+    """
+    An __init__ method of a Python class that can be used to create instances at runtime.
+    """
+
+    def __init__(self, c):
+        """
+        Wraps a Python procedure as a Spek constructor.
+        :param c: The Python instance method that should be used as a Spek constructor. This is often a class's
+                  __init__ method.
+        """
+        super().__init__()
+        self._c = c
+        s = signature(c)
+        self._num_args = sum(1 for n, p in s.parameters.items() if n != "self" and p.kind == Parameter.POSITIONAL_OR_KEYWORD)
+
+    @property
+    def num_args(self):
+        return self._num_args
+
+    def print(self, out):
+        out.write("IntrinsicConstructor(")
+        out.write(str(self._c))
+        out.write(")")
+
+    def execute(self, _, __, *args):
+        return self._c(*args)
+
+    def hash(self):
+        return hash(self._c)
+
+    def equals(self, other):
+        return isinstance(other, IntrinsicConstructor) and self._c is other._c
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)

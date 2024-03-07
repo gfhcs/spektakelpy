@@ -3,6 +3,7 @@ import abc
 from enum import Enum
 
 from engine.functional import Value
+from engine.functional.types import builtin_type, TBuiltin
 from engine.intrinsic import IntrinsicInstanceMethod
 from util import check_type
 from util.immutable import check_unsealed
@@ -19,6 +20,7 @@ class TaskStatus(Enum):
     CANCELLED = 4  # Task has been cancelled.
 
 
+@builtin_type("task", [TBuiltin.object])
 class TaskState(Value, abc.ABC):
     """
     Represents the current state of a computation.

@@ -1,7 +1,9 @@
 import abc
 from abc import ABC
-from itertools import chain
 
+from engine.functional.types import builtin_type, TBuiltin
+from engine.functional.values import VAttributeError, VProperty, VProcedure, VInstance
+from engine.intrinsic import IntrinsicProcedure
 from util import check_type
 from util.immutable import Sealable, Immutable
 from util.printable import Printable
@@ -71,13 +73,13 @@ class Value(Sealable, Printable, abc.ABC):
         pass
 
 
+@builtin_type("reference", [TBuiltin.object])
 class Reference(Value, abc.ABC):
     """
     A reference is a part of a machine state that can point to another part of a machine state.
     """
 
     def type(self):
-        from engine.functional.types import TBuiltin
         return TBuiltin.ref
 
     @abc.abstractmethod
@@ -181,6 +183,7 @@ def linearization(t):
     return merge([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
+@builtin_type("type", [TBuiltin.object])
 class Type(Value, ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
@@ -194,8 +197,6 @@ class Type(Value, ABC):
         :param field_names: An iterable of str objects specifying the instance field names of this type.
         :param members: A dict mapping str names to instance procedures and properties of this type.
         """
-        from engine.functional.values import VProperty, VProcedure
-        from engine.intrinsic import IntrinsicProcedure
 
         super().__init__()
         self.seal()
@@ -229,7 +230,6 @@ class Type(Value, ABC):
 
     @property
     def type(self):
-        from engine.functional.types import TBuiltin
         return TBuiltin.type
 
     def hash(self):
@@ -315,7 +315,6 @@ class Type(Value, ABC):
 
             foffset += len(t._field_names)
 
-        from engine.functional.values import VAttributeError
         raise VAttributeError(f"{self} has no attribute '{name}'!")
 
     def create_instance(self):
@@ -323,5 +322,4 @@ class Type(Value, ABC):
         Creates an instance of this type.
         :return: An instance of this type. The __init__ method must be called immediately after creation of the object.
         """
-        from .values import VInstance
         return VInstance(self, self._nfields)

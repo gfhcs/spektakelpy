@@ -1,5 +1,5 @@
 from engine.functional import Value
-from engine.functional.types import TBuiltin
+from engine.functional.types import TBuiltin, builtin_type
 from engine.tasks import Instruction
 from util import check_type
 from util.immutable import Immutable, check_sealed
@@ -44,6 +44,7 @@ class StackProgram(Printable, Immutable):
         return self._instructions[item]
 
 
+@builtin_type("location", [TBuiltin.object])
 class ProgramLocation(Immutable, Value):
     """
     A pair of StackProgram and instruction index.
