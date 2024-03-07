@@ -118,7 +118,7 @@ class TestSpektakelTranslation(unittest.TestCase):
             clones = {}
             found = v.clone_unsealed(clones).seal()
             expected = p.clone_unsealed(clones).seal()
-            self.assertEqual(found, expected)
+            self.assertTrue(found.bequals(expected, {}))
         elif isinstance(v, VTuple):
             self.assertIsInstance(p, tuple)
             self.assertEqual(len(v), len(p))

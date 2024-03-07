@@ -446,11 +446,10 @@ class Comparison(BinaryTerm):
         right = self.right.evaluate(tstate, mstate)
 
         try:
-            if self.operator in (ComparisonOperator.EQ, ComparisonOperator.NEQ):
-                clones = {}
-                left, right = (x.clone_unsealed(clones=clones).seal() for x in (left, right))
-                equal = left.equals(right)
-                return VBool.from_bool(equal if self.operator == ComparisonOperator.EQ else not equal)
+            if self.operator == ComparisonOperator.EQ:
+                return VBool.from_bool(left.cequals(right))
+            elif self.operator == ComparisonOperator.NEQ:
+                return VBool.from_bool(not left.cequals(right))
             elif self.operator == ComparisonOperator.LESS:
                 return VBool.from_bool(left < right)
             elif self.operator == ComparisonOperator.LESSOREQUAL:

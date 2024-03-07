@@ -56,6 +56,12 @@ class TaskState(Value, abc.ABC):
         check_unsealed(self)
         self._status = check_type(value, TaskStatus)
 
+    def equals(self, other):
+        return self is other
+
+    def cequals(self, other):
+        return self.equals(other)
+
     @abc.abstractmethod
     def enabled(self, mstate):
         """

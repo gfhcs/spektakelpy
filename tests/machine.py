@@ -549,8 +549,8 @@ class TestSpektakelMachine(unittest.TestCase):
                  (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hello")), VBool.true)
                  ]
 
-        for term, value in cases:
-            with self.subTest(term=term):
+        for idx, (term, value) in enumerate(cases):
+            with self.subTest(idx=idx, term=term):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
                                   Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
@@ -619,7 +619,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of terms that create new objects.
         """
 
-        cases = [(NewTuple(CInt(42), CInt(4711)), VTuple(VInt(42), VInt(4711))),
+        cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool.true),
                  (IsInstance(NewList(), CType(TBuiltin.list)), VBool.true),
                  (IsInstance(NewDict(), CType(TBuiltin.dict)), VBool.true),
                  (IsInstance(NewJumpError(VReturnError), CType(TBuiltin.return_error)), VBool.true),
@@ -761,7 +761,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), num_interactions_possible)
-                self.assertEqual(states[-1].content.task_states[0].stack[0][0], VTuple(v1, v2).seal())
+                self.assertTrue(states[-1].content.task_states[0].stack[0][0].cequals(VTuple(v1, v2)))
 
     def test_StoreAttrCase(self):
         """

@@ -37,12 +37,18 @@ class VRef(Reference):
     def hash(self):
         return hash(self._value)
 
+    def equals(self, other):
+        return isinstance(other, VRef) and self._value.equals(other)
+
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
             return isinstance(other, VRef) and self._value.bequals(other, bijection)
+
+    def cequals(self, other):
+        return isinstance(other, VRef) and self._value.cequals(other)
 
     def write(self, tstate, mstate, value):
         raise VReferenceError("Cannot write to a VRef!")
@@ -84,8 +90,14 @@ class FrameReference(Reference):
     def hash(self):
         return self._index
 
-    def bequals(self, other, bijection):
+    def equals(self, other):
         return isinstance(other, FrameReference) and self._index == other._index
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def write(self, tstate, mstate, value):
         # It is assumed that no exceptions are possible here, because calling Reference.write only happens during
@@ -135,8 +147,14 @@ class AbsoluteFrameReference(Reference):
     def hash(self):
         return hash((self._taskid, self._offset, self._index))
 
-    def bequals(self, other, bijection):
+    def equals(self, other):
         return isinstance(other, AbsoluteFrameReference) and (self._taskid, self._offset, self._index) == (other._taskid, other._offset, other._index)
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def write(self, tstate, mstate, value):
         try:
@@ -177,8 +195,14 @@ class ReturnValueReference(Reference):
     def hash(self):
         return 0
 
-    def bequals(self, other, bijection):
+    def equals(self, other):
         return isinstance(other, ReturnValueReference)
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def write(self, tstate, mstate, value):
         tstate.returned = value
@@ -194,7 +218,7 @@ class ExceptionReference(Reference):
 
     def __init__(self):
         """
-        Refers to the exception currently being handeled in a task.
+        Refers to the exception currently being handled in a task.
         """
         super().__init__()
         self.seal()
@@ -211,8 +235,14 @@ class ExceptionReference(Reference):
     def hash(self):
         return 1
 
-    def bequals(self, other, bijection):
+    def equals(self, other):
         return isinstance(other, ExceptionReference)
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def write(self, tstate, mstate, value):
         tstate.exception = value
@@ -257,12 +287,18 @@ class FieldReference(Reference):
     def hash(self):
         return self._fidx
 
+    def equals(self, other):
+        return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v.equals(other._v)
+
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
             return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v.bequals(other._v, bijection)
+
+    def cequals(self, other):
+        return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v.cequals(other._v)
 
     def write(self, tstate, mstate, value):
         self._v[self._fidx] = check_type(value, Value)
@@ -307,12 +343,18 @@ class NameReference(Reference):
     def hash(self):
         return hash(self._n)
 
+    def equals(self, other):
+        return isinstance(other, NameReference) and self._n == other._n and self._ns.equals(other._ns)
+
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
             return isinstance(other, NameReference) and self._n == other._n and self._ns.bequals(other._ns, bijection)
+
+    def cequals(self, other):
+        return isinstance(other, NameReference) and self._n == other._n and self._ns.cequals(other._ns)
 
     def write(self, tstate, mstate, value):
         ns = self._ns.read(tstate, mstate)
@@ -371,8 +413,14 @@ class CellReference(Reference):
     def hash(self):
         return hash(self._cref) ^ 987654
 
+    def equals(self, other):
+        return isinstance(other, CellReference) and self._cref.equals(other._cref)
+
     def bequals(self, other, bijection):
         return isinstance(other, CellReference) and self._cref.bequals(other._cref, bijection)
+
+    def cequals(self, other):
+        return isinstance(other, CellReference) and self._cref.cequals(other._cref)
 
     def write(self, tstate, mstate, value):
         cell = self._cref.read(tstate, mstate)

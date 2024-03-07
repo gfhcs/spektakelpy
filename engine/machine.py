@@ -53,6 +53,12 @@ class MachineState(Value):
             h ^= hash(s)
         return h
 
+    def equals(self, other):
+        # According to the documentation of Value.bequals, Value.equals is supposed to decide
+        # "if a machine program can possibly tell self apart from other". For the case of MachineState objects this
+        # is equivalent to the semantics of Value.bequals.
+        return self.bequals(other, {})
+
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
@@ -62,6 +68,10 @@ class MachineState(Value):
                     and len(self._tstates) == len(other._tstates)):
                 return False
             return all(a.bequals(b, bijection) for a, b in zip(self._tstates, other._tstates))
+
+    def cequals(self, other):
+        # This should actually never be called, because machine programs don't have access to the entire machine state.
+        return self.equals(other)
 
     @property
     def task_states(self):

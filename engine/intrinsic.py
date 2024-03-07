@@ -78,8 +78,14 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
     def hash(self):
         return hash(self._m)
 
-    def bequals(self, other, bijection):
+    def equals(self, other):
         return isinstance(other, IntrinsicInstanceMethod) and self._m is other._m
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def __call__(self, instance, *args):
         return self._m(instance, *args)

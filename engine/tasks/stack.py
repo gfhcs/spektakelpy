@@ -77,6 +77,12 @@ class Frame(Value):
         check_sealed(self)
         return len(self._local_values)
 
+    def equals(self, other):
+        return (isinstance(other, Frame)
+                and len(self._local_values) == len(other._local_values)
+                and self._location.equals(other._location)
+                and all(a.equals(b) for a, b in zip(self._local_values, other._local_values)))
+
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
@@ -87,6 +93,9 @@ class Frame(Value):
                     and self._location.bequals(other._location, bijection)):
                 return False
             return all(a.bequals(b, bijection) for a, b in zip(self._local_values, other._local_values))
+
+    def cequals(self, other):
+        return self.equals(other)
 
     @property
     def program(self):

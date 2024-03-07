@@ -45,8 +45,14 @@ class PBuiltin(IntrinsicProcedure):
     def hash(self):
         return hash(self._name)
 
-    def bequals(self, other, bijection):
+    def equals(self, other):
         return isinstance(other, PBuiltin) and self._name == other._name and self._p is other._p
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def __call__(self, tstate, mstate, *args):
         return self._p(tstate, mstate, *args)

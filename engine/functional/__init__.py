@@ -1,4 +1,6 @@
 import abc
+from abc import ABC
+from itertools import chain
 
 from util import check_type
 from util.immutable import Sealable, Immutable
@@ -22,29 +24,51 @@ class Value(Sealable, Printable, abc.ABC):
     @abc.abstractmethod
     def bequals(self, other, bijection):
         """
-        Decides whether a machine program could tell this value apart from another value.
-        This method must be compatible with self.hash, i.e. if this method returns True, we must have
-        self.hash() == other.hash().
-        This procedure is used to compare machine states to one another: We must be able to tell whether two objects
-        representing machine states are actually representing the *same* machine state, even though their Python
-        identities are truly different. This is why a bijection from sub-value references in one object to sub-value
-        references in the other object needs to be built up. Only in that way can we decide equality of Values that
-        the machine could tell apart by their identities.
+        Decides if for every machine state m containing self, there exists a bijection between the object identities in
+        m and the object identities in some machine state m', such that self is mapped to other and
+        bijection(m).equals(m').
+
+        This procedure is thus more permissive than self.equals. It must be compatible with self.hash, i.e.
+        for all bijections b self.bequals(other, b) must imply self.hash() == other.hash().
+
+        This procedure is used to decide if two MachineState objects of different Python identity are actually representing
+        indistinguishable Spek machine states: For this comparison, absolute Python object identities do not matter,
+        but *equality* of Python object identities within the same state does.
+
+        In contrast, self.equals must decide if a machine program can possibly tell self apart from other, which may
+        often be the case based on type or Python object identity! While self.equals implements == and != *in Python*,
+        self.cequals implements them in Spek, where they may be more permissive (for example for comparing integers
+        to booleans).
+
         :param other: Another Value.
-        :param bijection: A mapping from ID's s of Values to ID's e of Values.
+        :param bijection: A mapping from ID's s of Values to ID's e of Values, that this procedure may only *extend*,
+                  without modifying pre-existing key-value pairs.
                   If bijection[id(s)] = id(e), the sub-value s of self is considered indistinguishable
                   from the sub-value e of other.
                   The mapping must not contain Values that are only distinguishable by content, because in that case,
                   multiple Value objects of different identity can be indistinguishable, which cannot be represented
                   in a bijection.
                   The mapping must contain all sub values of self and other that are distinguishable by identity.
-                  self.bequals must *extend* the mapping accordingly, i.e. it may only *add* keys.
-        :return: A boolean value indicating if any machine program could distinguish self from other.
+        :return: A boolean value.
         """
         pass
 
-    def equals(self, other):
-        return self.bequals(other, {})
+    @abc.abstractmethod
+    def cequals(self, other):
+        """
+        Implements the == and != operators in Spek. It may be more permissive than self.equals: self.equals must
+        not be True for value pairs that a machine program could tell apart in anyway, including object identity or
+        type. However, according to the Spek semantics, values for which self.equals returns False might still be
+        considered equal by ==, for example because they are convertible into each other, as is the case for integers
+        and some floats.
+
+        This procedure must be compatible with self.hash,
+        i.e. self.cequals(other) must imply self.hash() == other.hash().
+
+        :param other: Another Value.
+        :return: A boolean value.
+        """
+        pass
 
 
 class Reference(Value, abc.ABC):
@@ -157,7 +181,7 @@ def linearization(t):
     return merge([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
-class Type(Value):
+class Type(Value, ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
     """
@@ -177,10 +201,10 @@ class Type(Value):
         self.seal()
         self._name = check_type(name, str)
         self._super_types = tuple(check_type(t, Type) for t in super_types)
-        self._field_names = field_names
+        self._field_names = tuple(field_names)
         self._members = {check_type(k, str): check_type(v, (VProperty, VProcedure, IntrinsicProcedure)) for k, v in members.items()}
         self._mro = list(linearization(self))
-        self._nfields = len(field_names)
+        self._nfields = len(self._field_names)
 
         for t in self.mro:
             self._nfields += t._nfields
@@ -215,7 +239,29 @@ class Type(Value):
         return self is other
 
     def bequals(self, other, bijection):
-        return self is other
+        if self is other:
+            return True
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            if not (isinstance(other, Type)
+                    and (self._name, len(self._super_types), len(self._field_names), len(self._members))
+                    == (other._name, len(other._super_types), len(other._field_names), len(other._members))):
+                return False
+            if not (all(a == b for a, b in zip(self._field_names, other._field_names))
+                    and all(a.bequals(b, bijection) for a, b in zip(self._super_types, other._super_types))):
+                return False
+            for k, v in self._members.items():
+                try:
+                    if not v.bequals(other._members[k]):
+                        return False
+                except KeyError:
+                    return False
+            return True
+
+    def cequals(self, other):
+        return self.equals(other)
 
     def _seal(self):
         pass
