@@ -1,7 +1,9 @@
-from engine.functional import Reference, Value
-from engine.functional.values import VNamespace, VCell, VReferenceError, VTypeError
+from engine.core.value import Value
+from engine.stack.exceptions import VReferenceError, VTypeError
+from engine.stack.reference import Reference
+from lang.spek.data.cells import VCell
+from lang.spek.data.values import VNamespace
 from util import check_type
-from util.immutable import check_unsealed
 
 
 class VRef(Reference):
@@ -29,7 +31,7 @@ class VRef(Reference):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VRef()
+            c = VRef(self._value)
             clones[id(self)] = c
             c._value = self._value.clone_unsealed(clones=clones)
             return c

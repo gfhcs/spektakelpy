@@ -1,14 +1,17 @@
 import unittest
 
+from engine.core import interaction
+from engine.core.data import VNone, VStr
+from engine.core.exceptions import VException, VCancellationError
+from engine.core.interaction import InteractionState, Interaction, num_interactions_possible, i2s
+from engine.core.machine import TaskStatus, MachineState
 from engine.exploration import explore, schedule_nonzeno
-from engine.functional.values import VNone, VCell, VException, VCancellationError, VTuple, VStr
-from engine.machine import MachineState
-from engine.task import TaskStatus
-from engine.tasks import interaction
-from engine.tasks.interaction import InteractionState, Interaction, num_interactions_possible, i2s
-from engine.tasks.program import ProgramLocation
-from engine.tasks.stack import StackState, Frame
+from engine.stack.frame import Frame
+from engine.stack.program import ProgramLocation
+from engine.stack.state import StackState
 from lang.spek import static, modules
+from lang.spek.data.cells import VCell
+from lang.spek.data.values import VTuple
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
 from state_space.equivalence import bisimilar, reach_wbisim

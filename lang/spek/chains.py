@@ -1,6 +1,6 @@
-from engine.functional import terms
-from engine.tasks.instructions import Push, Launch, Guard, Update, Pop
-from engine.tasks.program import StackProgram
+from engine.stack.instructionset import Push, Launch, Guard, Update, Pop
+from engine.stack.program import StackProgram
+from lang.spek.data import terms
 from util import check_type
 from util.printable import Printable
 

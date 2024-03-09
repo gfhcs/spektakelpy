@@ -1,11 +1,11 @@
-from engine.functional import terms
-from engine.functional.reference import ReturnValueReference, ExceptionReference, FrameReference, \
+from engine.core.exceptions import VException
+from engine.stack.procedure import StackProcedure
+from engine.stack.program import ProgramLocation
+from lang.spek.data.exceptions import VReturnError, VBreakError, VContinueError
+from lang.spek.data.references import ReturnValueReference, ExceptionReference, FrameReference, \
     AbsoluteFrameReference, CellReference
-from engine.functional.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
+from lang.spek.data.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
     CTerm, Lookup, CString, CNone, Callable, CInt
-from engine.functional.types import TBuiltin
-from engine.functional.values import VReturnError, VBreakError, VContinueError, VDict, VProcedure
-from engine.tasks.program import ProgramLocation
 from lang.translator import Translator
 from util import check_type
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
@@ -14,6 +14,8 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
 from .chains import Chain
+from .data import terms
+from .data.values import VDict
 from .scopes import ScopeStack, ExceptionScope, FunctionScope, LoopScope, ClassScope, ModuleScope
 from .vanalysis import VariableAnalysis
 from ..modules import ModuleSpecification
@@ -188,8 +190,9 @@ class Spektakel2Stack(Translator):
 
         module = spec.resolve()
 
+        mproc = StackProcedure(0, ProgramLocation(module, 0))
         m, chain = self.emit_call(chain, Read(TRef(AbsoluteFrameReference(0, 0, 1))),
-                                  [CTerm(ProgramLocation(module, 0))], on_error)
+                                  [CTerm(mproc)], on_error)
 
         m = m.children[0]
 
@@ -701,13 +704,14 @@ class Spektakel2Stack(Translator):
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(eref)
-            condition_return = terms.IsInstance(e, CTerm(TBuiltin.return_error))
-            condition_break = terms.IsInstance(e, CTerm(TBuiltin.break_error))
-            condition_continue = terms.IsInstance(e, CTerm(TBuiltin.continue_error))
+            condition_return = terms.IsInstance(e, CTerm(VReturnError.machine_type))
+            condition_break = terms.IsInstance(e, CTerm(VBreakError.machine_type))
+            condition_continue = terms.IsInstance(e, CTerm(VContinueError.machine_type))
 
-            condition_exception = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, terms.IsInstance(e, CTerm(TBuiltin.exception)),
-                                                         terms.BooleanBinaryOperation(terms.BooleanBinaryOperator.AND, negate(condition_break),
-                                                                                terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, negate(condition_continue), negate(condition_return))))
+            condition_exception = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, terms.IsInstance(e, CTerm(VException.machine_type)),
+                                                               terms.BooleanBinaryOperation(
+                                                                   terms.BooleanBinaryOperator.AND, negate(condition_break),
+                                                                   terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, negate(condition_continue), negate(condition_return))))
             condition_termination = terms.Comparison(ComparisonOperator.IS, e, terms.CNone())
 
             alternatives = {condition_termination: successor,
@@ -842,7 +846,7 @@ class Spektakel2Stack(Translator):
         self._scopes.pop()
 
         d = AbsoluteFrameReference(0, 0, 1)
-        preamble.append_update(TRef(d), CTerm(VProcedure(1, tuple(), ProgramLocation(imp_code.compile(), 0))), panic)
+        preamble.append_update(TRef(d), CTerm(StackProcedure(1, ProgramLocation(imp_code.compile(), 0))), panic)
 
         return preamble
 

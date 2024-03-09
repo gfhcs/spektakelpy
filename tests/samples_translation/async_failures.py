@@ -1,6 +1,5 @@
-
-from engine.functional.values import VException
-from engine.tasks.interaction import num_interactions_possible
+from engine.core.exceptions import VException
+from engine.core.interaction import num_interactions_possible
 
 samples = {
 

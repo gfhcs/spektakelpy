@@ -2,8 +2,7 @@ from enum import Enum
 
 from util import check_type
 from util.immutable import check_sealed
-from ..machine import MachineState
-from ..task import TaskState, TaskStatus
+from engine.core.machine import TaskStatus, TaskState
 
 
 class Interaction(Enum):
@@ -31,13 +30,6 @@ def i2s(i):
         return ""
     r = str(i)
     return r[r.index(".") + 1:]
-
-
-class BuiltinVariable(Enum):
-    """
-    Builtin variables.
-    """
-    TIME = 0
 
 
 class InteractionState(TaskState):

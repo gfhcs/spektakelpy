@@ -1,6 +1,6 @@
+from engine.core.interaction import InteractionState, Interaction
+from engine.core.machine import MachineState
 from util import check_type
-from engine.machine import MachineState
-from engine.tasks.interaction import InteractionState, Interaction
 
 
 def schedule_all(s):

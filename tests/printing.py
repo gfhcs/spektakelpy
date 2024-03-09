@@ -1,9 +1,8 @@
 import unittest
-from io import StringIO
 
-from engine.functional.terms import ComparisonOperator, Comparison, UnaryOperator, UnaryOperation, CNone, \
+from lang.spek import static, modules
+from lang.spek.data.terms import ComparisonOperator, Comparison, UnaryOperator, UnaryOperation, CNone, \
     BooleanBinaryOperation, BooleanBinaryOperator, CBool
-from lang.spek import syntax, static, modules
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
 

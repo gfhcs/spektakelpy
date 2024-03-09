@@ -2,17 +2,28 @@ import abc
 from abc import ABC
 from enum import Enum
 
-from engine.functional.reference import FieldReference, NameReference, FrameReference
+from engine.core.data import VNone, VBool, VInt, VFloat, VStr
+from engine.core.exceptions import VCancellationError, VRuntimeError, VException
+from engine.core.interaction import Interaction, InteractionState, i2s
+from engine.core.machine import TaskStatus, TaskState
+from engine.core.procedure import Procedure
+from engine.core.property import Property
+from engine.core.type import Type
+from engine.core.value import Value
+from engine.stack.exceptions import VTypeError
+from engine.stack.procedure import StackProcedure
+from engine.stack.program import StackProgram, ProgramLocation
+from engine.stack.reference import Reference
+from engine.stack.state import StackState
+from engine.stack.term import Term
+from lang.spek.data.bound import BoundProcedure
+from lang.spek.data.cells import VCell
+from lang.spek.data.exceptions import VJumpError, VAttributeError
+from lang.spek.data.futures import VFuture, FutureStatus
+from lang.spek.data.property import OrdinaryProperty
+from lang.spek.data.references import FieldReference, NameReference
+from lang.spek.data.values import VTuple, VList, VDict, VNamespace
 from util import check_type, check_types
-from . import Reference, Term, Value, Type
-from .values import VInt, VFloat, VBool, VNone, VTuple, VTypeError, VStr, VDict, VNamespace, VProcedure, \
-    VProperty, VAttributeError, VJumpError, VList, VCell, FutureStatus, VFuture, VRuntimeError, VCancellationError
-from ..intrinsic import IntrinsicProcedure
-from ..task import TaskStatus, TaskState
-from ..tasks.instructions import Pop, Push
-from ..tasks.interaction import Interaction, InteractionState, i2s
-from ..tasks.program import StackProgram, ProgramLocation
-from ..tasks.stack import StackState
 
 
 class CTerm(Term):
@@ -524,18 +535,12 @@ class UnaryPredicateTerm(Term):
         return self._p
 
     def evaluate(self, tstate, mstate):
-        from .types import TBuiltin
         r = self.operand.evaluate(tstate, mstate)
         t = r.type
         if self._p == UnaryPredicate.ISCALLABLE:
-            # Check if it is a function object, a class object, or if the type of the object has a __call__ method.
-            try:
-                value = t.subtypeof(TBuiltin.procedure) or isinstance(t.resolve_member("__call__"), VProcedure)
-            except VAttributeError:
-                value = False
+            value = isinstance(r, (Procedure, Type))
         elif self._p == UnaryPredicate.ISEXCEPTION:
-            # Check if the type of the object is a descendant of TException:
-            value = t.subtypeof(TBuiltin.exception)
+            value = t.subtypeof(VException.machine_type)
         elif self._p == UnaryPredicate.ISTERMINATED:
             # Check if the argument is a completed available.
             if isinstance(r, TaskState):
@@ -603,8 +608,7 @@ class AwaitedResult(Term):
 
 class Callable(Term):
     """
-    A term that converts its callable argument to either a ProgramLocation or an IntrinsicProcedure,
-    which can be used with a Push or Launch instruction.
+    A term that converts its argument to a Procedure object, which can be used with a Push or Launch instruction.
     """
 
     def __init__(self, t):
@@ -635,25 +639,15 @@ class Callable(Term):
     def evaluate(self, tstate, mstate):
         callee = self.term.evaluate(tstate, mstate)
 
-        free = []
-        num_args = VNone.instance
-
         while True:
-            if isinstance(callee, ProgramLocation):
-                break
-            elif isinstance(callee, IntrinsicProcedure):
-                num_args = VInt(callee.num_args)
+            if isinstance(callee, Procedure):
                 break
             elif isinstance(callee, Type):
                 callee = callee.resolve_member("__new__")
-            elif isinstance(callee, VProcedure):
-                num_args = VInt(callee.num_args)
-                free = [*callee.free, *free]
-                callee = callee.entry
             else:
                 raise VTypeError(f"Value of type {type(callee)} is not callable!")
 
-        return VTuple(callee, VTuple(*free), num_args)
+        return callee
 
 
 class ITask(Term):
@@ -940,19 +934,18 @@ class LoadAttrCase(Term):
         value = self.value.evaluate(tstate, mstate)
         t = value.type
 
-        attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+        try:
+            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+        except KeyError as kex:
+            raise VAttributeError(str(kex))
         if isinstance(attr, int):
             return VTuple(VBool.false, value[attr])
-        elif isinstance(attr, (VProcedure, IntrinsicProcedure)):
-            num_args = attr.num_args - 1
-            aterms = [Read(TRef(FrameReference(1))), *(Read(TRef(FrameReference(2 + idx))) for idx in range(num_args))]
-            call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), aterms, 1, 1), Pop(1)])
-            return VTuple(VBool.false, VProcedure(num_args, [attr, value], ProgramLocation(call, 0)))
-        elif isinstance(attr, VProperty):
-            call = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), [Read(TRef(FrameReference(1)))], 1, 1), Pop(1)])
-            return VTuple(VBool.true, VProcedure(0, [attr.get_procedure, value], ProgramLocation(call, 0)))
+        elif isinstance(attr, Procedure):
+            return VTuple(VBool.false, BoundProcedure(attr, value))
+        elif isinstance(attr, Property):
+            return VTuple(VBool.true, BoundProcedure(attr.getter_procedure, value))
         else:
-            raise TypeError(type(attr))
+            raise VTypeError("The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
 
 
 class StoreAttrCase(Term):
@@ -1006,15 +999,18 @@ class StoreAttrCase(Term):
         value = self.value.evaluate(tstate, mstate)
         t = value.type
 
-        attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+        try:
+            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+        except KeyError as kex:
+            raise VAttributeError(str(kex))
         if isinstance(attr, int):
             return FieldReference(value, attr)
-        if isinstance(attr, VProperty):
-            return attr.set_procedure
-        elif isinstance(attr, VProcedure):
+        if isinstance(attr, Property):
+            return attr.setter_procedure
+        elif isinstance(attr, Procedure):
             return VTypeError("Cannot assign values to method fields!")
         else:
-            raise TypeError(type(attr))
+            raise VTypeError("The attribute value {value} is of type {value.type}, which StoreAttrCase cannot handle!")
 
 
 class NewTuple(Term):
@@ -1180,41 +1176,6 @@ class NewJumpError(Term):
         return self._etype()
 
 
-class NewTypeError(Term):
-    """
-    A term that evaluates to a TypeError.
-    """
-
-    def __init__(self, message):
-        """
-        Creates a new tuple term.
-        :param message: The message for the type error created by this term.
-        """
-        super().__init__()
-        self._msg = check_type(message, str)
-
-    def hash(self):
-        return hash(self._msg)
-
-    def equals(self, other):
-        return isinstance(other, NewTypeError) and self._msg == other._msg
-
-    def print(self, out):
-        out.write("TypeError(")
-        out.write(repr(self._msg))
-        out.write(")")
-
-    @property
-    def message(self):
-        """
-        The message for the type error created by this term.
-        """
-        return self._msg
-
-    def evaluate(self, tstate, mstate):
-        return VTypeError(self._msg)
-
-
 class NewNamespace(Term):
     """
     A term that evaluates to a new empty namespace.
@@ -1304,7 +1265,9 @@ class NewProcedure(Term):
         e = self._entry
         if isinstance(e, StackProgram):
             e = ProgramLocation(e, 0)
-        return VProcedure(self._num_args, tuple(f.evaluate(tstate, mstate) for f in self._free), e)
+
+        return BoundProcedure(StackProcedure(len(self._free) + self._num_args, e),
+                              *(f.evaluate(tstate, mstate) for f in self._free))
 
 
 class NewProperty(Term):
@@ -1359,7 +1322,7 @@ class NewProperty(Term):
     def evaluate(self, tstate, mstate):
         g = self.getter.evaluate(tstate, mstate)
         s = None if self.setter is None else self.setter.evaluate(tstate, mstate)
-        return VProperty(g, s)
+        return OrdinaryProperty(g, s)
 
 
 class NewClass(Term):
@@ -1426,7 +1389,7 @@ class NewClass(Term):
         field_names = []
         members = {}
         for name, member in self.namespace.evaluate(tstate, mstate):
-            if isinstance(member, (VProcedure, VProperty)):
+            if isinstance(member, (Procedure, Property)):
                 members[name] = member
             elif isinstance(member, VNone):
                 field_names.append(name)

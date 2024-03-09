@@ -1,6 +1,7 @@
-from engine.functional import Value
-from engine.functional.types import TBuiltin, builtin_type
-from engine.tasks import Instruction
+from engine.core.intrinsic import intrinsic
+from engine.core.type import Type
+from engine.core.value import Value
+from engine.stack.instruction import Instruction
 from util import check_type
 from util.immutable import Immutable, check_sealed
 from util.printable import Printable
@@ -35,7 +36,7 @@ class StackProgram(Printable, Immutable):
         return isinstance(other, StackProgram) and self._instructions == other._instructions
 
     def __len__(self):
-        return self._instructions
+        return len(self._instructions)
 
     def __iter__(self):
         return iter(self._instructions)
@@ -44,7 +45,7 @@ class StackProgram(Printable, Immutable):
         return self._instructions[item]
 
 
-@builtin_type("location", [TBuiltin.object])
+@intrinsic("location", [Type.get_instance_object()])
 class ProgramLocation(Immutable, Value):
     """
     A pair of StackProgram and instruction index.
@@ -52,7 +53,7 @@ class ProgramLocation(Immutable, Value):
 
     @property
     def type(self):
-        return TBuiltin.location
+        return ProgramLocation.machine_type
 
     def __init__(self, program, index):
         """

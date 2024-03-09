@@ -2,16 +2,15 @@ import abc
 import os.path
 from io import StringIO
 
-from engine.functional import terms
-from engine.functional.procedures import PBuiltin
-from engine.functional.reference import ReturnValueReference
-from engine.functional.terms import TRef, CTerm, CString, ITask
-from engine.functional.types import TBuiltin
-from engine.functional.values import VProcedure
-from engine.tasks.instructions import Update, Pop
-from engine.tasks.interaction import Interaction, i2s
-from engine.tasks.program import StackProgram, ProgramLocation
+from engine.core.interaction import Interaction, i2s
+from engine.stack.instructionset import Update, Pop
+from engine.stack.procedure import StackProcedure
+from engine.stack.program import StackProgram, ProgramLocation
 from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
+from lang.spek.data import terms
+from lang.spek.data.builtin import all_builtin
+from lang.spek.data.references import ReturnValueReference
+from lang.spek.data.terms import TRef, CTerm, CString, ITask
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 from lang.validator import ValidationError
@@ -229,11 +228,9 @@ def build_default_finder(roots):
     r = TRef(ReturnValueReference())
     for name, symbol in symbols.items():
         p = StackProgram([Update(r, ITask(symbol), 1, 42), Pop(42)])
-        procedures[name] = VProcedure(0, tuple(), ProgramLocation(p, 0))
+        procedures[name] = StackProcedure(0, ProgramLocation(p, 0))
 
-    names = {t.name: t for t in TBuiltin.instances}
-    for f in PBuiltin.instances:
-        names[f.name] = f
+    names = {name: value for name, value in all_builtin()}
 
     interaction = BuiltinModuleSpecification("interaction", procedures)
     builtin = BuiltinModuleSpecification("<builtin>", names)

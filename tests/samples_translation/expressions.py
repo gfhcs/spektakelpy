@@ -1,4 +1,4 @@
-from engine.tasks.interaction import num_interactions_possible
+from engine.core.interaction import num_interactions_possible
 
 samples = {
 """

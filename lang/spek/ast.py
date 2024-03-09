@@ -1,7 +1,7 @@
 import abc
 from enum import Enum
 
-from engine.functional.terms import UnaryOperator, ComparisonOperator, BooleanBinaryOperator, ArithmeticBinaryOperator
+from lang.spek.data.terms import UnaryOperator, ComparisonOperator, BooleanBinaryOperator, ArithmeticBinaryOperator
 from lang.tokens import TokenPosition
 from util import check_type
 

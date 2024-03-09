@@ -1,11 +1,12 @@
+from engine.core.exceptions import VException, VCancellationError
+from engine.core.machine import TaskStatus
+from engine.core.procedure import Procedure
+from engine.core.data import VNone
+from engine.stack.exceptions import VTypeError, VInstructionException
+from engine.stack.instruction import Instruction
+from engine.stack.state import StackState
+from engine.stack.term import Term
 from util import check_type, check_types
-from . import InstructionException, Instruction
-from .program import ProgramLocation
-from .stack import Frame, StackState
-from ..functional import Term
-from ..functional.values import VException, VNone, VTypeError, VInt, VCancellationError
-from ..intrinsic import IntrinsicProcedure
-from ..task import TaskStatus
 
 
 def pack_exception(e, msg=None):
@@ -15,7 +16,7 @@ def pack_exception(e, msg=None):
     :param msg: The message to use for the VException, unless e is already a VException.
     :return: A VException object.
     """
-    return e if isinstance(e, VException) else VException(str(e) if msg is None else msg)
+    return e if isinstance(e, VException) else VException(str(e) if msg is None else msg, pexception=e)
 
 
 class Update(Instruction):
@@ -184,8 +185,8 @@ class Guard(Instruction):
     def enabled(self, tstate, mstate):
         try:
             return (isinstance(tstate.exception, VCancellationError) and tstate.exception.initial or
-                    any(bool(e.evaluate(tstate, mstate)) for e in self._alternatives.keys()))
-        except Exception:
+                    any(e.evaluate(tstate, mstate).value for e in self._alternatives.keys()))
+        except VException:
             # If the enabledness check fails, we want to make the error surface, but we are not allowed to change
             # state. This is why we instead return True, such that the instruction can be executed, leading to the
             # enabledness check failing a second time, in a context in which state *can* be changed.
@@ -212,9 +213,9 @@ class Guard(Instruction):
 
             if r:
                 if enabled:
-                    tstate.exception = VException("Failed to evaluate guard!", pexception=InstructionException("More than one of the expressions of this guard expression"
+                    tstate.exception = VInstructionException("More than one of the expressions of this guard expression"
                                                             " are true. This is not allowed, because tasks must be"
-                                                            " fully determenistic!"))
+                                                            " fully determenistic!")
                     top.instruction_index = self._edestination
                     return
 
@@ -285,36 +286,26 @@ class Push(Instruction):
             return
 
         try:
-            callee, free, num_args = self._callee.evaluate(tstate, mstate)
+            callee = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except Exception as e:
             tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
             old_top.instruction_index = self._edestination
             return
 
-        if isinstance(num_args, VInt) and int(num_args) != len(args):
-            tstate.exception = VTypeError("Wrong number of arguments for call!")
+        if not isinstance(callee, Procedure):
+            tstate.exception = VTypeError("The callee term did not evaluate to a callable procedure!")
             old_top.instruction_index = self._edestination
             return
 
-        if isinstance(callee, ProgramLocation):
-            frame = Frame(callee.clone_unsealed(), [*free, *args])
-            tstate.push(frame)
-            old_top.instruction_index = self._destination
-        elif isinstance(callee, IntrinsicProcedure):
-            assert len(free) == 0
-            try:
-                r = callee.execute(tstate, mstate, *args)
-                tstate.returned = VNone.instance if r is None else r
-            except Exception as e:
-                tstate.exception = pack_exception(e, msg="Failed to execute intrinsic procedure!")
-                old_top.instruction_index = self._edestination
-            else:
-                old_top.instruction_index = self._destination
-        else:
-            tstate.exception = VException("Failed to execute instruction!", pexception=InstructionException("The expression determining the initial program location for the"
-                                                    " new stack frame is neither a ProgramLocation nor an Intrinsic function!"))
+        try:
+            r = callee.initiate(tstate, mstate, *args)
+            tstate.returned = VNone.instance if r is None else r
+        except Exception as e:
+            tstate.exception = pack_exception(e, msg="Failed to call procedure!")
             old_top.instruction_index = self._edestination
+        else:
+            old_top.instruction_index = self._destination
 
 
 class Pop(Instruction):
@@ -413,27 +404,30 @@ class Launch(Instruction):
             return
 
         try:
-            callee, free, num_args = self._callee.evaluate(tstate, mstate)
+            callee = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except Exception as e:
             tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
             mytop.instruction_index = self._edestination
             return
 
-        if isinstance(num_args, VInt) and int(num_args) != len(args):
-            tstate.exception = VTypeError("Wrong number of arguments for call!")
+        if not isinstance(callee, Procedure):
+            tstate.exception = VTypeError("The callee term did not evaluate to a callable procedure!")
             mytop.instruction_index = self._edestination
             return
 
-        if isinstance(callee, ProgramLocation):
-            frame = Frame(callee.clone_unsealed(), [*free, *args])
-            task = StackState(TaskStatus.WAITING, [frame])
-            mstate.add_task(task)
-            tstate.returned = task
+        task = StackState(TaskStatus.WAITING, [])
+        mstate.add_task(task)
+        tstate.returned = task
+        try:
+            r = callee.initiate(task, mstate, *args)
+            task.returned = VNone.instance if r is None else r
+        except Exception as e:
+            tstate.exception = pack_exception(e, msg="Failed to call procedure!")
+            mytop.instruction_index = self._edestination
         else:
-            tstate.exception = VException("Failed to execute instruction!", pexception=InstructionException("The expression determining the initial program location for the"
-                                                    " new stack frame is not a proper program location!"))
-            mytop.instruction_index = self._edestination
-            return
+            mytop.instruction_index = self._destination
 
-        mytop.instruction_index = self._destination
+
+
+

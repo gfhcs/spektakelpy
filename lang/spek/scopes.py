@@ -1,9 +1,9 @@
 import abc
 from abc import ABC
 
-from engine.functional.reference import FrameReference, CellReference, NameReference
-from engine.functional.terms import TRef, NewCell, Read
 from lang.spek.ast import Identifier
+from lang.spek.data.references import FrameReference, CellReference, NameReference
+from lang.spek.data.terms import TRef, NewCell, Read
 from util import check_type
 
 

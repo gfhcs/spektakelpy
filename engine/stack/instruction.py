@@ -4,13 +4,6 @@ from util.immutable import Immutable
 from util.printable import Printable
 
 
-class InstructionException(Exception):
-    """
-    Raised when the execution of an instruction fails.
-    """
-    pass
-
-
 class Instruction(Printable, Immutable, abc.ABC):
     """
     An instruction is the smallest possible execution step that actually changes the machine state.

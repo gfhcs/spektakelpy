@@ -1,5 +1,5 @@
-from engine.functional.values import VAttributeError
-from engine.tasks.interaction import num_interactions_possible
+from lang.spek.data.exceptions import VAttributeError
+from engine.core.interaction import num_interactions_possible
 
 samples = {
 

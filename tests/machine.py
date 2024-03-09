@@ -1,24 +1,27 @@
 import unittest
 
+from engine.core.data import VNone, VBool, VInt, VFloat, VStr
+from engine.core.exceptions import VException
+from engine.core.interaction import InteractionState, Interaction, num_interactions_possible
+from engine.core.machine import TaskStatus, MachineState
+from engine.core.type import Type
 from engine.exploration import explore, schedule_nonzeno
-from state_space.lts import state_space
-from engine.functional import Type
-from engine.functional.reference import FrameReference, ReturnValueReference, FieldReference
-from engine.functional.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, TRef, \
+from engine.stack.exceptions import VTypeError
+from engine.stack.frame import Frame
+from engine.stack.instructionset import Update, Pop, Guard, Push, Launch
+from engine.stack.procedure import StackProcedure
+from engine.stack.program import StackProgram, ProgramLocation
+from engine.stack.state import StackState
+from lang.spek.data.exceptions import VReturnError, VBreakError
+from lang.spek.data.property import OrdinaryProperty
+from lang.spek.data.references import FrameReference, ReturnValueReference, FieldReference
+from lang.spek.data.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, TRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
-    NewTypeError, IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
+    IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
     NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase, Callable, Project
-from engine.functional.types import TBuiltin
-from engine.functional.values import VNone, VProcedure, VList, VInt, VFloat, VBool, VTuple, VReturnError, \
-    VBreakError, VNamespace, VStr, VProperty, VException
-from engine.machine import MachineState
-from engine.task import TaskStatus
-from engine.tasks.instructions import Update, Pop, Guard, Push, Launch
-from engine.tasks.interaction import InteractionState, Interaction, num_interactions_possible
-from engine.tasks.program import StackProgram, ProgramLocation
-from engine.tasks.stack import StackState, Frame
-from state_space.lts import lts2str
+from lang.spek.data.values import VTuple, VList, VNamespace, VDict, VInstance
+from state_space.lts import state_space
 
 
 class TestSpektakelMachine(unittest.TestCase):
@@ -185,7 +188,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop(42)])
 
-        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
+        q = StackProcedure(1, ProgramLocation(q, 0))
 
         p = StackProgram([Push(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -212,7 +215,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop(42)])
 
-        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
+        q = StackProcedure(1, ProgramLocation(q, 0))
 
         p = StackProgram([Push(Callable(Read(TRef(FrameReference(17)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -238,7 +241,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                           Guard({}, 1)])
 
-        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
+        q = StackProcedure(1, ProgramLocation(q, 0))
 
         p = StackProgram([Launch(Callable(Read(TRef(FrameReference(0)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -271,7 +274,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                                            Read(TRef(FrameReference(0))), CInt(1)), 1, 1),
                                         Pop(42)])
 
-        q = VProcedure(1, tuple(), ProgramLocation(q, 0))
+        q = StackProcedure(1, ProgramLocation(q, 0))
 
         p = StackProgram([Launch(Callable(Read(TRef(FrameReference(17)))), [CInt(42)], 1, 1),
                           Guard({}, 1)])
@@ -424,8 +427,6 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of CFloat terms.
         """
-
-
         p = StackProgram([Update(TRef(FrameReference(0)), CBool(False), 1, 1),
                                   Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
@@ -567,7 +568,7 @@ class TestSpektakelMachine(unittest.TestCase):
                  (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, CInt(42)), VBool.false),
                  (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, Read(TRef(FrameReference(0)))), VBool.true),
                  (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CInt(42)), VBool.false),
-                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, NewTypeError("Just for testing.")), VBool.true)
+                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CTerm(VTypeError("Just for testing."))), VBool.true)
                  ]
 
         for idx, (term, value) in enumerate(cases):
@@ -585,8 +586,8 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of IsInstance terms.
         """
 
-        cases = [(IsInstance(CInt(42), NewTuple(CType(TBuiltin.float), CType(TBuiltin.int))), VBool.true),
-                 (IsInstance(CInt(42), CType(TBuiltin.float)), VBool.false)
+        cases = [(IsInstance(CInt(42), NewTuple(CType(VFloat.machine_type), CType(VInt.machine_type))), VBool.true),
+                 (IsInstance(CInt(42), CType(VFloat.machine_type)), VBool.false)
                  ]
 
         for term, value in cases:
@@ -620,11 +621,11 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool.true),
-                 (IsInstance(NewList(), CType(TBuiltin.list)), VBool.true),
-                 (IsInstance(NewDict(), CType(TBuiltin.dict)), VBool.true),
-                 (IsInstance(NewJumpError(VReturnError), CType(TBuiltin.return_error)), VBool.true),
-                 (IsInstance(NewJumpError(VBreakError), CType(TBuiltin.break_error)), VBool.true),
-                 (IsInstance(NewTypeError("Just a test."), CType(TBuiltin.type_error)), VBool.true)
+                 (IsInstance(NewList(), CType(VList.machine_type)), VBool.true),
+                 (IsInstance(NewDict(), CType(VDict.machine_type)), VBool.true),
+                 (IsInstance(NewJumpError(VReturnError), CType(VReturnError.machine_type)), VBool.true),
+                 (IsInstance(NewJumpError(VBreakError), CType(VBreakError.machine_type)), VBool.true),
+                 (IsInstance(CTerm(VTypeError("Just a test.")), CType(VTypeError.machine_type)), VBool.true)
                  ]
 
         for idx, (term, value) in enumerate(cases):
@@ -639,7 +640,7 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of namespace-related terms.
         """
-        cases = [(IsInstance(NewNamespace(), CType(TBuiltin.namespace)), VBool.true),
+        cases = [(IsInstance(NewNamespace(), CType(VNamespace.machine_type)), VBool.true),
                  (Read(Lookup(TRef(FrameReference(0)), CString("hello"))), VInt(42))]
 
         for term, value in cases:
@@ -712,7 +713,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
                           Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
-                          Update(TRef(FrameReference(0)), NewClass("C", [CType(TBuiltin.object)], Read(TRef(FrameReference(0)))), 3, 42),
+                          Update(TRef(FrameReference(0)), NewClass("C", [CType(Type.get_instance_object())], Read(TRef(FrameReference(0)))), 3, 42),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
@@ -729,16 +730,16 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of LoadAttrCase terms.
         """
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
-        method = VProcedure(1, tuple(), ProgramLocation(method, 0))
+        method = StackProcedure(1, ProgramLocation(method, 0))
 
-        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)]), 0))
-        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop(42)]), 0))
-        property = VProperty(g, s)
+        g = StackProcedure(1, ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)]), 0))
+        s = StackProcedure(2, ProgramLocation(StackProgram([Pop(42)]), 0))
+        property = OrdinaryProperty(g, s)
 
         members = {"method": method, "property": property}
-        c = Type("C", [TBuiltin.object], ["x"], members)
+        c = Type("C", [Type.get_instance_object()], ["x"], members)
 
-        i = c.create_instance()
+        i = VInstance(c, 1)
 
         cases = (("x", (True, VBool.false, VNone.instance)),
                  ("method", (False, VBool.false, VInt(42))),
@@ -768,16 +769,16 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of StoreAttrCase terms.
         """
         method = StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
-        method = VProcedure(1, tuple(), ProgramLocation(method, 0))
+        method = StackProcedure(1, ProgramLocation(method, 0))
 
-        g = VProcedure(1, tuple(), ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)]), 0))
-        s = VProcedure(2, tuple(), ProgramLocation(StackProgram([Pop(42)]), 0))
-        property = VProperty(g, s)
+        g = StackProcedure(1, ProgramLocation(StackProgram([Update(TRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)]), 0))
+        s = StackProcedure(2, ProgramLocation(StackProgram([Pop(42)]), 0))
+        property = OrdinaryProperty(g, s)
 
         members = {"method": method, "property": property}
-        c = Type("C", [TBuiltin.object], ["x"], members)
+        c = Type("C", [Type.get_instance_object()], ["x"], members)
 
-        i = c.create_instance()
+        i = VInstance(c, 1)
 
         cases = (("x", FieldReference),
                  ("method", VException),
