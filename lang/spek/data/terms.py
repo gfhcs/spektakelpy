@@ -643,7 +643,10 @@ class Callable(Term):
             if isinstance(callee, Procedure):
                 break
             elif isinstance(callee, Type):
-                callee = callee.resolve_member("__new__")
+                try:
+                    callee = callee.resolve_member("__new__")
+                except KeyError:
+                    raise VTypeError(f"The type {callee} does not have a constructor!")
             else:
                 raise VTypeError(f"Value of type {type(callee)} is not callable!")
 

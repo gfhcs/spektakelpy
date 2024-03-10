@@ -1,5 +1,6 @@
 from engine.core.data import VNone, VInt, VFloat, VStr, VBool
 from engine.core.exceptions import VException, VCancellationError, VRuntimeError
+from engine.core.intrinsic import intrinsic
 from engine.core.machine import TaskState
 from engine.core.procedure import Procedure
 from engine.core.type import Type
@@ -22,13 +23,20 @@ def builtin(name=None):
     def decorate(x):
         nonlocal name
 
-        y = x
-        if hasattr(x, "machine_type"):
-            y = y.machine_type
-
-        if not isinstance(y, (Procedure, Type)):
-            raise TypeError("The @builtin decorator only works on Value subclasses Procedure and Type! "
-                            "Consider using @intrinsic_*!")
+        if isinstance(x, (Procedure, Type)):
+            y = x
+        elif callable(x) and not isinstance(x, type):
+            raise TypeError("The @builtin decorator only works on Python functions that are decorated with "
+                            "@intrinsic or @intrinsic_procedure!")
+        elif isinstance(x, type):
+            try:
+                y = x.machine_type
+            except AttributeError:
+                raise TypeError("The @builtin decorator only works on Python types that have a 'machine_type' "
+                                "attribute, such as those decorated with @intrinsic or @intrinsic_type!")
+            assert isinstance(y, Type)
+        else:
+            raise TypeError("The @builtin decorator only works on procedures and types!")
 
         if name is None:
             try:
@@ -72,3 +80,12 @@ builtin()(TaskState.machine_type)
 builtin()(VReferenceError.machine_type)
 builtin()(VTypeError.machine_type)
 builtin()(VInstructionException.machine_type)
+
+
+@builtin("isinstance")
+@intrinsic()
+def builtin_isinstance(x, types):
+    if not isinstance(types, tuple):
+        types = (types, )
+    t = x.type
+    return VBool.from_bool(any(t.subtypeof(s) for s in types))

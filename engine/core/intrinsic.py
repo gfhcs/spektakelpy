@@ -298,6 +298,8 @@ def intrinsic_type(name=None, super_types=None):
 
         # If there is a constructor in the MRO of the super types, we want to inherit it:
         for s in t.mro():
+            if s is t:
+                continue
             try:
                 s_intrinsic = s.machine_type
             except AttributeError:

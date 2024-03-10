@@ -1,5 +1,3 @@
-from abc import ABC
-
 from engine.core.value import Value
 from util import check_type
 
@@ -38,7 +36,7 @@ def linearization(t):
     return merge([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
-class Type(Value, ABC):
+class Type(Value):
     """
     A Type describes a set of abilities and an interface that a value provides.
     """
