@@ -3,6 +3,7 @@ from engine.core.intrinsic import intrinsic, intrinsic_constructor
 from engine.core.type import Type
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
+from lang.spek.data.exceptions import VKeyError
 from util import check_type
 from util.immutable import check_unsealed
 
@@ -279,7 +280,10 @@ class VDict(Value):
         :return: The value that was retrieved.
         """
         VDict._assert_key_hashable(key)
-        return self._items[check_type(key, Value)]
+        try:
+            return self._items[check_type(key, Value)]
+        except KeyError as kex:
+            raise VKeyError(str(kex))
 
     @intrinsic()
     def pop(self, key):

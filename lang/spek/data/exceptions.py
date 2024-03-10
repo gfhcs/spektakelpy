@@ -72,6 +72,15 @@ class VIndexError(VException):
 
 
 @builtin()
+@intrinsic("KeyError")
+class VKeyError(VException):
+    """
+    Raised when a mapping is missing a requested key.
+    """
+    pass
+
+
+@builtin()
 @intrinsic("FutureError")
 class VFutureError(VException):
     """
