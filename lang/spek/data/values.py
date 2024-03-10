@@ -19,9 +19,10 @@ class VTuple(Value):
         self._comps = tuple(check_type(c, Value) for c in components)
 
     @intrinsic_constructor()
-    @staticmethod
-    def convert(iterable):
-        return VTuple(*iterable)
+    @classmethod
+    def convert(cls, iterable):
+        assert issubclass(cls, VTuple)
+        return cls(*iterable)
 
     def print(self, out):
         out.write("(")

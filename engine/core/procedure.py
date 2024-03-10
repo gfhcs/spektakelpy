@@ -12,14 +12,6 @@ class Procedure(Value, ABC):
     machine_type = Type("procedure", [Type.get_instance_object()], [], {})
 
     @property
-    @abc.abstractmethod
-    def num_args(self):
-        """
-        The number of arguments of this procedure.
-        """
-        pass
-
-    @property
     def type(self):
         return Procedure.machine_type
 

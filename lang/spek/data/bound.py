@@ -13,23 +13,13 @@ class BoundProcedure(Procedure):
         """
         Binds some of the parameters of a procedure to fixed arguments.
         :param p: A Procedure.
-        :param bound: A tuple of Value objects serving as arguments. Their number must be at most p.num_args, but
-                      some of them may be None, to specify that the corresponding argument is not bound. If fewer than
-                      p.num_args arguments are given, None will be appended until p.num_args is reached.
+        :param bound: A tuple of Value objects serving as arguments. Some of them may be None,
+                      to specify that the corresponding argument is not bound.
         """
 
         super().__init__()
         self._p = check_type(p, Procedure)
-
-        if len(args) > p.num_args:
-            raise ValueError(f"Expected at most {p.num_args} arguments, but got {len(args)}!")
-
-        self._args = tuple(check_types(args, Value, allow_none=True)) + (None, ) * (p.num_args - len(args))
-        self._num_args = p.num_args - sum(1 for x in self._args if x is not None)
-
-    @property
-    def num_args(self):
-        return self._num_args
+        self._args = tuple(check_types(args, Value, allow_none=True))
 
     def _seal(self):
         self._p.seal()
@@ -60,7 +50,6 @@ class BoundProcedure(Procedure):
         except KeyError:
             bijection[id(self)] = id(other)
             if not (isinstance(other, BoundProcedure)
-                    and self._num_args == other._num_args
                     and self._p.bequals(other._p, bijection)):
                 return False
 
@@ -86,14 +75,19 @@ class BoundProcedure(Procedure):
             return c
 
     def initiate(self, tstate, mstate, *args):
-        if len(args) != self._num_args:
-            raise VTypeError(f"Expected {self._num_args} arguments, but got {len(args)}!")
+        expected = sum(1 for a in self._args if a is None)
+        received = len(args)
+        if received < expected:
+            raise ValueError(f"Expected at least {expected} arguments, but got only {received}!")
 
         local = list(self._args)
         args = iter(args)
         for idx, a in enumerate(self._args):
             if a is None:
                 local[idx] = next(args)
+
+        for a in args:
+            local.append(a)
 
         return self._p.initiate(tstate, mstate, *local)
 

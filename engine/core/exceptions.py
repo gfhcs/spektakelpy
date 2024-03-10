@@ -1,7 +1,7 @@
 from engine.core.type import Type
 from engine.core.value import Value
 from engine.core.data import VStr
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic, intrinsic_constructor
 from util import check_type
 
 
@@ -25,6 +25,15 @@ class VException(Value, Exception):
         self._msg = check_type(message, VStr, allow_none=True)
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
+
+    @intrinsic_constructor()
+    @classmethod
+    def create(cls, message):
+        """
+        The constructor for exceptions that is visible in Python.
+        :return: An instance of the base class on which this method is called.
+        """
+        return cls(message)
 
     def print(self, out):
         out.write(type(self).__name__)

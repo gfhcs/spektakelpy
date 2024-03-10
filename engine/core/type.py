@@ -29,7 +29,7 @@ def linearization(t):
                 else:
                     break
             if cand is None:
-                raise ValueError("Inconsistent hiearchy!")
+                raise ValueError("Inconsistent hierarchy!")
             yield cand
             for seq in nonempty:  # remove cand
                 if seq[0] == cand:
@@ -170,6 +170,12 @@ class Type(Value, ABC):
         """
         return self._mro
 
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._field_names[key]
+        else:
+            return self._members[key]
+
     def resolve_member(self, name):
         """
         Retrieves the type member of the given name, by searching the entire method resolution order of this type.
@@ -185,12 +191,10 @@ class Type(Value, ABC):
                 return foffset + fidx
             except ValueError:
                 try:
-                    return t._members[name]
+                    return t[name]
                 except KeyError:
                     pass
 
             foffset += len(t._field_names)
 
         raise KeyError(f"{self} has no attribute '{name}'!")
-
-

@@ -28,13 +28,6 @@ class IntrinsicProcedure(Procedure):
     def _seal(self):
         return self
 
-    @property
-    def num_args(self):
-        """
-        The number of arguments of this procedure.
-        """
-        return len(signature(self._p).parameters)
-
     def hash(self):
         return hash(self._p)
 
@@ -102,6 +95,61 @@ class IntrinsicMethod(IntrinsicProcedure, IntrinsicMember):
 
     def cequals(self, other):
         return super().equals(other) and self._name == other._name
+
+
+class IntrinsicConstructor(IntrinsicMethod):
+    """
+    Represents the intrinsic constructor of a Python type.
+    """
+
+    def __init__(self, t=None, m=None):
+        """
+        Builds a constructor that can be used to create instances of the given in type in both Python and Spek.
+        :param t: The Python type instances of which are to be constructed. If None is given, calling the intrinsic
+                  constructor will raise a ValueError.
+        :param m: Either a class method, or an __init__ method. Either will be used to construct instances in this
+                  constructor.
+        """
+
+        self._m = m
+
+        if isinstance(m, classmethod):
+            c = m.__func__
+        elif m.__name__ == "__init__" and next(iter(signature(m).parameters)) == "self":
+            def c(t, *largs, **kwargs):
+                return t(*largs, **kwargs)
+        else:
+            raise TypeError("IntrinsicConstructor only accepts class methods and  __init__ procedures!")
+
+        if t is None:
+            def construct(*_, **__):
+                raise TypeError("This intrinsic constructor has not been given a Python type "
+                                "and can therefor not actually construct any instances!")
+        else:
+            def construct(*largs, **kwargs):
+                return c(t, *largs, **kwargs)
+
+        super().__init__("__new__", construct)
+        self._m = m
+        self._t = t
+
+    @property
+    def python_type(self):
+        """
+        The Python type that this constructor creates *direct* instances of.
+        :return: Either a type object, or None, if no type was given.
+        """
+        return self._t
+
+    @property
+    def method(self):
+        """
+        The original Python method that this intrinsic constructor was made of.
+        """
+        return self._m
+
+    def __call__(self, *args, **kwargs):
+        return self._m(*args, **kwargs)
 
 
 class IntrinsicProperty(property, Property, IntrinsicMember):
@@ -207,22 +255,18 @@ def intrinsic_property(name=None):
     return decorator
 
 
-def intrinsic_init():
-    """
-    Turns the __init__ method of a Python class into an IntrinsicMethod that can be used as a constructor in Spek.
-    :param init: The __init__ method to turn into a constructor.
-    :return: An IntrinsicMethod.
-    """
-    return lambda init: IntrinsicMethod("__init__", init)
-
-
 def intrinsic_constructor():
     """
-    Turns a static method of a Python class into an IntrinsicMethod that can be used as a constructor in Spek.
+    Turns a class method of a Python class into an IntrinsicMethod that can be used as a constructor in Spek.
     :param construct: The static method to turn into a constructor.
     :return: An IntrinsicMethod.
     """
-    return lambda construct: IntrinsicMethod("__new__", construct)
+
+    def decorator(construct):
+        # We expect the Type constructor to fill in the proper Python type once it has been constructed.
+        return IntrinsicConstructor(t=None, m=construct)
+
+    return decorator
 
 
 def intrinsic_type(name=None, super_types=None):
@@ -251,23 +295,35 @@ def intrinsic_type(name=None, super_types=None):
                 raise ValueError(f"Some of the super types of {t.__name__} are not proper Type objects!")
 
         members = {}
+
+        # If there is a constructor in the MRO of the super types, we want to inherit it:
+        for s in t.mro():
+            try:
+                s_intrinsic = s.machine_type
+            except AttributeError:
+                continue
+            try:
+                members["__new__"] = s_intrinsic["__new__"]
+            except KeyError:
+                continue
+            break
+
         for n in dir(t):
             member = getattr(t, n)
             if not isinstance(member, IntrinsicMember):
                 continue
+            members[member.member_name] = member
 
-            mname = member.member_name
-
-            if mname == "__new__":
-                if "__new__" in members:
-                    raise ValueError(f"There seem to be multiple intrinsic constructors for {t}!")
-            elif member.member_name == "__init__":
-                mname = "__new__"
-                member = IntrinsicMethod(mname, t)
-            else:
-                pass
-
-            members[mname] = member
+        # If there is a constructor, it is expected to be an IntrinsicConstructor.
+        # It is coming either from a super class, or was defined in the decorated type.
+        # In both cases we must fill in the decorated type as the type to construct:
+        try:
+            constructor = members["__new__"]
+        except KeyError:
+            pass
+        else:
+            assert isinstance(constructor, IntrinsicConstructor)
+            members["__new__"] = IntrinsicConstructor(t=t, m=constructor.method)
 
         t.machine_type = Type(name, super_types, [], members).seal()
         return t
@@ -289,7 +345,7 @@ def intrinsic(*largs, **kwargs):
             s = signature(x)
             if next(iter(s.parameters.values())).name == "self":
                 if x.__name__ == "__init__":
-                    return intrinsic_init(*largs, **kwargs)(x)
+                    return intrinsic_constructor(*largs, **kwargs)(x)
                 else:
                     return intrinsic_method(*largs, **kwargs)(x)
             elif isinstance(x, property):
