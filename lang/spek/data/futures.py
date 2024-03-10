@@ -18,7 +18,7 @@ class FutureStatus(Enum):
     CANCELLED = 3  # The future has been cancelled.
 
 
-@builtin
+@builtin()
 @intrinsic("future", [Type.get_instance_object()])
 class VFuture(Value):
     """
