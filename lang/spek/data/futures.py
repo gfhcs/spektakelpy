@@ -28,6 +28,7 @@ class VFuture(Value):
     needs to make progress itself.
     """
 
+    @intrinsic()
     def __init__(self):
         """
         Creates a new unset future.
