@@ -1,12 +1,12 @@
 from engine.core.exceptions import VException, VCancellationError
 from engine.core.machine import TaskStatus, TaskState
+from engine.core.none import VNone
 from engine.core.value import Value
+from engine.stack.exceptions import VInstructionException
+from engine.stack.frame import Frame
+from engine.stack.program import ProgramLocation
 from util import check_type, check_types
 from util.immutable import check_sealed, check_unsealed
-from .exceptions import VInstructionException
-from .frame import Frame
-from .program import ProgramLocation
-from ..core.none import VNone
 
 
 class StackState(TaskState):

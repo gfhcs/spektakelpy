@@ -1,6 +1,5 @@
 from engine.core.exceptions import VException, VCancellationError
 from engine.core.machine import TaskStatus
-from engine.core.none import VNone
 from engine.core.procedure import Procedure
 from engine.stack.exceptions import VTypeError, VInstructionException
 from engine.stack.instruction import Instruction
