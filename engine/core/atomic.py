@@ -1,9 +1,11 @@
 from inspect import signature, Parameter
 
 from engine.core.type import Type
+from util import check_types, check_type
+from util.immutable import Immutable
 
 
-class AtomicType(Type):
+class AtomicType(Type, Immutable):
     """
     A type the instances of which are opaque and indivisible.
     """
@@ -17,7 +19,8 @@ class AtomicType(Type):
                     If None is given, the type will not have a visible constructor.
         :param members: The direct members of this type.
         """
-        super().__init__(name, bases, {} if members is None else members)
+        super().__init__(name, check_types(bases, Immutable), {} if members is None else {n: check_type(m, Immutable) for n, m in members.items()})
+        super(Type, self).__init__()
         self._new = new
 
     def num_cargs(self):

@@ -101,6 +101,24 @@ class IntrinsicInit(IntrinsicProcedure):
         return self._construct
 
 
+class IntrinsicProperty(OrdinaryProperty, Immutable):
+    """
+    Wraps a Python property. Like all intrinsic type members, this one must be immutable, in order to be compatible
+    with AtomicType.
+    """
+    def __init__(self, ptype, p):
+        """
+        Wraps a Python property.
+        :param ptype: The Python type the property is derived from.
+        :param p: A property object.
+        """
+        getter = IntrinsicInstanceMethod(ptype, self, p.fget)
+        setter = None if p.fset is None else IntrinsicInstanceMethod(ptype, self, p.fset)
+
+        super().__init__(getter, setter)
+        super(OrdinaryProperty, self).__init__()
+
+
 class IntrinsicType(AtomicType):
     """
     Wraps a Python type as an intrinsic type, i.e. as a type that can be used as part of the machine state.
@@ -167,9 +185,7 @@ class IntrinsicType(AtomicType):
                     return construct(ptype, *args)
 
             elif isinstance(pmember, property):
-                getter = IntrinsicInstanceMethod(ptype, self, pmember.fget)
-                setter = None if pmember.fset is None else IntrinsicInstanceMethod(ptype, self, pmember.fset)
-                imember = OrdinaryProperty(getter, setter)
+                imember = IntrinsicProperty(ptype, pmember)
             else:
                 imember = IntrinsicInstanceMethod(ptype, self, pmember)
 

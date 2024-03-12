@@ -61,7 +61,7 @@ class CompoundType(Type, ABC):
         offsets = {}
         offset = 0
         for t in dummy.mro:
-            offsets[t] = offset
+            offsets[id(t)] = offset
             if t is dummy:
                 for name in direct_field_names:
                     direct_members[name] = FieldIndex(offset)
@@ -77,8 +77,8 @@ class CompoundType(Type, ABC):
                 raise TypeError(f"Compound types can only inherit from atomic types and other compound types, not from {type(t)}!")
         super().__init__(name, bases, direct_members)
         self._size = offset
-        offsets[self] = offsets[dummy]
-        del offsets[dummy]
+        offsets[id(self)] = offsets[id(dummy)]
+        del offsets[id(dummy)]
         self._offsets = offsets
 
     @property
@@ -99,7 +99,7 @@ class CompoundType(Type, ABC):
         :param t: A super type of this type. May even be this type itself.
         :return: An int.
         """
-        return self._offsets[t]
+        return self._offsets[id(t)]
 
     def new(self, *_):
         return VCompound(self)

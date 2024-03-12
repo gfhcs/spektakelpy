@@ -5,10 +5,9 @@ from engine.core.atomic import type_object, AtomicType
 from engine.core.procedure import Procedure
 from engine.core.value import Value
 from util import check_type
-from util.immutable import Immutable
 
 
-class Property(Value, Immutable, ABC):
+class Property(Value, ABC):
     """
     Represents an instance property.
     """
@@ -48,8 +47,8 @@ class OrdinaryProperty(Property):
         :param setter: Either None (in case of a readonly property), or the setter procedure for this property.
         """
         super().__init__()
-        self._getter = check_type(check_type(getter, Procedure), Immutable)
-        self._setter = None if setter is None else check_type(check_type(setter, Procedure), Immutable)
+        self._getter = check_type(getter, Procedure)
+        self._setter = None if setter is None else check_type(setter, Procedure)
 
     @property
     def getter(self):
@@ -85,3 +84,19 @@ class OrdinaryProperty(Property):
 
     def cequals(self, other):
         return self is other
+
+    def _seal(self):
+        self._getter.seal()
+        self._setter.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = OrdinaryProperty(self._getter, self._setter)
+            clones[id(self)] = c
+            c._getter = self._getter.clone_unsealed(clones)
+            c._setter = self._setter.clone_unsealed(clones)
+            return c
