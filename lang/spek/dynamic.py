@@ -5,7 +5,7 @@ from lang.spek.data.exceptions import VReturnError, VBreakError, VContinueError
 from lang.spek.data.references import ReturnValueReference, ExceptionReference, FrameReference, \
     AbsoluteFrameReference, CellReference
 from lang.spek.data.terms import ComparisonOperator, BooleanBinaryOperator, TRef, UnaryOperator, Read, NewDict, \
-    CTerm, Lookup, CString, CNone, Callable, CInt
+    CTerm, Lookup, CString, CNone, Callable, CInt, LoadAttrCase, Project
 from lang.translator import Translator
 from util import check_type
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
@@ -831,7 +831,8 @@ class Spektakel2Stack(Translator):
         load2 = Chain()
         exit = Chain()
         l, = self.declare_pattern(imp_code, None, panic)
-        imp_code.append_push(Callable(CTerm(VDict.get)), [Read(TRef(d)), Read(TRef(l))], load1)
+
+        imp_code.append_push(Project(LoadAttrCase(CTerm(VDict.intrinsic_type), "get"), CInt(1)), [Read(TRef(d)), Read(TRef(l))], load1)
         imp_code.append_pop(panic)
         load1.append_update(TRef(ExceptionReference()), CNone(), panic)
         load1.append_push(Callable(Read(TRef(l))), [], exit)
@@ -839,7 +840,7 @@ class Spektakel2Stack(Translator):
         load1.append_guard({error: exit, negate(error): load2}, panic)
         h, = self.declare_pattern(load2, None, panic)
         load2.append_update(TRef(h), Read(TRef(ReturnValueReference())), panic)
-        load2.append_push(Callable(CTerm(VDict.set)), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
+        load2.append_push(Project(LoadAttrCase(CTerm(VDict.intrinsic_type), "set"), CInt(1)), [Read(TRef(d)), Read(TRef(l)), Read(TRef(ReturnValueReference()))], panic)
         load2.append_update(TRef(ReturnValueReference()), Read(TRef(h)), panic)
         load2.append_jump(exit)
         exit.append_pop(panic)
