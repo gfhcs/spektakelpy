@@ -153,7 +153,7 @@ class Spektakel2Stack(Translator):
             successor = Chain()
             chain.append_guard({csetter: setter, cupdate: update, cexception: exception}, on_error)
 
-            _, setter = self.emit_call(setter, Read(TRef(r)), [a, term], on_error)
+            _, setter = self.emit_call(setter, Read(TRef(r)), [term], on_error)
             setter.append_jump(successor)
 
             update.append_update(TRef(r), term, on_error)
