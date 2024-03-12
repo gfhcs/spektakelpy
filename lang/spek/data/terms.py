@@ -1007,18 +1007,17 @@ class LoadAttrCase(Term):
 
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
-        t = value.type
-
+        bound = not isinstance(value, Type)
         try:
-            attr = (value if isinstance(value, Type) else t).members[self.name]
+            attr = (value.type if bound else value).members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
         if isinstance(attr, FieldIndex):
-            return VTuple(VBool.false, value[int(attr)])
+            return VTuple(VBool.false, value[int(attr)] if bound else attr)
         elif isinstance(attr, Procedure):
-            return VTuple(VBool.false, BoundProcedure(attr, value))
+            return VTuple(VBool.false, BoundProcedure(attr, value) if bound else attr)
         elif isinstance(attr, Property):
-            return VTuple(VBool.true, BoundProcedure(attr.getter, value))
+            return VTuple(VBool.true, BoundProcedure(attr.getter, value) if bound else attr.getter)
         else:
             raise VTypeError("The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
 
@@ -1072,16 +1071,16 @@ class StoreAttrCase(Term):
 
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
-        t = value.type
+        bound = not isinstance(value, Type)
 
         try:
-            attr = (value if isinstance(value, Type) else t).members[self.name]
+            attr = (value.type if bound else value).members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
         if isinstance(attr, FieldIndex):
-            return FieldReference(value, int(attr))
+            return FieldReference(value, int(attr)) if bound else attr
         if isinstance(attr, Property):
-            return attr.setter
+            return BoundProcedure(attr.setter, value) if bound else attr.setter
         elif isinstance(attr, Procedure):
             return VTypeError("Cannot assign values to method fields!")
         else:

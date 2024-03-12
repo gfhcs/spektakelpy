@@ -15,6 +15,7 @@ from engine.stack.instructionset import Update, Pop, Guard, Push, Launch
 from engine.stack.procedure import StackProcedure
 from engine.stack.program import StackProgram, ProgramLocation
 from engine.stack.state import StackState
+from lang.spek.data.bound import BoundProcedure
 from lang.spek.data.classes import Class
 from lang.spek.data.exceptions import VReturnError, VBreakError
 from lang.spek.data.references import FrameReference, ReturnValueReference, FieldReference
@@ -785,7 +786,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         cases = (("x", FieldReference),
                  ("method", VException),
-                 ("property", s))
+                 ("property", BoundProcedure(s, i)))
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):
@@ -802,7 +803,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 if isinstance(value, type):
                     self.assertIsInstance(result, value)
                 else:
-                    self.assertIs(result, value)
+                    self.assertTrue(result.bequals(value, {}))
 
 
 
