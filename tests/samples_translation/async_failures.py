@@ -74,7 +74,7 @@ await never()
 """
 from interaction import never, tick
 
-var x, y = False, False
+var x, y = False, None
 
 def foo():
     try:
