@@ -2,7 +2,7 @@ from engine.core.atomic import type_object, type_type
 from engine.core.none import type_none
 from engine.core.primitive import VInt, VFloat, VStr, VBool
 from engine.core.exceptions import VException, VCancellationError, VRuntimeError
-from engine.core.intrinsic import intrinsic_procedure
+from engine.core.intrinsic import intrinsic_procedure, intrinsic_type, intrinsic_member
 from engine.core.machine import TaskState
 from engine.core.procedure import Procedure
 from engine.core.type import Type
@@ -65,6 +65,13 @@ def all_builtin():
              be visible globally in Spek.
     """
     return iter(__collected.items())
+
+# TaskState needs to be made intrinsic first, which we did not do in the core package because that would
+# lead to "conceptual circular imports":
+it = intrinsic_type("task", [type_object])
+intrinsic_member()(TaskState.cancel)
+it(TaskState)
+del it
 
 
 builtin()(type_object)

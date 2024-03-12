@@ -1,9 +1,7 @@
 import abc
-from itertools import chain
 
 from engine.core.value import Value
 from util import check_type, check_types
-from util.immutable import Immutable
 
 
 def linearization(t):
