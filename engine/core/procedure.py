@@ -1,7 +1,7 @@
 import abc
 from abc import ABC
 
-from engine.core.type import Type
+from engine.core.atomic import AtomicType, type_object
 from engine.core.value import Value
 
 
@@ -9,11 +9,11 @@ class Procedure(Value, ABC):
     """
     Represents an executable procedure.
     """
-    machine_type = Type("procedure", [Type.get_instance_object()], [], {})
+    intrinsic_type = AtomicType("procedure", [type_object])
 
     @property
     def type(self):
-        return Procedure.machine_type
+        return Procedure.intrinsic_type
 
     @abc.abstractmethod
     def initiate(self, tstate, mstate, *args):

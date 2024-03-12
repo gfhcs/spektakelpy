@@ -1,4 +1,6 @@
-from engine.core.data import VNone, VInt, VFloat, VStr, VBool
+from engine.core.atomic import type_object, type_type
+from engine.core.none import type_none
+from engine.core.primitive import VInt, VFloat, VStr, VBool
 from engine.core.exceptions import VException, VCancellationError, VRuntimeError
 from engine.core.intrinsic import intrinsic
 from engine.core.machine import TaskState
@@ -30,9 +32,9 @@ def builtin(name=None):
                             "@intrinsic or @intrinsic_procedure!")
         elif isinstance(x, type):
             try:
-                y = x.machine_type
+                y = x.intrinsic_type
             except AttributeError:
-                raise TypeError("The @builtin decorator only works on Python types that have a 'machine_type' "
+                raise TypeError("The @builtin decorator only works on Python types that have a 'intrinsic_type' "
                                 "attribute, such as those decorated with @intrinsic or @intrinsic_type!")
             assert isinstance(y, Type)
         else:
@@ -65,21 +67,21 @@ def all_builtin():
     return iter(__collected.items())
 
 
-builtin()(Type.get_instance_object())
-builtin()(Type.get_instance_type())
-builtin()(Procedure.machine_type)
-builtin()(VNone.machine_type)
-builtin()(VBool.machine_type)
-builtin()(VInt.machine_type)
-builtin()(VFloat.machine_type)
-builtin()(VStr.machine_type)
-builtin()(VException.machine_type)
-builtin()(VCancellationError.machine_type)
-builtin()(VRuntimeError.machine_type)
-builtin()(TaskState.machine_type)
-builtin()(VReferenceError.machine_type)
-builtin()(VTypeError.machine_type)
-builtin()(VInstructionException.machine_type)
+builtin()(type_object)
+builtin()(type_type)
+builtin()(Procedure.intrinsic_type)
+builtin()(type_none)
+builtin()(VBool.intrinsic_type)
+builtin()(VInt.intrinsic_type)
+builtin()(VFloat.intrinsic_type)
+builtin()(VStr.intrinsic_type)
+builtin()(VException.intrinsic_type)
+builtin()(VCancellationError.intrinsic_type)
+builtin()(VRuntimeError.intrinsic_type)
+builtin()(TaskState.intrinsic_type)
+builtin()(VReferenceError.intrinsic_type)
+builtin()(VTypeError.intrinsic_type)
+builtin()(VInstructionException.intrinsic_type)
 
 
 @builtin("isinstance")

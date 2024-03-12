@@ -704,11 +704,11 @@ class Spektakel2Stack(Translator):
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(eref)
-            condition_return = terms.IsInstance(e, CTerm(VReturnError.machine_type))
-            condition_break = terms.IsInstance(e, CTerm(VBreakError.machine_type))
-            condition_continue = terms.IsInstance(e, CTerm(VContinueError.machine_type))
+            condition_return = terms.IsInstance(e, CTerm(VReturnError.intrinsic_type))
+            condition_break = terms.IsInstance(e, CTerm(VBreakError.intrinsic_type))
+            condition_continue = terms.IsInstance(e, CTerm(VContinueError.intrinsic_type))
 
-            condition_exception = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, terms.IsInstance(e, CTerm(VException.machine_type)),
+            condition_exception = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, terms.IsInstance(e, CTerm(VException.intrinsic_type)),
                                                                terms.BooleanBinaryOperation(
                                                                    terms.BooleanBinaryOperator.AND, negate(condition_break),
                                                                    terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, negate(condition_continue), negate(condition_return))))

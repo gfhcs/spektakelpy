@@ -1,11 +1,11 @@
-from engine.core.type import Type
+from engine.core.atomic import type_object
+from engine.core.intrinsic import intrinsic, intrinsic_init
+from engine.core.primitive import VStr
 from engine.core.value import Value
-from engine.core.data import VStr
-from engine.core.intrinsic import intrinsic, intrinsic_constructor
 from util import check_type
 
 
-@intrinsic(name="Exception", super_types=[Type.get_instance_object()])
+@intrinsic("Exception", [type_object])
 class VException(Value, Exception):
     """
     The base type for all exceptions.
@@ -26,7 +26,7 @@ class VException(Value, Exception):
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
-    @intrinsic_constructor()
+    @intrinsic_init()
     @classmethod
     def create(cls, message):
         """
@@ -46,7 +46,7 @@ class VException(Value, Exception):
 
     @property
     def type(self):
-        return type(self).machine_type
+        return type(self).intrinsic_type
 
     @property
     def message(self):

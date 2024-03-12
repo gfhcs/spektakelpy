@@ -1,10 +1,11 @@
 import unittest
 
 from engine.core import interaction
-from engine.core.data import VNone, VStr
 from engine.core.exceptions import VException, VCancellationError
 from engine.core.interaction import InteractionState, Interaction, num_interactions_possible, i2s
 from engine.core.machine import TaskStatus, MachineState
+from engine.core.none import VNone
+from engine.core.primitive import VStr
 from engine.exploration import explore, schedule_nonzeno
 from engine.stack.frame import Frame
 from engine.stack.program import ProgramLocation

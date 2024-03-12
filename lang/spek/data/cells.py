@@ -1,11 +1,11 @@
+from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic
-from engine.core.type import Type
 from engine.core.value import Value
 from util import check_type
 from util.immutable import check_unsealed
 
 
-@intrinsic("cell", [Type.get_instance_object()])
+@intrinsic("cell", [type_object])
 class VCell(Value):
     """
     An object that references another object.
@@ -43,7 +43,7 @@ class VCell(Value):
 
     @property
     def type(self):
-        return VCell.machine_type
+        return VCell.intrinsic_type
 
     def hash(self):
         return hash(self._ref) ^ 47

@@ -1,15 +1,15 @@
-from engine.core.data import VBool, VNone, VStr
-from engine.core.intrinsic import intrinsic, intrinsic_constructor
+from engine.core.atomic import type_object
+from engine.core.intrinsic import intrinsic, intrinsic_init
+from engine.core.primitive import VBool, VStr
 from engine.core.type import Type
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
 from lang.spek.data.exceptions import VKeyError
 from util import check_type
-from util.immutable import check_unsealed
 
 
 @builtin()
-@intrinsic("tuple", [Type.get_instance_object()])
+@intrinsic("tuple", [type_object])
 class VTuple(Value):
     """
     Equivalent to Python's tuples.
@@ -19,7 +19,7 @@ class VTuple(Value):
         super().__init__()
         self._comps = tuple(check_type(c, Value) for c in components)
 
-    @intrinsic_constructor()
+    @intrinsic_init()
     @classmethod
     def convert(cls, iterable):
         assert issubclass(cls, VTuple)
@@ -39,7 +39,7 @@ class VTuple(Value):
 
     @property
     def type(self):
-        return VTuple.machine_type
+        return VTuple.intrinsic_type
 
     def hash(self):
         return len(self._comps)
@@ -101,7 +101,7 @@ class VTuple(Value):
 
 
 @builtin()
-@intrinsic("list", [Type.get_instance_object()])
+@intrinsic("list", [type_object])
 class VList(Value):
     """
     Equivalent to Python's lists.
@@ -176,7 +176,7 @@ class VList(Value):
 
     @property
     def type(self):
-        return VList.machine_type
+        return VList.intrinsic_type
 
     def hash(self):
         return len(self)
@@ -241,7 +241,7 @@ class VList(Value):
 
 
 @builtin()
-@intrinsic("dict", [Type.get_instance_object()])
+@intrinsic("dict", [type_object])
 class VDict(Value):
     """
     Equivalent to Python's dicts.
@@ -325,7 +325,7 @@ class VDict(Value):
 
     @property
     def type(self):
-        return VDict.machine_type
+        return VDict.intrinsic_type
 
     def hash(self):
         return hash(len(self))
@@ -391,7 +391,7 @@ class VDict(Value):
         self.set(key, value)
 
 
-@intrinsic("namespace", [Type.get_instance_object()])
+@intrinsic("namespace", [type_object])
 class VNamespace(Value):
     """
     A mapping from names to objects.
@@ -417,7 +417,7 @@ class VNamespace(Value):
 
     @property
     def type(self):
-        return VNamespace.machine_type
+        return VNamespace.intrinsic_type
 
     def hash(self):
         return hash(len(self))
@@ -472,76 +472,3 @@ class VNamespace(Value):
         if self.sealed:
             raise RuntimeError("This Namespace instance has been sealed and can thus not be modified anymore!")
         self._m[str(check_type(key, (str, VStr)))] = check_type(value, Value)
-
-
-class VInstance(Value):
-    """
-    An instance of a user-defined class.
-    """
-
-    def __init__(self, type, num_fields=0):
-        """
-        Creates a new class instance.
-        :param c: The Type instance that this object is considered an instance of.
-        :param num_fields: The number of fields this instance has.
-        """
-        super().__init__()
-        self._type = type
-        self._fields = [VNone.instance] * num_fields
-
-    def print(self, out):
-        out.write("Instance(")
-        self.type.print(out)
-        out.write(", ")
-        out.write(str(id(self)))
-        out.write(")")
-
-    @property
-    def type(self):
-        return self._type
-
-    def hash(self):
-        return hash(self._type) ^ 42
-
-    def equals(self, other):
-        return self is other
-
-    def bequals(self, other, bijection):
-        try:
-            return bijection[id(self)] == id(other)
-        except KeyError:
-            bijection[id(self)] = id(other)
-            if not (isinstance(other, VInstance)
-                    and len(self._fields) == len(other._fields)
-                    and self._type.bequals(other._type, bijection)):
-                return False
-            return all(a.bequals(b, bijection) for a, b in zip(self._fields, other._fields))
-
-    def cequals(self, other):
-        return self.equals(other)
-
-    def _seal(self):
-        self._type.seal()
-        for f in self._fields:
-            f.seal()
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = VInstance(self._type, len(self._fields))
-            clones[id(self)] = c
-            c._type = c._type.clone_unsealed(clones=clones)
-            c._fields = tuple(f.clone_unsealed(clones=clones) for f in self._fields)
-            return c
-
-    def __getitem__(self, item):
-        return self._fields[check_type(item, int)]
-
-    def __setitem__(self, key, value):
-        check_unsealed(self)
-        self._fields[check_type(key, int)] = check_type(value, Value)
-
-

@@ -1,9 +1,10 @@
 from enum import Enum
 
-from engine.core.data import VNone, VBool
+from engine.core.atomic import type_object
 from engine.core.exceptions import VCancellationError, VException
-from engine.core.intrinsic import intrinsic, intrinsic_property
-from engine.core.type import Type
+from engine.core.intrinsic import intrinsic, intrinsic_init
+from engine.core.none import VNone
+from engine.core.primitive import VBool
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
 from lang.spek.data.exceptions import VFutureError
@@ -19,7 +20,7 @@ class FutureStatus(Enum):
 
 
 @builtin()
-@intrinsic("future", [Type.get_instance_object()])
+@intrinsic("future", [type_object])
 class VFuture(Value):
     """
     An object that represents a computation result that is not available yet.
@@ -28,7 +29,7 @@ class VFuture(Value):
     needs to make progress itself.
     """
 
-    @intrinsic()
+    @intrinsic_init()
     def __init__(self):
         """
         Creates a new unset future.
@@ -51,7 +52,7 @@ class VFuture(Value):
 
     @property
     def type(self):
-        return VFuture.machine_type
+        return VFuture.intrinsic_type
 
     def hash(self):
         return hash(self._status)
@@ -93,7 +94,8 @@ class VFuture(Value):
         """
         return self._status
 
-    @intrinsic_property()
+    @intrinsic()
+    @property
     def done(self):
         """
         Indicates if a result for this future is either already available or cannot be expected anymore.
@@ -113,7 +115,8 @@ class VFuture(Value):
             return VBool.true
         return VBool.false
 
-    @intrinsic_property()
+    @intrinsic()
+    @property
     def result(self):
         """
         The result that was set for this future.
@@ -132,7 +135,7 @@ class VFuture(Value):
         else:
             raise NotImplementedError(f"Handling {self._status} as not been implemented!")
 
-    @result.intrinsic_setter
+    @result.setter
     def result(self, value):
         """
         Sets the result of this future and marks it as done.
@@ -147,7 +150,7 @@ class VFuture(Value):
         self._result = check_type(value, Value)
         self._status = FutureStatus.SET
 
-    @intrinsic_property()
+    @intrinsic()
     def exception(self):
         """
         The exception that was set on this future.

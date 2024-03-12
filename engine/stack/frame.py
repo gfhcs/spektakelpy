@@ -1,4 +1,4 @@
-from engine.core.data import VNone
+from engine.core.none import VNone
 from engine.core.value import Value
 from engine.stack.program import ProgramLocation
 from util import check_type, check_types

@@ -21,7 +21,7 @@ class VJumpError(VException):
         try:
             return clones[id(self)]
         except KeyError:
-            c = type(self)()
+            c = type(self)(self._msg)
             clones[id(self)] = c
             return c
 

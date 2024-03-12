@@ -6,7 +6,7 @@ from util.immutable import check_sealed, check_unsealed
 from .exceptions import VInstructionException
 from .frame import Frame
 from .program import ProgramLocation
-from ..core.data import VNone
+from ..core.none import VNone
 
 
 class StackState(TaskState):

@@ -1,5 +1,9 @@
+import abc
+from itertools import chain
+
 from engine.core.value import Value
-from util import check_type
+from util import check_type, check_types
+from util.immutable import Immutable
 
 
 def linearization(t):
@@ -36,61 +40,29 @@ def linearization(t):
     return merge([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
-class Type(Value):
+class Type(Value, Immutable, abc.ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
     """
 
-    __instance_type = None
-    __instance_object = None
-
-    def __init__(self, name, super_types, field_names, members):
+    def __init__(self, name, bases, direct_members):
         """
         Creates a new type.
-        :param name: A name for this type.
-        :param super_types: The super types this type inherits from.
-        :param field_names: An iterable of str objects specifying the instance field names of this type.
-        :param members: A dict mapping str names to instance procedures and properties of this type.
+        :param name: The name of this type.
+        :param bases: A tuple of Type objects that the new type inherits from.
+        :param direct_members: A mapping from names to Values that defines the *direct* members of this type.
         """
         super().__init__()
-        self.seal()
         self._name = check_type(name, str)
-        self._super_types = tuple(check_type(t, Type) for t in super_types)
-        self._field_names = tuple(field_names)
-        self._members = {check_type(k, str): check_type(v, Value) for k, v in members.items()}
+        self._bases = check_types(bases, Type)
+        self._members_direct = {check_type(k, str): check_type(check_type(v, Value), Immutable) for k, v in direct_members.items()}
         self._mro = list(linearization(self))
-        self._nfields = len(self._field_names)
-
-        for t in self.mro:
-            self._nfields += t._nfields
-
-    @staticmethod
-    def get_instance_object():
-        """
-        Returns the Type object that represents the type 'object'. This procedure always returns the same object.
-        :return: A Type.
-        """
-        if Type.__instance_object is None:
-            Type.__instance_object = Type("object", [], [], {})
-        return Type.__instance_object
-
-    @staticmethod
-    def get_instance_type():
-        """
-        Returns the Type object that represents the type 'type'. This procedure always returns the same object.
-        :return: A Type.
-        """
-        if Type.__instance_type is None:
-            Type.__instance_type = Type("type", [Type.get_instance_object()], [], {})
-        return Type.__instance_type
-
-    def print(self, out):
-        out.write(self._name)
 
     @property
     def name(self):
         """
         The name of this type.
+        :return: A str.
         """
         return self._name
 
@@ -98,50 +70,66 @@ class Type(Value):
     def bases(self):
         """
         The base types inherited by this type.
-        :return: A tuple of Type objects.
+        :return: An iterable of Type objects.
         """
-        return self._super_types
+        return self._bases
 
     @property
-    def type(self):
-        return Type.get_instance_type()
+    def mro(self):
+        """
+        The method resolution order of this type, i.e. a linearization of the hierarchy of all its super types.
+        :return: An iterable of Types.
+        """
+        return self._mro
+
+    @property
+    def direct_members(self):
+        """
+        A mapping from names to members that belong directly to this type (i.e. that are not inherited from other types).
+        :return: A dict-like object.
+        """
+        return self._members_direct
+
+    class MemberMap:
+        def __init__(self, mro):
+            self._mro = mro
+
+        def __getitem__(self, name):
+            for t in self._mro:
+                try:
+                    return t.direct_members[name]
+                except KeyError:
+                    continue
+            raise KeyError(f"{self} has no attribute '{name}'!")
+
+    @property
+    def members(self):
+        """
+        A mapping from names to members that are part of this type (including inherited members).
+        :return: A dict-like object.
+        """
+        return Type.MemberMap(self.mro)
 
     def hash(self):
-        return id(self)
+        return len(self.direct_members)
 
     def equals(self, other):
         return self is other
 
     def bequals(self, other, bijection):
-        if self is other:
-            return True
         try:
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
             if not (isinstance(other, Type)
-                    and (self._name, len(self._super_types), len(self._field_names), len(self._members))
-                    == (other._name, len(other._super_types), len(other._field_names), len(other._members))):
+                    and (self._name, len(self._bases), len(self._members_direct), self._num_fields)
+                    == (other._name, len(other._bases), len(other._members_direct), other._num_fields)):
                 return False
-            if not (all(a == b for a, b in zip(self._field_names, other._field_names))
-                    and all(a.bequals(b, bijection) for a, b in zip(self._super_types, other._super_types))):
-                return False
-            for k, v in self._members.items():
-                try:
-                    if not v.bequals(other._members[k]):
-                        return False
-                except KeyError:
-                    return False
-            return True
+            return all(a.bequals(b, bijection) for a, b in zip(chain(self._bases, self._members_direct),
+                                                               chain(other._bases, other._members_direct)))
 
     def cequals(self, other):
-        return self.equals(other)
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
+        return self is other
 
     def subtypeof(self, other):
         """
@@ -154,45 +142,29 @@ class Type(Value):
         if self == other:
             return True
 
-        for s in self._super_types:
+        for s in self.bases:
             if s.subtypeof(other):
                 return True
 
         return False
 
+    def print(self, out):
+        return self._name
+
     @property
-    def mro(self):
+    @abc.abstractmethod
+    def num_cargs(self):
         """
-        The method resolution order of this type, i.e. a linearization of the hierarchy of all its super types.
-        :return: An iterable of Types.
+        The number of arguments expected by self.new .
+        :return: Either an int, or None. If None is returned, the constructor ignores constructor arguments.
         """
-        return self._mro
+        pass
 
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return self._field_names[key]
-        else:
-            return self._members[key]
-
-    def resolve_member(self, name):
+    @abc.abstractmethod
+    def new(self, *args):
         """
-        Retrieves the type member of the given name, by searching the entire method resolution order of this type.
-        :param name: The name of the member to retrieve.
-        :return: Either an integer representing an instance field, or a VProcedure object, or a VProperty object.
-        :exception VAttributeError: If no member with the given name could be found.
+        Creates a new, uninitialized instance of this type.
+        :param args: The constructor arguments for instance creation.
+        :return: A Value object the type of which is this type.
         """
-
-        foffset = 0
-        for t in self.mro:
-            try:
-                fidx = t._field_names.index(name)
-                return foffset + fidx
-            except ValueError:
-                try:
-                    return t[name]
-                except KeyError:
-                    pass
-
-            foffset += len(t._field_names)
-
-        raise KeyError(f"{self} has no attribute '{name}'!")
+        pass

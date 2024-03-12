@@ -1,16 +1,19 @@
 import abc
 from abc import ABC
 from enum import Enum
+from weakref import WeakValueDictionary
 
-from engine.core.data import VNone, VBool, VInt, VFloat, VStr
 from engine.core.exceptions import VCancellationError, VRuntimeError, VException
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
+from engine.core.none import VNone
+from engine.core.primitive import VBool, VInt, VFloat, VStr
 from engine.core.procedure import Procedure
-from engine.core.property import Property
+from engine.core.property import Property, OrdinaryProperty
 from engine.core.type import Type
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError
+from engine.stack.instructionset import Update, Push, Pop
 from engine.stack.procedure import StackProcedure
 from engine.stack.program import StackProgram, ProgramLocation
 from engine.stack.reference import Reference
@@ -18,10 +21,10 @@ from engine.stack.state import StackState
 from engine.stack.term import Term
 from lang.spek.data.bound import BoundProcedure
 from lang.spek.data.cells import VCell
+from lang.spek.data.classes import Class
 from lang.spek.data.exceptions import VJumpError, VAttributeError
 from lang.spek.data.futures import VFuture, FutureStatus
-from lang.spek.data.property import OrdinaryProperty
-from lang.spek.data.references import FieldReference, NameReference
+from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference
 from lang.spek.data.values import VTuple, VList, VDict, VNamespace
 from util import check_type, check_types
 
@@ -540,7 +543,7 @@ class UnaryPredicateTerm(Term):
         if self._p == UnaryPredicate.ISCALLABLE:
             value = isinstance(r, (Procedure, Type))
         elif self._p == UnaryPredicate.ISEXCEPTION:
-            value = t.subtypeof(VException.machine_type)
+            value = t.subtypeof(VException.intrinsic_type)
         elif self._p == UnaryPredicate.ISTERMINATED:
             # Check if the argument is a completed available.
             if isinstance(r, TaskState):
@@ -606,10 +609,64 @@ class AwaitedResult(Term):
             raise VTypeError(f"Cannot obtain the result of a {type(a)}!")
 
 
+class New(Term):
+    """
+    A term that creates new instances of types.
+    """
+
+    def __init__(self, type, *args):
+        """
+        Creates a new New term.
+        :param type: A term evaluating to a Type object, representing the type constructor to call.
+        :param args: An iterable of terms evaluating to constructor arguments.
+        """
+        super().__init__(type, *args)
+
+    @property
+    def type(self):
+        """
+        A term evaluating to a Type object, representing the type constructor to call.
+        """
+        return self.children[0]
+
+    @property
+    def args(self):
+        """
+        An iterable of terms evaluating to constructor arguments.
+        """
+        return self.children[1:]
+
+    def hash(self):
+        return hash(self.type)
+
+    def equals(self, other):
+        return isinstance(other, New) and self.children == other.children
+
+    def print(self, out):
+        out.write("new<")
+        self.type.print(out)
+        out.write(">(")
+        prefix = ", "
+        for a in self.args:
+            out.write(prefix)
+            a.print(out)
+            prefix = ", "
+        out.write(")")
+
+    def evaluate(self, tstate, mstate):
+        t = self.type.evaluate(tstate, mstate)
+        if not isinstance(t, Type):
+            raise VTypeError(f"Only types have constructors, but {t} is not a type!")
+        args = tuple(check_types((a.evaluate(tstate, mstate) for a in self.args), Value))
+        return t.new(*args)
+
+
 class Callable(Term):
     """
     A term that converts its argument to a Procedure object, which can be used with a Push or Launch instruction.
     """
+
+    __constructors = WeakValueDictionary()
 
     def __init__(self, t):
         """
@@ -643,10 +700,24 @@ class Callable(Term):
             if isinstance(callee, Procedure):
                 break
             elif isinstance(callee, Type):
+                num_cargs = callee.num_cargs
                 try:
-                    callee = callee.resolve_member("__new__")
+                    return BoundProcedure(Callable.__constructors[num_cargs], callee)
                 except KeyError:
-                    raise VTypeError(f"The type {callee} does not have a constructor!")
+
+                    r = TRef(ReturnValueReference())
+                    t = TRef(FrameReference(0))
+                    args = [TRef(FrameReference(1 + idx)) for idx in range(num_cargs)]
+
+                    c = [Update(r, New(t, *args), 1, 2),
+                         Push(Project(LoadAttrCase(r, "__init__"), 1), args, 2, 2),
+                         Pop(2)
+                         ]
+
+                    c = StackProcedure(1 + t.num_cargs, StackProgram(c))
+
+                    Callable.__constructors[num_cargs] = c
+                    return BoundProcedure(c, callee)
             else:
                 raise VTypeError(f"Value of type {type(callee)} is not callable!")
 
@@ -946,7 +1017,7 @@ class LoadAttrCase(Term):
         elif isinstance(attr, Procedure):
             return VTuple(VBool.false, BoundProcedure(attr, value))
         elif isinstance(attr, Property):
-            return VTuple(VBool.true, BoundProcedure(attr.getter_procedure, value))
+            return VTuple(VBool.true, BoundProcedure(attr.getter, value))
         else:
             raise VTypeError("The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
 
@@ -1009,7 +1080,7 @@ class StoreAttrCase(Term):
         if isinstance(attr, int):
             return FieldReference(value, attr)
         if isinstance(attr, Property):
-            return attr.setter_procedure
+            return attr.setter
         elif isinstance(attr, Procedure):
             return VTypeError("Cannot assign values to method fields!")
         else:
@@ -1399,4 +1470,4 @@ class NewClass(Term):
             else:
                 raise VRuntimeError("Encountered an unexpected entry in a namespace to be used for class creation!")
 
-        return Type(self._name, ss, field_names, members)
+        return Class(self._name, ss, field_names, members)

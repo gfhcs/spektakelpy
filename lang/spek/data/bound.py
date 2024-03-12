@@ -1,6 +1,5 @@
 from engine.core.procedure import Procedure
 from engine.core.value import Value
-from engine.stack.exceptions import VTypeError
 from util import check_type, check_types
 
 

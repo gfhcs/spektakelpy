@@ -1,5 +1,5 @@
+from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic
-from engine.core.type import Type
 from engine.core.value import Value
 from engine.stack.instruction import Instruction
 from util import check_type
@@ -45,7 +45,7 @@ class StackProgram(Printable, Immutable):
         return self._instructions[item]
 
 
-@intrinsic("location", [Type.get_instance_object()])
+@intrinsic("location", [type_object])
 class ProgramLocation(Immutable, Value):
     """
     A pair of StackProgram and instruction index.
@@ -53,7 +53,7 @@ class ProgramLocation(Immutable, Value):
 
     @property
     def type(self):
-        return ProgramLocation.machine_type
+        return ProgramLocation.intrinsic_type
 
     def __init__(self, program, index):
         """

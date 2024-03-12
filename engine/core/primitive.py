@@ -1,48 +1,12 @@
+from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic
-from engine.core.type import Type
 from engine.core.value import Value
 from util import check_type
+from util.immutable import Immutable
 
 
-@intrinsic("none", [Type.get_instance_object()])
-class VNone(Value):
-    """
-    Equivalent of Python's 'None'.
-    """
-
-    @property
-    def type(self):
-        return VNone.machine_type
-
-    def hash(self):
-        return 0
-
-    def equals(self, other):
-        return isinstance(other, VNone)
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
-
-    def print(self, out):
-        out.write("None")
-
-    def __repr__(self):
-        return "VNone.instance"
-
-VNone.instance = VNone().seal()
-
-
-@intrinsic("bool", [Type.get_instance_object()])
-class VBool(Value):
+@intrinsic("bool", [type_object])
+class VBool(Value, Immutable):
     """
     Equivalent to Python's bool.
     """
@@ -76,7 +40,7 @@ class VBool(Value):
 
     @property
     def type(self):
-        return VBool.machine_type
+        return VBool.intrinsic_type
 
     def hash(self):
         return hash(self._value)
@@ -89,12 +53,6 @@ class VBool(Value):
 
     def cequals(self, other):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def __lt__(self, other):
         return VBool.from_bool(self._value < other._value)
@@ -184,8 +142,8 @@ def p2s(x):
         raise TypeError(f"p2s cannot convert values of Python type {type(x)}!")
 
 
-@intrinsic("int", [Type.get_instance_object()])
-class VInt(Value):
+@intrinsic("int", [type_object])
+class VInt(Value, Immutable):
     """
     Equivalent to Python's int.
     """
@@ -202,7 +160,7 @@ class VInt(Value):
 
     @property
     def type(self):
-        return VInt.machine_type
+        return VInt.intrinsic_type
 
     def hash(self):
         return self._value
@@ -215,12 +173,6 @@ class VInt(Value):
 
     def cequals(self, other):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def __lt__(self, other):
         return VBool.from_bool(self._value < other._value)
@@ -292,8 +244,8 @@ class VInt(Value):
         return VInt(self._value ** other._value)
 
 
-@intrinsic("float", [Type.get_instance_object()])
-class VFloat(Value):
+@intrinsic("float", [type_object])
+class VFloat(Value, Immutable):
     """
     Equivalent to Python's float.
     """
@@ -310,7 +262,7 @@ class VFloat(Value):
 
     @property
     def type(self):
-        return VFloat.machine_type
+        return VFloat.intrinsic_type
 
     def hash(self):
         return hash(self._value)
@@ -323,12 +275,6 @@ class VFloat(Value):
 
     def cequals(self, other):
         return isinstance(other, (VBool, VInt, VFloat)) and self._value == other._value
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def __lt__(self, other):
         return VBool.from_bool(self._value < other._value)
@@ -385,8 +331,8 @@ class VFloat(Value):
         return VFloat(self._value ** other._value)
 
 
-@intrinsic("str", [Type.get_instance_object()])
-class VStr(Value):
+@intrinsic("str", [type_object])
+class VStr(Value, Immutable):
     """
     Equivalent to Python's str.
     """
@@ -407,7 +353,7 @@ class VStr(Value):
 
     @property
     def type(self):
-        return VStr.machine_type
+        return VStr.intrinsic_type
 
     def hash(self):
         return hash(self._value)
@@ -424,12 +370,6 @@ class VStr(Value):
 
     def cequals(self, other):
         return isinstance(other, VStr) and self._value == other._value
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def __contains__(self, item):
         return item.string in self._value
