@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_member
 from engine.core.value import Value
 from util import check_type, check_types
 from util.immutable import check_unsealed, check_sealed
@@ -19,7 +19,7 @@ class TaskStatus(Enum):
     CANCELLED = 4  # Task has been cancelled.
 
 
-@intrinsic("task", [type_object])
+@intrinsic_type("task", [type_object])
 class TaskState(Value, abc.ABC):
     """
     Represents the current state of a computation.
@@ -37,7 +37,7 @@ class TaskState(Value, abc.ABC):
         super().__init__()
         self._status = check_type(status, TaskStatus)
 
-    @intrinsic()
+    @intrinsic_member()
     @abc.abstractmethod
     def cancel(self):
         """

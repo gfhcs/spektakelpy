@@ -1,5 +1,5 @@
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
 from engine.stack.instruction import Instruction
 from util import check_type
@@ -45,7 +45,7 @@ class StackProgram(Printable, Immutable):
         return self._instructions[item]
 
 
-@intrinsic("location", [type_object])
+@intrinsic_type("location", [type_object])
 class ProgramLocation(Immutable, Value):
     """
     A pair of StackProgram and instruction index.

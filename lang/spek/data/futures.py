@@ -2,7 +2,7 @@ from enum import Enum
 
 from engine.core.atomic import type_object
 from engine.core.exceptions import VCancellationError, VException
-from engine.core.intrinsic import intrinsic, intrinsic_init
+from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
 from engine.core.none import VNone
 from engine.core.primitive import VBool
 from engine.core.value import Value
@@ -20,7 +20,7 @@ class FutureStatus(Enum):
 
 
 @builtin()
-@intrinsic("future", [type_object])
+@intrinsic_type("future", [type_object])
 class VFuture(Value):
     """
     An object that represents a computation result that is not available yet.
@@ -94,7 +94,7 @@ class VFuture(Value):
         """
         return self._status
 
-    @intrinsic()
+    @intrinsic_member()
     @property
     def done(self):
         """
@@ -102,7 +102,7 @@ class VFuture(Value):
         """
         return VBool.from_bool(self._status != FutureStatus.UNSET)
 
-    @intrinsic()
+    @intrinsic_member()
     def cancel(self):
         """
         Cancels this future, i.e. notifies all stakeholders that a completion of the computation it represents cannot
@@ -115,7 +115,7 @@ class VFuture(Value):
             return VBool.true
         return VBool.false
 
-    @intrinsic()
+    @intrinsic_member()
     @property
     def result(self):
         """
@@ -150,7 +150,7 @@ class VFuture(Value):
         self._result = check_type(value, Value)
         self._status = FutureStatus.SET
 
-    @intrinsic()
+    @intrinsic_member()
     def exception(self):
         """
         The exception that was set on this future.

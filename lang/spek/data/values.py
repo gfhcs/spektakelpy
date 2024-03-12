@@ -1,7 +1,6 @@
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic, intrinsic_init
+from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
 from engine.core.primitive import VBool, VStr
-from engine.core.type import Type
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
 from lang.spek.data.exceptions import VKeyError
@@ -9,7 +8,7 @@ from util import check_type
 
 
 @builtin()
-@intrinsic("tuple", [type_object])
+@intrinsic_type("tuple", [type_object])
 class VTuple(Value):
     """
     Equivalent to Python's tuples.
@@ -101,7 +100,7 @@ class VTuple(Value):
 
 
 @builtin()
-@intrinsic("list", [type_object])
+@intrinsic_type("list", [type_object])
 class VList(Value):
     """
     Equivalent to Python's lists.
@@ -111,7 +110,7 @@ class VList(Value):
         super().__init__()
         self._items = [] if items is None else [check_type(x, Value) for x in items]
 
-    @intrinsic()
+    @intrinsic_member()
     def append(self, item):
         """
         Appends an item to this list.
@@ -121,7 +120,7 @@ class VList(Value):
             raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
         return self._items.append(check_type(item, Value))
 
-    @intrinsic()
+    @intrinsic_member()
     def pop(self, index):
         """
         Pops an item from this list.
@@ -132,7 +131,7 @@ class VList(Value):
             raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
         return self._items.pop(int(index))
 
-    @intrinsic()
+    @intrinsic_member()
     def insert(self, index, item):
         """
         Inserts an item into this list.
@@ -143,7 +142,7 @@ class VList(Value):
             raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
         return self._items.insert(int(index), check_type(item, Value))
 
-    @intrinsic()
+    @intrinsic_member()
     def remove(self, x):
         """
         Remove the first item from the list whose value is equal to x. It raises a ValueError if there is no such item.
@@ -153,7 +152,7 @@ class VList(Value):
             raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
         return self._items.remove(check_type(x, Value))
 
-    @intrinsic()
+    @intrinsic_member()
     def clear(self):
         """
         Empties this list, i.e. removes all items.
@@ -241,7 +240,7 @@ class VList(Value):
 
 
 @builtin()
-@intrinsic("dict", [type_object])
+@intrinsic_type("dict", [type_object])
 class VDict(Value):
     """
     Equivalent to Python's dicts.
@@ -263,7 +262,7 @@ class VDict(Value):
             raise ValueError("The given key is not immutable and thus cannot be hashed!")
         return key
 
-    @intrinsic()
+    @intrinsic_member()
     def clear(self):
         """
         Empties this dictionary, i.e. removes all its entries.
@@ -272,7 +271,7 @@ class VDict(Value):
             raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
         self._items.clear()
 
-    @intrinsic()
+    @intrinsic_member()
     def get(self, key):
         """
         Return the value for the given key if that key is in the dictionary
@@ -285,7 +284,7 @@ class VDict(Value):
         except KeyError as kex:
             raise VKeyError(str(kex))
 
-    @intrinsic()
+    @intrinsic_member()
     def pop(self, key):
         """
         Return the value for the given key if that key is in the dictionary, and remove it from the dictionary.
@@ -297,7 +296,7 @@ class VDict(Value):
         VDict._assert_key_hashable(key)
         return self._items.pop(check_type(key, Value))
 
-    @intrinsic()
+    @intrinsic_member()
     def set(self, key, value):
         """
         Sets the value for the given key.
@@ -391,7 +390,7 @@ class VDict(Value):
         self.set(key, value)
 
 
-@intrinsic("namespace", [type_object])
+@intrinsic_type("namespace", [type_object])
 class VNamespace(Value):
     """
     A mapping from names to objects.

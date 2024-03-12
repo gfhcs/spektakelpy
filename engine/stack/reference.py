@@ -1,11 +1,11 @@
 import abc
 
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
 
 
-@intrinsic("reference", [type_object])
+@intrinsic_type("reference", [type_object])
 class Reference(Value, abc.ABC):
     """
     A reference is a part of a machine state that can point to another part of a machine state.

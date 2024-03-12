@@ -1,3 +1,4 @@
+from enum import Enum
 from inspect import signature
 
 from engine.core.atomic import AtomicType
@@ -105,58 +106,6 @@ class IntrinsicInit(IntrinsicProcedure):
         return self._construct
 
 
-
-# While a decorated Python type is under construction, this maps from intrinsic member names to Python member names:
-__intrinsic_collection__ = None
-
-
-def intrinsic_procedure():
-    """
-    Turns a Python procedure into a Procedure object.
-    :return: A Procedure object.
-    """
-
-    if __intrinsic_collection__ is not None:
-        raise TypeError("It appears that @intrinsic_procedure is being used inside a Python type declaration that was "
-                        "itself decorated with @intrinsic or @intrinsic_type. This is not allowed! Use other @intrinsic "
-                        "decorators inside the type instead!")
-
-    return lambda p: IntrinsicProcedure(p)
-
-
-def intrinsic_member(name=None):
-    """
-    Decorates a member of a Python type, to be turned into a member of the resulting intrinsic type.
-    :param name: The name under which the method should be visible in Spek.
-    """
-
-    if __intrinsic_collection__ is None:
-        raise TypeError("@intrinsic_member can only be used inside Python type declarations that are themselves"
-                        "marked as @intrinsic or @intrinsic_type!")
-
-    def decorator(x):
-        nonlocal name
-        if name is None:
-            name = x.__name__
-        __intrinsic_collection__[name] = x.__name
-        return x
-    return decorator
-
-
-def intrinsic_init():
-    """
-    Decorates a class method of a Python type, to be turned into an instance constructor.
-    """
-    if __intrinsic_collection__ is None:
-        raise TypeError("@intrinsic_init can only be used inside Python type declarations that are themselves"
-                        "marked as @intrinsic or @intrinsic_type!")
-
-    def decorator(x):
-        __intrinsic_collection__["__init__"] = x.__name__
-        return x
-    return decorator
-
-
 class IntrinsicType(AtomicType):
     """
     Wraps a Python type as an intrinsic type, i.e. as a type that can be used as part of the machine state.
@@ -239,59 +188,104 @@ class IntrinsicType(AtomicType):
         super().__init__(name, bases, new=new, members=members)
 
 
+# While a decorated Python type is under construction, this maps from intrinsic member names to Python member names:
+__intrinsic_collection__ = {}
+
+class CollectionType(Enum):
+    GLOBAL = 0
+    GENERIC = 1
+    TYPE = 2
+    PROCEDURE = 3
+    MEMBER = 4
+    INIT = 5
+
+collection_stack = [CollectionType.GLOBAL]
+
+
+def intrinsic_procedure():
+    """
+    Turns a Python procedure into a Procedure object.
+    :return: A Procedure object.
+    """
+
+    if tuple(collection_stack[1:]) not in ((),):
+        raise TypeError("@intrinsic_procedure may only be used on the module level!")
+    collection_stack.append(CollectionType.PROCEDURE)
+
+    def decorate(x):
+        try:
+            return IntrinsicProcedure(x)
+        finally:
+            collection_stack.pop()
+
+    return decorate
+
+
+def intrinsic_member(name=None):
+    """
+    Decorates a member of a Python type, to be turned into a member of the resulting intrinsic type.
+    :param name: The name under which the method should be visible in Spek.
+    """
+    if tuple(collection_stack[1:]) not in ((CollectionType.TYPE, ),):
+        raise TypeError("@intrinsic_member may only be used for members of Python types that "
+                        "are themselves decorated with @intrinsic_type!")
+    collection_stack.append(CollectionType.MEMBER)
+
+    def decorator(x):
+        nonlocal name
+        try:
+            if name is None:
+                name = x.__name__
+            __intrinsic_collection__[name] = x.__name
+            return x
+        finally:
+            collection_stack.pop()
+
+    return decorator
+
+
+def intrinsic_init():
+    """
+    Decorates a class method of a Python type, to be turned into an instance constructor.
+    """
+
+    if tuple(collection_stack[1:]) not in ((CollectionType.TYPE, ),):
+        raise TypeError("@intrinsic_member may only be used for members of Python types that "
+                        "are themselves decorated with @intrinsic_type!")
+    collection_stack.append(CollectionType.INIT)
+
+    def decorator(x):
+        try:
+            __intrinsic_collection__["__init__"] = x.__name__
+            return x
+        finally:
+            collection_stack.pop()
+    return decorator
+
+
 def intrinsic_type(name=None, bases=None):
     """
     Turns a Python class definition into a Type that can be used in Spek.
     :return: A Type object.
     """
-    global __intrinsic_collection__
 
-    if __intrinsic_collection__ is not None:
-        raise TypeError("It appears that this usage of @intrinsic type is nested within another Python type that is"
-                        "also decorated as intrinsic. This is not supported!")
-
-    __intrinsic_collection__ = {}
+    if tuple(collection_stack[1:]) not in ((),):
+        raise TypeError("@intrinsic_type may only be used on the module level!")
+    collection_stack.append(CollectionType.TYPE)
 
     def decorator(t):
         nonlocal name, bases
-        if name is None:
-            name = t.__name__
+        try:
+            if name is None:
+                name = t.__name__
 
-        if bases is None:
-            bases = tuple(b.intrinsic_type for b in t.__bases__ if hasattr(b, "intrinsic_type"))
+            if bases is None:
+                bases = tuple(b.intrinsic_type for b in t.__bases__ if hasattr(b, "intrinsic_type"))
 
-        IntrinsicType(name, t, bases, __intrinsic_collection__)
-        __intrinsic_collection__.clear()
+            IntrinsicType(name, t, bases, __intrinsic_collection__)
 
-        return t
-
-    return decorator
-
-
-def intrinsic(*largs, **kwargs):
-    """
-    Decorates a Python procedure, method, or class as a Value object visible in Spek.
-    :param largs: Arguments to be supplied to other intrinsic_* decorators.
-    :param kwargs: Arguments to be supplied to other intrinsic_* decorators.
-    """
-
-    def decorator(x):
-        if isinstance(x, type):
-            return intrinsic_type(*largs, **kwargs)(x)
-        else:
-            s = signature(x)
-            if next(iter(s.parameters.values())).name == "self":
-                if x.__name__ == "__init__":
-                    return intrinsic_init(*largs, **kwargs)(x)
-                else:
-                    return intrinsic_member(*largs, **kwargs)(x)
-            elif isinstance(x, property):
-                return intrinsic_member(*largs, **kwargs)(x)
-            elif isinstance(x, classmethod):
-                raise NotImplementedError("Cannot mark class methods as intrinsic!")
-            elif isinstance(x, staticmethod):
-                raise NotImplementedError("Cannot mark static methods as intrinsic!")
-            else:
-                return intrinsic_procedure(*largs, **kwargs)(x)
+            return t
+        finally:
+            collection_stack.pop()
 
     return decorator

@@ -1,8 +1,8 @@
 from engine.core.exceptions import VException
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_type
 
 
-@intrinsic("ReferenceError")
+@intrinsic_type("ReferenceError")
 class VReferenceError(VException):
     """
     Raised when accessing a Reference has failed.
@@ -10,7 +10,7 @@ class VReferenceError(VException):
     pass
 
 
-@intrinsic("TypeError")
+@intrinsic_type("TypeError")
 class VTypeError(VException):
     """
     Raised when an inappropriate type is encountered.
@@ -18,7 +18,7 @@ class VTypeError(VException):
     pass
 
 
-@intrinsic("InstructionException")
+@intrinsic_type("InstructionException")
 class VInstructionException(VException):
     """
     Raised when the execution of an instruction fails.

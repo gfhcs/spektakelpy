@@ -1,11 +1,11 @@
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
 from util import check_type
 from util.immutable import Immutable
 
 
-@intrinsic("bool", [type_object])
+@intrinsic_type("bool", [type_object])
 class VBool(Value, Immutable):
     """
     Equivalent to Python's bool.
@@ -142,7 +142,7 @@ def p2s(x):
         raise TypeError(f"p2s cannot convert values of Python type {type(x)}!")
 
 
-@intrinsic("int", [type_object])
+@intrinsic_type("int", [type_object])
 class VInt(Value, Immutable):
     """
     Equivalent to Python's int.
@@ -244,7 +244,7 @@ class VInt(Value, Immutable):
         return VInt(self._value ** other._value)
 
 
-@intrinsic("float", [type_object])
+@intrinsic_type("float", [type_object])
 class VFloat(Value, Immutable):
     """
     Equivalent to Python's float.
@@ -331,7 +331,7 @@ class VFloat(Value, Immutable):
         return VFloat(self._value ** other._value)
 
 
-@intrinsic("str", [type_object])
+@intrinsic_type("str", [type_object])
 class VStr(Value, Immutable):
     """
     Equivalent to Python's str.

@@ -1,11 +1,11 @@
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic, intrinsic_init
+from engine.core.intrinsic import intrinsic_init, intrinsic_type
 from engine.core.primitive import VStr
 from engine.core.value import Value
 from util import check_type
 
 
-@intrinsic("Exception", [type_object])
+@intrinsic_type("Exception", [type_object])
 class VException(Value, Exception):
     """
     The base type for all exceptions.
@@ -107,7 +107,7 @@ class VException(Value, Exception):
             return c
 
 
-@intrinsic("CancellationError")
+@intrinsic_type("CancellationError")
 class VCancellationError(VException):
     """
     Raised inside a task when it is cancelled.
@@ -150,7 +150,7 @@ class VCancellationError(VException):
             return c
 
 
-@intrinsic("RuntimeError")
+@intrinsic_type("RuntimeError")
 class VRuntimeError(VException):
     """
     Raised when an error occurs at VM runtime, for logical reasons that cannot be described by another

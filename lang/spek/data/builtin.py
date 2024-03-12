@@ -2,7 +2,7 @@ from engine.core.atomic import type_object, type_type
 from engine.core.none import type_none
 from engine.core.primitive import VInt, VFloat, VStr, VBool
 from engine.core.exceptions import VException, VCancellationError, VRuntimeError
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_procedure
 from engine.core.machine import TaskState
 from engine.core.procedure import Procedure
 from engine.core.type import Type
@@ -16,8 +16,8 @@ __collected = {}
 def builtin(name=None):
     """
     Decorates intrinsic types and procedures as globally visible in Spek.
-    This decorator can be used on Python types decorated with @intrinsic or @intrinsic_type,
-    and on Python procedures decorated with @intrinsic or @intrinsic_procedure.
+    This decorator can be used on Python types decorated with @intrinsic_type,
+    and on Python procedures decorated with @intrinsic_procedure.
     This decorator does not modify its argument, but registers it in the collection of built-in values.
     :param name: The name under which the type or procedure should be visible.
     """
@@ -29,13 +29,13 @@ def builtin(name=None):
             y = x
         elif callable(x) and not isinstance(x, type):
             raise TypeError("The @builtin decorator only works on Python functions that are decorated with "
-                            "@intrinsic or @intrinsic_procedure!")
+                            "@intrinsic_procedure!")
         elif isinstance(x, type):
             try:
                 y = x.intrinsic_type
             except AttributeError:
                 raise TypeError("The @builtin decorator only works on Python types that have a 'intrinsic_type' "
-                                "attribute, such as those decorated with @intrinsic or @intrinsic_type!")
+                                "attribute, such as those decorated with @intrinsic_type!")
             assert isinstance(y, Type)
         else:
             raise TypeError("The @builtin decorator only works on procedures and types!")
@@ -85,7 +85,7 @@ builtin()(VInstructionException.intrinsic_type)
 
 
 @builtin("isinstance")
-@intrinsic()
+@intrinsic_procedure()
 def builtin_isinstance(x, types):
     if not isinstance(types, tuple):
         types = (types, )

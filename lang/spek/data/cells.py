@@ -1,11 +1,11 @@
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
 from util import check_type
 from util.immutable import check_unsealed
 
 
-@intrinsic("cell", [type_object])
+@intrinsic_type("cell", [type_object])
 class VCell(Value):
     """
     An object that references another object.

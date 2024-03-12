@@ -1,9 +1,9 @@
 from engine.core.exceptions import VException
-from engine.core.intrinsic import intrinsic
+from engine.core.intrinsic import intrinsic_type
 from lang.spek.data.builtin import builtin
 
 
-@intrinsic("JumpError")
+@intrinsic_type("JumpError")
 class VJumpError(VException):
     """
     Raised a control flow jump is executed.
@@ -26,7 +26,7 @@ class VJumpError(VException):
             return c
 
 
-@intrinsic("ReturnError")
+@intrinsic_type("ReturnError")
 class VReturnError(VJumpError):
     """
     Raised a return statement is executed.
@@ -35,7 +35,7 @@ class VReturnError(VJumpError):
         super().__init__("A procedure return is being executed!")
 
 
-@intrinsic("BreakError")
+@intrinsic_type("BreakError")
 class VBreakError(VJumpError):
     """
     Raised a break statement is executed.
@@ -44,7 +44,7 @@ class VBreakError(VJumpError):
         super().__init__("An escape from a loop is being executed!")
 
 
-@intrinsic("ContinueError")
+@intrinsic_type("ContinueError")
 class VContinueError(VJumpError):
     """
     Raised a continue statement is executed.
@@ -54,7 +54,7 @@ class VContinueError(VJumpError):
 
 
 @builtin()
-@intrinsic("AttributeError")
+@intrinsic_type("AttributeError")
 class VAttributeError(VException):
     """
     Raised when an attribute cannot be resolved.
@@ -63,7 +63,7 @@ class VAttributeError(VException):
 
 
 @builtin()
-@intrinsic("IndexError")
+@intrinsic_type("IndexError")
 class VIndexError(VException):
     """
     Spek equivalent of Python's IndexError.
@@ -72,7 +72,7 @@ class VIndexError(VException):
 
 
 @builtin()
-@intrinsic("KeyError")
+@intrinsic_type("KeyError")
 class VKeyError(VException):
     """
     Raised when a mapping is missing a requested key.
@@ -81,7 +81,7 @@ class VKeyError(VException):
 
 
 @builtin()
-@intrinsic("FutureError")
+@intrinsic_type("FutureError")
 class VFutureError(VException):
     """
     Raised when the state of a Future does not allow an operation.
