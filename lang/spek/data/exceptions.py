@@ -1,10 +1,11 @@
 from engine.core.exceptions import VException
 from engine.core.intrinsic import intrinsic_type
 from lang.spek.data.builtin import builtin
+from util.immutable import Immutable
 
 
 @intrinsic_type("JumpError")
-class VJumpError(VException):
+class VJumpError(VException, Immutable):
     """
     Raised a control flow jump is executed.
     """
@@ -16,14 +17,7 @@ class VJumpError(VException):
         return hash(self._msg)
 
     def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = type(self)(self._msg)
-            clones[id(self)] = c
-            return c
+        return self
 
 
 @intrinsic_type("ReturnError")
