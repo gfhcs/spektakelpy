@@ -5,7 +5,39 @@ from engine.core.none import VNone
 from engine.core.type import Type
 from engine.core.value import Value
 from util import check_type
-from util.immutable import check_unsealed
+from util.immutable import check_unsealed, Immutable
+
+
+class FieldIndex(Value, Immutable):
+    """
+    An index into the fields of a compound value.
+    """
+
+    def __init__(self, idx):
+        super().__init__()
+        self._idx = idx
+
+    def __int__(self):
+        return self._idx
+
+    @property
+    def type(self):
+        raise NotImplementedError("The type of a field index should never be needed.")
+
+    def equals(self, other):
+        return isinstance(other, FieldIndex) and self._idx == other._idx
+
+    def bequals(self, other, bijection):
+        return self.equals(other)
+
+    def cequals(self, other):
+        return self.equals(other)
+
+    def hash(self):
+        return self._idx
+
+    def print(self, out):
+        out.write(f"{self._idx}")
 
 
 class CompoundType(Type, ABC):
@@ -13,28 +45,41 @@ class CompoundType(Type, ABC):
     A type the instances of which consist of tuples of other type instances.
     """
 
-    def __init__(self, name, bases, num_direct_fields, direct_members):
+    def __init__(self, name, bases, direct_field_names, direct_members):
         """
         Creates a new type.
         :param name: The name of this type.
         :param bases: A tuple of Type objects that the new type inherits from.
         :param direct_members: A mapping from names to Values that defines the *direct* members of this type.
-        :param num_direct_fields: The number of data fields in the instances of this type that are not inherited from the
-                           super types.
+        :param direct_field_names: The names of the direct fields of instances of this type, i.e. those fields that
+                                   are not inherited from base classes.
         """
-        super().__init__(name, bases, direct_members)
-        self._num_direct_fields = num_direct_fields
-        self._offsets = {}
+
+        direct_members = dict(direct_members)
+
+        dummy = AtomicType("", bases)
+        offsets = {}
         offset = 0
-        for t in self._mro:
-            self._offsets[t] = offset
-            if isinstance(t, AtomicType):
+        for t in dummy.mro:
+            offsets[t] = offset
+            if t is dummy:
+                for name in direct_field_names:
+                    direct_members[name] = FieldIndex(offset)
+                    offset += 1
+            elif isinstance(t, AtomicType):
                 offset += 1
             elif isinstance(t, CompoundType):
-                offset += t._num_direct_fields
+                for name, member in t.direct_members:
+                    if isinstance(member, FieldIndex):
+                        direct_members[name] = FieldIndex(offset)
+                        offset += 1
             else:
                 raise TypeError(f"Compound types can only inherit from atomic types and other compound types, not from {type(t)}!")
+        super().__init__(name, bases, direct_members)
         self._size = offset
+        offsets[self] = offsets[dummy]
+        del offsets[dummy]
+        self._offsets = offsets
 
     @property
     def type(self):
@@ -50,7 +95,7 @@ class CompoundType(Type, ABC):
 
     def get_offset(self, t):
         """
-        Computes the offset at which the fields of the given super type begin in the instances of this type.
+        Computes the offset at which the *direct* fields of the given super type begin in the instances of this type.
         :param t: A super type of this type. May even be this type itself.
         :return: An int.
         """

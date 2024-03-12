@@ -122,11 +122,20 @@ class Type(Value, Immutable, abc.ABC):
         except KeyError:
             bijection[id(self)] = id(other)
             if not (isinstance(other, Type)
-                    and (self._name, len(self._bases), len(self._members_direct), self._num_fields)
-                    == (other._name, len(other._bases), len(other._members_direct), other._num_fields)):
+                    and (self._name, len(self._bases), len(self._members_direct))
+                    == (other._name, len(other._bases), len(other._members_direct))):
                 return False
-            return all(a.bequals(b, bijection) for a, b in zip(chain(self._bases, self._members_direct),
-                                                               chain(other._bases, other._members_direct)))
+
+            for name, member in self._members_direct.items():
+                try:
+                    member_other = other._members_direct[name]
+                except KeyError:
+                    return False
+
+                if not member.bequals(member_other, bijection):
+                    return False
+
+            return all(a.bequals(b, bijection) for a, b in zip(self._bases, other._bases))
 
     def cequals(self, other):
         return self is other

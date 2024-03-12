@@ -3,6 +3,7 @@ from abc import ABC
 from enum import Enum
 from weakref import WeakValueDictionary
 
+from engine.core.compound import FieldIndex
 from engine.core.exceptions import VCancellationError, VRuntimeError, VException
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
@@ -1012,8 +1013,8 @@ class LoadAttrCase(Term):
             attr = (value if isinstance(value, Type) else t).members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
-        if isinstance(attr, int):
-            return VTuple(VBool.false, value[attr])
+        if isinstance(attr, FieldIndex):
+            return VTuple(VBool.false, value[int(attr)])
         elif isinstance(attr, Procedure):
             return VTuple(VBool.false, BoundProcedure(attr, value))
         elif isinstance(attr, Property):
@@ -1077,8 +1078,8 @@ class StoreAttrCase(Term):
             attr = (value if isinstance(value, Type) else t).members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
-        if isinstance(attr, int):
-            return FieldReference(value, attr)
+        if isinstance(attr, FieldIndex):
+            return FieldReference(value, int(attr))
         if isinstance(attr, Property):
             return attr.setter
         elif isinstance(attr, Procedure):

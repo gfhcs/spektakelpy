@@ -16,7 +16,7 @@ class Class(CompoundType):
         :param direct_field_names: The names of the direct fields of instances of this class.
         :param direct_members: A dict mapping member names to the direct (i.e. not inherited) members of this class.
         """
-        super().__init__(name, bases, len(direct_field_names), direct_members)
+        super().__init__(name, bases, direct_field_names, direct_members)
 
     @property
     def num_cargs(self):
