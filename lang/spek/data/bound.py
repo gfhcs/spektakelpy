@@ -29,7 +29,7 @@ class BoundProcedure(Procedure):
     def print(self, out):
         out.write(f"BoundProcedure(")
         prefix = ""
-        for f in self._bound:
+        for f in self._args:
             out.write(prefix)
             f.print(out)
             prefix = ", "
