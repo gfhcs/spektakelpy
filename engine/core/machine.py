@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic_member
+from engine.core.intrinsic import intrinsic_member, intrinsic_type
 from engine.core.value import Value
 from util import check_type, check_types
 from util.immutable import check_unsealed, check_sealed

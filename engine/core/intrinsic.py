@@ -8,9 +8,10 @@ from engine.core.property import OrdinaryProperty
 from engine.core.type import Type
 from engine.core.value import Value
 from util import check_types, check_type
+from util.immutable import Immutable
 
 
-class IntrinsicProcedure(Procedure):
+class IntrinsicProcedure(Procedure, Immutable):
     """
     A procedure the execution of which is not observable, i.e. the procedure is executed atomically, without giving
     access to intermediate machine states.
@@ -26,9 +27,6 @@ class IntrinsicProcedure(Procedure):
         super().__init__()
         self._p = p
 
-    def _seal(self):
-        return self
-
     def hash(self):
         return hash(self._p)
 
@@ -40,9 +38,6 @@ class IntrinsicProcedure(Procedure):
 
     def cequals(self, other):
         return self.equals(other)
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def print(self, out):
         out.write(f"IntrinsicProcedure({self._p})")
@@ -121,12 +116,7 @@ class IntrinsicType(AtomicType):
                          this mapping will be turned into members of the intrinsic type.
         """
 
-        try:
-            ptype.intrinsic_type
-        except AttributeError:
-            pass
-        else:
-            raise ValueError(f"The Python type {ptype} has already been wrapped as an intrinsic type!")
+        self._ptype = ptype
 
         check_type(name, str)
         check_type(ptype, type)
@@ -187,17 +177,29 @@ class IntrinsicType(AtomicType):
 
         super().__init__(name, bases, new=new, members=members)
 
+    @property
+    def python_type(self):
+        """
+        The Python type modelled by this intrinsic type.
+        :return: A type object.
+        """
+        return self._ptype
+
+    def clone_unsealed(self, clones=None):
+        return self
+
 
 # While a decorated Python type is under construction, this maps from intrinsic member names to Python member names:
 __intrinsic_collection__ = {}
 
+
 class CollectionType(Enum):
     GLOBAL = 0
-    GENERIC = 1
     TYPE = 2
     PROCEDURE = 3
     MEMBER = 4
     INIT = 5
+
 
 collection_stack = [CollectionType.GLOBAL]
 
@@ -234,9 +236,10 @@ def intrinsic_member(name=None):
     def decorator(x):
         nonlocal name
         try:
+            pname = x.fget.__name__ if isinstance(x, property) else x.__name__
             if name is None:
-                name = x.__name__
-            __intrinsic_collection__[name] = x.__name
+                name = pname
+            __intrinsic_collection__[name] = pname
             return x
         finally:
             collection_stack.pop()
@@ -282,10 +285,19 @@ def intrinsic_type(name=None, bases=None):
             if bases is None:
                 bases = tuple(b.intrinsic_type for b in t.__bases__ if hasattr(b, "intrinsic_type"))
 
-            IntrinsicType(name, t, bases, __intrinsic_collection__)
+            try:
+                t.intrinsic_type
+            except AttributeError:
+                pass
+            else:
+                if t.intrinsic_type.python_type is t:
+                    raise ValueError(f"The Python type {t} has already been wrapped as an intrinsic type!")
+
+            t.intrinsic_type = IntrinsicType(name, t, bases, __intrinsic_collection__)
 
             return t
         finally:
+            __intrinsic_collection__.clear()
             collection_stack.pop()
 
     return decorator

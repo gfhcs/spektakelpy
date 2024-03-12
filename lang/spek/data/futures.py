@@ -151,6 +151,7 @@ class VFuture(Value):
         self._status = FutureStatus.SET
 
     @intrinsic_member()
+    @property
     def exception(self):
         """
         The exception that was set on this future.
@@ -168,7 +169,7 @@ class VFuture(Value):
         else:
             raise NotImplementedError(f"Handling {self._status} as not been implemented!")
 
-    @exception.intrinsic_setter
+    @exception.setter
     def exception(self, value):
         """
         Sets an exception for this future.

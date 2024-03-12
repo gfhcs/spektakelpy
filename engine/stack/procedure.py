@@ -3,9 +3,10 @@ from engine.stack.exceptions import VTypeError
 from engine.stack.frame import Frame
 from engine.stack.program import ProgramLocation
 from util import check_type
+from util.immutable import Immutable
 
 
-class StackProcedure(Procedure):
+class StackProcedure(Procedure, Immutable):
     """
     A procedure that is implemented by virtual machine instructions.
     """
@@ -53,19 +54,6 @@ class StackProcedure(Procedure):
 
     def cequals(self, other):
         return self.equals(other)
-
-    def _seal(self):
-        self._entry.seal()
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = StackProcedure(self._num_args, self._entry)
-            clones[id(self)] = c
-            return c
 
     def initiate(self, tstate, mstate, *args):
         if len(args) != self._num_args:
