@@ -303,7 +303,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         state0 = self.initialize_machine(p, 2)
         state0.task_states[0].stack[0][0] = VList(items=[VInt(42)])
-        state0.task_states[0].stack[0][1] = VList.pop
+        state0.task_states[0].stack[0][1] = VList.intrinsic_type.members["pop"]
 
         _, states, internal, external = self.explore(p, state0)
 
@@ -324,7 +324,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         state0 = self.initialize_machine(p, 1)
         state0.task_states[0].stack[0][0] = VList(items=[])
-        state0.task_states[0].stack[0][0] = VList.pop
+        state0.task_states[0].stack[0][0] = VList.intrinsic_type.members["pop"]
 
         _, states, internal, external = self.explore(p, state0)
 
@@ -579,7 +579,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = StackProgram([Update(TRef(FrameReference(0)), term, 1, 1),
                                   Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
-                s0.task_states[0].stack[0][0] = VList.append
+                s0.task_states[0].stack[0][0] = VList.intrinsic_type.members["append"]
                 _, states, _, _ = self.explore(p, s0)
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)

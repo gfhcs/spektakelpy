@@ -1009,7 +1009,7 @@ class LoadAttrCase(Term):
         t = value.type
 
         try:
-            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+            attr = (value if isinstance(value, Type) else t).members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
         if isinstance(attr, int):
@@ -1074,7 +1074,7 @@ class StoreAttrCase(Term):
         t = value.type
 
         try:
-            attr = (value if isinstance(value, Type) else t).resolve_member(self.name)
+            attr = (value if isinstance(value, Type) else t).members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
         if isinstance(attr, int):

@@ -100,7 +100,7 @@ class Type(Value, Immutable, abc.ABC):
                     return t.direct_members[name]
                 except KeyError:
                     continue
-            raise KeyError(f"{self} has no attribute '{name}'!")
+            raise KeyError(f"{self._mro[0]} has no attribute '{name}'!")
 
     @property
     def members(self):
@@ -149,7 +149,7 @@ class Type(Value, Immutable, abc.ABC):
         return False
 
     def print(self, out):
-        return self._name
+        out.write(self._name)
 
     @property
     @abc.abstractmethod

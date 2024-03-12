@@ -57,7 +57,7 @@ class CompoundType(Type, ABC):
         return self._offsets[t]
 
     def new(self, *_):
-        return VCompound(self, self.size)
+        return VCompound(self)
 
 
 class VCompound(Value):
