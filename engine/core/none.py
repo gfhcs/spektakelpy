@@ -37,8 +37,4 @@ class VNone(Value, Immutable):
 VNone.instance = VNone()
 
 
-def new_none():
-    return VNone.instance
-
-
-type_none = AtomicType("none", [type_object], new=new_none)
+type_none = AtomicType("none", [type_object])

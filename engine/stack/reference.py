@@ -11,6 +11,7 @@ class Reference(Value, abc.ABC):
     A reference is a part of a machine state that can point to another part of a machine state.
     """
 
+    @property
     def type(self):
         return Reference.intrinsic_type
 

@@ -1,5 +1,5 @@
 from enum import Enum
-from inspect import signature
+from inspect import signature, Parameter
 
 from engine.core.atomic import AtomicType
 from engine.core.compound import VCompound
@@ -87,6 +87,8 @@ class IntrinsicInit(IntrinsicProcedure):
                     raise TypeError(f"The type of the given instance is not derived from the Python type {ptype}!")
                 # The instance is already initialized.
 
+            return instance
+
         super().__init__(init)
         self._construct = construct
 
@@ -148,6 +150,7 @@ class IntrinsicType(AtomicType):
 
         members = {}
         new = None
+        num_cargs = None
 
         # If there is an initializer in the MRO of ptype, we want to inherit it:
         for base in ptype.mro():
@@ -165,6 +168,8 @@ class IntrinsicType(AtomicType):
 
                 def new(*args):
                     return init.construct(ptype, *args)
+                num_cargs = base_intrinsic.num_cargs
+
             except KeyError:
                 continue
             break
@@ -174,6 +179,9 @@ class IntrinsicType(AtomicType):
             pmember = getattr(ptype, pname)
 
             if iname == "__init__":
+
+                num_cargs = sum(1 for p in signature(pmember).parameters.values() if p.kind == Parameter.POSITIONAL_OR_KEYWORD) - 1
+
                 if pname == "__init__":
                     def construct(cls, *args):
                         return cls(*args)
@@ -191,7 +199,7 @@ class IntrinsicType(AtomicType):
 
             members[iname] = imember
 
-        super().__init__(name, bases, new=new, members=members)
+        super().__init__(name, bases, new=new, num_cargs=num_cargs, members=members)
 
     @property
     def python_type(self):

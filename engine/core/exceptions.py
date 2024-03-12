@@ -27,7 +27,7 @@ class VException(Value, Exception):
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
     @intrinsic_init()
-    @classmethod
+    @staticmethod
     def create(cls, message):
         """
         The constructor for exceptions that is visible in Python.

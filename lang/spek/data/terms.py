@@ -647,7 +647,7 @@ class New(Term):
         out.write("new<")
         self.type.print(out)
         out.write(">(")
-        prefix = ", "
+        prefix = ""
         for a in self.args:
             out.write(prefix)
             a.print(out)
@@ -707,15 +707,15 @@ class Callable(Term):
                 except KeyError:
 
                     r = TRef(ReturnValueReference())
-                    t = TRef(FrameReference(0))
-                    args = [TRef(FrameReference(1 + idx)) for idx in range(num_cargs)]
+                    t = Read(TRef(FrameReference(0)))
+                    args = [Read(TRef(FrameReference(1 + idx))) for idx in range(num_cargs)]
 
                     c = [Update(r, New(t, *args), 1, 2),
-                         Push(Project(LoadAttrCase(r, "__init__"), 1), args, 2, 2),
+                         Push(Project(LoadAttrCase(Read(r), "__init__"), CInt(1)), args, 2, 2),
                          Pop(2)
                          ]
 
-                    c = StackProcedure(1 + t.num_cargs, StackProgram(c))
+                    c = StackProcedure(1 + callee.num_cargs, ProgramLocation(StackProgram(c), 0))
 
                     Callable.__constructors[num_cargs] = c
                     return BoundProcedure(c, callee)

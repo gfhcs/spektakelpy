@@ -19,8 +19,8 @@ class VTuple(Value):
         self._comps = tuple(check_type(c, Value) for c in components)
 
     @intrinsic_init()
-    @classmethod
-    def convert(cls, iterable):
+    @staticmethod
+    def create(cls, iterable):
         assert issubclass(cls, VTuple)
         return cls(*iterable)
 
