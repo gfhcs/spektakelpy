@@ -300,7 +300,8 @@ class Push(Instruction):
 
         try:
             r = callee.initiate(tstate, mstate, *args)
-            tstate.returned = VNone.instance if r is None else r
+            if r is not None:
+                tstate.returned = r
         except Exception as e:
             tstate.exception = pack_exception(e, msg="Failed to call procedure!")
             old_top.instruction_index = self._edestination
@@ -421,7 +422,10 @@ class Launch(Instruction):
         tstate.returned = task
         try:
             r = callee.initiate(task, mstate, *args)
-            task.returned = VNone.instance if r is None else r
+            if r is None:
+                task.status = TaskStatus.RUNNING
+            else:
+                task.returned = r
         except Exception as e:
             tstate.exception = pack_exception(e, msg="Failed to call procedure!")
             mytop.instruction_index = self._edestination
