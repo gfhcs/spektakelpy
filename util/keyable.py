@@ -13,6 +13,7 @@ class Keyable(Immutable):
     """
 
     key2instance = None
+    # hits = 0
 
     def __new__(cls, key, *largs, **kwargs):
         if cls.key2instance is None:
@@ -23,7 +24,12 @@ class Keyable(Immutable):
             instance = super().__new__(cls, *largs, **kwargs)
             instance._key = key
             cls.key2instance[key] = instance
+            # cls.hits -= 1
             return instance
+        finally:
+            # cls.hits += 1
+            # print(f"{cls.hits} hits on {len(cls.key2instance)} instances.")
+            pass
 
     @property
     def instance_key(self):
