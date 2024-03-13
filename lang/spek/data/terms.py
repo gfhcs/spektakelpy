@@ -28,6 +28,7 @@ from lang.spek.data.futures import VFuture, FutureStatus
 from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference
 from lang.spek.data.values import VTuple, VList, VDict, VNamespace
 from util import check_type, check_types
+from util.singleton import Singleton
 
 
 class CTerm(Term):
@@ -108,7 +109,7 @@ class CBool(CTerm):
         super().__init__(VBool(value))
 
 
-class CNone(CTerm):
+class CNone(Singleton, CTerm):
     """
     A term that represents the None constant.
     """
@@ -131,19 +132,6 @@ class CString(CTerm):
         :param value: The string this term is supposed to represent.
         """
         super().__init__(VStr(value))
-
-
-class CType(CTerm):
-    """
-    A term that represents a fixed type.
-    """
-
-    def __init__(self, t):
-        """
-        Instantiates a new constant type term.
-        :param t: The type this term is supposed to represent.
-        """
-        super().__init__(t)
 
 
 def print_child(out, parent, child):
@@ -1166,7 +1154,7 @@ class NewCell(Term):
         return VCell(value_none if self.term is None else self.term.evaluate(tstate, mstate))
 
 
-class NewList(Term):
+class NewList(Singleton, Term):
     """
     A term that evaluates to a new empty list.
     """
@@ -1177,12 +1165,6 @@ class NewList(Term):
         """
         super().__init__()
 
-    def hash(self):
-        return 43
-
-    def equals(self, other):
-        return isinstance(other, NewList)
-
     def print(self, out):
         out.write("[]")
 
@@ -1190,7 +1172,7 @@ class NewList(Term):
         return VList()
 
 
-class NewDict(Term):
+class NewDict(Singleton, Term):
     """
     A term that evaluates to a new empty dictionary.
     """
@@ -1200,12 +1182,6 @@ class NewDict(Term):
         Creates a new dict term.
         """
         super().__init__()
-
-    def hash(self):
-        return 4711
-
-    def equals(self, other):
-        return isinstance(other, NewDict)
 
     def print(self, out):
         out.write("{}")
@@ -1250,7 +1226,7 @@ class NewJumpError(Term):
         return self._etype()
 
 
-class NewNamespace(Term):
+class NewNamespace(Singleton, Term):
     """
     A term that evaluates to a new empty namespace.
     """
@@ -1260,12 +1236,6 @@ class NewNamespace(Term):
         Creates a new namespace term.
         """
         super().__init__()
-
-    def hash(self):
-        return 1337
-
-    def equals(self, other):
-        return isinstance(other, NewNamespace)
 
     def print(self, out):
         out.write("Namespace()")

@@ -1,3 +1,4 @@
+from engine.core.singleton import SingletonValue
 from engine.core.value import Value
 from engine.stack.exceptions import VReferenceError, VTypeError
 from engine.stack.reference import Reference
@@ -174,37 +175,13 @@ class AbsoluteFrameReference(Reference):
             raise VReferenceError(f"Failed to retrieve entry {self._index} of stack frame {self._offset} in task {self._taskid}!") from ex
 
 
-class ReturnValueReference(Reference):
+class ReturnValueReference(SingletonValue, Reference):
     """
     A reference to the value currently being returned from the callee to the caller.
     """
 
-    def __init__(self):
-        """
-        Refers to a value that is to be returned.
-        """
-        super().__init__()
-
     def print(self, out):
         return out.write("@return")
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
-
-    def hash(self):
-        return 0
-
-    def equals(self, other):
-        return isinstance(other, ReturnValueReference)
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
 
     def write(self, tstate, mstate, value):
         tstate.returned = value
@@ -213,38 +190,13 @@ class ReturnValueReference(Reference):
         return tstate.returned
 
 
-class ExceptionReference(Reference):
+class ExceptionReference(SingletonValue, Reference):
     """
     A reference to the exception currently being handled in a task.
     """
 
-    def __init__(self):
-        """
-        Refers to the exception currently being handled in a task.
-        """
-        super().__init__()
-        self.seal()
-
     def print(self, out):
         return out.write("@exception")
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
-
-    def hash(self):
-        return 1
-
-    def equals(self, other):
-        return isinstance(other, ExceptionReference)
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
 
     def write(self, tstate, mstate, value):
         tstate.exception = value

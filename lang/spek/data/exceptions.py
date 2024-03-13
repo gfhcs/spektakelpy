@@ -1,27 +1,21 @@
 from engine.core.exceptions import VException
 from engine.core.intrinsic import intrinsic_type
+from engine.core.singleton import SingletonValue
 from lang.spek.data.builtin import builtin
 from util.immutable import Immutable
 
 
 @intrinsic_type("JumpError")
-class VJumpError(VException, Immutable):
+class VJumpError(Immutable, VException):
     """
     Raised a control flow jump is executed.
     """
-
     def __init__(self, msg):
         super().__init__(msg)
 
-    def hash(self):
-        return hash(self._msg)
-
-    def clone_unsealed(self, clones=None):
-        return self
-
 
 @intrinsic_type("ReturnError")
-class VReturnError(VJumpError):
+class VReturnError(SingletonValue, VJumpError):
     """
     Raised a return statement is executed.
     """
@@ -30,7 +24,7 @@ class VReturnError(VJumpError):
 
 
 @intrinsic_type("BreakError")
-class VBreakError(VJumpError):
+class VBreakError(SingletonValue, VJumpError):
     """
     Raised a break statement is executed.
     """
@@ -39,7 +33,7 @@ class VBreakError(VJumpError):
 
 
 @intrinsic_type("ContinueError")
-class VContinueError(VJumpError):
+class VContinueError(SingletonValue, VJumpError):
     """
     Raised a continue statement is executed.
     """

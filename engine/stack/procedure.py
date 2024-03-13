@@ -6,7 +6,7 @@ from util import check_type
 from util.immutable import Immutable
 
 
-class StackProcedure(Procedure, Immutable):
+class StackProcedure(Immutable, Procedure):
     """
     A procedure that is implemented by virtual machine instructions.
     """

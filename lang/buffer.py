@@ -13,6 +13,7 @@ class BufferedMatchStream:
         Buffers a TextIOBase object.
         :param source: The TextIOBase oject that is to be buffered.
         """
+        super().__init__()
         self._source = check_type(source, io.TextIOBase)
         self._buffer = io.StringIO('')
         self._buffer_offset = 0

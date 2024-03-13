@@ -5,7 +5,7 @@ from util import check_types, check_type
 from util.immutable import Immutable
 
 
-class AtomicType(Type, Immutable):
+class AtomicType(Immutable, Type):
     """
     A type the instances of which are opaque and indivisible.
     """
@@ -21,7 +21,6 @@ class AtomicType(Type, Immutable):
         :param members: The direct members of this type.
         """
         super().__init__(name, check_types(bases, AtomicType), {} if members is None else {n: check_type(m, Immutable) for n, m in members.items()})
-        super(Type, self).__init__()
         self._new = new
         if num_cargs is None and new is not None:
             num_cargs = sum(1 for p in signature(self._new).parameters.values() if p.kind == Parameter.POSITIONAL_OR_KEYWORD)

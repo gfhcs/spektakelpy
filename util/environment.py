@@ -10,6 +10,7 @@ class Environment:
         :param base: The environment to adjoin.
         :param k2v: A dict-like object that maps keys in which the new environment should differ from the base to new values.
         """
+        super().__init__()
         self._base = base
         self._k2v = {} if k2v is None else dict(k2v)
         self._len = None

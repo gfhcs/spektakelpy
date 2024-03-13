@@ -1,4 +1,4 @@
-from engine.core.compound import CompoundType, FieldIndex
+from engine.core.compound import CompoundType
 from engine.stack.exceptions import VTypeError
 from engine.stack.procedure import StackProcedure
 

@@ -18,8 +18,7 @@ class VException(Value, Exception):
         :param args: Additional constructor arguments that annotate the exception.
         :param pexception: An underlying Python exception, if it caused the exception to be created.
         """
-        super(Value, self).__init__()
-        super(Exception, self).__init__(message)
+        super().__init__(message)
         if isinstance(message, str):
             message = VStr(message)
         self._msg = check_type(message, VStr, allow_none=True)

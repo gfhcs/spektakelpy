@@ -10,6 +10,7 @@ class Chain(Printable):
     Represents a sequence of instructions. Control flow can enter this chain only at its start.
     """
     def __init__(self):
+        super().__init__()
         self._proto = []
         self._targets = set()
         self._can_continue = True

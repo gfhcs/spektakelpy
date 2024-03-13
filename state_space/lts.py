@@ -139,7 +139,6 @@ class LTS(Immutable):
         Creates a new LTS.
         :param s0: The initial state of this LTS.
         """
-
         super().__init__()
         self._s0 = check_sealed(s0)
 

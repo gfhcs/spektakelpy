@@ -22,7 +22,7 @@ from lang.spek.data.references import FrameReference, ReturnValueReference, Fiel
 from lang.spek.data.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, TRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
-    IsInstance, NewTuple, CType, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
+    IsInstance, NewTuple, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
     NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase, Callable, Project
 from lang.spek.data.values import VTuple, VList, VNamespace, VDict
 from state_space.lts import state_space
@@ -590,8 +590,8 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of IsInstance terms.
         """
 
-        cases = [(IsInstance(CInt(42), NewTuple(CType(VFloat.intrinsic_type), CType(VInt.intrinsic_type))), VBool.true),
-                 (IsInstance(CInt(42), CType(VFloat.intrinsic_type)), VBool.false)
+        cases = [(IsInstance(CInt(42), NewTuple(CTerm(VFloat.intrinsic_type), CTerm(VInt.intrinsic_type))), VBool.true),
+                 (IsInstance(CInt(42), CTerm(VFloat.intrinsic_type)), VBool.false)
                  ]
 
         for term, value in cases:
@@ -625,11 +625,11 @@ class TestSpektakelMachine(unittest.TestCase):
         """
 
         cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool.true),
-                 (IsInstance(NewList(), CType(VList.intrinsic_type)), VBool.true),
-                 (IsInstance(NewDict(), CType(VDict.intrinsic_type)), VBool.true),
-                 (IsInstance(NewJumpError(VReturnError), CType(VReturnError.intrinsic_type)), VBool.true),
-                 (IsInstance(NewJumpError(VBreakError), CType(VBreakError.intrinsic_type)), VBool.true),
-                 (IsInstance(CTerm(VTypeError("Just a test.")), CType(VTypeError.intrinsic_type)), VBool.true)
+                 (IsInstance(NewList(), CTerm(VList.intrinsic_type)), VBool.true),
+                 (IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool.true),
+                 (IsInstance(NewJumpError(VReturnError), CTerm(VReturnError.intrinsic_type)), VBool.true),
+                 (IsInstance(NewJumpError(VBreakError), CTerm(VBreakError.intrinsic_type)), VBool.true),
+                 (IsInstance(CTerm(VTypeError("Just a test.")), CTerm(VTypeError.intrinsic_type)), VBool.true)
                  ]
 
         for idx, (term, value) in enumerate(cases):
@@ -644,7 +644,7 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of namespace-related terms.
         """
-        cases = [(IsInstance(NewNamespace(), CType(VNamespace.intrinsic_type)), VBool.true),
+        cases = [(IsInstance(NewNamespace(), CTerm(VNamespace.intrinsic_type)), VBool.true),
                  (Read(Lookup(TRef(FrameReference(0)), CString("hello"))), VInt(42))]
 
         for term, value in cases:
@@ -717,7 +717,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         p = StackProgram([Update(TRef(FrameReference(0)), NewNamespace(), 1, 42),
                           Update(Lookup(TRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
-                          Update(TRef(FrameReference(0)), NewClass("C", [CType(type_object)], Read(TRef(FrameReference(0)))), 3, 42),
+                          Update(TRef(FrameReference(0)), NewClass("C", [CTerm(type_object)], Read(TRef(FrameReference(0)))), 3, 42),
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)

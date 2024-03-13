@@ -6,7 +6,7 @@ from util.immutable import Immutable
 
 
 @intrinsic_type("bool", [type_object])
-class VBool(Value, Immutable):
+class VBool(Immutable, Value):
     """
     Equivalent to Python's bool.
     """
@@ -143,7 +143,7 @@ def p2s(x):
 
 
 @intrinsic_type("int", [type_object])
-class VInt(Value, Immutable):
+class VInt(Immutable, Value):
     """
     Equivalent to Python's int.
     """
@@ -245,7 +245,7 @@ class VInt(Value, Immutable):
 
 
 @intrinsic_type("float", [type_object])
-class VFloat(Value, Immutable):
+class VFloat(Immutable, Value):
     """
     Equivalent to Python's float.
     """
@@ -332,7 +332,7 @@ class VFloat(Value, Immutable):
 
 
 @intrinsic_type("str", [type_object])
-class VStr(Value, Immutable):
+class VStr(Immutable, Value):
     """
     Equivalent to Python's str.
     """

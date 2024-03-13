@@ -11,7 +11,7 @@ from util import check_types, check_type
 from util.immutable import Immutable
 
 
-class IntrinsicProcedure(Procedure, Immutable):
+class IntrinsicProcedure(Immutable, Procedure):
     """
     A procedure the execution of which is not observable, i.e. the procedure is executed atomically, without giving
     access to intermediate machine states.
@@ -103,7 +103,7 @@ class IntrinsicInit(IntrinsicProcedure):
         return self._construct
 
 
-class IntrinsicProperty(OrdinaryProperty, Immutable):
+class IntrinsicProperty(Immutable, OrdinaryProperty):
     """
     Wraps a Python property. Like all intrinsic type members, this one must be immutable, in order to be compatible
     with AtomicType.
@@ -118,7 +118,6 @@ class IntrinsicProperty(OrdinaryProperty, Immutable):
         setter = None if p.fset is None else IntrinsicInstanceMethod(ptype, self, p.fset)
 
         super().__init__(getter, setter)
-        super(OrdinaryProperty, self).__init__()
 
 
 class IntrinsicType(AtomicType):

@@ -1,9 +1,8 @@
 from engine.core.atomic import AtomicType, type_object
-from engine.core.value import Value
-from util.singleton import Singleton
+from engine.core.singleton import SingletonValue
 
 
-class VNone(Value, Singleton):
+class VNone(SingletonValue):
     """
     Equivalent of Python's 'None'.
     """
@@ -11,15 +10,6 @@ class VNone(Value, Singleton):
     @property
     def type(self):
         return type_none
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def print(self, out):
         out.write("None")

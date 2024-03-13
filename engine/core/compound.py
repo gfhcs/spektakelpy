@@ -8,7 +8,7 @@ from util import check_type
 from util.immutable import check_unsealed, Immutable
 
 
-class FieldIndex(Value, Immutable):
+class FieldIndex(Immutable, Value):
     """
     An index into the fields of a compound value.
     """

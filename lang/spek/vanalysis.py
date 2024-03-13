@@ -20,6 +20,7 @@ class VariableAnalysis:
         :param dec: The dict returned from the Validator.
         :param statement: The Statement node to analyse as an executed sequence.
         """
+        super().__init__()
         self._free = dict()
         self._free_in_proc = set()
         declared, _, _, nonfunctional, _ = self._analyse_statement(statement, dec)

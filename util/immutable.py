@@ -44,8 +44,8 @@ class Sealable:
     An object that is mutable after its construction, but can be sealed, to become immutable.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *largs, **kwargs):
+        super().__init__(*largs, **kwargs)
         self._sealed = False
         self._hash = None
 
@@ -127,8 +127,8 @@ class Immutable(Sealable, abc.ABC):
     An object that is both immutable and defines an abstract equality.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *largs, **kwargs):
+        super().__init__(*largs, **kwargs)
         self._sealed = True
 
     def _seal(self):

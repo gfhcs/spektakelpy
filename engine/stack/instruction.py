@@ -4,7 +4,7 @@ from util.immutable import Immutable
 from util.printable import Printable
 
 
-class Instruction(Printable, Immutable, abc.ABC):
+class Instruction(Immutable, Printable, abc.ABC):
     """
     An instruction is the smallest possible execution step that actually changes the machine state.
     Instructions are executed atomically, in the sense that intermediate states of its execution are not observable

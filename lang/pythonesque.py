@@ -51,6 +51,7 @@ class PythonesqueLexicalGrammar(LexicalGrammar):
         :param separators: The strings that are to be lexed as separators. Separators have the same token type
                            as keywords, but unlike keywords they cannot be substrings of identifier or keyword tokens.
         """
+        super().__init__()
 
         # This code is loosely based on https://docs.python.org/3/library/re.html#writing-a-tokenizer
 

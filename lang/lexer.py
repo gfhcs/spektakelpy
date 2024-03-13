@@ -96,7 +96,7 @@ class Lexer:
         :param spec: The LexicalGrammar used for lexing.
         :param source: A text stream providing input characters.
         """
-
+        super().__init__()
         self._end = spec.type_end
         self._g = iter(spec.generate_tokens(BufferedMatchStream(source)))
         self._peek = None

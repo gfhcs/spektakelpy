@@ -7,7 +7,7 @@ from util.immutable import Immutable, check_sealed
 from util.printable import Printable
 
 
-class StackProgram(Printable, Immutable):
+class StackProgram(Immutable, Printable):
     """
     An array of stack machine instructions. Each instruction updates the state of a stack machine, in particular
     determining which instruction to execute next.
