@@ -814,7 +814,7 @@ class IsInstance(Term):
             raise VTypeError("isinstance(() arg 2 must be a type or tuple of types.")
 
 
-class Read(Term):
+class Read(Keyable, Term):
     """
     A term that resolves a Reference value.
     """
@@ -825,12 +825,6 @@ class Read(Term):
         :param r: A term specifying the reference to be read.
         """
         super().__init__(r)
-
-    def hash(self):
-        return hash(self.reference) ^ 890245
-
-    def equals(self, other):
-        return isinstance(other, Read) and tuple(self.children) == tuple(other.children)
 
     def print(self, out):
         out.write("read(")
