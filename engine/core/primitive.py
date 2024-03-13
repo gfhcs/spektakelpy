@@ -13,7 +13,12 @@ class VBool(Finite, Value):
     """
 
     def __init__(self, value):
-        super().__init__(int(value.value if isinstance(value, VBool) else check_type(value, bool)))
+        """
+        Wraps a bool value as a VBool value.
+        :param value: The bool value to wrap.
+        """
+        # Finite.__new__ already took care of the value.
+        super().__init__()
 
     @property
     def value(self):

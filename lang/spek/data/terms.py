@@ -29,81 +29,82 @@ from lang.spek.data.references import FieldReference, NameReference, FrameRefere
 from lang.spek.data.values import VTuple, VList, VDict, VNamespace
 from util import check_type, check_types
 from util.finite import Finite
+from util.keyable import Keyable
 from util.singleton import Singleton
 
 
-class CTerm(Term):
+class CTerm(Keyable, Term):
     """
     A term that represents a constant value.
     """
 
+    def __new__(cls, value, *largs, **kwargs):
+        value = cls.prepare(value)
+        assert check_type(value, Value).sealed
+        return super().__new__(cls, value, *largs, **kwargs)
+
     def __init__(self, value):
         """
-        Instantiates a new constant term.
-        :param value: The Value object that this term should evaluate to.
+        Wraps a value as a Term.
+        :param value: The value to wrap.
         """
+        # Keyable.__new__ already consumed the value.
         super().__init__()
-        self._value = check_type(value, Value).clone_unsealed().seal()
 
-    def hash(self):
-        return hash(self._value)
-
-    def equals(self, other):
-        return isinstance(other, CTerm) and self._value == other._value
+    @classmethod
+    def prepare(cls, value):
+        """
+        Turns the given object into a sealed Value object.
+        :param value: An object.
+        :return: A sealed Value object.
+        """
+        return check_type(value, Value).clone_unsealed().seal()
 
     def evaluate(self, tstate, mstate):
-        return self._value
+        return self.instance_key
 
     def print(self, out):
-        self._value.print(out)
+        self.instance_key.print(out)
 
 
 class TRef(CTerm):
     """
     A term that represents a reference.
     """
-
-    def __init__(self, r):
-        """
-        Instantiates a constant reference.
-        :param r: The reference to be represented by this term.
-        """
-        super().__init__(check_type(r, Reference))
+    @classmethod
+    def prepare(cls, value):
+        return check_type(value, Reference).clone_unsealed().seal()
 
 
 class CInt(CTerm):
     """
     A term that represents an integer constant.
     """
-
-    def __init__(self, value):
-        """
-        Instantiates a new integer constant term.
-        :param value: The integer this term is supposed to represent.
-        """
-        super().__init__(VInt(value))
+    @classmethod
+    def prepare(cls, value):
+        return VInt(check_type(value, int))
 
 
 class CFloat(CTerm):
     """
     A term that represents a float constant.
     """
-
-    def __init__(self, value):
-        """
-        Instantiates a new float constant term.
-        :param value: The float this term is supposed to represent.
-        """
-        super().__init__(VFloat(value))
+    @classmethod
+    def prepare(cls, value):
+        return VFloat(check_type(value, float))
 
 
 class CBool(Finite, CTerm):
     """
     A term that represents a boolean constant.
     """
-    def __init__(self, value):
-        b = check_type(value, bool)
-        super().__init__(int(b), VBool(b))
+
+    def __new__(cls, value, *args, **kwargs):
+        return super().__new__(cls, value, value, *args, **kwargs)
+
+    @classmethod
+    def prepare(cls, value):
+        return VBool(bool(value))
 
 
 class CNone(Singleton, CTerm):
@@ -111,24 +112,27 @@ class CNone(Singleton, CTerm):
     A term that represents the None constant.
     """
 
+    def __new__(cls, *args, **kwargs):
+        return super().__new__(cls, value_none, *args, **kwargs)
+
     def __init__(self):
         """
         Instantiates a new None term.
         """
         super().__init__(value_none)
 
+    @classmethod
+    def prepare(cls, value):
+        return value_none
+
 
 class CString(CTerm):
     """
     A term that represents a character string.
     """
-
-    def __init__(self, value):
-        """
-        Instantiates a new string constant term.
-        :param value: The string this term is supposed to represent.
-        """
-        super().__init__(VStr(value))
+    @classmethod
+    def prepare(cls, value):
+        return VStr(check_type(value, str))
 
 
 def print_child(out, parent, child):

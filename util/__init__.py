@@ -10,7 +10,7 @@ def check_type(x, t, msg=None, allow_none=False):
     :return: The value x.
     """
     if not (isinstance(x, t) or (x is None and allow_none)):
-        raise TypeError("{x} is of type {f}, but type {e} was expected!".format(x=x, f=type(x), e=t))
+        raise TypeError(f"{x} is of type {type(x)}, but type {t} was expected!")
 
     return x
 

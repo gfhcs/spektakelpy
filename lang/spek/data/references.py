@@ -5,6 +5,7 @@ from engine.stack.reference import Reference
 from lang.spek.data.cells import VCell
 from lang.spek.data.values import VNamespace
 from util import check_type
+from util.immutable import Immutable
 
 
 class VRef(Reference):
@@ -60,7 +61,7 @@ class VRef(Reference):
         return self._value
 
 
-class FrameReference(Reference):
+class FrameReference(Immutable, Reference):
     """
     A reference to a value stored in the top-most stack frame of a task.
     """
@@ -83,12 +84,6 @@ class FrameReference(Reference):
 
     def print(self, out):
         out.write(f"@{self._index}")
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def hash(self):
         return self._index
@@ -119,7 +114,7 @@ class FrameReference(Reference):
             raise VReferenceError(f"Could not read entry {self._index} from top stack frame!") from ex
 
 
-class AbsoluteFrameReference(Reference):
+class AbsoluteFrameReference(Immutable, Reference):
     """
     A reference to a value stored in a stack frame that is addressed explicitly.
     This reference will always evaluate to the same value regardless of the task that interprets it.
@@ -134,18 +129,12 @@ class AbsoluteFrameReference(Reference):
         :param index: The index of the stack frame variable to refer to.
         """
         super().__init__()
-        self._taskid = taskid
-        self._offset = offset
-        self._index = index
+        self._taskid = check_type(taskid, int)
+        self._offset = check_type(offset, int)
+        self._index = check_type(index, int)
 
     def print(self, out):
         return out.write(f"@({self._taskid}, {self._offset}, {self._index})")
-
-    def _seal(self):
-        pass
-
-    def clone_unsealed(self, clones=None):
-        return self
 
     def hash(self):
         return hash((self._taskid, self._offset, self._index))

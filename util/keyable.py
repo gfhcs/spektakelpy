@@ -12,26 +12,18 @@ class Keyable(Immutable):
     A type the instances of which can bijectively mapped to hashable keys.
     """
 
-    instances = None
+    key2instance = None
 
     def __new__(cls, key, *largs, **kwargs):
-        if cls.instances is None:
-            cls.instances = WeakValueDictionary()
+        if cls.key2instance is None:
+            cls.key2instance = WeakValueDictionary()
         try:
-            return cls.instances[key]
+            return cls.key2instance[key]
         except KeyError:
-            value = super().__new__(cls, *largs, **kwargs)
-            cls.instances[key] = value
-            return value
-
-    def __init__(self, key, *largs, **kwargs):
-        """
-        :param key: A hashable object that uniquely identifies this instance.
-        :param largs: Further constructor arguments, to be passed on.
-        :param kwargs: Further constructor arguments, to be passed on.
-        """
-        super().__init__(*largs, **kwargs)
-        self._key = key
+            instance = super().__new__(cls, *largs, **kwargs)
+            instance._key = key
+            cls.key2instance[key] = instance
+            return instance
 
     @property
     def instance_key(self):
