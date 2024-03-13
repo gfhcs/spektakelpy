@@ -6,11 +6,13 @@ class Finite(Immutable):
     A type with a sufficiently small, finite number of possible instances.
     """
 
-    instances = []
+    instances = None
 
     def __new__(cls, index, *largs, **kwargs):
         index = int(index)
-        if index >= len(cls.instances):
+        if cls.instances is None:
+            cls.instances = [None, ] * (index + 1)
+        elif index >= len(cls.instances):
             cls.instances.extend([None, ] * (index + 1 - len(cls.instances)))
         instance = cls.instances[index]
         if instance is None:

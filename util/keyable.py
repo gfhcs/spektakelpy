@@ -12,9 +12,11 @@ class Keyable(Immutable):
     A type the instances of which can bijectively mapped to hashable keys.
     """
 
-    instances = WeakValueDictionary()
+    instances = None
 
     def __new__(cls, key, *largs, **kwargs):
+        if cls.instances is None:
+            cls.instances = WeakValueDictionary()
         try:
             return cls.instances[key]
         except KeyError:
