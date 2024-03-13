@@ -8,9 +8,9 @@ class Singleton(Immutable):
 
     instance = None
 
-    def __new__(cls):
+    def __new__(cls, *largs, **kwargs):
         if not isinstance(cls.instance, cls):
-            cls.instance = super().__new__(cls)
+            cls.instance = super().__new__(cls, *largs, **kwargs)
         return cls.instance
 
     def hash(self):
