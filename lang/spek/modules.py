@@ -10,7 +10,7 @@ from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.data import terms
 from lang.spek.data.builtin import all_builtin
 from lang.spek.data.references import ReturnValueReference
-from lang.spek.data.terms import TRef, CTerm, CString, ITask
+from lang.spek.data.terms import CRef, CTerm, CString, ITask
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 from lang.validator import ValidationError
@@ -49,7 +49,7 @@ class BuiltinModuleSpecification(ModuleSpecification):
 
         code = []
         panic = 42
-        r = TRef(ReturnValueReference())
+        r = CRef(ReturnValueReference())
 
         # Initialize a new namespace:
         code.append(Update(r, terms.NewNamespace(), len(code) + 1, panic))
@@ -225,7 +225,7 @@ def build_default_finder(roots):
     symbols = {i2s(i).lower(): i for i in Interaction}
 
     procedures = {}
-    r = TRef(ReturnValueReference())
+    r = CRef(ReturnValueReference())
     for name, symbol in symbols.items():
         p = StackProgram([Update(r, ITask(symbol), 1, 42), Pop(42)])
         procedures[name] = StackProcedure(0, ProgramLocation(p, 0))

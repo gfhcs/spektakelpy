@@ -3,7 +3,7 @@ from abc import ABC
 
 from lang.spek.ast import Identifier
 from lang.spek.data.references import FrameReference, CellReference, NameReference
-from lang.spek.data.terms import TRef, NewCell, Read
+from lang.spek.data.terms import CRef, NewCell, Read
 from util import check_type
 
 
@@ -148,9 +148,9 @@ class FunctionScope(Scope):
         self._offset += 1
         if cell:
             if initialize:
-                chain.append_update(TRef(r), NewCell(), on_error)
+                chain.append_update(CRef(r), NewCell(), on_error)
             if cellify:
-                chain.append_update(TRef(r), NewCell(Read(TRef(r))), on_error)
+                chain.append_update(CRef(r), NewCell(Read(CRef(r))), on_error)
             r = CellReference(r)
         if name is not None:
             self._names[name] = r
@@ -189,9 +189,9 @@ class ClassScope(Scope):
             r = NameReference(FrameReference(0), name)
         if cell:
             if initialize:
-                chain.append_update(TRef(r), NewCell(), on_error)
+                chain.append_update(CRef(r), NewCell(), on_error)
             if cellify:
-                chain.append_update(TRef(r), NewCell(Read(TRef(r))), on_error)
+                chain.append_update(CRef(r), NewCell(Read(CRef(r))), on_error)
             r = CellReference(r)
         if name is not None:
             self._names[name] = r
@@ -231,9 +231,9 @@ class ModuleScope(Scope):
             r = NameReference(FrameReference(0), name)
         if cell:
             if initialize:
-                chain.append_update(TRef(r), NewCell(), on_error)
+                chain.append_update(CRef(r), NewCell(), on_error)
             if cellify:
-                chain.append_update(TRef(r), NewCell(Read(TRef(r))), on_error)
+                chain.append_update(CRef(r), NewCell(Read(CRef(r))), on_error)
             r = CellReference(r)
         if name is not None:
             self._names[name] = r

@@ -67,7 +67,7 @@ class CTerm(Keyable, Term):
         self.instance_key.print(out)
 
 
-class TRef(CTerm):
+class CRef(CTerm):
     """
     A term that represents a reference.
     """
@@ -695,9 +695,9 @@ class Callable(Term):
                     return BoundProcedure(Callable.__constructors[num_cargs], callee)
                 except KeyError:
 
-                    r = TRef(ReturnValueReference())
-                    t = Read(TRef(FrameReference(0)))
-                    args = [Read(TRef(FrameReference(1 + idx))) for idx in range(num_cargs)]
+                    r = CRef(ReturnValueReference())
+                    t = Read(CRef(FrameReference(0)))
+                    args = [Read(CRef(FrameReference(1 + idx))) for idx in range(num_cargs)]
 
                     c = [Update(r, New(t, *args), 1, 2),
                          Push(Project(LoadAttrCase(Read(r), "__init__"), CInt(1)), args, 2, 2),
