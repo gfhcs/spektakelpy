@@ -450,25 +450,25 @@ class Comparison(BinaryTerm):
 
         try:
             if self.operator == ComparisonOperator.EQ:
-                return VBool.from_bool(left.cequals(right))
+                return VBool(left.cequals(right))
             elif self.operator == ComparisonOperator.NEQ:
-                return VBool.from_bool(not left.cequals(right))
+                return VBool(not left.cequals(right))
             elif self.operator == ComparisonOperator.LESS:
-                return VBool.from_bool(left < right)
+                return VBool(left < right)
             elif self.operator == ComparisonOperator.LESSOREQUAL:
-                return VBool.from_bool(left <= right)
+                return VBool(left <= right)
             elif self.operator == ComparisonOperator.GREATER:
-                return VBool.from_bool(left > right)
+                return VBool(left > right)
             elif self.operator == ComparisonOperator.GREATEROREQUAL:
-                return VBool.from_bool(left >= right)
+                return VBool(left >= right)
             elif self.operator == ComparisonOperator.IN:
-                return VBool.from_bool(left in right)
+                return VBool(left in right)
             elif self.operator == ComparisonOperator.NOTIN:
-                return VBool.from_bool(left not in right)
+                return VBool(left not in right)
             elif self.operator == ComparisonOperator.IS:
-                return VBool.from_bool(left is right)
+                return VBool(left is right)
             elif self.operator == ComparisonOperator.ISNOT:
-                return VBool.from_bool(left is not right)
+                return VBool(left is not right)
             else:
                 raise NotImplementedError()
         except TypeError as te:
@@ -1001,11 +1001,11 @@ class LoadAttrCase(Term):
         except KeyError as kex:
             raise VAttributeError(str(kex))
         if isinstance(attr, FieldIndex):
-            return VTuple(VBool.false, value[int(attr)] if bound else attr)
+            return VTuple(VBool(False), value[int(attr)] if bound else attr)
         elif isinstance(attr, Procedure):
-            return VTuple(VBool.false, BoundProcedure(attr, value) if bound else attr)
+            return VTuple(VBool(False), BoundProcedure(attr, value) if bound else attr)
         elif isinstance(attr, Property):
-            return VTuple(VBool.true, BoundProcedure(attr.getter, value) if bound else attr.getter)
+            return VTuple(VBool(True), BoundProcedure(attr.getter, value) if bound else attr.getter)
         else:
             raise VTypeError("The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
 

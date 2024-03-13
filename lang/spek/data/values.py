@@ -87,16 +87,16 @@ class VTuple(Value):
         return self._comps[int(check_type(key, Value))]
 
     def __lt__(self, other):
-        return VBool.from_bool(self._comps < other._comps)
+        return VBool(self._comps < other._comps)
 
     def __le__(self, other):
-        return VBool.from_bool(self._comps <= other._comps)
+        return VBool(self._comps <= other._comps)
 
     def __gt__(self, other):
-        return VBool.from_bool(self._comps > other._comps)
+        return VBool(self._comps > other._comps)
 
     def __ge__(self, other):
-        return VBool.from_bool(self._comps >= other._comps)
+        return VBool(self._comps >= other._comps)
 
 
 @builtin()
@@ -227,16 +227,16 @@ class VList(Value):
         self._items[int(check_type(key, Value))] = check_type(value, Value)
 
     def __lt__(self, other):
-        return VBool.from_bool(self._items < other._items)
+        return VBool(self._items < other._items)
 
     def __le__(self, other):
-        return VBool.from_bool(self._items <= other._items)
+        return VBool(self._items <= other._items)
 
     def __gt__(self, other):
-        return VBool.from_bool(self._items > other._items)
+        return VBool(self._items > other._items)
 
     def __ge__(self, other):
-        return VBool.from_bool(self._items >= other._items)
+        return VBool(self._items >= other._items)
 
 
 @builtin()

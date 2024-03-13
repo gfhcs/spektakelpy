@@ -508,14 +508,14 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of BooleanBinaryOperation terms.
         """
 
-        cases = [(BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(False), CBool(False)), VBool.false),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(False), CBool(True)), VBool.false),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(True), CBool(False)), VBool.false),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(True), CBool(True)), VBool.true),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(False), CBool(False)), VBool.false),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(False), CBool(True)), VBool.true),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(True), CBool(False)), VBool.true),
-                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(True), CBool(True)), VBool.true)
+        cases = [(BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(False), CBool(False)), VBool(False)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(False), CBool(True)), VBool(False)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(True), CBool(False)), VBool(False)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.AND, CBool(True), CBool(True)), VBool(True)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(False), CBool(False)), VBool(False)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(False), CBool(True)), VBool(True)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(True), CBool(False)), VBool(True)),
+                 (BooleanBinaryOperation(BooleanBinaryOperator.OR, CBool(True), CBool(True)), VBool(True))
                  ]
 
         for term, value in cases:
@@ -532,26 +532,26 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of Comparison terms.
         """
 
-        cases = [(Comparison(ComparisonOperator.EQ, CInt(42), CFloat(42.0)), VBool.true),
-                 (Comparison(ComparisonOperator.EQ, CInt(42), CFloat(43.0)), VBool.false),
-                 (Comparison(ComparisonOperator.NEQ, CInt(42), CFloat(42.0)), VBool.false),
-                 (Comparison(ComparisonOperator.NEQ, CInt(42), CFloat(43.0)), VBool.true),
-                 (Comparison(ComparisonOperator.LESS, CInt(42), CFloat(374895.0)), VBool.true),
-                 (Comparison(ComparisonOperator.LESS, CInt(42), CFloat(-43.0)), VBool.false),
-                 (Comparison(ComparisonOperator.LESSOREQUAL, CInt(42), CInt(42)), VBool.true),
-                 (Comparison(ComparisonOperator.LESSOREQUAL, CInt(42), CFloat(-43.0)), VBool.false),
-                 (Comparison(ComparisonOperator.GREATER, CInt(42), CFloat(374895.0)), VBool.false),
-                 (Comparison(ComparisonOperator.GREATER, CInt(42), CFloat(-43.0)), VBool.true),
-                 (Comparison(ComparisonOperator.GREATEROREQUAL, CInt(42), CInt(42)), VBool.true),
-                 (Comparison(ComparisonOperator.GREATEROREQUAL, CFloat(-43.0), CInt(42)), VBool.false),
-                 (Comparison(ComparisonOperator.IS, CNone(), CNone()), VBool.true),
-                 (Comparison(ComparisonOperator.IS, CInt(42), CNone()), VBool.false),
-                 (Comparison(ComparisonOperator.ISNOT, CNone(), CNone()), VBool.false),
-                 (Comparison(ComparisonOperator.ISNOT, CInt(42), CNone()), VBool.true),
-                 (Comparison(ComparisonOperator.IN, CString("a"), CString("Hallo")), VBool.true),
-                 (Comparison(ComparisonOperator.IN, CString("a"), CString("Hello")), VBool.false),
-                 (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hallo")), VBool.false),
-                 (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hello")), VBool.true)
+        cases = [(Comparison(ComparisonOperator.EQ, CInt(42), CFloat(42.0)), VBool(True)),
+                 (Comparison(ComparisonOperator.EQ, CInt(42), CFloat(43.0)), VBool(False)),
+                 (Comparison(ComparisonOperator.NEQ, CInt(42), CFloat(42.0)), VBool(False)),
+                 (Comparison(ComparisonOperator.NEQ, CInt(42), CFloat(43.0)), VBool(True)),
+                 (Comparison(ComparisonOperator.LESS, CInt(42), CFloat(374895.0)), VBool(True)),
+                 (Comparison(ComparisonOperator.LESS, CInt(42), CFloat(-43.0)), VBool(False)),
+                 (Comparison(ComparisonOperator.LESSOREQUAL, CInt(42), CInt(42)), VBool(True)),
+                 (Comparison(ComparisonOperator.LESSOREQUAL, CInt(42), CFloat(-43.0)), VBool(False)),
+                 (Comparison(ComparisonOperator.GREATER, CInt(42), CFloat(374895.0)), VBool(False)),
+                 (Comparison(ComparisonOperator.GREATER, CInt(42), CFloat(-43.0)), VBool(True)),
+                 (Comparison(ComparisonOperator.GREATEROREQUAL, CInt(42), CInt(42)), VBool(True)),
+                 (Comparison(ComparisonOperator.GREATEROREQUAL, CFloat(-43.0), CInt(42)), VBool(False)),
+                 (Comparison(ComparisonOperator.IS, CNone(), CNone()), VBool(True)),
+                 (Comparison(ComparisonOperator.IS, CInt(42), CNone()), VBool(False)),
+                 (Comparison(ComparisonOperator.ISNOT, CNone(), CNone()), VBool(False)),
+                 (Comparison(ComparisonOperator.ISNOT, CInt(42), CNone()), VBool(True)),
+                 (Comparison(ComparisonOperator.IN, CString("a"), CString("Hallo")), VBool(True)),
+                 (Comparison(ComparisonOperator.IN, CString("a"), CString("Hello")), VBool(False)),
+                 (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hallo")), VBool(False)),
+                 (Comparison(ComparisonOperator.NOTIN, CString("a"), CString("Hello")), VBool(True))
                  ]
 
         for idx, (term, value) in enumerate(cases):
@@ -568,11 +568,11 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of UnaryPredicateTerm terms.
         """
 
-        cases = [(UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, ITask(Interaction.NEXT)), VBool.false),
-                 (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, CInt(42)), VBool.false),
-                 (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, Read(TRef(FrameReference(0)))), VBool.true),
-                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CInt(42)), VBool.false),
-                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CTerm(VTypeError("Just for testing."))), VBool.true)
+        cases = [(UnaryPredicateTerm(UnaryPredicate.ISTERMINATED, ITask(Interaction.NEXT)), VBool(False)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, CInt(42)), VBool(False)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISCALLABLE, Read(TRef(FrameReference(0)))), VBool(True)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CInt(42)), VBool(False)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISEXCEPTION, CTerm(VTypeError("Just for testing."))), VBool(True))
                  ]
 
         for idx, (term, value) in enumerate(cases):
@@ -590,8 +590,8 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of IsInstance terms.
         """
 
-        cases = [(IsInstance(CInt(42), NewTuple(CTerm(VFloat.intrinsic_type), CTerm(VInt.intrinsic_type))), VBool.true),
-                 (IsInstance(CInt(42), CTerm(VFloat.intrinsic_type)), VBool.false)
+        cases = [(IsInstance(CInt(42), NewTuple(CTerm(VFloat.intrinsic_type), CTerm(VInt.intrinsic_type))), VBool(True)),
+                 (IsInstance(CInt(42), CTerm(VFloat.intrinsic_type)), VBool(False))
                  ]
 
         for term, value in cases:
@@ -624,12 +624,12 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of terms that create new objects.
         """
 
-        cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool.true),
-                 (IsInstance(NewList(), CTerm(VList.intrinsic_type)), VBool.true),
-                 (IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool.true),
-                 (IsInstance(NewJumpError(VReturnError), CTerm(VReturnError.intrinsic_type)), VBool.true),
-                 (IsInstance(NewJumpError(VBreakError), CTerm(VBreakError.intrinsic_type)), VBool.true),
-                 (IsInstance(CTerm(VTypeError("Just a test.")), CTerm(VTypeError.intrinsic_type)), VBool.true)
+        cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool(True)),
+                 (IsInstance(NewList(), CTerm(VList.intrinsic_type)), VBool(True)),
+                 (IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool(True)),
+                 (IsInstance(NewJumpError(VReturnError), CTerm(VReturnError.intrinsic_type)), VBool(True)),
+                 (IsInstance(NewJumpError(VBreakError), CTerm(VBreakError.intrinsic_type)), VBool(True)),
+                 (IsInstance(CTerm(VTypeError("Just a test.")), CTerm(VTypeError.intrinsic_type)), VBool(True))
                  ]
 
         for idx, (term, value) in enumerate(cases):
@@ -644,7 +644,7 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the successful evaluation of namespace-related terms.
         """
-        cases = [(IsInstance(NewNamespace(), CTerm(VNamespace.intrinsic_type)), VBool.true),
+        cases = [(IsInstance(NewNamespace(), CTerm(VNamespace.intrinsic_type)), VBool(True)),
                  (Read(Lookup(TRef(FrameReference(0)), CString("hello"))), VInt(42))]
 
         for term, value in cases:
@@ -745,9 +745,9 @@ class TestSpektakelMachine(unittest.TestCase):
 
         i = c.new()
 
-        cases = (("x", (True, VBool.false, value_none)),
-                 ("method", (False, VBool.false, VInt(42))),
-                 ("property", (False, VBool.true, VInt(42))))
+        cases = (("x", (True, VBool(False), value_none)),
+                 ("method", (False, VBool(False), VInt(42))),
+                 ("property", (False, VBool(True), VInt(42))))
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):

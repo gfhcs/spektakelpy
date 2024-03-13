@@ -100,7 +100,7 @@ class VFuture(Value):
         """
         Indicates if a result for this future is either already available or cannot be expected anymore.
         """
-        return VBool.from_bool(self._status != FutureStatus.UNSET)
+        return VBool(self._status != FutureStatus.UNSET)
 
     @intrinsic_member()
     def cancel(self):
@@ -112,8 +112,8 @@ class VFuture(Value):
         check_unsealed(self)
         if self._status == FutureStatus.UNSET:
             self._status = FutureStatus.CANCELLED
-            return VBool.true
-        return VBool.false
+            return VBool(True)
+        return VBool(False)
 
     @intrinsic_member()
     @property
