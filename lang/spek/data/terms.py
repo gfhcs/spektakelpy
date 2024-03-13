@@ -28,6 +28,7 @@ from lang.spek.data.futures import VFuture, FutureStatus
 from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference
 from lang.spek.data.values import VTuple, VList, VDict, VNamespace
 from util import check_type, check_types
+from util.finite import Finite
 from util.singleton import Singleton
 
 
@@ -96,17 +97,13 @@ class CFloat(CTerm):
         super().__init__(VFloat(value))
 
 
-class CBool(CTerm):
+class CBool(Finite, CTerm):
     """
     A term that represents a boolean constant.
     """
-
     def __init__(self, value):
-        """
-        Instantiates a new boolean constant term.
-        :param value: The boolean this term is supposed to represent.
-        """
-        super().__init__(VBool(value))
+        b = check_type(value, bool)
+        super().__init__(int(b), VBool(b))
 
 
 class CNone(Singleton, CTerm):
