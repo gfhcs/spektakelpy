@@ -1,9 +1,10 @@
 from engine.core.atomic import AtomicType, type_object
 from engine.core.value import Value
 from util.immutable import Immutable
+from util.singleton import Singleton
 
 
-class VNone(Value, Immutable):
+class VNone(Value, Immutable, Singleton):
     """
     Equivalent of Python's 'None'.
     """
@@ -31,10 +32,8 @@ class VNone(Value, Immutable):
         out.write("None")
 
     def __repr__(self):
-        return "VNone.instance"
-
-
-VNone.instance = VNone()
+        return "value_none"
 
 
 type_none = AtomicType("none", [type_object])
+value_none = VNone()

@@ -1,7 +1,7 @@
 from abc import ABC
 
 from engine.core.atomic import type_type, AtomicType
-from engine.core.none import VNone
+from engine.core.none import value_none
 from engine.core.type import Type
 from engine.core.value import Value
 from util import check_type
@@ -117,7 +117,7 @@ class VCompound(Value):
         """
         super().__init__()
         self._type = check_type(t, CompoundType)
-        self._fields = (VNone.instance, ) * t.size
+        self._fields = (value_none, ) * t.size
 
     @property
     def type(self):

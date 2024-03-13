@@ -4,7 +4,7 @@ from engine.core.atomic import type_object
 from engine.core.exceptions import VException
 from engine.core.interaction import InteractionState, Interaction, num_interactions_possible
 from engine.core.machine import TaskStatus, MachineState
-from engine.core.none import VNone
+from engine.core.none import value_none
 from engine.core.primitive import VBool, VInt, VFloat, VStr
 from engine.core.property import OrdinaryProperty
 from engine.core.type import Type
@@ -40,7 +40,7 @@ class TestSpektakelMachine(unittest.TestCase):
         :param num_fvars: The number of variables to allocate on the initial stack frame.
         :return: A MachineState object.
         """
-        frames = [Frame(ProgramLocation(p, 0), [VNone.instance] * num_fvars)]
+        frames = [Frame(ProgramLocation(p, 0), [value_none] * num_fvars)]
         m = StackState(TaskStatus.RUNNING, frames)
         return MachineState([m, *(InteractionState(i) for i in Interaction if i != Interaction.NEVER)])
 
@@ -101,7 +101,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[1].content.task_states[0].stack[0][0]), 42)
-        self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
+        self.assertEqual(states[1].content.task_states[0].exception, value_none)
 
     def test_update_failure(self):
         """
@@ -115,7 +115,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(states), 2)
         self.assertEqual(len(internal), 1)
 
-        self.assertEqual(states[1].content.task_states[0].stack[0][0], VNone.instance)
+        self.assertEqual(states[1].content.task_states[0].stack[0][0], value_none)
         self.assertIsNot(states[1].content.task_states[0].exception, None)
 
     def test_guard_success(self):
@@ -207,7 +207,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[1].content.task_states[0].returned), 43)
-        self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
+        self.assertEqual(states[1].content.task_states[0].exception, value_none)
 
     def test_push_failure(self):
         """
@@ -313,7 +313,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(external), num_interactions_possible)
 
         self.assertEqual(int(states[1].content.task_states[0].returned), 42)
-        self.assertEqual(states[1].content.task_states[0].exception, VNone.instance)
+        self.assertEqual(states[1].content.task_states[0].exception, value_none)
 
     def test_intrinsic_failure(self):
         """
@@ -396,8 +396,8 @@ class TestSpektakelMachine(unittest.TestCase):
                          ])
 
         s0 = self.initialize_machine(p, 2)
-        s0.task_states[0].stack[0][0] = VNone.instance
-        s0.task_states[0].stack[0][1] = VNone.instance
+        s0.task_states[0].stack[0][0] = value_none
+        s0.task_states[0].stack[0][1] = value_none
         lts, states, internal, external = self.explore(p, s0)
 
         # print(lts2str(lts))
@@ -448,7 +448,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         result = states[-1].content.task_states[0].stack[0][0]
 
-        self.assertIs(VNone.instance, result)
+        self.assertIs(value_none, result)
 
     def test_CString(self):
         """
@@ -745,7 +745,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         i = c.new()
 
-        cases = (("x", (True, VBool.false, VNone.instance)),
+        cases = (("x", (True, VBool.false, value_none)),
                  ("method", (False, VBool.false, VInt(42))),
                  ("property", (False, VBool.true, VInt(42))))
 

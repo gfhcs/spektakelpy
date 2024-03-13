@@ -1,6 +1,6 @@
 from engine.core.exceptions import VException, VCancellationError
 from engine.core.machine import TaskStatus, TaskState
-from engine.core.none import VNone
+from engine.core.none import value_none
 from engine.core.value import Value
 from engine.stack.exceptions import VInstructionException
 from engine.stack.frame import Frame
@@ -25,8 +25,8 @@ class StackState(TaskState):
         super().__init__(status)
 
         self._stack = list(check_types(stack, Frame))
-        self._exception = VNone.instance if exception is None else check_type(exception, Value)
-        self._returned = VNone.instance if returned is None else check_type(returned, Value)
+        self._exception = value_none if exception is None else check_type(exception, Value)
+        self._returned = value_none if returned is None else check_type(returned, Value)
         self.status = TaskStatus.RUNNING if len(self._stack) > 0 else TaskStatus.COMPLETED
 
     def cancel(self):

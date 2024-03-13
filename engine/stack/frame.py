@@ -1,4 +1,4 @@
-from engine.core.none import VNone
+from engine.core.none import value_none
 from engine.core.value import Value
 from engine.stack.program import ProgramLocation
 from util import check_type, check_types
@@ -34,7 +34,7 @@ class Frame(Value):
         """
         d = new_length - len(self._local_values)
         if d > 0:
-            self._local_values.extend([VNone.instance] * d)
+            self._local_values.extend([value_none] * d)
         elif d < 0:
             self._local_values = self._local_values[:d]
 

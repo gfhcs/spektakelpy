@@ -4,7 +4,7 @@ from engine.core import interaction
 from engine.core.exceptions import VException, VCancellationError
 from engine.core.interaction import InteractionState, Interaction, num_interactions_possible, i2s
 from engine.core.machine import TaskStatus, MachineState
-from engine.core.none import VNone
+from engine.core.none import VNone, value_none
 from engine.core.primitive import VStr
 from engine.exploration import explore, schedule_nonzeno
 from engine.stack.frame import Frame
@@ -51,7 +51,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         :param num_fvars: The number of variables to allocate on the initial stack frame.
         :return: A MachineState object.
         """
-        frames = [Frame(ProgramLocation(p, 0), [VNone.instance] * num_fvars)]
+        frames = [Frame(ProgramLocation(p, 0), [value_none] * num_fvars)]
         m = StackState(TaskStatus.RUNNING, frames)
         return MachineState([m, *(InteractionState(i) for i in Interaction)])
 

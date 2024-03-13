@@ -7,7 +7,7 @@ from engine.core.compound import FieldIndex
 from engine.core.exceptions import VCancellationError, VRuntimeError, VException
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
-from engine.core.none import VNone
+from engine.core.none import VNone, value_none
 from engine.core.primitive import VBool, VInt, VFloat, VStr
 from engine.core.procedure import Procedure
 from engine.core.property import Property, OrdinaryProperty
@@ -117,7 +117,7 @@ class CNone(CTerm):
         """
         Instantiates a new None term.
         """
-        super().__init__(VNone.instance)
+        super().__init__(value_none)
 
 
 class CString(CTerm):
@@ -598,10 +598,10 @@ class AwaitedResult(Term):
                 raise a.exception
             if a.status != TaskStatus.COMPLETED:
                 raise VRuntimeError("Cannot retrieve the result for a task that has not been completed!")
-            return VNone.instance if a.returned is None else a.returned
+            return value_none if a.returned is None else a.returned
         elif isinstance(a, TaskState):
             if a.status == TaskStatus.COMPLETED:
-                return VNone.instance
+                return value_none
             else:
                 raise VRuntimeError("Cannot retrieve the result for a task that has not been completed!")
         elif isinstance(a, VFuture):
@@ -1163,7 +1163,7 @@ class NewCell(Term):
         out.write(")")
 
     def evaluate(self, tstate, mstate):
-        return VCell(VNone() if self.term is None else self.term.evaluate(tstate, mstate))
+        return VCell(value_none if self.term is None else self.term.evaluate(tstate, mstate))
 
 
 class NewList(Term):

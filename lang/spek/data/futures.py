@@ -3,7 +3,7 @@ from enum import Enum
 from engine.core.atomic import type_object
 from engine.core.exceptions import VCancellationError, VException
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
-from engine.core.none import VNone
+from engine.core.none import value_none
 from engine.core.primitive import VBool
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
@@ -36,7 +36,7 @@ class VFuture(Value):
         """
         super().__init__()
         self._status = FutureStatus.UNSET
-        self._result = VNone.instance
+        self._result = value_none
 
     def _print_status(self):
         return {FutureStatus.UNSET: "unset",
