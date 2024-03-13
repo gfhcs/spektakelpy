@@ -1,12 +1,12 @@
 
 class Singleton:
     """
-    A type of which only one instance can exist.
+    A type that has only one single instance. All constructor calls return that same instance.
     """
 
+    instance = None
+
     def __new__(cls):
-        try:
-            return cls.instance
-        except AttributeError:
-            cls.__instance = super().__new__(cls)
-            return cls.instance
+        if not isinstance(cls.instance, cls):
+            cls.instance = super().__new__(cls)
+        return cls.instance
