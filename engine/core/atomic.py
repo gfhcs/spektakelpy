@@ -14,13 +14,13 @@ class AtomicType(Type, Immutable):
         """
         Creates a new atomic type.
         :param name: The name of the new type.
-        :param bases: The base types the new type is supposed to inherit from.
+        :param bases: An iterable of AtomicTypes that the new type is supposed to inherit from.
         :param new: A procedure that takes constructor arguments and constructs an uninitialized instance of this type.
                     If None is given, the type will not have a visible constructor.
         :param num_cargs: The number of arguments that the constructor for this type should accept.
         :param members: The direct members of this type.
         """
-        super().__init__(name, check_types(bases, Immutable), {} if members is None else {n: check_type(m, Immutable) for n, m in members.items()})
+        super().__init__(name, check_types(bases, AtomicType), {} if members is None else {n: check_type(m, Immutable) for n, m in members.items()})
         super(Type, self).__init__()
         self._new = new
         if num_cargs is None and new is not None:
