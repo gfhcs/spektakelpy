@@ -3,6 +3,7 @@ from abc import ABC
 from enum import Enum
 from weakref import WeakValueDictionary
 
+from engine.core.atomic import type_object
 from engine.core.compound import FieldIndex
 from engine.core.exceptions import VCancellationError, VRuntimeError, VException
 from engine.core.interaction import Interaction, InteractionState, i2s
@@ -23,6 +24,7 @@ from engine.stack.term import Term
 from lang.spek.data.bound import BoundProcedure
 from lang.spek.data.cells import VCell
 from lang.spek.data.classes import Class
+from lang.spek.data.empty import EmptyProcedure
 from lang.spek.data.exceptions import VJumpError, VAttributeError, JumpType
 from lang.spek.data.futures import VFuture, FutureStatus
 from lang.spek.data.references import FieldReference, FrameReference, ReturnValueReference, ItemReference, CellReference
@@ -958,6 +960,9 @@ class LoadAttrCase(Term):
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
         bound = not isinstance(value, Type)
+
+        if value.type is type_object and self.name == "__init__":
+            return VTuple((VBool(False), EmptyProcedure()))
         try:
             attr = (value.type if bound else value).members[self.name]
         except KeyError as kex:

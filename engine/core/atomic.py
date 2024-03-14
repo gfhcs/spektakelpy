@@ -1,6 +1,8 @@
+from abc import ABC
 from inspect import signature, Parameter
 
 from engine.core.type import Type
+from engine.core.value import Value
 from util import check_types, check_type
 from util.immutable import Immutable
 
@@ -42,5 +44,48 @@ class AtomicType(Immutable, Type):
         return type_type
 
 
-type_object = AtomicType("object", [])
+type_object = None
+
+
+class VObject(Value):
+
+    @property
+    def type(self):
+        global type_object
+        return type_object
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, VObject)
+
+    def cequals(self, other):
+        return self is other
+
+    def hash(self):
+        return id(self)
+
+    def equals(self, other):
+        return self is other
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VObject()
+            clones[id(self)] = c
+            return c
+
+    def print(self, out):
+        return super(ABC, self).__str__()
+
+
+type_object = AtomicType("object", [], new=VObject, num_cargs=0)
 type_type = AtomicType("type", [type_object])
