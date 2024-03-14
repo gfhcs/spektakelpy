@@ -1,11 +1,17 @@
 from engine.core.exceptions import VException
 from engine.stack.procedure import StackProcedure
 from engine.stack.program import ProgramLocation
-from lang.spek.data.exceptions import VReturnError, VBreakError, VContinueError
+from lang.modules import ModuleSpecification
+from lang.spek.chains import Chain
+from lang.spek.data import terms
+from lang.spek.data.exceptions import JumpType
 from lang.spek.data.references import ReturnValueReference, ExceptionReference, FrameReference, \
     AbsoluteFrameReference, CellReference
 from lang.spek.data.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator, Read, NewDict, \
     CTerm, Lookup, CString, CNone, Callable, CInt, LoadAttrCase, Project
+from lang.spek.data.values import VDict
+from lang.spek.scopes import ScopeStack, ExceptionScope, FunctionScope, LoopScope, ClassScope, ModuleScope
+from lang.spek.vanalysis import VariableAnalysis
 from lang.translator import Translator
 from util import check_type
 from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call, Launch, Await, Comparison, \
@@ -13,12 +19,6 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
     PropertyDefinition, ClassDefinition
-from .chains import Chain
-from .data import terms
-from .data.values import VDict
-from .scopes import ScopeStack, ExceptionScope, FunctionScope, LoopScope, ClassScope, ModuleScope
-from .vanalysis import VariableAnalysis
-from ..modules import ModuleSpecification
 
 
 def negate(bexp):
@@ -382,7 +382,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or arrive at the function body:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
-                chain.append_update(eref, terms.NewJumpError(VReturnError), on_error=on_error)
+                chain.append_update(eref, terms.NewJumpError(JumpType.RETURN), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return chain
             elif isinstance(scope, FunctionScope):
@@ -441,7 +441,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
-                chain.append_update(eref, terms.NewJumpError(VBreakError), on_error=on_error)
+                chain.append_update(eref, terms.NewJumpError(JumpType.BREAK), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return chain
             elif isinstance(scope, LoopScope):
@@ -471,7 +471,7 @@ class Spektakel2Stack(Translator):
         # Walk over the block stack ("outwards"), until you hit either an exception block or a loop:
         for scope in self._scopes:
             if isinstance(scope, ExceptionScope):
-                chain.append_update(eref, terms.NewJumpError(VContinueError), on_error=on_error)
+                chain.append_update(eref, terms.NewJumpError(JumpType.CONTINUE), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return chain
             elif isinstance(scope, LoopScope):
@@ -704,9 +704,9 @@ class Spektakel2Stack(Translator):
 
             # Then it decides where to jump to, depending on the exception that caused the finally to be entered:
             e = terms.Read(eref)
-            condition_return = terms.IsInstance(e, CTerm(VReturnError.intrinsic_type))
-            condition_break = terms.IsInstance(e, CTerm(VBreakError.intrinsic_type))
-            condition_continue = terms.IsInstance(e, CTerm(VContinueError.intrinsic_type))
+            condition_return = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISRETURN, e)
+            condition_break = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISBREAK, e)
+            condition_continue = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCONTINUE, e)
 
             condition_exception = terms.BooleanBinaryOperation(BooleanBinaryOperator.AND, terms.IsInstance(e, CTerm(VException.intrinsic_type)),
                                                                terms.BooleanBinaryOperation(

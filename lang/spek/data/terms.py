@@ -23,7 +23,7 @@ from engine.stack.term import Term
 from lang.spek.data.bound import BoundProcedure
 from lang.spek.data.cells import VCell
 from lang.spek.data.classes import Class
-from lang.spek.data.exceptions import VJumpError, VAttributeError
+from lang.spek.data.exceptions import VJumpError, VAttributeError, JumpType
 from lang.spek.data.futures import VFuture, FutureStatus
 from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference
 from lang.spek.data.values import VTuple, VList, VDict, VNamespace
@@ -483,6 +483,9 @@ class UnaryPredicate(Enum):
     ISCALLABLE = 0
     ISEXCEPTION = 1
     ISTERMINATED = 2
+    ISRETURN = 3
+    ISBREAK = 4
+    ISCONTINUE = 5
 
 
 class UnaryPredicateTerm(Term):
@@ -542,6 +545,12 @@ class UnaryPredicateTerm(Term):
                 value = r.status != FutureStatus.UNSET
             else:
                 raise VTypeError(f"The argument evaluated to a {type(r)}, which is not supported by ISTERMINATED!")
+        elif self._p == UnaryPredicate.ISRETURN:
+            value = isinstance(r, VJumpError) and r.reason == JumpType.RETURN
+        elif self._p == UnaryPredicate.ISBREAK:
+            value = isinstance(r, VJumpError) and r.reason == JumpType.BREAK
+        elif self._p == UnaryPredicate.ISCONTINUE:
+            value = isinstance(r, VJumpError) and r.reason == JumpType.CONTINUE
         else:
             raise NotImplementedError()
 
@@ -1185,40 +1194,31 @@ class NewDict(Singleton, Term):
         return VDict()
 
 
-class NewJumpError(Term):
+class NewJumpError(Finite, Term):
     """
     A term that evaluates to either a break, continue or return exception.
     """
 
-    def __init__(self, etype):
+    def __init__(self, reason):
         """
         Creates a new tuple term.
-        :param etype: The subclass of VJumpException that is to be instantiated by this term.
+        :param reason: The JumpType justifying the error to create.
         """
-        if not issubclass(etype, VJumpError):
-            raise TypeError("{} is not a subclass of VJumpException!".format(etype))
         super().__init__()
-        self._etype = etype
-
-    def hash(self):
-        return 87543
-
-    def equals(self, other):
-        return isinstance(other, NewJumpError) and self._etype is other._etype
+        self._reason = check_type(reason, JumpType)
 
     def print(self, out):
-        out.write(str(self._etype))
-        out.write("()")
+        out.write(f"JumpError({self._reason})")
 
     @property
-    def etype(self):
+    def reason(self):
         """
-        The subclass of VJumpException that is to be instantiated by this term.
+        The JumpType justifying the error to create.
         """
-        return self._etype
+        return self._reason
 
     def evaluate(self, tstate, mstate):
-        return self._etype()
+        return VJumpError(self._reason)
 
 
 class NewNamespace(Singleton, Term):

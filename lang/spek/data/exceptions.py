@@ -1,44 +1,40 @@
+from enum import Enum, IntEnum
+
 from engine.core.exceptions import VException
 from engine.core.intrinsic import intrinsic_type
-from engine.core.singleton import SingletonValue
 from lang.spek.data.builtin import builtin
-from util.immutable import Immutable
+from util import check_type
+from util.finite import Finite
+
+
+class JumpType(IntEnum):
+    """
+    Describes the reason for an unconditional jump in a machine program resulting from a Spek program.
+    """
+    RETURN = 0
+    BREAK = 1
+    CONTINUE = 2
 
 
 @intrinsic_type("JumpError")
-class VJumpError(Immutable, VException):
+class VJumpError(Finite, VException):
     """
     Raised a control flow jump is executed.
     """
-    def __init__(self, msg):
-        super().__init__(msg)
+    def __init__(self, reason):
+        """
+        Creates a new jump error.
+        :param reason: The JumpType justifying this error.
+        """
+        super().__init__(f"An unconditional jump is being executed. Reason: {reason}")
+        self._reason = check_type(reason, JumpType)
 
-
-@intrinsic_type("ReturnError")
-class VReturnError(SingletonValue, VJumpError):
-    """
-    Raised a return statement is executed.
-    """
-    def __init__(self):
-        super().__init__("A procedure return is being executed!")
-
-
-@intrinsic_type("BreakError")
-class VBreakError(SingletonValue, VJumpError):
-    """
-    Raised a break statement is executed.
-    """
-    def __init__(self):
-        super().__init__("An escape from a loop is being executed!")
-
-
-@intrinsic_type("ContinueError")
-class VContinueError(SingletonValue, VJumpError):
-    """
-    Raised a continue statement is executed.
-    """
-    def __init__(self):
-        super().__init__("A remainder of a loop body is being skipped!")
+    @property
+    def reason(self):
+        """
+        The JumpType justifying this error.
+        """
+        return self._reason
 
 
 @builtin()

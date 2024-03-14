@@ -17,7 +17,7 @@ from engine.stack.program import StackProgram, ProgramLocation
 from engine.stack.state import StackState
 from lang.spek.data.bound import BoundProcedure
 from lang.spek.data.classes import Class
-from lang.spek.data.exceptions import VReturnError, VBreakError
+from lang.spek.data.exceptions import JumpType
 from lang.spek.data.references import FrameReference, ReturnValueReference, FieldReference
 from lang.spek.data.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
@@ -627,8 +627,9 @@ class TestSpektakelMachine(unittest.TestCase):
         cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool(True)),
                  (IsInstance(NewList(), CTerm(VList.intrinsic_type)), VBool(True)),
                  (IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool(True)),
-                 (IsInstance(NewJumpError(VReturnError), CTerm(VReturnError.intrinsic_type)), VBool(True)),
-                 (IsInstance(NewJumpError(VBreakError), CTerm(VBreakError.intrinsic_type)), VBool(True)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISRETURN, NewJumpError(JumpType.RETURN)), VBool(True)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISBREAK, NewJumpError(JumpType.BREAK)), VBool(True)),
+                 (UnaryPredicateTerm(UnaryPredicate.ISCONTINUE, NewJumpError(JumpType.CONTINUE)), VBool(True)),
                  (IsInstance(CTerm(VTypeError("Just a test.")), CTerm(VTypeError.intrinsic_type)), VBool(True))
                  ]
 
