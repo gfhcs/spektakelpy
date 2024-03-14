@@ -1,13 +1,13 @@
 from engine.core.atomic import type_object
+from engine.core.finite import FiniteValue
 from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
 from util import check_type
-from util.finite import Finite
 from util.immutable import Immutable
 
 
 @intrinsic_type("bool", [type_object])
-class VBool(Finite, Value):
+class VBool(FiniteValue):
     """
     Equivalent to Python's bool.
     """
@@ -37,9 +37,6 @@ class VBool(Finite, Value):
     @property
     def type(self):
         return VBool.intrinsic_type
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
 
     def cequals(self, other):
         return isinstance(other, (VBool, VInt, VFloat)) and self.value == other.value

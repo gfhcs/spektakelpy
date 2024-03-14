@@ -1,3 +1,4 @@
+from engine.core.finite import FiniteValue
 from engine.core.singleton import SingletonValue
 from engine.core.value import Value
 from engine.stack.exceptions import VReferenceError, VTypeError
@@ -61,7 +62,7 @@ class VRef(Reference):
         return self._value
 
 
-class FrameReference(Immutable, Reference):
+class FrameReference(FiniteValue, Reference):
     """
     A reference to a value stored in the top-most stack frame of a task.
     """
@@ -71,8 +72,8 @@ class FrameReference(Immutable, Reference):
         Refers to an entry in the topmost stack frame of a task.
         :param index: The index of the stack frame variable to refer to.
         """
+        # __new__ is taking care of the index.
         super().__init__()
-        self._index = index
 
     @property
     def index(self):
@@ -80,22 +81,10 @@ class FrameReference(Immutable, Reference):
         The index of the stack frame variable to refer to.
         :return:
         """
-        return self._index
+        return self.instance_index
 
     def print(self, out):
-        out.write(f"@{self._index}")
-
-    def hash(self):
-        return self._index
-
-    def equals(self, other):
-        return isinstance(other, FrameReference) and self._index == other._index
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
+        out.write(f"@{self.index}")
 
     def write(self, tstate, mstate, value):
         # It is assumed that no exceptions are possible here, because calling Reference.write only happens during
@@ -103,15 +92,15 @@ class FrameReference(Immutable, Reference):
         # here thus point at implementation bugs of the virtual machine and should NOT be presented as "legitimate"
         # VException objects!
         frame = tstate.stack[-1]
-        if len(frame) < self._index + 1:
-            frame.resize(self._index + 1)
-        frame[self._index] = value
+        if len(frame) < self.index + 1:
+            frame.resize(self.index + 1)
+        frame[self.index] = value
 
     def read(self, tstate, mstate):
         try:
-            return tstate.stack[-1][self._index]
+            return tstate.stack[-1][self.index]
         except IndexError as ex:
-            raise VReferenceError(f"Could not read entry {self._index} from top stack frame!") from ex
+            raise VReferenceError(f"Could not read entry {self.index} from top stack frame!") from ex
 
 
 class AbsoluteFrameReference(Immutable, Reference):
