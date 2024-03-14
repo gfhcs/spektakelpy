@@ -98,3 +98,9 @@ def builtin_isinstance(x, types):
         types = (types, )
     t = x.type
     return VBool(any(t.subtypeof(s) for s in types))
+
+
+@builtin("len")
+@intrinsic_procedure()
+def builtin_len(x):
+    return VInt(len(x))
