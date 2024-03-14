@@ -33,6 +33,17 @@ from util.keyable import Keyable
 from util.singleton import Singleton
 
 
+pt2vt = {int: VInt, float: VFloat, bool: VBool, str: VStr, tuple: VTuple}
+
+def p2v(x):
+    """
+    Maps Python objects to Value instances.
+    :param x: A Python object.
+    :return: A Value.
+    """
+    return pt2vt[type(x)](x)
+
+
 class CTerm(Keyable, Term):
     """
     A term that represents a constant value.
@@ -235,11 +246,11 @@ class UnaryOperation(Term):
             r = check_type(self.operand.evaluate(tstate, mstate), Value)
 
             if self._op == UnaryOperator.NOT:
-                return VPython.from_python(not r.__python__())
+                return p2v(not r.__python__())
             elif self._op == UnaryOperator.INVERT:
-                return VPython.from_python(~r.__python__())
+                return p2v(~r.__python__())
             elif self._op == UnaryOperator.MINUS:
-                return VPython.from_python(-r.__python__())
+                return p2v(-r.__python__())
             else:
                 raise NotImplementedError()
         except TypeError as tex:
@@ -346,19 +357,19 @@ class ArithmeticBinaryOperation(BinaryTerm):
 
         try:
             if self.operator == ArithmeticBinaryOperator.PLUS:
-                return VPython.from_python(left + right)
+                return p2v(left + right)
             elif self.operator == ArithmeticBinaryOperator.MINUS:
-                return VPython.from_python(left - right)
+                return p2v(left - right)
             elif self.operator == ArithmeticBinaryOperator.TIMES:
-                return VPython.from_python(left * right)
+                return p2v(left * right)
             elif self.operator == ArithmeticBinaryOperator.OVER:
-                return VPython.from_python(left / right)
+                return p2v(left / right)
             elif self.operator == ArithmeticBinaryOperator.INTOVER:
-                return VPython.from_python(left // right)
+                return p2v(left // right)
             elif self.operator == ArithmeticBinaryOperator.MODULO:
-                return VPython.from_python(left % right)
+                return p2v(left % right)
             elif self.operator == ArithmeticBinaryOperator.POWER:
-                return VPython.from_python(left ** right)
+                return p2v(left ** right)
             else:
                 raise NotImplementedError()
         except TypeError as te:

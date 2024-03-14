@@ -56,12 +56,6 @@ class VPython(Immutable, Value, ABC):
         # int.__new__ already took care of the value.
         super().__init__()
 
-    @staticmethod
-    def from_python(x):
-        if VPython.t2i is None:
-            VPython.t2i = {int: VInt, float: VFloat, bool: VBool, str: VStr}
-        return VPython.t2i[type(x)](x)
-
     @abc.abstractmethod
     def __python__(self):
         """

@@ -1,6 +1,6 @@
 from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
-from engine.core.primitive import VBool, VStr
+from engine.core.primitive import VBool
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
 from lang.spek.data.exceptions import VKeyError, VIndexError
