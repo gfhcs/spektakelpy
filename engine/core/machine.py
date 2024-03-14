@@ -97,7 +97,7 @@ class MachineState(Value):
         :param task_states: The states of all the tasks running on the machine.
         """
         super().__init__()
-        self._tstates = check_types(task_states, TaskState)
+        self._tstates = list(check_types(task_states, TaskState))
 
     def print(self, out):
         out.write("MachineState(")

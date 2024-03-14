@@ -1,6 +1,6 @@
 import abc
 
-from util import check_type
+from util import check_types
 from util.immutable import Immutable
 from util.printable import Printable
 
@@ -19,9 +19,7 @@ class Term(Immutable, Printable, abc.ABC):
 
     def __init__(self, *children):
         super().__init__()
-        for c in children:
-            check_type(c, Term)
-        self._children = children
+        self._children = check_types(children, Term)
 
     def __ne(self, other):
         return not self.__eq__(other)

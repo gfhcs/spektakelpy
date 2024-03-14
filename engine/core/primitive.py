@@ -5,7 +5,6 @@ from engine.core.atomic import type_object
 from engine.core.finite import FiniteValue
 from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
-from util import check_type
 from util.immutable import Immutable
 
 

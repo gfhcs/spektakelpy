@@ -62,7 +62,7 @@ try:
 except IndexError as iex:
     x = iex
 await never()
-""": ((2, 1, num_interactions_possible), {"x": VIndexError("Index too large!")}),
+""": ((2, 1, num_interactions_possible), {"x": VIndexError("tuple index out of range")}),
 
 # 8
 """

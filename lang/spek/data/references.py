@@ -232,6 +232,76 @@ class FieldReference(Reference):
         return self._v[self._fidx]
 
 
+class ItemReference(Reference):
+    """
+    A reference to an indexed item of a data structure.
+    """
+
+    def __init__(self, structure, index):
+        """
+        Refers to an indexed item of a data structure.
+        :param structure: A Value representing the indexed data structure.
+        :param index: A Value representing the index.
+        """
+        super().__init__()
+        self._structure = check_type(structure, Value)
+        self._index = check_type(index, Value)
+
+    def _seal(self):
+        self._structure.seal()
+        self._index.seal()
+
+    def hash(self):
+        return hash(self._index)
+
+    def equals(self, other):
+        return isinstance(other, ItemReference) and (self._structure, self._index) == (other._structure, other._index)
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return (isinstance(other, ItemReference)
+                    and self._structure.bequals(other._structure, bijection)
+                    and self._index.bequals(other._index, bijection))
+
+    def cequals(self, other):
+        return (isinstance(other, ItemReference)
+                and self._structure.cequals(other._structure)
+                and self._index.cequals(other._index))
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = ItemReference(self._structure, self._index)
+            clones[id(self)] = c
+            c._structure = self._structure.clone_unsealed(clones=clones)
+            c._index = self._index.clone_unsealed(clones=clones)
+            return c
+
+    def print(self, out):
+        self._structure.print(out)
+        out.write("[")
+        self._index.print(out)
+        out.write("]")
+
+    def read(self, tstate, mstate):
+        try:
+            return self._structure[self._index]
+        except AttributeError:
+            raise VTypeError(f"Values of type {self._structure.type} cannot be projected!")
+
+    def write(self, tstate, mstate, value):
+        try:
+            self._structure[self._index] = value
+        except AttributeError:
+            raise VTypeError(f"Values of type {self._structure.type} do not allow writing to projection items!")
+
+
 class NameReference(Reference):
     """
     A reference to a namespace entry.

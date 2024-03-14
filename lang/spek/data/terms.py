@@ -25,7 +25,7 @@ from lang.spek.data.cells import VCell
 from lang.spek.data.classes import Class
 from lang.spek.data.exceptions import VJumpError, VAttributeError, JumpType
 from lang.spek.data.futures import VFuture, FutureStatus
-from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference
+from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference, ItemReference
 from lang.spek.data.values import VTuple, VList, VDict, VNamespace
 from util import check_type, check_types
 from util.finite import Finite
@@ -656,7 +656,7 @@ class New(Term):
         t = self.type.evaluate(tstate, mstate)
         if not isinstance(t, Type):
             raise VTypeError(f"Only types have constructors, but {t} is not a type!")
-        args = tuple(check_types((a.evaluate(tstate, mstate) for a in self.args), Value))
+        args = check_types((a.evaluate(tstate, mstate) for a in self.args), Value)
         return t.new(*args)
 
 
@@ -709,7 +709,7 @@ class Callable(Term):
                     args = [Read(CRef(FrameReference(1 + idx))) for idx in range(num_cargs)]
 
                     c = [Update(r, New(t, *args), 1, 2),
-                         Push(Project(LoadAttrCase(Read(r), "__init__"), CInt(1)), args, 2, 2),
+                         Push(Read(Project(LoadAttrCase(Read(r), "__init__"), CInt(1))), args, 2, 2),
                          Pop(2)
                          ]
 
@@ -853,51 +853,45 @@ class Read(Keyable, Term):
 
 class Project(Term):
     """
-    A term projecting a tuple to one of its components.
+    A projecting a data structure to one of its components. Evaluating this term yields an ItemReference.
     """
 
-    def __init__(self, tuple, index):
+    def __init__(self, structure, index):
         """
         Creates a new projection term.
-        :param tuple: A term evaluating to a tuple.
-        :param index: A term evaluating to an integer.
+        :param structure: A term evaluating to a Value that is to be projected.
+        :param index: A term evaluating to a Value that is to be used as a key to index the data structure.
         """
-        super().__init__(check_type(tuple, Term), check_type(index, Term))
+        super().__init__(structure, index)
 
     def hash(self):
-        return hash(self.index)
+        return hash(self.structure) ^ hash(self.index)
 
     def equals(self, other):
-        return isinstance(other, Project) and tuple(self.children) == tuple(other.children)
+        return isinstance(other, Project) and self.children == other.children
 
     def print(self, out):
-        print_child(out, self, self.tuple)
+        print_child(out, self, self.structure)
         out.write("[")
         self.index.print(out)
         out.write("]")
 
     @property
-    def tuple(self):
+    def structure(self):
         """
-        A term evaluating to the tuple that is to be projected.
+        A term evaluating to a Value that is to be projected.
         """
         return self.children[0]
 
     @property
     def index(self):
         """
-        A term evaluating to the index to which the tuple is to be projected.
+        A term evaluating to a Value that is to be used as a key to index the data structure.
         """
         return self.children[1]
 
     def evaluate(self, tstate, mstate):
-        t = self.tuple.evaluate(tstate, mstate)
-        if not isinstance(t, VTuple):
-            raise VTypeError(f"Projection terms only work with tuples not {t.type}!")
-        i = self.index.evaluate(tstate, mstate)
-        if not isinstance(i, VInt):
-            raise VTypeError(f"Projection terms only accept integer indices, not {i.type}!")
-        return t[i]
+        return ItemReference(self.structure.evaluate(tstate, mstate), self.index.evaluate(tstate, mstate))
 
 
 class Lookup(Term):

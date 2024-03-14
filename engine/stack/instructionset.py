@@ -246,7 +246,7 @@ class Push(Instruction):
         """
         super().__init__()
         self._callee = check_type(callee, Term)
-        self._aterms = tuple(check_types(terms, Term))
+        self._aterms = check_types(terms, Term)
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 
@@ -365,7 +365,7 @@ class Launch(Instruction):
         """
         super().__init__()
         self._callee = check_type(callee, Term)
-        self._aterms = tuple(check_types(terms, Term))
+        self._aterms = check_types(terms, Term)
         self._destination = check_type(destination, int)
         self._edestination = check_type(edestination, int)
 

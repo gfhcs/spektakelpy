@@ -755,8 +755,8 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = [Update(CRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 1, 42)]
 
                 if not direct:
-                    p.append(Push(Callable(Project(Read(CRef(FrameReference(0))), CInt(1))), [], len(p) + 1, 42))
-                    p.append(Update(CRef(FrameReference(0)), NewTuple(Project(Read(CRef(FrameReference(0))), CInt(0)), Read(CRef(ReturnValueReference()))), len(p) + 1, 42))
+                    p.append(Push(Callable(Read(Project(Read(CRef(FrameReference(0))), CInt(1)))), [], len(p) + 1, 42))
+                    p.append(Update(CRef(FrameReference(0)), NewTuple(Read(Project(Read(CRef(FrameReference(0))), CInt(0))), Read(CRef(ReturnValueReference()))), len(p) + 1, 42))
 
                 p = StackProgram([*p, Guard({}, len(p))])
 

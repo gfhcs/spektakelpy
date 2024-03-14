@@ -18,7 +18,7 @@ class BoundProcedure(Procedure):
 
         super().__init__()
         self._p = check_type(p, Procedure)
-        self._args = tuple(check_types(args, Value, allow_none=True))
+        self._args = check_types(args, Value, allow_none=True)
 
     def _seal(self):
         self._p.seal()

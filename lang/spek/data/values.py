@@ -3,7 +3,7 @@ from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_memb
 from engine.core.primitive import VBool, VStr
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
-from lang.spek.data.exceptions import VKeyError
+from lang.spek.data.exceptions import VKeyError, VIndexError
 from util import check_type
 
 
@@ -84,7 +84,10 @@ class VTuple(Value):
         return iter(self._comps)
 
     def __getitem__(self, key):
-        return self._comps[int(check_type(key, Value))]
+        try:
+            return self._comps[int(check_type(key, Value))]
+        except IndexError as iex:
+            raise VIndexError(str(iex))
 
     def __lt__(self, other):
         return VBool(self._comps < other._comps)

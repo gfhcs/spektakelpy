@@ -105,13 +105,14 @@ class Spektakel2Stack(Translator):
             #       need to call a procedure first that turns it into a sequence.
             refs = []
             for idx, c in enumerate(pattern.children):
-                r, chain = self.emit_assignment(chain, c, dec, terms.Project(term, terms.CInt(idx)), on_error, declaring=declaring)
+                r, chain = self.emit_assignment(chain, c, dec, Read(terms.Project(term, terms.CInt(idx))), on_error, declaring=declaring)
                 refs.append(r)
             return tuple(refs), chain
         elif isinstance(pattern, Projection):
-            callee, chain = self.translate_expression(chain, Attribute(pattern.value, "__set_item__"), dec, on_error)
+            target, chain = self.translate_expression(chain, pattern.value, dec, on_error)
             index, chain = self.translate_expression(chain, pattern.index, dec, on_error)
-            return None, self.emit_call(chain, callee, [index, term], on_error)
+            chain.append_update(Project(target, index), term, on_error)
+            return None, chain
         elif isinstance(pattern, Attribute):
             # Python's "Descriptor How-To Guide"
             # (https://docs.python.org/3/howto/descriptor.html#overview-of-descriptor-invocation)
@@ -264,17 +265,17 @@ class Spektakel2Stack(Translator):
             r = CRef(r)
             chain.append_update(r, terms.LoadAttrCase(v, node.name.name), on_error)
 
-            cgetter = terms.Project(Read(r), CInt(0))
+            cgetter = Read(terms.Project(Read(r), CInt(0)))
 
             getter, dvalue = Chain(), Chain()
             successor = Chain()
             chain.append_guard({cgetter: getter, negate(cgetter): dvalue}, on_error)
 
-            v, getter = self.emit_call(getter, terms.Project(Read(r), CInt(1)), [], on_error)
+            v, getter = self.emit_call(getter, Read(terms.Project(Read(r), CInt(1))), [], on_error)
             getter.append_update(r, v, on_error)
             getter.append_jump(successor)
 
-            dvalue.append_update(r, terms.Project(Read(r), CInt(1)), on_error)
+            dvalue.append_update(r, Read(terms.Project(Read(r), CInt(1))), on_error)
             dvalue.append_jump(successor)
 
             return Read(r), successor
@@ -311,10 +312,11 @@ class Spektakel2Stack(Translator):
             successor.append_update(a, terms.AwaitedResult(Read(a)), on_error)
             return Read(a), successor
         elif isinstance(node, Projection):
-            idx, chain = self.translate_expression(chain, node.index, dec, on_error)
-            v, chain = self.translate_expression(chain, node.value, dec, on_error)
-            callee, chain = self.translate_expression(chain, Attribute(v, "__get_item__"), dec, on_error)
-            return self.emit_call(chain, callee, [idx], on_error)
+            target, chain = self.translate_expression(chain, node.value, dec, on_error)
+            index, chain = self.translate_expression(chain, node.index, dec, on_error)
+            r = CRef(self.declare_pattern(chain, None, on_error)[0])
+            chain.append_update(r, Read(Project(target, index)), on_error)
+            return Read(r), chain
         elif isinstance(node, UnaryOperation):
             arg, chain = self.translate_expression(chain, node.operand, dec, on_error)
             return terms.UnaryOperation(node.operator, arg), chain
@@ -832,7 +834,7 @@ class Spektakel2Stack(Translator):
         exit = Chain()
         l, = self.declare_pattern(imp_code, None, panic)
 
-        imp_code.append_push(Project(LoadAttrCase(CTerm(VDict.intrinsic_type), "get"), CInt(1)), [Read(CRef(d)), Read(CRef(l))], load1)
+        imp_code.append_push(Read(Project(LoadAttrCase(CTerm(VDict.intrinsic_type), "get"), CInt(1))), [Read(CRef(d)), Read(CRef(l))], load1)
         imp_code.append_pop(panic)
         load1.append_update(CRef(ExceptionReference()), CNone(), panic)
         load1.append_push(Callable(Read(CRef(l))), [], exit)
@@ -840,7 +842,7 @@ class Spektakel2Stack(Translator):
         load1.append_guard({error: exit, negate(error): load2}, panic)
         h, = self.declare_pattern(load2, None, panic)
         load2.append_update(CRef(h), Read(CRef(ReturnValueReference())), panic)
-        load2.append_push(Project(LoadAttrCase(CTerm(VDict.intrinsic_type), "set"), CInt(1)), [Read(CRef(d)), Read(CRef(l)), Read(CRef(ReturnValueReference()))], panic)
+        load2.append_push(Read(Project(LoadAttrCase(CTerm(VDict.intrinsic_type), "set"), CInt(1))), [Read(CRef(d)), Read(CRef(l)), Read(CRef(ReturnValueReference()))], panic)
         load2.append_update(CRef(ReturnValueReference()), Read(CRef(h)), panic)
         load2.append_jump(exit)
         exit.append_pop(panic)
