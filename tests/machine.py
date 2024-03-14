@@ -766,7 +766,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 self.assertEqual(len(states), 2)
                 self.assertEqual(len(internal), 1)
                 self.assertEqual(len(external), num_interactions_possible)
-                self.assertTrue(states[-1].content.task_states[0].stack[0][0].cequals(VTuple(v1, v2)))
+                self.assertTrue(states[-1].content.task_states[0].stack[0][0].cequals(VTuple((v1, v2))))
 
     def test_StoreAttrCase(self):
         """

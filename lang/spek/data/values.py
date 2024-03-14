@@ -14,15 +14,10 @@ class VTuple(Value):
     Equivalent to Python's tuples.
     """
 
-    def __init__(self, *components):
+    @intrinsic_init()
+    def __init__(self, components):
         super().__init__()
         self._comps = tuple(check_type(c, Value) for c in components)
-
-    @intrinsic_init()
-    @staticmethod
-    def create(cls, iterable):
-        assert issubclass(cls, VTuple)
-        return cls(*iterable)
 
     def print(self, out):
         out.write("(")
@@ -72,7 +67,7 @@ class VTuple(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VTuple(*self._comps)
+            c = VTuple(self._comps)
             clones[id(self)] = c
             c._comps = tuple(c.clone_unsealed(clones=clones) for c in self._comps)
             return c
@@ -103,6 +98,9 @@ class VTuple(Value):
 
     def __ge__(self, other):
         return VBool(self._comps >= other._comps)
+
+    def __add__(self, other):
+        return self._comps.__add__(tuple(other))
 
 
 @builtin()

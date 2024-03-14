@@ -963,11 +963,11 @@ class LoadAttrCase(Term):
         except KeyError as kex:
             raise VAttributeError(str(kex))
         if isinstance(attr, FieldIndex):
-            return VTuple(VBool(False), value[int(attr)] if bound else attr)
+            return VTuple((VBool(False), value[int(attr)] if bound else attr))
         elif isinstance(attr, Procedure):
-            return VTuple(VBool(False), BoundProcedure(attr, value) if bound else attr)
+            return VTuple((VBool(False), BoundProcedure(attr, value) if bound else attr))
         elif isinstance(attr, Property):
-            return VTuple(VBool(True), BoundProcedure(attr.getter, value) if bound else attr.getter)
+            return VTuple((VBool(True), BoundProcedure(attr.getter, value) if bound else attr.getter))
         else:
             raise VTypeError("The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
 
@@ -1073,7 +1073,7 @@ class NewTuple(Term):
         return self.children
 
     def evaluate(self, tstate, mstate):
-        return VTuple(*(c.evaluate(tstate, mstate) for c in self.components))
+        return VTuple((c.evaluate(tstate, mstate) for c in self.components))
 
 
 class NewCell(Term):
