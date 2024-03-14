@@ -1,43 +1,39 @@
 from abc import ABC
 
 from engine.core.atomic import type_type, AtomicType
+from engine.core.finite import FiniteValue
 from engine.core.none import value_none
 from engine.core.type import Type
 from engine.core.value import Value
 from util import check_type
-from util.immutable import check_unsealed, Immutable
+from util.immutable import check_unsealed
 
 
-class FieldIndex(Immutable, Value):
+class FieldIndex(FiniteValue):
     """
     An index into the fields of a compound value.
     """
 
     def __init__(self, idx):
+        # __new__ takes care of idx.
         super().__init__()
-        self._idx = idx
 
     def __int__(self):
-        return self._idx
+        return self.instance_index
+
+    @property
+    def value(self):
+        """
+        The nonnegative integer represented by this object.
+        """
+        return self.instance_index
 
     @property
     def type(self):
         raise NotImplementedError("The type of a field index should never be needed.")
 
-    def equals(self, other):
-        return isinstance(other, FieldIndex) and self._idx == other._idx
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
-
-    def hash(self):
-        return self._idx
-
     def print(self, out):
-        out.write(f"{self._idx}")
+        out.write(f"{self.instance_index}")
 
 
 class CompoundType(Type, ABC):
