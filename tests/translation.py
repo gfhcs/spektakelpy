@@ -5,7 +5,7 @@ from engine.core.exceptions import VException, VCancellationError
 from engine.core.interaction import InteractionState, Interaction, num_interactions_possible, i2s
 from engine.core.machine import TaskStatus, MachineState
 from engine.core.none import VNone, value_none
-from engine.core.primitive import VStr
+from engine.core.primitive import VStr, VBool, VPython
 from engine.exploration import explore, schedule_nonzeno
 from engine.stack.frame import Frame
 from engine.stack.program import ProgramLocation
@@ -116,6 +116,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         if isinstance(v, VNone):
             self.assertIsNone(p)
+        elif isinstance(v, (VPython, VBool)):
+            self.assertEqual(v.__python__(), p)
         elif isinstance(v, VStr):
             self.assertEqual(v.string, p)
         elif isinstance(v, VException):
@@ -547,7 +549,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(ww.seal())
 
         def p(state):
-            return tuple(bool(state.task_states[0].stack[-1][0][v].value) for v in ("s0", "s1"))
+            return tuple(state.task_states[0].stack[-1][0][v].value.__python__() for v in ("s0", "s1"))
 
         self.examine_sample(code_turns, None, None, None, bisim=reduced, project=p)
 
@@ -574,7 +576,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(ww.seal())
 
         def p(state):
-            return tuple(bool(state.task_states[0].stack[-1][0][v].value) for v in ("s0", "s1"))
+            return tuple(state.task_states[0].stack[-1][0][v].value.__python__() for v in ("s0", "s1"))
 
         self.examine_sample(code_choice, None, None, None, bisim=reduced, project=p)
 
@@ -670,7 +672,7 @@ class TestSpektakelTranslation(unittest.TestCase):
                 assert i >= 0
                 return i
 
-            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.string)) for idx in range(3)))
+            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.__python__())) for idx in range(3)))
 
         self.examine_sample(code_philosophers_deadlock, None, None, None, bisim=reduced, project=p)
 
@@ -756,7 +758,7 @@ class TestSpektakelTranslation(unittest.TestCase):
                 assert i >= 0
                 return i
 
-            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.string)) for idx in range(3)))
+            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.__python__())) for idx in range(3)))
 
         self.examine_sample(code_philosophers_nodeadlock, None, None, None, bisim=reduced, project=p)
 

@@ -141,10 +141,8 @@ class TestSpektakelMachine(unittest.TestCase):
         """
         Tests the errors raised by failing execution of the Guard instruction.
         """
-        false = CBool(False)
-        true = CBool(True)
 
-        p = StackProgram([Guard({false: 1, true: 34634}, 1),
+        p = StackProgram([Guard({CBool(False): 1, CBool(True): 34634}, 1),
                           Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p))
 
@@ -435,7 +433,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                   Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
         result = states[-1].content.task_states[0].stack[0][0]
-        self.assertEqual(False, float(result))
+        self.assertEqual(VBool(False), result)
 
     def test_CNone(self):
         """
@@ -458,7 +456,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                   Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
         result = states[-1].content.task_states[0].stack[0][0]
-        self.assertEqual("Hello World", result.string)
+        self.assertEqual("Hello World", str(result))
 
     def test_UnaryOperation(self):
 
@@ -471,8 +469,8 @@ class TestSpektakelMachine(unittest.TestCase):
                  (UnaryOperation(UnaryOperator.NOT, CBool(True)), VBool(False)),
                  (UnaryOperation(UnaryOperator.MINUS, CFloat(42.0)), VFloat(-42.0))]
 
-        for term, value in cases:
-            with self.subTest(term=term):
+        for idx, (term, value) in enumerate(cases):
+            with self.subTest(idx=idx, term=term):
                 p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1),
                                   Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))
@@ -494,8 +492,8 @@ class TestSpektakelMachine(unittest.TestCase):
                  (ArithmeticBinaryOperation(ArithmeticBinaryOperator.INTOVER, CInt(42), CInt(11)), VInt(3)),
                  ]
 
-        for term, value in cases:
-            with self.subTest(term=term):
+        for idx, (term, value) in enumerate(cases):
+            with self.subTest(idx=idx, term=term):
                 p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1),
                                   Guard({}, 1)])
                 _, states, _, _ = self.explore(p, self.initialize_machine(p, 1))

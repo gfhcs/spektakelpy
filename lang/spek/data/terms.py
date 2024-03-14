@@ -8,7 +8,7 @@ from engine.core.exceptions import VCancellationError, VRuntimeError, VException
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
 from engine.core.none import VNone, value_none
-from engine.core.primitive import VBool, VInt, VFloat, VStr
+from engine.core.primitive import VBool, VInt, VFloat, VStr, VPython
 from engine.core.procedure import Procedure
 from engine.core.property import Property, OrdinaryProperty
 from engine.core.type import Type
@@ -231,14 +231,15 @@ class UnaryOperation(Term):
         return self._op
 
     def evaluate(self, tstate, mstate):
-        r = self.operand.evaluate(tstate, mstate)
         try:
+            r = check_type(self.operand.evaluate(tstate, mstate), Value)
+
             if self._op == UnaryOperator.NOT:
-                return VBool(not bool(r))
+                return VPython.from_python(not r.__python__())
             elif self._op == UnaryOperator.INVERT:
-                return ~r
+                return VPython.from_python(~r.__python__())
             elif self._op == UnaryOperator.MINUS:
-                return -r
+                return VPython.from_python(-r.__python__())
             else:
                 raise NotImplementedError()
         except TypeError as tex:
@@ -345,19 +346,19 @@ class ArithmeticBinaryOperation(BinaryTerm):
 
         try:
             if self.operator == ArithmeticBinaryOperator.PLUS:
-                return left + right
+                return VPython.from_python(left + right)
             elif self.operator == ArithmeticBinaryOperator.MINUS:
-                return left - right
+                return VPython.from_python(left - right)
             elif self.operator == ArithmeticBinaryOperator.TIMES:
-                return left * right
+                return VPython.from_python(left * right)
             elif self.operator == ArithmeticBinaryOperator.OVER:
-                return left / right
+                return VPython.from_python(left / right)
             elif self.operator == ArithmeticBinaryOperator.INTOVER:
-                return left // right
+                return VPython.from_python(left // right)
             elif self.operator == ArithmeticBinaryOperator.MODULO:
-                return left % right
+                return VPython.from_python(left % right)
             elif self.operator == ArithmeticBinaryOperator.POWER:
-                return left ** right
+                return VPython.from_python(left ** right)
             else:
                 raise NotImplementedError()
         except TypeError as te:
@@ -390,17 +391,16 @@ class BooleanBinaryOperation(BinaryTerm):
                    BooleanBinaryOperator.OR: "or"}[self._op])
 
     def evaluate(self, tstate, mstate):
-        left = self.left.evaluate(tstate, mstate)
-
         try:
+            left = check_type(self.left.evaluate(tstate, mstate), VBool).__python__()
             if self.operator == BooleanBinaryOperator.AND:
-                return left and self.right.evaluate(tstate, mstate)
+                return VBool(left and check_type(self.right.evaluate(tstate, mstate), VBool).__python__())
             elif self.operator == BooleanBinaryOperator.OR:
-                return left or self.right.evaluate(tstate, mstate)
+                return VBool(left or check_type(self.right.evaluate(tstate, mstate), VBool).__python__())
             else:
                 raise NotImplementedError()
         except TypeError as te:
-            raise VTypeError(f"Cannot apply {self.operator} on arguments of type ({left.type}, {self.right.evaluate(tstate, mstate)})") from te
+            raise VTypeError(f"Cannot apply {self.operator} on arguments of type ({left.type}, {self.right.evaluate(tstate, mstate).type})") from te
 
 
 class ComparisonOperator(Enum):

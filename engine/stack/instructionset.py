@@ -1,5 +1,6 @@
 from engine.core.exceptions import VException, VCancellationError
 from engine.core.machine import TaskStatus
+from engine.core.primitive import VBool
 from engine.core.procedure import Procedure
 from engine.stack.exceptions import VTypeError, VInstructionException
 from engine.stack.instruction import Instruction
@@ -184,7 +185,7 @@ class Guard(Instruction):
     def enabled(self, tstate, mstate):
         try:
             return (isinstance(tstate.exception, VCancellationError) and tstate.exception.initial or
-                    any(e.evaluate(tstate, mstate).value for e in self._alternatives.keys()))
+                    any(check_type(e.evaluate(tstate, mstate), VBool).__python__() for e in self._alternatives.keys()))
         except VException:
             # If the enabledness check fails, we want to make the error surface, but we are not allowed to change
             # state. This is why we instead return True, such that the instruction can be executed, leading to the
@@ -204,7 +205,7 @@ class Guard(Instruction):
         for e, d in self._alternatives.items():
 
             try:
-                r = bool(e.evaluate(tstate, mstate))
+                r = check_type(e.evaluate(tstate, mstate), VBool).__python__()
             except Exception as e:
                 tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
                 top.instruction_index = self._edestination
