@@ -1,4 +1,5 @@
 from engine.core.finite import FiniteValue
+from engine.core.keyable import KeyableValue
 from engine.core.singleton import SingletonValue
 from engine.core.value import Value
 from engine.stack.exceptions import VReferenceError, VTypeError
@@ -103,11 +104,14 @@ class FrameReference(FiniteValue, Reference):
             raise VReferenceError(f"Could not read entry {self.index} from top stack frame!") from ex
 
 
-class AbsoluteFrameReference(Immutable, Reference):
+class AbsoluteFrameReference(KeyableValue, Reference):
     """
     A reference to a value stored in a stack frame that is addressed explicitly.
     This reference will always evaluate to the same value regardless of the task that interprets it.
     """
+
+    def __new__(cls, taskid, offset, index, *args, **kwargs):
+        return super().__new__(cls, (taskid, offset, index), *args, **kwargs)
 
     def __init__(self, taskid, offset, index):
         """
@@ -117,40 +121,29 @@ class AbsoluteFrameReference(Immutable, Reference):
         :param offset: The offset (from the base) in the task stack at which the reference stack frame is found.
         :param index: The index of the stack frame variable to refer to.
         """
+        # KeyableValue.__new__ already took care of the arguments.
         super().__init__()
-        self._taskid = check_type(taskid, int)
-        self._offset = check_type(offset, int)
-        self._index = check_type(index, int)
 
     def print(self, out):
-        return out.write(f"@({self._taskid}, {self._offset}, {self._index})")
-
-    def hash(self):
-        return hash((self._taskid, self._offset, self._index))
-
-    def equals(self, other):
-        return isinstance(other, AbsoluteFrameReference) and (self._taskid, self._offset, self._index) == (other._taskid, other._offset, other._index)
-
-    def bequals(self, other, bijection):
-        return self.equals(other)
-
-    def cequals(self, other):
-        return self.equals(other)
+        t, o, i = self.instance_key
+        return out.write(f"@({t}, {o}, {i})")
 
     def write(self, tstate, mstate, value):
+        t, o, i = self.instance_key
         try:
-            frame = mstate.task_states[self._taskid].stack[self._offset]
+            frame = mstate.task_states[t].stack[o]
         except IndexError as ex:
-            raise VReferenceError(f"Failed to retrieve stack frame {self._offset} in task {self._taskid}!") from ex
-        if len(frame) < self._index + 1:
-            frame.resize(self._index + 1)
-        frame[self._index] = value
+            raise VReferenceError(f"Failed to retrieve stack frame {o} in task {t}!") from ex
+        if len(frame) < i + 1:
+            frame.resize(i + 1)
+        frame[i] = value
 
     def read(self, tstate, mstate):
+        t, o, i = self.instance_key
         try:
-            return mstate.task_states[self._taskid].stack[self._offset][self._index]
+            return mstate.task_states[t].stack[o][i]
         except IndexError as ex:
-            raise VReferenceError(f"Failed to retrieve entry {self._index} of stack frame {self._offset} in task {self._taskid}!") from ex
+            raise VReferenceError(f"Failed to retrieve entry {i} of stack frame {o} in task {t}!") from ex
 
 
 class ReturnValueReference(SingletonValue, Reference):

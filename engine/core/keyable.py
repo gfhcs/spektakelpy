@@ -2,12 +2,12 @@
 from abc import ABC
 
 from engine.core.value import Value
-from util.finite import Finite
+from util.keyable import Keyable
 
 
-class FiniteValue(Finite, Value, ABC):
+class KeyableValue(Keyable, Value, ABC):
     """
-    A Value subtype that is also a subtype of Finite.
+    A Value subtype that is also a subtype of Keyable.
     """
 
     def bequals(self, other, _):
