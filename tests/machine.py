@@ -22,9 +22,9 @@ from lang.spek.data.references import FrameReference, ReturnValueReference, Fiel
 from lang.spek.data.terms import CInt, CBool, ArithmeticBinaryOperation, ArithmeticBinaryOperator, Read, CRef, \
     UnaryPredicateTerm, UnaryPredicate, ITask, CNone, CFloat, CString, UnaryOperation, \
     UnaryOperator, BooleanBinaryOperation, BooleanBinaryOperator, Comparison, ComparisonOperator, \
-    IsInstance, NewTuple, NewList, NewDict, NewJumpError, NewNamespace, Lookup, NewProcedure, \
+    IsInstance, NewTuple, NewList, NewDict, NewJumpError, NewProcedure, \
     NewProperty, NewClass, CTerm, LoadAttrCase, StoreAttrCase, Callable, Project
-from lang.spek.data.values import VTuple, VList, VNamespace, VDict
+from lang.spek.data.values import VTuple, VList, VDict
 from state_space.lts import state_space
 
 
@@ -642,9 +642,10 @@ class TestSpektakelMachine(unittest.TestCase):
     def test_namespace1(self):
         """
         Tests the successful evaluation of namespace-related terms.
+        Note: There used to be a type VNamespace, that we eliminated in favor of VDict.
         """
-        cases = [(IsInstance(NewNamespace(), CTerm(VNamespace.intrinsic_type)), VBool(True)),
-                 (Read(Lookup(CRef(FrameReference(0)), CString("hello"))), VInt(42))]
+        cases = [(IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool(True)),
+                 (Read(Project(Read(CRef(FrameReference(0))), CString("hello"))), VInt(42))]
 
         for term, value in cases:
             with self.subTest(term=term):
@@ -652,7 +653,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                   Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
 
-                ns = VNamespace()
+                ns = VDict()
                 ns[VStr("hello")] = VInt(42)
 
                 s0.task_states[0].stack[0][0] = ns
@@ -665,9 +666,9 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of namespace-related terms.
         """
 
-        p = StackProgram([Update(CRef(FrameReference(0)), NewNamespace(), 1, 42),
-                          Update(Lookup(CRef(FrameReference(0)), CString("x")), CInt(42), 2, 42),
-                          Update(Lookup(CRef(FrameReference(0)), CString("y")), CInt(4711), 3, 42),
+        p = StackProgram([Update(CRef(FrameReference(0)), NewDict(), 1, 42),
+                          Update(Project(Read(CRef(FrameReference(0))), CString("x")), CInt(42), 2, 42),
+                          Update(Project(Read(CRef(FrameReference(0))), CString("y")), CInt(4711), 3, 42),
                           Update(CRef(FrameReference(0)), Read(CRef(FrameReference(0))), 4, 42),
                           Guard({}, 1)]
                          )
@@ -680,7 +681,7 @@ class TestSpektakelMachine(unittest.TestCase):
         self.assertEqual(len(internal), 1)
         self.assertEqual(len(external), num_interactions_possible)
 
-        self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], VNamespace)
+        self.assertIsInstance(states[-1].content.task_states[0].stack[0][0], VDict)
 
     def test_procedure(self):
         """
@@ -714,8 +715,8 @@ class TestSpektakelMachine(unittest.TestCase):
         g = StackProgram([Update(CRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
         s = StackProgram([Pop(42)])
 
-        p = StackProgram([Update(CRef(FrameReference(0)), NewNamespace(), 1, 42),
-                          Update(Lookup(CRef(FrameReference(0)), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
+        p = StackProgram([Update(CRef(FrameReference(0)), NewDict(), 1, 42),
+                          Update(Project(Read(CRef(FrameReference(0))), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
                           Update(CRef(FrameReference(0)), NewClass("C", [CTerm(type_object)], Read(CRef(FrameReference(0)))), 3, 42),
                           Guard({}, 1)])
 

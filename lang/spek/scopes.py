@@ -2,8 +2,8 @@ import abc
 from abc import ABC
 
 from lang.spek.ast import Identifier
-from lang.spek.data.references import FrameReference, CellReference, NameReference
-from lang.spek.data.terms import CRef, NewCell, Read
+from lang.spek.data.references import FrameReference
+from lang.spek.data.terms import CRef, NewCell, Read, Project, NewCellReference, CString
 from util import check_type
 
 
@@ -41,7 +41,7 @@ class Scope(ABC):
         :param initialize: Specifies if the newly allocated variable should be initialized by writing to it.
         :param cellify: Specifies if the newly allocated variable should be turned into a cell, preserving any
                         value that is already stored in it.
-        :return: A Reference object that represents the newly allocated variable.
+        :return: A Term that evaluates to a Reference to the newly allocated variable.
         """
         pass
 
@@ -144,14 +144,14 @@ class FunctionScope(Scope):
         self._offset = 0
 
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
-        r = FrameReference(self._offset)
+        r = CRef(FrameReference(self._offset))
         self._offset += 1
         if cell:
             if initialize:
-                chain.append_update(CRef(r), NewCell(), on_error)
+                chain.append_update(r, NewCell(), on_error)
             if cellify:
-                chain.append_update(CRef(r), NewCell(Read(CRef(r))), on_error)
-            r = CellReference(r)
+                chain.append_update(r, NewCell(Read(r)), on_error)
+            r = NewCellReference(r)
         if name is not None:
             self._names[name] = r
         return r
@@ -181,18 +181,19 @@ class ClassScope(Scope):
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
         if name is None:
             # We are declaring a local variable:
-            r = FrameReference(self._offset)
+            r = CRef(FrameReference(self._offset))
             self._offset += 1
         else:
             # We are declaring a class member. We know that the class/module definition code is
-            # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
-            r = NameReference(FrameReference(0), name)
+            # running under a stack frame that has a namespace dict at offset 0. That object needs to be extended.
+            r = Project(Read(CRef(FrameReference(0))), CString(name))
         if cell:
             if initialize:
-                chain.append_update(CRef(r), NewCell(), on_error)
+                chain.append_update(r, NewCell(), on_error)
             if cellify:
-                chain.append_update(CRef(r), NewCell(Read(CRef(r))), on_error)
-            r = CellReference(r)
+                chain.append_update(r, NewCell(Read(r)), on_error)
+            r = NewCellReference(r)
+
         if name is not None:
             self._names[name] = r
         return r
@@ -223,18 +224,19 @@ class ModuleScope(Scope):
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
         if name is None:
             # We are declaring a local variable:
-            r = FrameReference(self._offset)
+            r = CRef(FrameReference(self._offset))
             self._offset += 1
         else:
             # We are declaring a module member. We know that the module definition code is
-            # running under a stack frame that has a Namespace object at offset 0. That object needs to be extended.
-            r = NameReference(FrameReference(0), name)
+            # running under a stack frame that has a namespace dict at offset 0. That object needs to be extended.
+            r = Project(Read(CRef(FrameReference(0))), CString(name))
         if cell:
             if initialize:
-                chain.append_update(CRef(r), NewCell(), on_error)
+                chain.append_update(r, NewCell(), on_error)
             if cellify:
-                chain.append_update(CRef(r), NewCell(Read(CRef(r))), on_error)
-            r = CellReference(r)
+                chain.append_update(r, NewCell(Read(r)), on_error)
+            r = NewCellReference(r)
+
         if name is not None:
             self._names[name] = r
         return r

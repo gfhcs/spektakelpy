@@ -25,8 +25,8 @@ from lang.spek.data.cells import VCell
 from lang.spek.data.classes import Class
 from lang.spek.data.exceptions import VJumpError, VAttributeError, JumpType
 from lang.spek.data.futures import VFuture, FutureStatus
-from lang.spek.data.references import FieldReference, NameReference, FrameReference, ReturnValueReference, ItemReference
-from lang.spek.data.values import VTuple, VList, VDict, VNamespace
+from lang.spek.data.references import FieldReference, FrameReference, ReturnValueReference, ItemReference, CellReference
+from lang.spek.data.values import VTuple, VList, VDict
 from util import check_type, check_types
 from util.finite import Finite
 from util.keyable import Keyable
@@ -894,53 +894,6 @@ class Project(Term):
         return ItemReference(self.structure.evaluate(tstate, mstate), self.index.evaluate(tstate, mstate))
 
 
-class Lookup(Term):
-    """
-    A term that constructs a NameReference.
-    """
-    def __init__(self, namespace, name):
-        """
-        Creates a new namespace lookup.
-        :param namespace: A term evaluating to a reference to a Namespace value.
-        :param name: A term specifying the string name that is to be looked up.
-        """
-        super().__init__(check_type(namespace, Term), check_type(name, Term))
-
-    def hash(self):
-        return hash(self.name)
-
-    def equals(self, other):
-        return isinstance(other, Lookup) and tuple(self.children) == tuple(other.children)
-
-    def print(self, out):
-        print_child(out, self, self.namespace)
-        out.write("[")
-        self.name.print(out)
-        out.write("]")
-
-    @property
-    def namespace(self):
-        """
-        A term evaluating to name space that is to be queried.
-        """
-        return self.children[0]
-
-    @property
-    def name(self):
-        """
-        A term evaluating to the string name that is to be looked up.
-        """
-        return self.children[1]
-
-    def evaluate(self, tstate, mstate):
-        namespace = self.namespace.evaluate(tstate, mstate)
-        name = self.name.evaluate(tstate, mstate)
-        try:
-            return NameReference(namespace, str(name))
-        except TypeError as tex:
-            raise VTypeError(str(tex)) from tex
-
-
 class LoadAttrCase(Term):
     """
     A term that reads an attribute.
@@ -1017,7 +970,7 @@ class StoreAttrCase(Term):
         0. The name was found and refers to a property. The term evaluates to the setter of that property.
         1. The name was found and refers to an instance variable. The term valuates to a FieldReference.
         2. The name was found and refers to a method. The term evaluates to an exception to raise.
-        3. The name was found and refers to a class variable. The term evaluates to a NameReference.
+        3. The name was found and refers to a class variable. The term evaluates to a ItemReference.
         4. The name was not found. The term evaluates to an exception to raise.
     """
 
@@ -1215,24 +1168,6 @@ class NewJumpError(Finite, Term):
         return VJumpError(self._reason)
 
 
-class NewNamespace(Singleton, Term):
-    """
-    A term that evaluates to a new empty namespace.
-    """
-
-    def __init__(self):
-        """
-        Creates a new namespace term.
-        """
-        super().__init__()
-
-    def print(self, out):
-        out.write("Namespace()")
-
-    def evaluate(self, tstate, mstate):
-        return VNamespace()
-
-
 class NewProcedure(Term):
     """
     A term that evaluates to a new VProcedure object.
@@ -1379,7 +1314,7 @@ class NewClass(Term):
         return hash(self._name)
 
     def equals(self, other):
-        return isinstance(other, NewClass) and self._name == other._name and tuple(self.children) == tuple(other.children)
+        return isinstance(other, NewClass) and self._name == other._name and self.children == other.children
 
     def print(self, out):
         out.write("class(")
@@ -1421,7 +1356,7 @@ class NewClass(Term):
 
         field_names = []
         members = {}
-        for name, member in self.namespace.evaluate(tstate, mstate):
+        for name, member in check_type(self.namespace.evaluate(tstate, mstate), VDict).items():
             if isinstance(member, (Procedure, Property)):
                 members[name] = member
             elif isinstance(member, VNone):
@@ -1430,3 +1365,37 @@ class NewClass(Term):
                 raise VRuntimeError("Encountered an unexpected entry in a namespace to be used for class creation!")
 
         return Class(self._name, ss, field_names, members)
+
+
+class NewCellReference(Term):
+    """
+    A term that evaluates to a CellReference.
+    """
+
+    def __init__(self, ref):
+        """
+        Creates a new cell reference term.
+        :param ref: A term that evaluates to a Reference.
+        """
+        super().__init__(ref)
+
+    def hash(self):
+        return hash(self.core)
+
+    def equals(self, other):
+        return isinstance(other, NewCellReference) and self.children == other.children
+
+    def print(self, out):
+        out.write("NewCellReference(")
+        self.core.print(out)
+        out.write(")")
+
+    @property
+    def core(self):
+        """
+        A term that evaluates to a VCell.
+        """
+        return self.children[0]
+
+    def evaluate(self, tstate, mstate):
+        return CellReference(self.core.evaluate(tstate, mstate))

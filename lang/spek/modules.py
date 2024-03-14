@@ -10,7 +10,7 @@ from lang.modules import ModuleSpecification, Finder, AdjoinedFinder
 from lang.spek.data import terms
 from lang.spek.data.builtin import all_builtin
 from lang.spek.data.references import ReturnValueReference
-from lang.spek.data.terms import CRef, CTerm, CString, ITask
+from lang.spek.data.terms import CRef, CTerm, CString, ITask, Read
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.syntax import SpektakelLexer, SpektakelParser
 from lang.validator import ValidationError
@@ -52,11 +52,11 @@ class BuiltinModuleSpecification(ModuleSpecification):
         r = CRef(ReturnValueReference())
 
         # Initialize a new namespace:
-        code.append(Update(r, terms.NewNamespace(), len(code) + 1, panic))
+        code.append(Update(r, terms.NewDict(), len(code) + 1, panic))
 
         # Map names to values:
         for name, value in self._m.items():
-            code.append(Update(terms.Lookup(r, CString(name)), CTerm(value), len(code) + 1, panic))
+            code.append(Update(terms.Project(Read(r), CString(name)), CTerm(value), len(code) + 1, panic))
 
         # Return module:
         code.append(Pop(panic))

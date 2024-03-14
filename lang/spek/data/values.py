@@ -265,6 +265,9 @@ class VDict(Value):
             raise ValueError("The given key is not immutable and thus cannot be hashed!")
         return key
 
+    def items(self):
+        return self._items.items()
+
     @intrinsic_member()
     def clear(self):
         """
@@ -391,86 +394,3 @@ class VDict(Value):
 
     def __setitem__(self, key, value):
         self.set(key, value)
-
-
-@intrinsic_type("namespace", [type_object])
-class VNamespace(Value):
-    """
-    A mapping from names to objects.
-    """
-
-    def __init__(self):
-        """
-        Creates a new empty namespace.
-        """
-        super().__init__()
-        self._m = {}
-
-    def print(self, out):
-        out.write("namespace{")
-        prefix = ""
-        for k, v in self._m.items():
-            out.write(prefix)
-            out.write(k)
-            out.write(": ")
-            v.print(out)
-            prefix = ", "
-        out.write("}")
-
-    @property
-    def type(self):
-        return VNamespace.intrinsic_type
-
-    def hash(self):
-        return hash(len(self))
-
-    def equals(self, other):
-        return self is other
-
-    def bequals(self, other, bijection):
-        try:
-            return bijection[id(self)] == id(other)
-        except KeyError:
-            bijection[id(self)] = id(other)
-            if not (isinstance(other, VNamespace)
-                    and len(self._m) == len(other._m)):
-                return False
-            for k, v in self._m.items():
-                try:
-                    if not v.bequals(other._m[k], bijection):
-                        return False
-                except KeyError:
-                    return False
-            return True
-
-    def cequals(self, other):
-        return self.equals(other)
-
-    def _seal(self):
-        for v in self._m.values():
-            v.seal()
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = VNamespace()
-            clones[id(self)] = c
-            c._m = {k: v.clone_unsealed(clones=clones) for k, v in self._m.items()}
-            return c
-
-    def __len__(self):
-        return len(self._m)
-
-    def __iter__(self):
-        return iter(self._m.items())
-
-    def __getitem__(self, item):
-        return self._m[str(check_type(item, (str, VStr)))]
-
-    def __setitem__(self, key, value):
-        if self.sealed:
-            raise RuntimeError("This Namespace instance has been sealed and can thus not be modified anymore!")
-        self._m[str(check_type(key, (str, VStr)))] = check_type(value, Value)

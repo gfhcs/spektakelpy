@@ -125,16 +125,3 @@ class VStr(VPython, str):
 
     def __python__(self):
         return str(self)
-
-    def equals(self, other):
-        return self is other
-
-    def bequals(self, other, bijection):
-        try:
-            return bijection[id(self)] == id(other)
-        except KeyError:
-            bijection[id(self)] = id(other)
-            return isinstance(other, VStr) and str(self) == str(other)
-
-    def cequals(self, other):
-        return isinstance(other, VStr) and str(self) == str(other)

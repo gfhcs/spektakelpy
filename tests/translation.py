@@ -182,7 +182,7 @@ class TestSpektakelTranslation(unittest.TestCase):
             self.assertEqual(len(external), num_external)
 
         for vname, expected in expectation.items():
-            found = states[-1].content.task_states[0].stack[-1][0][vname]
+            found = states[-1].content.task_states[0].stack[-1][0][VStr(vname)]
             self.assertVEqual(found, expected)
 
         if bisim is not None:
@@ -418,7 +418,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(s0.seal())
 
         def p(state):
-            return int(state.task_states[0].stack[-1][0]['state'].value)
+            return int(state.task_states[0].stack[-1][0][VStr('state')].value)
 
         self.examine_sample(code_diamond, None, None, None, bisim=reduced, project=p)
 
@@ -449,7 +449,7 @@ class TestSpektakelTranslation(unittest.TestCase):
             tasks = [t for t in state.task_states if isinstance(t, StackState)]
 
             try:
-                return int(tasks[0].stack[-1][0]['consumed'].value)
+                return int(tasks[0].stack[-1][0][VStr('consumed')].value)
             except:
                 raise
 
@@ -496,7 +496,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(s0.seal())
 
         def p(state):
-            return int(state.task_states[0].stack[-1][0]['state'].value)
+            return int(state.task_states[0].stack[-1][0][VStr('state')].value)
 
         self.examine_sample(code_twofirecracker, None, None, None, bisim=reduced, project=p)
 
@@ -522,7 +522,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(s0.seal())
 
         def p(state):
-            v, w, x, y, z = (state.task_states[0].stack[-1][0][v] for v in "vwxyz")
+            v, w, x, y, z = (state.task_states[0].stack[-1][0][VStr(v)] for v in "vwxyz")
             return v is w, w is x, x is y, y is z
 
         self.examine_sample(code_future_equality, None, None, None, bisim=reduced, project=p)
@@ -549,7 +549,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(ww.seal())
 
         def p(state):
-            return tuple(state.task_states[0].stack[-1][0][v].value.__python__() for v in ("s0", "s1"))
+            return tuple(state.task_states[0].stack[-1][0][VStr(v)].value.__python__() for v in ("s0", "s1"))
 
         self.examine_sample(code_turns, None, None, None, bisim=reduced, project=p)
 
@@ -576,7 +576,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         reduced = LTS(ww.seal())
 
         def p(state):
-            return tuple(state.task_states[0].stack[-1][0][v].value.__python__() for v in ("s0", "s1"))
+            return tuple(state.task_states[0].stack[-1][0][VStr(v)].value.__python__() for v in ("s0", "s1"))
 
         self.examine_sample(code_choice, None, None, None, bisim=reduced, project=p)
 
@@ -672,7 +672,7 @@ class TestSpektakelTranslation(unittest.TestCase):
                 assert i >= 0
                 return i
 
-            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.__python__())) for idx in range(3)))
+            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][VStr(f's{idx}')].value.__python__())) for idx in range(3)))
 
         self.examine_sample(code_philosophers_deadlock, None, None, None, bisim=reduced, project=p)
 
@@ -758,7 +758,7 @@ class TestSpektakelTranslation(unittest.TestCase):
                 assert i >= 0
                 return i
 
-            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][f's{idx}'].value.__python__())) for idx in range(3)))
+            return status2content(tuple(s2i(str(state.task_states[0].stack[-1][0][VStr(f's{idx}')].value.__python__())) for idx in range(3)))
 
         self.examine_sample(code_philosophers_nodeadlock, None, None, None, bisim=reduced, project=p)
 

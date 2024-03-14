@@ -5,9 +5,7 @@ from engine.core.value import Value
 from engine.stack.exceptions import VReferenceError, VTypeError
 from engine.stack.reference import Reference
 from lang.spek.data.cells import VCell
-from lang.spek.data.values import VNamespace
 from util import check_type
-from util.immutable import Immutable
 
 
 class VRef(Reference):
@@ -300,68 +298,6 @@ class ItemReference(Reference):
             self._structure[self._index] = value
         except AttributeError:
             raise VTypeError(f"Values of type {self._structure.type} do not allow writing to projection items!")
-
-
-class NameReference(Reference):
-    """
-    A reference to a namespace entry.
-    """
-
-    def __init__(self, namespace, name):
-        """
-        Refers to a named field of an object.
-        :param namespace: A Reference pointing to a Namespace object.
-        :param name: The string name of the namespace entry to refer to.
-        """
-        super().__init__()
-        self._ns = check_type(namespace, Reference)
-        self._n = check_type(name, str)
-
-    def print(self, out):
-        self._ns.print(out)
-        out.write(f".{self._n}")
-
-    def _seal(self):
-        self._ns.seal()
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = NameReference(self._ns, self._n)
-            clones[id(self)] = c
-            c._ns = c._ns.clone_unsealed(clones=clones)
-            return c
-
-    def hash(self):
-        return hash(self._n)
-
-    def equals(self, other):
-        return isinstance(other, NameReference) and self._n == other._n and self._ns.equals(other._ns)
-
-    def bequals(self, other, bijection):
-        try:
-            return bijection[id(self)] == id(other)
-        except KeyError:
-            bijection[id(self)] = id(other)
-            return isinstance(other, NameReference) and self._n == other._n and self._ns.bequals(other._ns, bijection)
-
-    def cequals(self, other):
-        return isinstance(other, NameReference) and self._n == other._n and self._ns.cequals(other._ns)
-
-    def write(self, tstate, mstate, value):
-        ns = self._ns.read(tstate, mstate)
-        if not isinstance(ns, VNamespace):
-            raise VTypeError("NameReferences can only refer to VNamespace entries!")
-        ns[self._n] = value
-
-    def read(self, tstate, mstate):
-        ns = self._ns.read(tstate, mstate)
-        if not isinstance(ns, VNamespace):
-            raise VTypeError("NameReferences can only refer to VNamespace entries!")
-        return ns[self._n]
 
 
 class CellReference(Reference):
