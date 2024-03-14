@@ -83,6 +83,9 @@ class VTuple(Value):
     def __iter__(self):
         return iter(self._comps)
 
+    def __contains__(self, item):
+        return item in self._comps
+
     def __getitem__(self, key):
         try:
             return self._comps[int(check_type(key, Value))]
