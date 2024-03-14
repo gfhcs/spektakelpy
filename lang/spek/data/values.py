@@ -29,7 +29,7 @@ class VTuple(Value):
         out.write(")")
 
     def __repr__(self):
-        return "VTuple({})".format(", ".join(self._comps))
+        return f"VTuple({', '.join(self._comps)}"
 
     @property
     def type(self):
@@ -79,7 +79,7 @@ class VTuple(Value):
         return iter(self._comps)
 
     def __contains__(self, item):
-        return item in self._comps
+        return any(c.cequals(item) for c in self)
 
     def __getitem__(self, key):
         try:

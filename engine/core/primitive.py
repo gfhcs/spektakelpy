@@ -32,14 +32,17 @@ class VBool(FiniteValue):
         out.write("True" if self._iindex == 1 else "False")
 
     def __repr__(self):
-        return "VBool(True)" if self._iindex == 1 else "VBool(False)"
+        return f"VBool({self._iindex == 1})"
 
     @property
     def type(self):
         return VBool.intrinsic_type
 
     def cequals(self, other):
-        return self.__python__() == other.__python__()
+        try:
+            return self.__python__() == other.__python__()
+        except AttributeError:
+            return False
 
 
 class VPython(Immutable, Value, ABC):
@@ -64,7 +67,7 @@ class VPython(Immutable, Value, ABC):
         pass
 
     def print(self, out):
-        out.write(self)
+        out.write(super(ABC, self).__str__())
 
     def hash(self):
         return super(ABC, self).__hash__()
@@ -76,7 +79,10 @@ class VPython(Immutable, Value, ABC):
         return self.equals(other)
 
     def cequals(self, other):
-        return self.__python__() == other.__python__()
+        try:
+            return self.__python__() == other.__python__()
+        except AttributeError:
+            return False
 
 
 @intrinsic_type("int", [type_object])
