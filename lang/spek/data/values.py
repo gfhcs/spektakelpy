@@ -102,6 +102,9 @@ class VTuple(Value):
     def __add__(self, other):
         return self._comps.__add__(tuple(other))
 
+    def __mul__(self, other):
+        return self._comps.__mul__(other)
+
 
 @builtin()
 @intrinsic_type("list", [type_object])
