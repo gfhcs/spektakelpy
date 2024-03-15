@@ -64,7 +64,7 @@ from interaction import never
 var x = "Hello"
 x = ("e" in x, "a" in x, "h" not in x, "a" not in x, "ll" in x)
 await never()
-""": ((2, 1, num_interactions_possible), {"x": (True, False, False, True, True)}),
+""": ((2, 1, num_interactions_possible), {"x": (True, False, True, True, True)}),
 
 # 8
 """
