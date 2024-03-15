@@ -363,7 +363,11 @@ class ArithmeticBinaryOperation(BinaryTerm):
             elif self.operator == ArithmeticBinaryOperator.MINUS:
                 return p2v(left - right)
             elif self.operator == ArithmeticBinaryOperator.TIMES:
-                return p2v(left * right)
+                try:
+                    r = left * right
+                except TypeError:
+                    r = right * left
+                return p2v(r)
             elif self.operator == ArithmeticBinaryOperator.OVER:
                 return p2v(left / right)
             elif self.operator == ArithmeticBinaryOperator.INTOVER:
