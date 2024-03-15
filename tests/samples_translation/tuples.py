@@ -84,8 +84,9 @@ await never()
 """
 from interaction import never
 var x = (7, ) * 3
+var y = 3 * (2, )
 await never()
-""": ((2, 1, num_interactions_possible), {"x": (7, 7, 7)}),
+""": ((2, 1, num_interactions_possible), {"x": (7, 7, 7), "y": (2, 2, 2)}),
 
 # 11
 """
