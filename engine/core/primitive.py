@@ -3,7 +3,7 @@ from abc import ABC
 
 from engine.core.atomic import type_object
 from engine.core.finite import FiniteValue
-from engine.core.intrinsic import intrinsic_type
+from engine.core.intrinsic import intrinsic_type, intrinsic_init
 from engine.core.value import Value
 from util.immutable import Immutable
 
@@ -118,6 +118,10 @@ class VStr(VPython, str):
     """
     Equivalent to Python's str.
     """
+
+    @intrinsic_init()
+    def __init__(self, value):
+        super().__init__(value)
 
     @property
     def type(self):
