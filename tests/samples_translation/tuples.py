@@ -119,7 +119,6 @@ var x = (object(), object()) == (object(), object())
 await never()
 """: ((2, 1, num_interactions_possible), {"x": False}),
 
-
 # 15
 """
 from interaction import never
@@ -127,5 +126,11 @@ var x = (future(), future()) == (future(), future())
 await never()
 """: ((2, 1, num_interactions_possible), {"x": False}),
 
+# 16
+"""
+from interaction import never
+var x, y, z = (1, 2, 3)
+await never()
+""": ((2, 1, num_interactions_possible), {"x": 1, "y": 2, "z": 3}),
 
 }
