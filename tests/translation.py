@@ -26,6 +26,7 @@ from tests.samples_translation.exceptions import samples as exceptions
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.ifs import samples as ifs
+from tests.samples_translation.lists import samples as lists
 from tests.samples_translation.manboy import code as code_manboy
 from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
 from tests.samples_translation.philosophers_nodeadlock import code as code_philosophers_nodeadlock
@@ -798,8 +799,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and usage of lists, including Projection expressions and "in" expressions,
         assignment to projection expressions.
         """
-        # TODO: Test len
-        raise NotImplementedError()
+        self.examine_samples(lists)
 
     def test_dicts(self):
         """
