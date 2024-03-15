@@ -1,4 +1,4 @@
-from engine.core.exceptions import VException
+from engine.core.data import VException
 from engine.stack.exceptions import VTypeError
 from engine.core.interaction import num_interactions_possible
 

@@ -1,4 +1,4 @@
-from engine.core.exceptions import VException, VCancellationError
+from engine.core.data import VException, VCancellationError
 from engine.core.machine import TaskStatus, TaskState
 from engine.core.none import value_none
 from engine.core.value import Value

@@ -1,4 +1,4 @@
-from engine.core.exceptions import VException
+from engine.core.data import VException
 from engine.core.intrinsic import intrinsic_type
 
 

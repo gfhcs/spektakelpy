@@ -1,4 +1,4 @@
-from engine.core.exceptions import VException
+from engine.core.data import VException
 from engine.stack.procedure import StackProcedure
 from engine.stack.program import ProgramLocation
 from lang.modules import ModuleSpecification

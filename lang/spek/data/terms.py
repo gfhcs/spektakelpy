@@ -5,11 +5,10 @@ from weakref import WeakValueDictionary
 
 from engine.core.atomic import type_object
 from engine.core.compound import FieldIndex
-from engine.core.exceptions import VCancellationError, VRuntimeError, VException
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
 from engine.core.none import VNone, value_none
-from engine.core.primitive import VBool, VInt, VFloat, VStr, VPython
+from engine.core.data import VBool, VInt, VFloat, VStr, VPython, VException, VCancellationError, VRuntimeError
 from engine.core.procedure import Procedure
 from engine.core.property import Property, OrdinaryProperty
 from engine.core.type import Type

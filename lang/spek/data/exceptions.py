@@ -1,6 +1,6 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 
-from engine.core.exceptions import VException
+from engine.core.data import VException
 from engine.core.intrinsic import intrinsic_type
 from lang.spek.data.builtin import builtin
 from util import check_type
@@ -42,24 +42,6 @@ class VJumpError(Finite, VException):
 class VAttributeError(VException):
     """
     Raised when an attribute cannot be resolved.
-    """
-    pass
-
-
-@builtin()
-@intrinsic_type("IndexError")
-class VIndexError(VException):
-    """
-    Spek equivalent of Python's IndexError.
-    """
-    pass
-
-
-@builtin()
-@intrinsic_type("KeyError")
-class VKeyError(VException):
-    """
-    Raised when a mapping is missing a requested key.
     """
     pass
 

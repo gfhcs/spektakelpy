@@ -1,11 +1,10 @@
 import unittest
 
 from engine.core.atomic import type_object
-from engine.core.exceptions import VException
 from engine.core.interaction import InteractionState, Interaction, num_interactions_possible
 from engine.core.machine import TaskStatus, MachineState
 from engine.core.none import value_none
-from engine.core.primitive import VBool, VInt, VFloat, VStr
+from engine.core.data import VBool, VInt, VFloat, VStr, VException
 from engine.core.property import OrdinaryProperty
 from engine.core.type import Type
 from engine.exploration import explore, schedule_nonzeno

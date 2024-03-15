@@ -1,7 +1,7 @@
 from engine.core.atomic import type_object, type_type
 from engine.core.none import type_none
-from engine.core.primitive import VInt, VFloat, VStr, VBool
-from engine.core.exceptions import VException, VCancellationError, VRuntimeError
+from engine.core.data import VInt, VFloat, VStr, VBool, VIndexError, VException, VCancellationError, VRuntimeError, \
+    VKeyError
 from engine.core.intrinsic import intrinsic_procedure, intrinsic_type, intrinsic_member
 from engine.core.machine import TaskState
 from engine.core.procedure import Procedure
@@ -89,6 +89,8 @@ builtin()(TaskState.intrinsic_type)
 builtin()(VReferenceError.intrinsic_type)
 builtin()(VTypeError.intrinsic_type)
 builtin()(VInstructionException.intrinsic_type)
+builtin()(VIndexError.intrinsic_type)
+builtin()(VKeyError.intrinsic_type)
 
 
 @builtin("isinstance")

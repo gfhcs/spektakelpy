@@ -1,4 +1,4 @@
-from lang.spek.data.exceptions import VIndexError
+from engine.core.data import VIndexError
 from engine.core.interaction import num_interactions_possible
 
 
