@@ -31,6 +31,7 @@ from tests.samples_translation.philosophers_deadlock import code as code_philoso
 from tests.samples_translation.philosophers_nodeadlock import code as code_philosophers_nodeadlock
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
+from tests.samples_translation.strings import samples as strings
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.tuples import samples as tuples
 from tests.samples_translation.turns import code as code_turns
@@ -785,6 +786,12 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and usage of tuples, including Projection expressions and "in" expressions
         """
         self.examine_samples(tuples)
+
+    def test_strings(self):
+        """
+        Tests strings for basically the same functionality as tuples.
+        """
+        self.examine_samples(strings)
 
     def test_lists(self):
         """
