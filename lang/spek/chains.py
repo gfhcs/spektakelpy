@@ -216,6 +216,7 @@ class Chain(Printable):
                 offset += 1
 
             if c._can_continue:
+                # TODO: this should probably be done in the first loop above!
                 instructions.append(Guard({}, offset))
                 offset += 1
 
