@@ -233,17 +233,22 @@ class Spektakel2Stack(Translator):
 
     def translate_expression(self, chain, node, dec, on_error):
         """
-        Translates an AST expression into a machine expression.
+        Generates code that evaluates the given AST expression.
+        :param chain: The chain that the generated code should be appended to.
         :param node: An AST node representing an expression.
         :param dec: A dict mapping AST nodes to decorations.
-        :return: A pair (t, c), where t is the term representing the result of expression evaluation and c is the chain
-                 in which execution is to be continued after evaluation of the expression.
+        :parma on_error: The Chain to jump to in case of errors.
+        :return: A pair (t, c), where
+                 t is a term representing the result of the evaluation of the given expression. This term will evaluate
+                 to the result of the evaluation of the expression, even if code for evaluating other expressions
+                 is executed first.
+                 c is the chain in which execution is to be continued after evaluation of the expression.
         """
 
         if isinstance(node, Constant):
             value = dec[node]
             if isinstance(value, bool):
-                return (terms.CBool(True) if value == True else terms.CBool(False)), chain
+                return terms.CBool(value), chain
             elif isinstance(value, str):
                 return terms.CString(value), chain
             elif value is None:
@@ -256,7 +261,9 @@ class Spektakel2Stack(Translator):
                 raise NotImplementedError("Translation of constant expressions of type {}"
                                           " has not been implemented!".format(type(value)))
         elif isinstance(node, Identifier):
-            return Read(self._scopes.retrieve(dec[node][1])), chain
+            r, = self.declare_pattern(chain, None, on_error)
+            chain.append_update(r, Read(self._scopes.retrieve(dec[node][1])), on_error)
+            return Read(r), chain
         elif isinstance(node, Attribute):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
@@ -300,14 +307,13 @@ class Spektakel2Stack(Translator):
             chain.append_update(t, Read(CRef(ReturnValueReference())), on_error)
             return Read(t), chain
         elif isinstance(node, Await):
-            t, chain = self.translate_expression(chain, node.awaited, dec, on_error)
-            a, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(a, t, on_error)
+            a, chain = self.translate_expression(chain, node.awaited, dec, on_error)
             successor = Chain()
-            complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, Read(a))
+            complete = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISTERMINATED, a)
             chain.append_guard({complete: successor}, on_error)
-            successor.append_update(a, terms.AwaitedResult(Read(a)), on_error)
-            return Read(a), successor
+            r, = self.declare_pattern(chain, None, on_error)
+            successor.append_update(r, terms.AwaitedResult(a), on_error)
+            return Read(r), successor
         elif isinstance(node, Projection):
             target, chain = self.translate_expression(chain, node.value, dec, on_error)
             index, chain = self.translate_expression(chain, node.index, dec, on_error)
@@ -326,8 +332,8 @@ class Spektakel2Stack(Translator):
             right, chain = self.translate_expression(chain, node.right, dec, on_error)
             return terms.Comparison(node.operator, left, right), chain
         elif isinstance(node, BooleanBinaryOperation):
-            # Note: Like in Python, we want AND and OR to be short-circuited. This means that we require some control
-            #       flow in order to possibly skip the evaluation of the right operand.
+            # Like in Python, we want AND and OR to be short-circuited. This means that we require some control
+            # flow in order to possibly skip the evaluation of the right operand.
 
             v, = self.declare_pattern(chain, None, on_error)
             left, chain = self.translate_expression(chain, node.left, dec, on_error)
