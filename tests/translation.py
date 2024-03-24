@@ -835,6 +835,8 @@ class TestSpektakelTranslation(unittest.TestCase):
 
         # TODO: Extend and use the samples in classes.py!
 
+        # TODO: Have a test case evaluate "object.method is object.method"
+
         raise NotImplementedError()
 
     def test_properties(self):

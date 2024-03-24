@@ -41,7 +41,9 @@ class BoundProcedure(Procedure):
         return len(self._args) ^ hash(self._p)
 
     def equals(self, other):
-        return self is other
+        return (isinstance(other, BoundProcedure)
+                and self._p.equals(other._p)
+                and all(((a is None) == (b is None)) and (a is None or a.equals(b)) for a, b in zip(self._args, other._args)))
 
     def bequals(self, other, bijection):
         try:
@@ -59,7 +61,9 @@ class BoundProcedure(Procedure):
             return True
 
     def cequals(self, other):
-        return self.equals(other)
+        return (isinstance(other, BoundProcedure)
+                and self._p.cequals(other._p)
+                and all(((a is None) == (b is None)) and (a is None or a.cequals(b)) for a, b in zip(self._args, other._args)))
 
     def clone_unsealed(self, clones=None):
         if clones is None:
