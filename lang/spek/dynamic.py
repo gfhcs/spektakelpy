@@ -288,20 +288,19 @@ class Spektakel2Stack(Translator):
             # TODO: Implement this for 'super', see https://docs.python.org/3/howto/descriptor.html#invocation-from-super
             #       and https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
         elif isinstance(node, Call):
+            callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             args = []
             for a in node.arguments:
                 v, chain = self.translate_expression(chain, a, dec, on_error)
                 args.append(v)
-
-            callee, chain = self.translate_expression(chain, node.callee, dec, on_error)
             return self.emit_call(chain, callee, args, on_error)
         elif isinstance(node, Launch):
             call = node.work
+            callee, chain = self.translate_expression(chain, call.callee, dec, on_error)
             args = []
             for a in call.arguments:
                 v, chain = self.translate_expression(chain, a, dec, on_error)
                 args.append(v)
-            callee, chain = self.translate_expression(chain, call.callee, dec, on_error)
             chain.append_launch(Callable(callee), args, on_error)
             t, = self.declare_pattern(chain, None, on_error)
             chain.append_update(t, Read(CRef(ReturnValueReference())), on_error)

@@ -1,5 +1,3 @@
-from itertools import chain
-
 from lang.spek.ast import Identifier, Pass, ExpressionStatement, Assignment, Return, Raise, Continue, Break, Block, \
     VariableDeclaration, Conditional, While, For, Try, ProcedureDefinition, PropertyDefinition, ClassDefinition, \
     ImportNames, ImportSource, Except, Expression, Attribute
