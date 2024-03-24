@@ -7,9 +7,11 @@ from util.printable import Printable
 
 class Term(Immutable, Printable, abc.ABC):
     """
-    A term is a type of expression that is evaluated atomically and functionally, meaning that intermediate states
-    of its evaluation are not semantically observable and that evaluation cannot change the machine state ever.
-    Even when evaluation should fail, an error is merely reported as an exception.
+    A term is a type of expression that is evaluated atomically. This means that evaluation of a term does not modify
+    the machine state. Even when evaluation should fail, an error is merely raised as an exception.
+
+    However, terms are not functional: Repeatedly evaluating the same term over the same machine state may nevertheless
+    yield different results. The degree to which results differ depends on the concrete type of term.
 
     Terms can be seen as a special type of machine instruction: Instead of making the instruction set of our virtual
     machine rather large, to support all the different ways in which computations can be combined, we keep the set of
