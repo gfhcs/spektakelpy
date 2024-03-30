@@ -13,6 +13,8 @@ from tests.samples_parsing.controlflow import samples as samples_controlflow
 from tests.samples_parsing.procedures import samples as samples_def
 from tests.samples_parsing.properties import samples as samples_prop
 from tests.samples_parsing.tuples import samples as samples_tuples
+from tests.samples_parsing.lists import samples as samples_lists
+from tests.samples_parsing.dicts import samples as samples_dicts
 
 
 def parse(sample):
@@ -359,6 +361,33 @@ class TestSpektakelParser(unittest.TestCase):
                 if t is not None:
                     for statement in n.children:
                         self.assertIsInstance(statement, t)
+
+    def test_lists(self):
+        """
+        Tests various ways of constructing lists.
+        """
+        for idx, (s, t) in enumerate(samples_lists.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+
+                if t is not None:
+                    for statement in n.children:
+                        self.assertIsInstance(statement, t)
+
+    def test_dicts(self):
+        """
+        Tests various ways of constructing dicts.
+        """
+        for idx, (s, t) in enumerate(samples_dicts.items()):
+            with self.subTest(idx=idx):
+                n = parse(s)
+                self.assertIsInstance(n, ast.Block)
+
+                if t is not None:
+                    for statement in n.children:
+                        self.assertIsInstance(statement, t)
+
 
     def test_import(self):
         """
