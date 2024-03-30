@@ -67,7 +67,7 @@ await never()
 """
 from interaction import never
 var x = [1, 2, 3]
-x = (2 in x, 7 in x, 1 not in x, 42 not in x)
+x = [2 in x, 7 in x, 1 not in x, 42 not in x]
 await never()
 """: ((2, 1, num_interactions_possible), {"x": [True, False, False, True]}),
 
@@ -139,7 +139,7 @@ await never()
 """
 from interaction import never
 var x = [1, 2, 3]
-var y = x.pop(len(x))
+var y = x.pop(len(x) - 1)
 await never()
 """: ((2, 1, num_interactions_possible), {"x": [1, 2], "y": 3}),
 

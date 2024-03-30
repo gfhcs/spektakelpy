@@ -2,8 +2,10 @@ from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
 from engine.core.data import VBool, VIndexError, VKeyError
 from engine.core.value import Value
+from engine.stack.exceptions import VTypeError
 from lang.spek.data.builtin import builtin
 from util import check_type
+from util.immutable import check_unsealed
 
 
 @builtin()
@@ -126,8 +128,7 @@ class VList(Value):
         Appends an item to this list.
         :param item: The item to append.
         """
-        if self.sealed:
-            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        check_unsealed(self)
         return self._items.append(check_type(item, Value))
 
     @intrinsic_member()
@@ -137,9 +138,17 @@ class VList(Value):
         :param index: The index of the item to pop.
         :return: The popped item.
         """
-        if self.sealed:
-            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        check_unsealed(self)
         return self._items.pop(int(index))
+
+    @intrinsic_member()
+    def extend(self, iterable):
+        """
+        Exends this list by an iterable of further elements.
+        :param iterable: An iterable of Values.
+        """
+        check_unsealed(self)
+        return self._items.extend(check_type(x, Value) for x in iterable)
 
     @intrinsic_member()
     def insert(self, index, item):
@@ -148,8 +157,7 @@ class VList(Value):
         :param index: The index the inserted item will have in the list after insertion.
         :param item: The Value to insert.
         """
-        if self.sealed:
-            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        check_unsealed(self)
         return self._items.insert(int(index), check_type(item, Value))
 
     @intrinsic_member()
@@ -158,8 +166,7 @@ class VList(Value):
         Remove the first item from the list whose value is equal to x. It raises a ValueError if there is no such item.
         :param x: The Value to remove from this list.
         """
-        if self.sealed:
-            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        check_unsealed(self)
         return self._items.remove(check_type(x, Value))
 
     @intrinsic_member()
@@ -167,9 +174,16 @@ class VList(Value):
         """
         Empties this list, i.e. removes all items.
         """
-        if self.sealed:
-            raise RuntimeError("This VList instance has been sealed and can thus not be modified anymore!")
+        check_unsealed(self)
         return self._items.clear()
+
+    @intrinsic_member()
+    def sort(self):
+        """
+        Sorts this list stably in-place.
+        """
+        check_unsealed(self)
+        self._items.sort()
 
     def print(self, out):
         out.write("[")
@@ -231,10 +245,23 @@ class VList(Value):
         return iter(self._items)
 
     def __getitem__(self, key):
-        return self._items[int(check_type(key, Value))]
+        try:
+            return self._items[int(check_type(key, Value))]
+        except IndexError as iex:
+            raise VIndexError(str(iex))
 
     def __setitem__(self, key, value):
         self._items[int(check_type(key, Value))] = check_type(value, Value)
+
+    def __add__(self, other):
+        if not isinstance(other, VList):
+            raise VTypeError(f"Can only concatenate list (not \"{other.type}\" to list")
+        return VList([*self, *other])
+
+    def __mul__(self, other):
+        if not isinstance(other, int):
+            raise VTypeError(f"Can't multiply sequence by non-int of type '{other.type}'")
+        return VList(list(self) * other)
 
     def __lt__(self, other):
         return VBool(self._items < other._items)

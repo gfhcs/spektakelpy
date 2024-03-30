@@ -34,7 +34,7 @@ from util.keyable import Keyable
 from util.singleton import Singleton
 
 
-pt2vt = {int: VInt, float: VFloat, bool: VBool, str: VStr, tuple: VTuple}
+pt2vt = {int: VInt, float: VFloat, bool: VBool, str: VStr, tuple: VTuple, list: VList, dict: VDict}
 
 def p2v(x):
     """
@@ -42,7 +42,7 @@ def p2v(x):
     :param x: A Python object.
     :return: A Value.
     """
-    return pt2vt[type(x)](x)
+    return x if isinstance(x, Value) else pt2vt[type(x)](x)
 
 
 class CTerm(Keyable, Term):
