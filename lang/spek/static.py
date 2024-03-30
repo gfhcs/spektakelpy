@@ -1,7 +1,14 @@
-from lang.spek.modules import BuiltinModuleSpecification
-from util.environment import Environment
+from enum import Enum
+
 from lang.modules import Finder
-from lang.validator import *
+from lang.spek.ast import Identifier, Tuple, Constant, Attribute, Projection, Call, Await, Launch, \
+    ArithmeticBinaryOperation, UnaryOperation, Comparison, BooleanBinaryOperation, VariableDeclaration, Assignment, \
+    ExpressionStatement, Return, Raise, Continue, Break, Pass, Block, Conditional, ImportSource, ImportNames, \
+    While, For, Try, PropertyDefinition, ProcedureDefinition, ClassDefinition, List, Dict, Expression, Statement
+from lang.spek.modules import BuiltinModuleSpecification
+from lang.validator import Validator, ValidationError
+from util import check_type
+from util.environment import Environment
 
 
 class ValidationKey(Enum):
@@ -113,7 +120,7 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("Name '{}' undefined!".format(node.name), node, mspec))
         elif isinstance(node, Attribute):
             self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
-        elif isinstance(node, (Tuple, Projection, Call, Launch, Await,
+        elif isinstance(node, (Tuple, List, Dict, Projection, Call, Launch, Await,
                                Comparison, BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation)):
             for c in node.children:
                 self.validate_expression(c, env, dec=dec, err=err, mspec=mspec)

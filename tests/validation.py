@@ -132,7 +132,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(0, err)
-        self.assertEqual(1, len(dec))
+        self.assertEqual(3, len(dec))
 
     def test_dicts(self):
         """
@@ -144,7 +144,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_out), len(env_in) + 1)
         self.assertErrors(0, err)
-        self.assertEqual(1, len(dec))
+        self.assertEqual(2, len(dec))
 
     def test_assignment(self):
         """

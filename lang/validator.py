@@ -1,4 +1,7 @@
-from lang.spek.ast import *
+import abc
+
+from lang.spek.ast import Node
+from util import check_type
 
 
 class ValidationError(Exception):
