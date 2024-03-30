@@ -18,7 +18,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition
+    PropertyDefinition, ClassDefinition, List
 
 
 def negate(bexp):
@@ -363,6 +363,16 @@ class Spektakel2Stack(Translator):
             v, = self.declare_pattern(chain, None, on_error)
             chain.append_update(v, terms.NewTuple(*cs), on_error)
             return Read(v), chain
+        elif isinstance(node, List):
+            cs = []
+            for c in node.children:
+                r, chain = self.translate_expression(chain, c, dec, on_error)
+                cs.append(r)
+
+            v, = self.declare_pattern(chain, None, on_error)
+            chain.append_update(v, terms.NewList(*cs), on_error)
+            return Read(v), chain
+
         else:
             raise NotImplementedError()
 

@@ -1124,22 +1124,43 @@ class NewCell(Term):
         return VCell(value_none if self.term is None else self.term.evaluate(tstate, mstate))
 
 
-class NewList(Singleton, Term):
+class NewList(Term):
     """
-    A term that evaluates to a new empty list.
+    A term that evaluates to a new list object.
     """
 
-    def __init__(self):
+    def __init__(self, *elements):
         """
         Creates a new list term.
+        :param elements: The terms that evaluate to the components of the tuple.
         """
-        super().__init__()
+        super().__init__(*elements)
+
+    def hash(self):
+        return len(self.children)
+
+    def equals(self, other):
+        return isinstance(other, NewList) and tuple(self.children) == tuple(other.children)
 
     def print(self, out):
-        out.write("[]")
+        out.write("[")
+        prefix = ""
+        for c in self.children:
+            out.write(prefix)
+            c.print(out)
+            prefix = ", "
+        out.write("]")
+
+    @property
+    def elements(self):
+        """
+        The terms that evaluate to the elements of the list.
+        :return:
+        """
+        return self.children
 
     def evaluate(self, tstate, mstate):
-        return VList()
+        return VList((c.evaluate(tstate, mstate) for c in self.elements))
 
 
 class NewDict(Singleton, Term):
