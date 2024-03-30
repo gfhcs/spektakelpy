@@ -300,7 +300,7 @@ class TestSpektakelMachine(unittest.TestCase):
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 2)
-        state0.task_states[0].stack[0][0] = VList(items=[VInt(42)])
+        state0.task_states[0].stack[0][0] = VList([VInt(42)])
         state0.task_states[0].stack[0][1] = VList.intrinsic_type.members["pop"]
 
         _, states, internal, external = self.explore(p, state0)
@@ -321,7 +321,7 @@ class TestSpektakelMachine(unittest.TestCase):
                           Guard({}, 1)])
 
         state0 = self.initialize_machine(p, 1)
-        state0.task_states[0].stack[0][0] = VList(items=[])
+        state0.task_states[0].stack[0][0] = VList([])
         state0.task_states[0].stack[0][0] = VList.intrinsic_type.members["pop"]
 
         _, states, internal, external = self.explore(p, state0)
