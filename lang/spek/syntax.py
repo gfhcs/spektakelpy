@@ -179,8 +179,20 @@ class SpektakelParser(Parser):
             return e
         elif t == KW and s == "[":
             lexer.read()
-            e = cls._parse_expressions(lexer)
-            return List(*e.children, start=start, end=end(lexer.match(keyword("]"))))
+
+            elements = []
+            _, _, start = lexer.peek()
+
+            while True:
+                t, s, p = lexer.peek()
+                if (t == KW and s == "]") or t == NL:
+                    break
+                elements.append(cls.parse_expression(lexer))
+                if lexer.seeing(keyword(",")):
+                    lexer.read()
+                else:
+                    break
+            return List(*elements, start=start, end=end(lexer.match(keyword("]"))))
         elif t == KW and s == "{":
             lexer.read()
             items = []

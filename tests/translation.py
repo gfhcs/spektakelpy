@@ -1,17 +1,17 @@
 import unittest
 
 from engine.core import interaction
+from engine.core.data import VStr, VBool, VPython, VException, VCancellationError
 from engine.core.interaction import InteractionState, Interaction, num_interactions_possible, i2s
 from engine.core.machine import TaskStatus, MachineState
 from engine.core.none import VNone, value_none
-from engine.core.data import VStr, VBool, VPython, VException, VCancellationError
 from engine.exploration import explore, schedule_nonzeno
 from engine.stack.frame import Frame
 from engine.stack.program import ProgramLocation
 from engine.stack.state import StackState
 from lang.spek import static, modules
 from lang.spek.data.cells import VCell
-from lang.spek.data.values import VTuple
+from lang.spek.data.values import VTuple, VDict, VList
 from lang.spek.dynamic import Spektakel2Stack
 from lang.spek.modules import SpekStringModuleSpecification
 from state_space.equivalence import bisimilar, reach_wbisim
@@ -131,6 +131,17 @@ class TestSpektakelTranslation(unittest.TestCase):
             self.assertEqual(len(v), len(p))
             for a, b in zip(v, p):
                 self.assertVEqual(a, b)
+        elif isinstance(v, VList):
+            self.assertIsInstance(p, list)
+            self.assertEqual(len(v), len(p))
+            for a, b in zip(v, p):
+                self.assertVEqual(a, b)
+        elif isinstance(v, VDict):
+            self.assertIsInstance(p, dict)
+            self.assertEqual(len(v), len(p))
+            for (k, v), (kk, vv) in zip(p.items(), v.items()):
+                self.assertVEqual(k, kk)
+                self.assertVEqual(v, vv)
         elif isinstance(v, VCell):
             self.assertVEqual(v.value, p)
         else:

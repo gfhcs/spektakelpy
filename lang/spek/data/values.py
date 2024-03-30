@@ -111,10 +111,14 @@ class VList(Value):
     """
     Equivalent to Python's lists.
     """
-
-    def __init__(self, items=None):
+    @intrinsic_init()
+    def __init__(self, elements):
+        """
+        Constructs a new VList.
+        :param elements: An iterable of Value objects that should form the elements of the list.
+        """
         super().__init__()
-        self._items = [] if items is None else [check_type(x, Value) for x in items]
+        self._items = [] if elements is None else [check_type(x, Value) for x in elements]
 
     @intrinsic_member()
     def append(self, item):
