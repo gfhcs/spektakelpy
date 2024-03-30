@@ -122,6 +122,30 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertErrors(2, err)
         self.assertEqual(8, len(dec))
 
+    def test_lists(self):
+        """
+        Tests the validation of list literals.
+        """
+
+        node, env_in, env_out, dec, err = validate("[]\n"
+                                           "var x = [1, 2, 3]")
+
+        self.assertEqual(len(env_out), len(env_in) + 1)
+        self.assertErrors(0, err)
+        self.assertEqual(1, len(dec))
+
+    def test_dicts(self):
+        """
+        Tests the validation of dict literals.
+        """
+
+        node, env_in, env_out, dec, err = validate("{}\n"
+                                           "var x = {\"hello\": 42}")
+
+        self.assertEqual(len(env_out), len(env_in) + 1)
+        self.assertErrors(0, err)
+        self.assertEqual(1, len(dec))
+
     def test_assignment(self):
         """
         Tests the validation of assignments
