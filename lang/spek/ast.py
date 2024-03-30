@@ -131,9 +131,50 @@ class Tuple(Expression):
         """
         Creates a new tuple expression.
         :param components: The expressions for the tuple components.
-        :param kwargs: See AssigneableExpression constructor.
+        :param kwargs: See Expression constructor.
         """
         super().__init__(*(check_type(c, Expression) for c in components), **kwargs)
+
+    @property
+    def assignable(self):
+        return all(c.assignable for c in self.children)
+
+
+class List(Expression):
+    """
+    A list literal.
+    """
+    def __init__(self, *elements, **kwargs):
+        """
+        Creates a new list expression.
+        :param elements: The expressions for the list elements.
+        :param kwargs: See Expression constructor.
+        """
+        super().__init__(*(check_type(c, Expression) for c in elements), **kwargs)
+
+    @property
+    def assignable(self):
+        return all(c.assignable for c in self.children)
+
+
+class Dict(Expression):
+    """
+    A dict literal.
+    """
+    def __init__(self, items, **kwargs):
+        """
+        Creates a new dict expression.
+        :param items: An iterable of (key, value) pairs defining the content of the dict denoted by this expression.
+        :param kwargs: See Expression constructor.
+        """
+        super().__init__(*(check_type(x, Expression) for kv in items for x in kv), **kwargs)
+
+    @property
+    def items(self):
+        """
+        An iterable of (key, value) pairs defining the content of the dict denoted by this expression.
+        """
+        return [(k, v) for k, v in zip(self.children[::2], self.children[1::2])]
 
     @property
     def assignable(self):

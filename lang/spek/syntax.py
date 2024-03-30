@@ -1,7 +1,11 @@
 from lang.lexer import Lexer, expected
-from lang.pythonesque import TokenType, PythonesqueLexicalGrammar
 from lang.parser import Parser, ParserError
-from lang.spek.ast import *
+from lang.pythonesque import TokenType, PythonesqueLexicalGrammar
+from lang.spek.ast import Identifier, Tuple, Constant, Attribute, Projection, Call, Await, Launch, \
+    ArithmeticBinaryOperation, UnaryOperation, Comparison, BooleanBinaryOperation, VariableDeclaration, Assignment, \
+    ExpressionStatement, Return, Raise, Continue, Break, Pass, Block, Conditional, Source, ImportSource, ImportNames, \
+    While, For, Except, Try, PropertyDefinition, ProcedureDefinition, ClassDefinition, List, Dict
+from lang.spek.data.terms import ArithmeticBinaryOperator, UnaryOperator, ComparisonOperator, BooleanBinaryOperator
 from lang.tokens import TokenPosition
 
 ID = TokenType.IDENTIFIER
@@ -136,7 +140,7 @@ class SpektakelParser(Parser):
 
         while True:
             t, s, p = lexer.peek()
-            if (t == KW and s in (")", "=", "in")) or t == NL:
+            if (t == KW and s in (")", "]", "}", "=", "in")) or t == NL:
                 break
             components.append(cls.parse_expression(lexer))
             if lexer.seeing(keyword(",")):
@@ -173,8 +177,28 @@ class SpektakelParser(Parser):
             e = cls._parse_expressions(lexer)
             lexer.match(keyword(")"))
             return e
-
-        raise ParserError("Expected an identifier, literal, or opening parenthesis!", start)
+        elif t == KW and s == "[":
+            lexer.read()
+            e = cls._parse_expressions(lexer)
+            return List(*e.children, start=start, end=end(lexer.match(keyword("]"))))
+        elif t == KW and s == "{":
+            lexer.read()
+            items = []
+            comma_needed = False
+            while True:
+                t, s, p = lexer.peek()
+                if t == KW and s == "}":
+                    break
+                if comma_needed:
+                    lexer.match(keyword(","))
+                key = cls.parse_expression(lexer)
+                lexer.match(keyword(":"))
+                value = cls.parse_expression(lexer)
+                items.append((key, value))
+                comma_needed = True
+            return Dict(items, start=start, end=end(lexer.match(keyword("}"))))
+        else:
+            raise ParserError("Expected an identifier, literal, or any of '(', '[', '{'!", start)
 
     @classmethod
     def _parse_application(cls, lexer):
