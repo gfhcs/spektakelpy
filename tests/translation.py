@@ -21,6 +21,7 @@ from tests.samples_translation.async_failures import samples as async_failures
 from tests.samples_translation.choice import code as code_choice
 from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.diamond import code as code_diamond
+from tests.samples_translation.dicts import samples as dicts
 from tests.samples_translation.exceptions import samples as exceptions
 from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.future_equality import code as code_future_equality
@@ -816,8 +817,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and usage of dicts, including Projection expressions and "in" expressions, including
         assignment to projection expressions.
         """
-        # TODO: Test len
-        raise NotImplementedError()
+        self.examine_samples(dicts)
 
     def test_for(self):
         """
