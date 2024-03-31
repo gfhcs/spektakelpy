@@ -2,7 +2,7 @@ from engine.core.finite import FiniteValue
 from engine.core.keyable import KeyableValue
 from engine.core.singleton import SingletonValue
 from engine.core.value import Value
-from engine.stack.exceptions import VReferenceError, VTypeError
+from engine.stack.exceptions import VReferenceError, VTypeError, unhashable
 from engine.stack.reference import Reference
 from lang.spek.data.cells import VCell
 from util import check_type
@@ -53,6 +53,9 @@ class VRef(Reference):
 
     def cequals(self, other):
         return isinstance(other, VRef) and self._value.cequals(other)
+
+    def chash(self):
+        return self._value.chash()
 
     def write(self, tstate, mstate, value):
         raise VReferenceError("Cannot write to a VRef!")
@@ -223,6 +226,9 @@ class FieldReference(Reference):
     def cequals(self, other):
         return isinstance(other, FieldReference) and self._fidx == other._fidx and self._v.cequals(other._v)
 
+    def chash(self):
+        return self._fidx
+
     def write(self, tstate, mstate, value):
         self._v[self._fidx] = check_type(value, Value)
 
@@ -268,6 +274,9 @@ class ItemReference(Reference):
         return (isinstance(other, ItemReference)
                 and self._structure.cequals(other._structure)
                 and self._index.cequals(other._index))
+
+    def chash(self):
+        return unhashable(self)
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -352,6 +361,9 @@ class CellReference(Reference):
 
     def cequals(self, other):
         return isinstance(other, CellReference) and self._cref.cequals(other._cref)
+
+    def chash(self):
+        return self._cref.chash() ^ 873245
 
     def write(self, tstate, mstate, value):
         cell = self._cref.read(tstate, mstate)

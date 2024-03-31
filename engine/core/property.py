@@ -85,6 +85,9 @@ class OrdinaryProperty(Property):
     def cequals(self, other):
         return self is other
 
+    def chash(self):
+        return hash((self._getter.chash(), (0 if self._setter is None else self._setter.chash())))
+
     def _seal(self):
         self._getter.seal()
         self._setter.seal()

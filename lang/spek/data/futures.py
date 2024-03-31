@@ -7,6 +7,7 @@ from engine.core.data import VBool, VException, VCancellationError
 from engine.core.value import Value
 from lang.spek.data.builtin import builtin
 from lang.spek.data.exceptions import VFutureError
+from engine.stack.exceptions import unhashable
 from util import check_type
 from util.immutable import check_unsealed
 
@@ -68,6 +69,9 @@ class VFuture(Value):
 
     def cequals(self, other):
         return self.equals(other)
+
+    def chash(self):
+        return unhashable(self)
 
     def _seal(self):
         if self._result is not None:

@@ -652,7 +652,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                   Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
 
-                ns = VDict()
+                ns = VDict({})
                 ns[VStr("hello")] = VInt(42)
 
                 s0.task_states[0].stack[0][0] = ns

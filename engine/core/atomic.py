@@ -64,6 +64,9 @@ class VObject(Value):
     def cequals(self, other):
         return self is other
 
+    def chash(self):
+        return 0
+
     def hash(self):
         return id(self)
 

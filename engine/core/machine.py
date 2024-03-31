@@ -2,6 +2,7 @@ import abc
 from enum import Enum
 
 from engine.core.value import Value
+from engine.stack.exceptions import unhashable
 from util import check_type, check_types
 from util.immutable import check_unsealed, check_sealed
 
@@ -149,6 +150,9 @@ class MachineState(Value):
     def cequals(self, other):
         # This should actually never be called, because machine programs don't have access to the entire machine state.
         return self.equals(other)
+
+    def chash(self):
+        return unhashable(self)
 
     @property
     def task_states(self):

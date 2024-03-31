@@ -1,6 +1,7 @@
 from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic_type
 from engine.core.value import Value
+from engine.stack.exceptions import unhashable
 from util import check_type
 from util.immutable import check_unsealed
 
@@ -60,6 +61,9 @@ class VCell(Value):
 
     def cequals(self, other):
         return self.equals(other)
+
+    def chash(self):
+        return unhashable(self)
 
     def _seal(self):
         self._ref.seal()

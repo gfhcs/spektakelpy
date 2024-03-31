@@ -90,6 +90,9 @@ class ProgramLocation(Immutable, Value):
         check_sealed(self)
         return self._index
 
+    def chash(self):
+        return self._index
+
     def equals(self, other):
         return isinstance(other, ProgramLocation) and (self._index, self._program) == (other._index, other._program)
 

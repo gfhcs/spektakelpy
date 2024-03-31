@@ -1,6 +1,7 @@
 from engine.core.none import value_none
 from engine.core.value import Value
 from engine.stack.program import ProgramLocation
+from engine.stack.exceptions import unhashable
 from util import check_type, check_types
 from util.immutable import check_sealed, check_unsealed
 
@@ -70,6 +71,9 @@ class Frame(Value):
     def hash(self):
         check_sealed(self)
         return len(self._local_values)
+
+    def chash(self):
+        return unhashable(self)
 
     def equals(self, other):
         return (isinstance(other, Frame)

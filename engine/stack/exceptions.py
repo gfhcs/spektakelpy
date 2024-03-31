@@ -24,3 +24,12 @@ class VInstructionException(VException):
     Raised when the execution of an instruction fails.
     """
     pass
+
+
+def unhashable(v):
+    """
+    Raises an exception informing about the given Value not being hashable.
+    This abbreviation can be used to implement (by not implementing) Value.chash.
+    :param v: The Value that is not hashable.
+    """
+    raise VTypeError("Unhashable type: '{v.type}'")

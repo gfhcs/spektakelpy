@@ -14,3 +14,6 @@ class SingletonValue(Singleton, Value, ABC):
 
     def cequals(self, other):
         return self is other
+
+    def chash(self):
+        return self.type.chash()

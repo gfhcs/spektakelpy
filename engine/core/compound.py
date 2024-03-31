@@ -151,6 +151,9 @@ class VCompound(Value):
     def cequals(self, other):
         return self.equals(other)
 
+    def chash(self):
+        return self.type.chash()
+
     def clone_unsealed(self, clones=None):
         if clones is None:
             clones = {}

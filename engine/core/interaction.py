@@ -98,3 +98,5 @@ class InteractionState(TaskState):
                 return True
             return False
 
+    def chash(self):
+        return hash(self._interaction)

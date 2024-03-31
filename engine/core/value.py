@@ -61,10 +61,17 @@ class Value(Sealable, Printable, abc.ABC):
 
         This procedure must be compatible with self.hash,
         i.e. self.cequals(other) must imply self.hash() == other.hash().
+        Analogously, this procedure must be compatible with self.chash.
 
         :param other: Another Value.
         :return: A boolean value.
         """
         pass
 
-
+    @abc.abstractmethod
+    def chash(self):
+        """
+        Returns a hash value for this value. If self.cequals(other), then self.chash() == other.chash()
+        :return: An int.
+        """
+        pass

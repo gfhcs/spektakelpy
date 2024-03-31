@@ -39,6 +39,9 @@ class IntrinsicProcedure(Immutable, Procedure):
     def cequals(self, other):
         return self.equals(other)
 
+    def chash(self):
+        return self.hash()
+
     def print(self, out):
         out.write(f"IntrinsicProcedure({self._p})")
 

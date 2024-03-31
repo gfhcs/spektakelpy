@@ -136,6 +136,9 @@ class Type(Value, abc.ABC):
     def cequals(self, other):
         return self is other
 
+    def chash(self):
+        return hash(self._name) ^ hash(tuple(b.chash() for b in self._bases))
+
     def subtypeof(self, other):
         """
         Decides if this type is a subtype of another type, i.e. whether it is either equal to that type, or inherits

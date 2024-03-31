@@ -1178,7 +1178,7 @@ class NewDict(Singleton, Term):
         out.write("{}")
 
     def evaluate(self, tstate, mstate):
-        return VDict()
+        return VDict({})
 
 
 class NewJumpError(Finite, Term):

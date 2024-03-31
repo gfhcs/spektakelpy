@@ -55,6 +55,9 @@ class StackProcedure(Immutable, Procedure):
     def cequals(self, other):
         return self.equals(other)
 
+    def chash(self):
+        return self._num_args ^ len(self._entry.program)
+
     def initiate(self, tstate, mstate, *args):
         if len(args) != self._num_args:
             raise VTypeError(f"Expected {self._num_args} arguments, but got {len(args)}!")

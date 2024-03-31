@@ -129,6 +129,9 @@ class StackState(TaskState):
         check_sealed(self)
         return len(self._stack)
 
+    def chash(self):
+        return 0
+
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)

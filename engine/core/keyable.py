@@ -15,3 +15,6 @@ class KeyableValue(Keyable, Value, ABC):
 
     def cequals(self, other):
         return self is other
+
+    def chash(self):
+        return hash(self.instance_key)

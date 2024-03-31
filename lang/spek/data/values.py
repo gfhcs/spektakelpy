@@ -1,8 +1,10 @@
+import abc
+
 from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
 from engine.core.data import VBool, VIndexError, VKeyError
 from engine.core.value import Value
-from engine.stack.exceptions import VTypeError
+from engine.stack.exceptions import VTypeError, unhashable
 from lang.spek.data.builtin import builtin
 from util import check_type
 from util.immutable import check_unsealed
@@ -57,6 +59,9 @@ class VTuple(Value):
         return (isinstance(other, VTuple)
                 and len(self._comps) == len(other._comps)
                 and all(a.equals(b) for a, b in zip(self._comps, other._comps)))
+
+    def chash(self):
+        return hash(c.chash() for c in self)
 
     def _seal(self):
         for c in self._comps:
@@ -113,6 +118,7 @@ class VList(Value):
     """
     Equivalent to Python's lists.
     """
+
     @intrinsic_init()
     def __init__(self, elements):
         """
@@ -222,6 +228,9 @@ class VList(Value):
                 and len(self._items) == len(other._items)
                 and all(a.cbequals(b) for a, b in zip(self._items, other._items)))
 
+    def chash(self):
+        return unhashable(self)
+
     def _seal(self):
         for c in self._items:
             c.seal()
@@ -283,46 +292,85 @@ class VDict(Value):
     Equivalent to Python's dicts.
     """
 
-    def __init__(self, items=None):
+    class Key:
+        """
+        Wraps a Value as a Python object that is hashable according to Value.chash.
+        """
+
+        def __init__(self, x):
+            self._x = check_type(x, Value)
+
+        def __str__(self):
+            return str(self._x)
+
+        def __repr__(self):
+            return repr(self._x)
+
+        def __hash__(self):
+            return self._x.chash()
+
+        def __eq__(self, other):
+            return isinstance(other, VDict.Key) and self._x.cequals(other._x)
+
+        def __ne__(self, other):
+            return self.__eq__(other)
+
+        @property
+        def wrapped(self):
+            return self._x
+
+    @intrinsic_init()
+    def __init__(self, items):
+        """
+        Constructs a new VDict.
+        :param items: Either a VDict that is to be copied, or an iterable of key-value pairs that is to be turned
+                      into a new VDict.
+        """
         super().__init__()
-        self._items = {} if items is None else {VDict._assert_key_hashable(check_type(k, Value)): check_type(v, Value) for k, v in items.items()}
+        if isinstance(items, VDict):
+            self._items = dict(items.items_python())
+        elif isinstance(items, dict):
+            self._items = {VDict.Key(k): check_type(v, Value) for k, v in items.items()}
+        else:
+            self._items = {VDict.Key(k): check_type(v, Value) for k, v in items}
 
-    @staticmethod
-    def _assert_key_hashable(key):
+    def keys_python(self):
         """
-        Asserts that the given key is hashable.
-        :param key: The key to check.
-        :return: The check key.
-        :except VException: If the key is not hashable.
+        A Python view on the keys of this VDict.
         """
-        if not key.sealed:
-            raise ValueError("The given key is not immutable and thus cannot be hashed!")
-        return key
+        return self._items.keys()
 
-    def items(self):
+    @intrinsic_member()
+    def keys(self):
+        return VKeysView(self)
+
+    def values_python(self):
+        """
+        A Python view on the values of this VDict.
+        """
+        return self._items.values()
+
+    @intrinsic_member()
+    def values(self):
+        return VValuesView(self)
+
+    def items_python(self):
+        """
+        A Python view on the items of this VDict.
+        """
         return self._items.items()
+
+    @intrinsic_member()
+    def items(self):
+        return VItemsView(self)
 
     @intrinsic_member()
     def clear(self):
         """
         Empties this dictionary, i.e. removes all its entries.
         """
-        if self.sealed:
-            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
+        check_unsealed(self)
         self._items.clear()
-
-    @intrinsic_member()
-    def get(self, key):
-        """
-        Return the value for the given key if that key is in the dictionary
-        :param key: The key for which a value is to be retrieved.
-        :return: The value that was retrieved.
-        """
-        VDict._assert_key_hashable(key)
-        try:
-            return self._items[check_type(key, Value)]
-        except KeyError as kex:
-            raise VKeyError(str(kex))
 
     @intrinsic_member()
     def pop(self, key):
@@ -331,29 +379,27 @@ class VDict(Value):
         :param key: The key for which a value is to be retrieved and removed.
         :return: The value that was retrieved and removed.
         """
-        if self.sealed:
-            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
-        VDict._assert_key_hashable(key)
-        return self._items.pop(check_type(key, Value))
+        check_unsealed(self)
+        return self._items.pop(VDict.Key(key))
 
     @intrinsic_member()
-    def set(self, key, value):
+    def update(self, other):
         """
-        Sets the value for the given key.
-        :param key: The key for which a value is to be set.
-        :param value: The value to set for the given key.
+        Update this VDict with the key/value pairs from other, overwriting existing keys.
+        :param other: Either a VDict or an iterable of key/value pairs.
         """
-        if self.sealed:
-            raise RuntimeError("This VDict instance has been sealed and can thus not be modified anymore!")
-        VDict._assert_key_hashable(key)
-        self._items[check_type(key, Value)] = check_type(value, Value)
+        check_unsealed(self)
+        if isinstance(other, VDict):
+            self._items.update(other._items)
+        else:
+            self._items.update((VDict.Key(k), check_type(v, Value)) for k, v in (other.items() if isinstance(other, dict) else other))
 
     def print(self, out):
         out.write("{")
         prefix = ""
         for k, v in self._items.items():
             out.write(prefix)
-            k.print(out)
+            k.wrapped.print(out)
             out.write(": ")
             v.print(out)
             prefix = ", "
@@ -400,9 +446,12 @@ class VDict(Value):
                 return False
         return True
 
+    def chash(self):
+        return unhashable(self)
+
     def _seal(self):
         for k, v in self._items.items():
-            k.seal()
+            k.wrapped.seal()
             v.seal()
 
     def clone_unsealed(self, clones=None):
@@ -411,20 +460,173 @@ class VDict(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VDict(self._items)
+            c = VDict(self)
             clones[id(self)] = c
-            # Keys are immutable anyway and thus can remain sealed.
-            c._items = {k: v.clone_unsealed(clones=clones) for k, v in c._items.items()}
+            c._items = {VDict.Key(k.wrapped.clone_unsealed(clones=clones)): v.clone_unsealed(clones=clones) for k, v in c._items.items()}
             return c
 
     def __len__(self):
         return len(self._items)
 
     def __iter__(self):
-        return iter(self._items)
+        return iter(self.keys())
+
+    def __contains__(self, key):
+        return VDict.Key(key) in self._items
 
     def __getitem__(self, key):
-        return self.get(key)
+        try:
+            return self._items[VDict.Key(key)]
+        except KeyError as kex:
+            raise VKeyError(str(kex))
 
     def __setitem__(self, key, value):
-        self.set(key, value)
+        check_unsealed(self)
+        self._items[VDict.Key(key)] = check_type(value, Value)
+
+    def __ior__(self, other):
+        self.update(other)
+
+    def __or__(self, other):
+        c = VDict(self)
+        c.update(other)
+        return c
+
+
+@builtin()
+@intrinsic_type("dictview", [type_object])
+class VDictView(Value):
+    """
+    A readonly view of a VDict.
+    """
+
+    def __init__(self, d):
+        """
+        Creates a new view of a VDict.
+        :param d: The VDict object that this view is for.
+        """
+        super().__init__()
+        self._d = d
+
+    @property
+    def mapping(self):
+        """
+        The VDict that this view gives readonly access to.
+        """
+        return self._d
+
+    def print(self, out):
+        out.write(type(self).__name__)
+        out.write("(")
+        self._d.print(out)
+        out.write(")")
+
+    @property
+    def type(self):
+        return type(self).intrinsic_type
+
+    def hash(self):
+        return hash(self._d)
+
+    def equals(self, other):
+        return self is other
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, type(self)) and self._d.bequals(other._d, bijection)
+
+    def cequals(self, other):
+        return isinstance(other, type(self)) and self._d is other._d
+
+    def chash(self):
+        return unhashable(self)
+
+    def _seal(self):
+        self._d.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = type(self)(self._d)
+            clones[id(self)] = c
+            c._d = self._d.clone_unsealed(clones=clones)
+            return c
+
+    def __len__(self):
+        return len(self._d)
+
+    @abc.abstractmethod
+    def iter(self):
+        """
+        Returns a Python iterable for this view.
+        """
+        pass
+
+    @abc.abstractmethod
+    def contains(self, element):
+        """
+        Decides if this view contains the given element.
+        :param element: A Value object.
+        :return: A bool value.
+        """
+        pass
+
+    def __iter__(self):
+        return self.iter()
+
+    def __contains__(self, x):
+        return self.contains(x)
+
+
+@builtin()
+@intrinsic_type("dictkeys")
+class VKeysView(VDictView):
+    """
+    A view on the keys of a VDict.
+    """
+
+    def iter(self):
+        return iter(self.mapping.keys_python())
+
+    def contains(self, element):
+        return element in self.mapping
+
+
+@builtin()
+@intrinsic_type("dictvalues")
+class VValuesView(VDictView):
+    """
+    A view on the values of a VDict.
+    """
+
+    def iter(self):
+        return iter(self.mapping.values_python())
+
+    def contains(self, x):
+        return any(x.cequals(v) for v in self.mapping.values_python())
+
+
+@builtin()
+@intrinsic_type("dictitems")
+class VItemsView(VDictView):
+    """
+    A view on the items of a VDict.
+    """
+
+    def iter(self):
+        return iter((k.wrapped, v) for k, v in self.mapping.items_python())
+
+    def contains(self, x):
+        k, v = x
+        try:
+            found = self.mapping[k]
+        except VKeyError:
+            return False
+        else:
+            return found.cequals(v)

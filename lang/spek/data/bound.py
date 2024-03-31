@@ -65,6 +65,9 @@ class BoundProcedure(Procedure):
                 and self._p.cequals(other._p)
                 and all(((a is None) == (b is None)) and (a is None or a.cequals(b)) for a, b in zip(self._args, other._args)))
 
+    def chash(self):
+        return self._p.chash() ^ hash((a.chash() for a in self._args))
+
     def clone_unsealed(self, clones=None):
         if clones is None:
             clones = {}

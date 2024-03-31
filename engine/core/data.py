@@ -85,6 +85,9 @@ class VPython(Immutable, Value, ABC):
         except AttributeError:
             return False
 
+    def chash(self):
+        return self.hash()
+
 
 @intrinsic_type("int", [type_object])
 class VInt(VPython, int):
@@ -226,6 +229,9 @@ class VException(Value, Exception):
 
     def cequals(self, other):
         return self.equals(other)
+
+    def chash(self):
+        return self.type.chash()
 
     def clone_unsealed(self, clones=None):
         if clones is None:

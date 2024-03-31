@@ -15,3 +15,6 @@ class FiniteValue(Finite, Value, ABC):
 
     def cequals(self, other):
         return self is other
+
+    def chash(self):
+        return self.instance_index
