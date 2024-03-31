@@ -623,7 +623,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         cases = [(Comparison(ComparisonOperator.EQ, NewTuple(CInt(42), CInt(4711)), NewTuple(CInt(42), CInt(4711))), VBool(True)),
                  (IsInstance(NewList(), CTerm(VList.intrinsic_type)), VBool(True)),
-                 (IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool(True)),
+                 (IsInstance(NewDict([]), CTerm(VDict.intrinsic_type)), VBool(True)),
                  (UnaryPredicateTerm(UnaryPredicate.ISRETURN, NewJumpError(JumpType.RETURN)), VBool(True)),
                  (UnaryPredicateTerm(UnaryPredicate.ISBREAK, NewJumpError(JumpType.BREAK)), VBool(True)),
                  (UnaryPredicateTerm(UnaryPredicate.ISCONTINUE, NewJumpError(JumpType.CONTINUE)), VBool(True)),
@@ -643,7 +643,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of namespace-related terms.
         Note: There used to be a type VNamespace, that we eliminated in favor of VDict.
         """
-        cases = [(IsInstance(NewDict(), CTerm(VDict.intrinsic_type)), VBool(True)),
+        cases = [(IsInstance(NewDict([]), CTerm(VDict.intrinsic_type)), VBool(True)),
                  (Read(Project(Read(CRef(FrameReference(0))), CString("hello"))), VInt(42))]
 
         for term, value in cases:
@@ -665,7 +665,7 @@ class TestSpektakelMachine(unittest.TestCase):
         Tests the successful evaluation of namespace-related terms.
         """
 
-        p = StackProgram([Update(CRef(FrameReference(0)), NewDict(), 1, 42),
+        p = StackProgram([Update(CRef(FrameReference(0)), NewDict([]), 1, 42),
                           Update(Project(Read(CRef(FrameReference(0))), CString("x")), CInt(42), 2, 42),
                           Update(Project(Read(CRef(FrameReference(0))), CString("y")), CInt(4711), 3, 42),
                           Update(CRef(FrameReference(0)), Read(CRef(FrameReference(0))), 4, 42),
@@ -714,7 +714,7 @@ class TestSpektakelMachine(unittest.TestCase):
         g = StackProgram([Update(CRef(ReturnValueReference()), CInt(42), 1, 1), Pop(42)])
         s = StackProgram([Pop(42)])
 
-        p = StackProgram([Update(CRef(FrameReference(0)), NewDict(), 1, 42),
+        p = StackProgram([Update(CRef(FrameReference(0)), NewDict([]), 1, 42),
                           Update(Project(Read(CRef(FrameReference(0))), CString("test")), NewProperty(NewProcedure(1, tuple(), g), NewProcedure(2, tuple(), s)), 2, 42),
                           Update(CRef(FrameReference(0)), NewClass("C", [CTerm(type_object)], Read(CRef(FrameReference(0)))), 3, 42),
                           Guard({}, 1)])

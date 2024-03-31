@@ -1163,22 +1163,45 @@ class NewList(Term):
         return VList((c.evaluate(tstate, mstate) for c in self.elements))
 
 
-class NewDict(Singleton, Term):
+class NewDict(Term):
     """
-    A term that evaluates to a new empty dictionary.
+    A term that evaluates to a new VDict object.
     """
 
-    def __init__(self):
+    def __init__(self, items):
         """
         Creates a new dict term.
+        :param items: An iterable of pairs of terms that define the items of the dictionary.
         """
-        super().__init__()
+        super().__init__(*(x for kv in items for x in kv))
+
+    def hash(self):
+        return len(self.children) // 2
 
     def print(self, out):
-        out.write("{}")
+        out.write("{[}")
+        prefix = ""
+        for k, v in self.items:
+            out.write(prefix)
+            k.print(out)
+            out.write(": ")
+            v.print(out)
+            prefix = ", "
+        out.write("}")
+
+    def equals(self, other):
+        return isinstance(other, NewDict) and tuple(self.children) == tuple(other.children)
+
+    @property
+    def items(self):
+        """
+        The terms that define the items of the dictionary.
+        :return: An iterable of pairs (k, v).
+        """
+        return zip(self.children[::2], self.children[1::2])
 
     def evaluate(self, tstate, mstate):
-        return VDict({})
+        return VDict(((k.evaluate(tstate, mstate), v.evaluate(tstate, mstate)) for k, v in self.items))
 
 
 class NewJumpError(Finite, Term):

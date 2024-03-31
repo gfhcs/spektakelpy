@@ -52,7 +52,7 @@ class BuiltinModuleSpecification(ModuleSpecification):
         r = CRef(ReturnValueReference())
 
         # Initialize a new namespace:
-        code.append(Update(r, terms.NewDict(), len(code) + 1, panic))
+        code.append(Update(r, terms.NewDict([]), len(code) + 1, panic))
 
         # Map names to values:
         for name, value in self._m.items():

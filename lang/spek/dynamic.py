@@ -18,7 +18,7 @@ from .ast import Pass, Constant, Identifier, Attribute, Tuple, Projection, Call,
     BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation, ImportNames, ImportSource, \
     ExpressionStatement, Assignment, Block, Return, Raise, Break, \
     Continue, Conditional, While, For, Try, VariableDeclaration, ProcedureDefinition, \
-    PropertyDefinition, ClassDefinition, List
+    PropertyDefinition, ClassDefinition, List, Dict
 
 
 def negate(bexp):
@@ -371,6 +371,16 @@ class Spektakel2Stack(Translator):
 
             v, = self.declare_pattern(chain, None, on_error)
             chain.append_update(v, terms.NewList(*cs), on_error)
+            return Read(v), chain
+        elif isinstance(node, Dict):
+            items = []
+            for k, v in node.items:
+                k, chain = self.translate_expression(chain, k, dec, on_error)
+                v, chain = self.translate_expression(chain, v, dec, on_error)
+                items.append((k, v))
+
+            v, = self.declare_pattern(chain, None, on_error)
+            chain.append_update(v, terms.NewDict(items), on_error)
             return Read(v), chain
 
         else:
@@ -837,7 +847,7 @@ class Spektakel2Stack(Translator):
 
         d, = self.declare_pattern(preamble, None, panic)
         d = AbsoluteFrameReference(0, 0, d.instance_key.index)
-        preamble.append_update(CRef(d), NewDict(), panic)
+        preamble.append_update(CRef(d), NewDict([]), panic)
 
         self._scopes.push(FunctionScope(self._scopes.top))
         imp_code = Chain()
@@ -882,7 +892,7 @@ class Spektakel2Stack(Translator):
         exit = Chain()
 
         # We create a new namespace dict and put it into the stack frame.
-        block.append_update(CRef(FrameReference(0)), terms.NewDict(), exit)
+        block.append_update(CRef(FrameReference(0)), terms.NewDict([]), exit)
 
         # The code of a module assumes that there is 1 argument on the current stack frame, which is the Namespace object
         # that is to be populated. All allocations of local variables must actually be members of that Namespace object.
