@@ -33,6 +33,7 @@ from tests.samples_translation.philosophers_nodeadlock import code as code_philo
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.ranges import samples as ranges
+from tests.samples_translation.fors import samples as fors
 from tests.samples_translation.strings import samples as strings
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.tuples import samples as tuples
@@ -830,20 +831,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests for loops, including break and continue.
         """
-
-        # TODO: Here and in many of the following test cases, we will have to use an object's interface.
-        #       This cannot be done with terms only, because terms are functional, but many of the operations in
-        #       question have side effects. So we must use instructions. The only useful instruction is
-        #       the push instruction, which can be used to call double-underscore methods. Using them might make
-        #       certain terms obsolete, which is good.
-        #       The alternative would be to introduce additional instructions for the special methods, but this
-        #       bloats the instruction set and does not really have any advantages.
-
-        # TODO: Repeat all while test cases here.
-        # TODO: Test next.
-        # TODO: Specifically test the allocation of the loop variable as a cell. See closure test cases for inspiration.
-
-        raise NotImplementedError()
+        self.examine_samples(fors)
 
     def test_classes(self):
         """
