@@ -68,7 +68,7 @@ class VPython(Immutable, Value, ABC):
         pass
 
     def print(self, out):
-        out.write(super(ABC, self).__str__())
+        out.write(str(self.__python__()))
 
     def hash(self):
         return super(ABC, self).__hash__()
@@ -132,7 +132,7 @@ class VStr(VPython, str):
         return VStr.intrinsic_type
 
     def __python__(self):
-        return str(self)
+        return str.__str__(self)
 
     def __getitem__(self, item):
         try:

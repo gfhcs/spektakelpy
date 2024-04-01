@@ -455,7 +455,7 @@ class TestSpektakelMachine(unittest.TestCase):
                                   Guard({}, 1)])
         _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))
         result = states[-1].content.task_states[0].stack[0][0]
-        self.assertEqual("Hello World", str(result))
+        self.assertEqual("Hello World", result.__python__())
 
     def test_UnaryOperation(self):
 
