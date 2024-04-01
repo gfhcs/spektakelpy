@@ -61,7 +61,7 @@ try:
 except KeyError as kex:
     x = kex
 await never()
-""": ((2, 1, num_interactions_possible), {"x": VKeyError("KeyError: 4")}),
+""": ((2, 1, num_interactions_possible), {"x": VKeyError("4")}),
 
 # 8
 """
@@ -100,7 +100,7 @@ await never()
 """
 from interaction import never
 var x = {1: 2, 2: 3, 3: 4}
-x.update({{1: 2, 4: 5}})
+x.update({1: 2, 4: 5})
 await never()
 """: ((2, 1, num_interactions_possible), {"x": {1: 2, 2: 3, 3: 4, 4: 5}}),
 

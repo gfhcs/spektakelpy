@@ -478,7 +478,7 @@ class VDict(Value):
         try:
             return self._items[VDict.Key(key)]
         except KeyError as kex:
-            raise VKeyError(str(kex))
+            raise VKeyError(str(key))
 
     def __setitem__(self, key, value):
         check_unsealed(self)
@@ -592,7 +592,7 @@ class VKeysView(VDictView):
     """
 
     def iter(self):
-        return iter(self.mapping.keys_python())
+        return iter(k.wrapped for k in self.mapping.keys_python())
 
     def contains(self, element):
         return element in self.mapping
@@ -620,7 +620,7 @@ class VItemsView(VDictView):
     """
 
     def iter(self):
-        return iter((k.wrapped, v) for k, v in self.mapping.items_python())
+        return iter(VTuple((k.wrapped, v)) for k, v in self.mapping.items_python())
 
     def contains(self, x):
         k, v = x
