@@ -1179,7 +1179,7 @@ class NewDict(Term):
         return len(self.children) // 2
 
     def print(self, out):
-        out.write("{[}")
+        out.write("{")
         prefix = ""
         for k, v in self.items:
             out.write(prefix)
