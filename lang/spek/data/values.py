@@ -2,7 +2,7 @@ import abc
 
 from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
-from engine.core.data import VBool, VIndexError, VKeyError
+from engine.core.data import VBool, VIndexError, VKeyError, VInt
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError, unhashable
 from lang.spek.data.builtin import builtin
@@ -110,6 +110,67 @@ class VTuple(Value):
 
     def __mul__(self, other):
         return self._comps.__mul__(other)
+
+
+@builtin()
+@intrinsic_type("range", [type_object])
+class VRange(Value):
+    """
+    Equivalent to Python's range type.
+    """
+
+    @intrinsic_init()
+    def __init__(self, stop):
+        super().__init__()
+        self._stop = check_type(stop, VInt)
+
+    def print(self, out):
+        out.write(f"range({self._stop})")
+
+    @property
+    def type(self):
+        return VRange.intrinsic_type
+
+    def hash(self):
+        return hash(self._stop)
+
+    def equals(self, other):
+        return self is other
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, VRange) and self._stop == other._stop
+
+    def cequals(self, other):
+        return isinstance(other, VRange) and self._stop == other._stop
+
+    def chash(self):
+        return hash(self._stop)
+
+    def _seal(self):
+        pass
+
+    def clone_unsealed(self, clones=None):
+        return self
+
+    def __len__(self):
+        return self._stop
+
+    def __iter__(self):
+        return iter(VInt(i) for i in range(self._stop))
+
+    def __contains__(self, item):
+        return isinstance(item, VInt) and 0 <= item < self._stop
+
+    def __getitem__(self, index):
+        if not isinstance(index, VInt):
+            raise VTypeError("range indices must be integers!")
+        if not (0 <= index < self._stop):
+            raise VIndexError("range object index out of range")
+        return index
 
 
 @builtin()
