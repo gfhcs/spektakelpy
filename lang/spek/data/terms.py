@@ -8,7 +8,8 @@ from engine.core.compound import FieldIndex
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
 from engine.core.none import VNone, value_none
-from engine.core.data import VBool, VInt, VFloat, VStr, VPython, VException, VCancellationError, VRuntimeError
+from engine.core.data import VBool, VInt, VFloat, VStr, VPython, VException, VCancellationError, VRuntimeError, \
+    VIterator
 from engine.core.procedure import Procedure
 from engine.core.property import Property, OrdinaryProperty
 from engine.core.type import Type
@@ -1462,3 +1463,45 @@ class NewCellReference(Term):
 
     def evaluate(self, tstate, mstate):
         return CellReference(self.core.evaluate(tstate, mstate))
+
+
+class Iter(Term):
+    """
+    A term that obtains an iterator for a sequence.
+    """
+
+    def __init__(self, iterable):
+        """
+        Creates a new Iter term.
+        :param iterable: A term that evaluates to an iterable, i.e. to an object for which iterators can be obtained.
+        """
+        super().__init__(iterable)
+
+    @property
+    def iterable(self):
+        """
+        A term that evaluates to an iterable, i.e. to an object for which iterators can be obtained.
+        """
+        return self.children[0]
+
+    def hash(self):
+        return hash(self.iterable)
+
+    def equals(self, other):
+        return isinstance(other, Iter) and self.iterable.equals(other.iterable)
+
+    def print(self, out):
+        out.write("iter(")
+        self.iterable.print(out)
+        out.write(")")
+
+    def evaluate(self, tstate, mstate):
+        iterable = self.iterable.evaluate(tstate, mstate)
+        try:
+            i = iter(iterable)
+            if not isinstance(i, VIterator):
+                raise TypeError()
+            return i
+        except TypeError:
+            raise VTypeError(f"'{iterable.type}' is not iterable!")
+

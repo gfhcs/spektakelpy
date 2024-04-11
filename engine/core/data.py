@@ -3,7 +3,7 @@ from abc import ABC
 
 from engine.core.atomic import type_object
 from engine.core.finite import FiniteValue
-from engine.core.intrinsic import intrinsic_type, intrinsic_init
+from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
 from engine.core.value import Value
 from util import check_type
 from util.immutable import Immutable
@@ -117,6 +117,130 @@ class VFloat(VPython, float):
         return float(self)
 
 
+class VIterator(Value, ABC):
+    """
+    Represents the state of an iteration over an iterable.
+    The subclasses of this class must fulfill the following requirements:
+        1. It must either be an IntrinsicType, or override Value.type.
+        2. It must either override Value.seal, or cannot contain any subvalues.
+    """
+
+    def __init__(self, iterable):
+        super().__init__()
+        self._iterable = iterable
+
+    @property
+    def iterable(self):
+        """
+        The iterable that this VIterator belongs to.
+        """
+        return self._iterable
+
+    @property
+    def type(self):
+        return type(self).intrinsic_type
+
+    def equals(self, other):
+        return self is other
+
+    def _seal(self):
+        self._iterable.seal()
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return isinstance(other, type(self)) and self.iterable.equals(other.iterable) and self.sequals(other)
+
+    def cequals(self, other):
+        return self is other
+
+    def chash(self):
+        return self.iterable.chash()
+
+    def hash(self):
+        return self.iterable.hash()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.next()
+
+    @abc.abstractmethod
+    def next(self):
+        """
+        Like Python's __next__, this procedure returns the next element of an iteration.
+        :exception VStopIteration: If there is no next iteration element.
+        :return: A Value object.
+        """
+        pass
+
+    @abc.abstractmethod
+    def sequals(self, other):
+        """
+        Decides if this iterator represents exactly the same iteration state as another iterator.
+        :param other: A VIterator object that is of the same type as self and belongs to the same iterable.
+        :return: A bool value.
+        """
+        pass
+
+    @abc.abstractmethod
+    def copy_unsealed(self):
+        """
+        Returns an unsealed copy of this iterator. This method is called by self.clone_unsealed in order to replicate
+        the state of this iterator.
+        :return: A VIterator i with i.sequals(self).
+        """
+        pass
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = self.copy_unsealed()
+            clones[id(self)] = c
+            c._iterable = self._iterable.clone_unsealed(clones=clones)
+            return c
+
+
+@intrinsic_type("indexing_iterator", [type_object])
+class VIndexingIterator(VIterator):
+    """
+    An iterator the state of which is encoded by an index that is incremented after every iteration.
+    This iterator works will all immutable, indexable sequence types.
+    """
+
+    def __init__(self, s):
+        super().__init__(check_type(s, Value))
+        self._i = 0
+
+    def sequals(self, other):
+        return self._i == other._i
+
+    def copy_unsealed(self):
+        c = VIndexingIterator(self.iterable)
+        c._i = self._i
+        return c
+
+    def print(self, out):
+        out.write("indexing_iterator(")
+        self.iterable.print(out)
+        out.write(f", {self._i})")
+
+    @intrinsic_member("__next__")
+    def next(self):
+        try:
+            c = self.iterable[VInt(self._i)]
+            self._i += 1
+            return c
+        except VIndexError:
+            raise VStopIteration("End of iterator!")
+
+
 @intrinsic_type("str", [type_object])
 class VStr(VPython, str):
     """
@@ -139,6 +263,9 @@ class VStr(VPython, str):
             return VStr(super(ABC, self).__getitem__(item))
         except IndexError as iex:
             raise VIndexError(str(iex))
+
+    def __iter__(self):
+        return VIndexingIterator(self)
 
 
 @intrinsic_type("Exception", [type_object])
@@ -309,5 +436,13 @@ class VIndexError(VException):
 class VKeyError(VException):
     """
     Raised when a mapping is missing a requested key.
+    """
+    pass
+
+
+@intrinsic_type("StopIteration")
+class VStopIteration(VException, StopIteration):
+    """
+    Raised when an iteration runs out of elements to iterate over.
     """
     pass

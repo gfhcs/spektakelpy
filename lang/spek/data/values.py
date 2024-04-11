@@ -2,7 +2,7 @@ import abc
 
 from engine.core.atomic import type_object
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
-from engine.core.data import VBool, VIndexError, VKeyError, VInt
+from engine.core.data import VBool, VIndexError, VKeyError, VInt, VIndexingIterator
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError, unhashable
 from lang.spek.data.builtin import builtin
@@ -82,7 +82,7 @@ class VTuple(Value):
         return len(self._comps)
 
     def __iter__(self):
-        return iter(self._comps)
+        return VIndexingIterator(self)
 
     def __contains__(self, item):
         return any(c.cequals(item) for c in self)
@@ -160,7 +160,7 @@ class VRange(Value):
         return self._stop
 
     def __iter__(self):
-        return iter(VInt(i) for i in range(self._stop))
+        return VIndexingIterator(self)
 
     def __contains__(self, item):
         return isinstance(item, VInt) and 0 <= item < self._stop
