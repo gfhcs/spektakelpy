@@ -15,6 +15,7 @@ await never()
 # 1
 """
 from interaction import never
+var l = []
 var i = iter(range(3))
 while True:
     try:
