@@ -1,4 +1,4 @@
-from engine.core.data import VException
+from engine.core.data import VException, VStopIteration
 from engine.stack.procedure import StackProcedure
 from engine.stack.program import ProgramLocation
 from lang.modules import ModuleSpecification
@@ -6,10 +6,9 @@ from lang.spek.chains import Chain
 from lang.spek.data import terms
 from lang.spek.data.exceptions import JumpType
 from lang.spek.data.references import ReturnValueReference, ExceptionReference, FrameReference, \
-    AbsoluteFrameReference, CellReference
+    AbsoluteFrameReference
 from lang.spek.data.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator, Read, NewDict, \
-    CTerm, CString, CNone, Callable, CInt, LoadAttrCase, Project, NewCellReference
-from lang.spek.data.values import VDict
+    CTerm, CString, CNone, Callable, CInt, Project, NewCellReference, Iter
 from lang.spek.scopes import ScopeStack, ExceptionScope, FunctionScope, LoopScope, ClassScope, ModuleScope
 from lang.spek.vanalysis import VariableAnalysis
 from lang.translator import Translator
@@ -637,34 +636,25 @@ class Spektakel2Stack(Translator):
                         break
                     <body>
             """
-
-            stopper = Chain()
-            body = Chain()
-            successor = Chain()
-
             iterable, chain = self.translate_expression(chain, node.iterable, dec, on_error)
-            callee, chain = self.translate_expression(chain, Attribute(iterable, "__iter__"), dec, on_error)
-            iterator, chain = self.emit_call(chain, callee, [], on_error)
+            next, = self.declare_pattern(chain, None, on_error)
+            chain.append_update(next, Read(terms.Project(terms.LoadAttrCase(Iter(iterable), "__next__"), CInt(1))), on_error)
 
-            self.declare_pattern(chain, node.pattern, on_error)
-
-            chain.append_jump(body)
-
-            callee, body = self.translate_expression(body, Attribute(iterator, "__next__"), dec, on_error)
-            element, body = self.emit_call(body, callee, [], stopper)
-
+            body_in = Chain()
+            body = body_in
+            successor = Chain()
+            chain.append_jump(body_in)
+            self._scopes.push(LoopScope(self._scopes.top, body_in, successor))
+            stopper = Chain()
+            element, body = self.emit_call(body, next, [], stopper)
             eref = CRef(ExceptionReference())
-            s = terms.IsInstance(Read(eref), TStopIteration.instance)
-            stopper.append_guard({s: successor, negate(s): on_error}, on_error)
+            stop = terms.IsInstance(Read(eref), CTerm(VStopIteration.intrinsic_type))
+            stopper.append_guard({stop: successor, negate(stop): on_error}, on_error)
             successor.append_update(eref, terms.CNone(), on_error)
-
-            t, head = self.translate_expression(chain, element, dec, on_error)
-            _, head = self.emit_assignment(head, node.pattern, dec, t, on_error)
-
-            self._scopes.push(LoopScope(self._scopes.top, head, successor))
-            self.translate_statement(body, node.body, dec, on_error)
+            _, body = self.emit_assignment(body, node.pattern, dec, element, on_error)
+            body = self.translate_statement(body, node.body, dec, on_error)
             self._scopes.pop()
-            body.append_jump(body)
+            body.append_jump(body_in)
             return successor
         elif isinstance(node, Try):
             handler = Chain()
