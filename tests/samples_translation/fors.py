@@ -1,3 +1,4 @@
+from engine.core.data import VRuntimeError
 from engine.core.interaction import num_interactions_possible
 
 samples = {
@@ -92,5 +93,32 @@ for i in range(100):
 
 await never()
 """: ((2, 1, num_interactions_possible), {"primes": [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]}),
+
+
+# 8
+"""
+from interaction import never
+var l = [1, 2, 4]
+try:
+    for x in l:
+        l.append(42)
+except RuntimeError as rex:
+    pass
+await never()
+""": ((2, 1, num_interactions_possible), {"rex": VRuntimeError("The iterable underlying this iterator has been modified!")}),
+
+
+# 9
+"""
+from interaction import never
+var d = {1: 2}
+try:
+    for k, v in d.items():
+        d[42] = 42
+except RuntimeError as rex:
+    pass
+await never()
+""": ((2, 1, num_interactions_possible), {"rex": VRuntimeError("The iterable underlying this iterator has been modified!")}),
+
 
 }
