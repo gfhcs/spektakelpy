@@ -48,6 +48,9 @@ class IntrinsicProcedure(Immutable, Procedure):
     def initiate(self, tstate, mstate, *args):
         return self._p(*check_types(args, Value))
 
+    def __call__(self, *args):
+        return self._p(*check_types(args, Value))
+
 
 class IntrinsicInstanceMethod(IntrinsicProcedure):
     """
