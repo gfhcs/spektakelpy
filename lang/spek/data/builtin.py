@@ -1,7 +1,7 @@
 from engine.core.atomic import type_object, type_type
 from engine.core.none import type_none
 from engine.core.data import VInt, VFloat, VStr, VBool, VIndexError, VException, VCancellationError, VRuntimeError, \
-    VKeyError
+    VKeyError, VIterator
 from engine.core.intrinsic import intrinsic_procedure, intrinsic_type, intrinsic_member
 from engine.core.machine import TaskState
 from engine.core.procedure import Procedure
@@ -106,3 +106,14 @@ def builtin_isinstance(x, types):
 @intrinsic_procedure()
 def builtin_len(x):
     return VInt(len(x))
+
+@builtin("iter")
+@intrinsic_procedure()
+def builtin_iter(iterable):
+    try:
+        i = iter(iterable)
+        if not isinstance(i, VIterator):
+            raise TypeError()
+        return i
+    except TypeError:
+        raise VTypeError(f"'{iterable.type}' is not iterable!")

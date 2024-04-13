@@ -5,11 +5,10 @@ from weakref import WeakValueDictionary
 
 from engine.core.atomic import type_object
 from engine.core.compound import FieldIndex
+from engine.core.data import VBool, VInt, VFloat, VStr, VException, VCancellationError, VRuntimeError
 from engine.core.interaction import Interaction, InteractionState, i2s
 from engine.core.machine import TaskStatus, TaskState
 from engine.core.none import VNone, value_none
-from engine.core.data import VBool, VInt, VFloat, VStr, VPython, VException, VCancellationError, VRuntimeError, \
-    VIterator
 from engine.core.procedure import Procedure
 from engine.core.property import Property, OrdinaryProperty
 from engine.core.type import Type
@@ -22,6 +21,7 @@ from engine.stack.reference import Reference
 from engine.stack.state import StackState
 from engine.stack.term import Term
 from lang.spek.data.bound import BoundProcedure
+from lang.spek.data.builtin import builtin_iter
 from lang.spek.data.cells import VCell
 from lang.spek.data.classes import Class
 from lang.spek.data.empty import EmptyProcedure
@@ -33,7 +33,6 @@ from util import check_type, check_types
 from util.finite import Finite
 from util.keyable import Keyable
 from util.singleton import Singleton
-
 
 pt2vt = {int: VInt, float: VFloat, bool: VBool, str: VStr, tuple: VTuple, list: VList, dict: VDict}
 
@@ -1496,12 +1495,4 @@ class Iter(Term):
         out.write(")")
 
     def evaluate(self, tstate, mstate):
-        iterable = self.iterable.evaluate(tstate, mstate)
-        try:
-            i = iter(iterable)
-            if not isinstance(i, VIterator):
-                raise TypeError()
-            return i
-        except TypeError:
-            raise VTypeError(f"'{iterable.type}' is not iterable!")
-
+        return builtin_iter(self.iterable.evaluate(tstate, mstate))
