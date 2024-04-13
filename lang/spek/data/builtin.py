@@ -117,3 +117,11 @@ def builtin_iter(iterable):
         return i
     except TypeError:
         raise VTypeError(f"'{iterable.type}' is not iterable!")
+
+
+@builtin("next")
+@intrinsic_procedure()
+def builtin_next(iterator):
+    if not isinstance(iterator, VIterator):
+        raise VTypeError(f"'{iterator.type}' object is not an iterator")
+    return iterator.next()
