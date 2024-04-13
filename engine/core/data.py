@@ -122,10 +122,14 @@ class VIterator(Value, ABC):
     Represents the state of an iteration over an iterable.
     The subclasses of this class must fulfill the following requirements:
         1. It must either be an IntrinsicType, or override Value.type.
-        2. It must either override Value.seal, or cannot contain any subvalues.
+        2. It must either override Value._seal Value.clone_unsealed and Value.bequals, or cannot contain any subvalues.
     """
 
     def __init__(self, iterable):
+        """
+        Creates a new VIterator.
+        :param iterable: The iterable object this VIterator belongs to.
+        """
         super().__init__()
         self._iterable = iterable
 
@@ -151,7 +155,9 @@ class VIterator(Value, ABC):
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
-            return isinstance(other, type(self)) and self.iterable.equals(other.iterable) and self.sequals(other)
+            return (isinstance(other, type(self))
+                    and self.iterable.bequals(other.iterable, bijection)
+                    and self.sequals(other))
 
     def cequals(self, other):
         return self is other

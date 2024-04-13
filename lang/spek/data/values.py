@@ -1,8 +1,8 @@
 import abc
 
 from engine.core.atomic import type_object
+from engine.core.data import VBool, VIndexError, VKeyError, VInt, VIndexingIterator, VIterator, VRuntimeError
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
-from engine.core.data import VBool, VIndexError, VKeyError, VInt, VIndexingIterator
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError, unhashable
 from lang.spek.data.builtin import builtin
@@ -173,9 +173,89 @@ class VRange(Value):
         return index
 
 
+class TokenizedMutable(Value):
+    """
+    A Value that each time it is modified will also modify a public mutation token.
+    """
+
+    @property
+    @abc.abstractmethod
+    def mtoken(self):
+        """
+        The current mutation token. Whenever this object is modified, this token changes.
+        :return: A Value.
+        """
+        pass
+
+
+@intrinsic_type("mutable_indexing_iterator", [type_object])
+class VMutableIterator(VIterator):
+    """
+    An indexing iterator over a mutable sequence. This iterator becomes unusable when the sequence is modified.
+    """
+
+    def __init__(self, core, iterable=None):
+        """
+        Wraps a VIterator over a MutableIterable as a VMutableIterator.
+        :param core: A VIterator the iterable of which inherits TokenizedMutable.
+        :param iterable: The iterable that this iterator is supposed to belong to. If omitted, the iterator
+                         of the core will be used.
+        """
+        if iterable is None:
+            iterable = core.iterable
+        super().__init__(check_type(iterable, TokenizedMutable))
+        self._core = core
+        self._mtoken = iterable.mtoken
+
+    def _seal(self):
+        self.iterable.seal()
+        self._core.seal()
+        self._mtoken.seal()
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return (isinstance(other, type(self))
+                    and self.iterable.bequals(other.iterable, bijection)
+                    and self._core.bequals(other._core, bijection)
+                    and self._mtoken.bequals(other._mtoken, bijection))
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VMutableIterator(self._core.clone_unsealed(clones=clones), iterable=self.iterable)
+            clones[id(self)] = c
+            c._mtoken = self._mtoken.clone_unsealed(clones=clones)
+            return c
+
+    def sequals(self, other):
+        raise NotImplementedError()
+
+    def copy_unsealed(self):
+        raise NotImplementedError()
+
+    def print(self, out):
+        out.write("mutable_iterator(")
+        self._core.print(out)
+        out.write(", ")
+        self._mtoken.print(out)
+        out.write(")")
+
+    @intrinsic_member("__next__")
+    def next(self):
+        if self._mtoken != self.iterable.mtoken:
+            raise VRuntimeError("The iterable underlying this iterator has been modified!")
+        return self._core.next()
+
+
 @builtin()
 @intrinsic_type("list", [type_object])
-class VList(Value):
+class VList(TokenizedMutable):
     """
     Equivalent to Python's lists.
     """
@@ -188,6 +268,11 @@ class VList(Value):
         """
         super().__init__()
         self._items = [] if elements is None else [check_type(x, Value) for x in elements]
+        self._mtoken = VInt(0)
+
+    @property
+    def mtoken(self):
+        return self._mtoken
 
     @intrinsic_member()
     def append(self, item):
@@ -196,6 +281,7 @@ class VList(Value):
         :param item: The item to append.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.append(check_type(item, Value))
 
     @intrinsic_member()
@@ -206,6 +292,7 @@ class VList(Value):
         :return: The popped item.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.pop(int(index))
 
     @intrinsic_member()
@@ -215,6 +302,7 @@ class VList(Value):
         :param iterable: An iterable of Values.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.extend(check_type(x, Value) for x in iterable)
 
     @intrinsic_member()
@@ -225,6 +313,7 @@ class VList(Value):
         :param item: The Value to insert.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.insert(int(index), check_type(item, Value))
 
     @intrinsic_member()
@@ -234,6 +323,7 @@ class VList(Value):
         :param x: The Value to remove from this list.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.remove(check_type(x, Value))
 
     @intrinsic_member()
@@ -242,6 +332,7 @@ class VList(Value):
         Empties this list, i.e. removes all items.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.clear()
 
     @intrinsic_member()
@@ -250,6 +341,7 @@ class VList(Value):
         Sorts this list stably in-place.
         """
         check_unsealed(self)
+        self._mtoken += 1
         self._items.sort()
 
     def print(self, out):
@@ -312,7 +404,7 @@ class VList(Value):
         return len(self._items)
 
     def __iter__(self):
-        return iter(self._items)
+        return VMutableIterator(VIndexingIterator(self))
 
     def __getitem__(self, key):
         try:
@@ -321,6 +413,8 @@ class VList(Value):
             raise VIndexError(str(iex))
 
     def __setitem__(self, key, value):
+        check_unsealed(self)
+        self._mtoken += 1
         self._items[int(check_type(key, Value))] = check_type(value, Value)
 
     def __add__(self, other):
@@ -348,7 +442,7 @@ class VList(Value):
 
 @builtin()
 @intrinsic_type("dict", [type_object])
-class VDict(Value):
+class VDict(TokenizedMutable):
     """
     Equivalent to Python's dicts.
     """
@@ -395,6 +489,12 @@ class VDict(Value):
         else:
             self._items = {VDict.Key(k): check_type(v, Value) for k, v in items}
 
+        self._mtoken = VInt(0)
+
+    @property
+    def mtoken(self):
+        return self._mtoken
+
     def keys_python(self):
         """
         A Python view on the keys of this VDict.
@@ -431,6 +531,7 @@ class VDict(Value):
         Empties this dictionary, i.e. removes all its entries.
         """
         check_unsealed(self)
+        self._mtoken += 1
         self._items.clear()
 
     @intrinsic_member()
@@ -441,6 +542,7 @@ class VDict(Value):
         :return: The value that was retrieved and removed.
         """
         check_unsealed(self)
+        self._mtoken += 1
         return self._items.pop(VDict.Key(key))
 
     @intrinsic_member()
@@ -450,6 +552,7 @@ class VDict(Value):
         :param other: Either a VDict or an iterable of key/value pairs.
         """
         check_unsealed(self)
+        self._mtoken += 1
         if isinstance(other, VDict):
             self._items.update(other._items)
         else:
@@ -543,6 +646,7 @@ class VDict(Value):
 
     def __setitem__(self, key, value):
         check_unsealed(self)
+        self._mtoken += 1
         self._items[VDict.Key(key)] = check_type(value, Value)
 
     def __ior__(self, other):
@@ -556,7 +660,7 @@ class VDict(Value):
 
 @builtin()
 @intrinsic_type("dictview", [type_object])
-class VDictView(Value):
+class VDictView(TokenizedMutable):
     """
     A readonly view of a VDict.
     """
@@ -567,7 +671,11 @@ class VDictView(Value):
         :param d: The VDict object that this view is for.
         """
         super().__init__()
-        self._d = d
+        self._d = check_type(d, VDict)
+
+    @property
+    def mtoken(self):
+        return self._d.mtoken
 
     @property
     def mapping(self):
@@ -653,7 +761,7 @@ class VKeysView(VDictView):
     """
 
     def iter(self):
-        return iter(k.wrapped for k in self.mapping.keys_python())
+        return VMutableIterator(iter(VTuple(k.wrapped for k in self.mapping.keys_python())), iterable=self)
 
     def contains(self, element):
         return element in self.mapping
@@ -667,7 +775,7 @@ class VValuesView(VDictView):
     """
 
     def iter(self):
-        return iter(self.mapping.values_python())
+        return VMutableIterator(iter(VTuple(self.mapping.values_python())), iterable=self)
 
     def contains(self, x):
         return any(x.cequals(v) for v in self.mapping.values_python())
@@ -681,7 +789,7 @@ class VItemsView(VDictView):
     """
 
     def iter(self):
-        return iter(VTuple((k.wrapped, v)) for k, v in self.mapping.items_python())
+        return VMutableIterator(iter(VTuple(VTuple((k.wrapped, v)) for k, v in self.mapping.items_python())), iterable=self)
 
     def contains(self, x):
         k, v = x
