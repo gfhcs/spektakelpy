@@ -100,7 +100,7 @@ class Update(Instruction):
             ref = self._ref.evaluate(tstate, mstate)
             value = self._term.evaluate(tstate, mstate)
         except Exception as e:
-            tstate.exception = pack_exception(e, msg="Failed to evaluate expression")
+            tstate.exception = pack_exception(e, msg="Failed to evaluate term")
             top.instruction_index = self._edestination
             return
 
@@ -206,7 +206,7 @@ class Guard(Instruction):
             try:
                 r = check_type(e.evaluate(tstate, mstate), VBool).__python__()
             except Exception as e:
-                tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
+                tstate.exception = pack_exception(e, msg="Failed to evaluate term!")
                 top.instruction_index = self._edestination
                 return
 
@@ -288,7 +288,7 @@ class Push(Instruction):
             callee = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except Exception as e:
-            tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
+            tstate.exception = pack_exception(e, msg="Failed to evaluate term!")
             old_top.instruction_index = self._edestination
             return
 
@@ -407,7 +407,7 @@ class Launch(Instruction):
             callee = self._callee.evaluate(tstate, mstate)
             args = tuple(e.evaluate(tstate, mstate) for e in self._aterms)
         except Exception as e:
-            tstate.exception = pack_exception(e, msg="Failed to evaluate expression!")
+            tstate.exception = pack_exception(e, msg="Failed to evaluate term!")
             mytop.instruction_index = self._edestination
             return
 
