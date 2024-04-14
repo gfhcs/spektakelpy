@@ -19,11 +19,13 @@ from state_space.lts import state_space, Transition, State, LTS
 from tests.samples_translation.assignments import samples as assignments
 from tests.samples_translation.async_failures import samples as async_failures
 from tests.samples_translation.choice import code as code_choice
+from tests.samples_translation.classes import samples as classes
 from tests.samples_translation.closures import samples as closures
 from tests.samples_translation.diamond import code as code_diamond
 from tests.samples_translation.dicts import samples as dicts
 from tests.samples_translation.exceptions import samples as exceptions
 from tests.samples_translation.expressions import samples as expressions
+from tests.samples_translation.fors import samples as fors
 from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.ifs import samples as ifs
 from tests.samples_translation.lists import samples as lists
@@ -33,7 +35,6 @@ from tests.samples_translation.philosophers_nodeadlock import code as code_philo
 from tests.samples_translation.procedures import samples as procedures
 from tests.samples_translation.producer_consumer import code as code_producer_consumer
 from tests.samples_translation.ranges import samples as ranges
-from tests.samples_translation.fors import samples as fors
 from tests.samples_translation.strings import samples as strings
 from tests.samples_translation.tasks import samples as tasks
 from tests.samples_translation.tuples import samples as tuples
@@ -838,18 +839,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         Tests the creation and instantiation of classes, including inheritance and defining/calling methods, as well
         as local types (i.e. types defined in scopes other than module level.
         """
-
-        # TODO: Extend and use the samples in classes.py!
-
-        # TODO: Have a test case evaluate "object.method is object.method"
-
-        raise NotImplementedError()
-
-    def test_properties(self):
-        """
-        Tests the declaration and execution of properties, involving attribute expressions, assignment to attribute expressions.
-        """
-        raise NotImplementedError()
+        self.examine_samples(classes)
 
     def test_imports(self):
         """
