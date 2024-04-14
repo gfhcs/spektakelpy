@@ -485,7 +485,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "        return self._y\n"
                                            "\n"
                                            "def p():\n"
-                                           "  class A(): # Error: Class definitions are not allowed in procedures.\n"
+                                           "  class A(): # Used to be forbidden, but is now allowed.\n"
                                            "    pass\n"
                                            "\n"
                                            "class A(C, D):\n"
@@ -521,7 +521,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "")
 
         self.assertEqual(len(env_in) + 8, len(env_out))
-        self.assertErrors(4, err)
+        self.assertErrors(3, err)
         self.assertEqual(30, len(dec))
 
     def test_import(self):

@@ -310,8 +310,6 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("Property definitions are only allowed as direct members of a class definition!", node, mspec))
             env = self._declare(node, node.name, env)
         elif isinstance(node, ClassDefinition):
-            if env[ValidationKey.LEVEL] != Level.GLOBAL:
-                err.append(ValidationError("Class definitions are only allowed on the global level!", node, mspec))
             for b in node.bases:
                 self.validate_expression(b, env, dec=dec, err=err, mspec=mspec)
             env = self._declare(node, node.name, env)
