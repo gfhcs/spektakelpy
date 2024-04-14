@@ -188,9 +188,9 @@ class VariableAnalysis:
             self._free_in_proc |= free
         elif isinstance(node, ClassDefinition):
             ds = {node.name}
-            rs = node.bases
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, rs, empty, rs)
-            for member in node.body:
+            rs = set(node.bases)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, empty, empty, empty, rs)
+            for member in node.body.children:
                 dsb, wsb, rsb, nsb, fsb = self._analyse_statement(member, dec)
                 if isinstance(member, VariableDeclaration):
                     toremove = self.analyse_expression(member.pattern, dec)
@@ -198,6 +198,8 @@ class VariableAnalysis:
                     toremove = (member.name, )
                 elif isinstance(member, PropertyDefinition):
                     toremove = (member.name, )
+                elif isinstance(member, Pass):
+                    toremove = ()
                 else:
                     raise TypeError(f"Cannot analyse class members of type {type(member)}!")
                 for v in toremove:
@@ -206,6 +208,7 @@ class VariableAnalysis:
                     rsb.remove(v)
                     nsb.remove(v)
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, dsb, wsb, rsb, nsb, fsb)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ds, rs, empty, rs)
         elif isinstance(node, ImportNames):
             ds = set(node.aliases.values())
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, empty, empty, empty)
