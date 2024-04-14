@@ -646,7 +646,7 @@ class Spektakel2Stack(Translator):
             chain.append_jump(body_in)
             self._scopes.push(LoopScope(self._scopes.top, body_in, successor))
             stopper = Chain()
-            element, body = self.emit_call(body, next, [], stopper)
+            element, body = self.emit_call(body, Callable(Read(next)), [], stopper)
             eref = CRef(ExceptionReference())
             stop = terms.IsInstance(Read(eref), CTerm(VStopIteration.intrinsic_type))
             stopper.append_guard({stop: successor, negate(stop): on_error}, on_error)
