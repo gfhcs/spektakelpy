@@ -193,7 +193,7 @@ class DefaultingDict(dict):
         except KeyError:
             return self.default
 
-var d = DefaultDict(42)
+var d = DefaultingDict(42)
 d[1] = 2
 
 var result = (d.get_with_default(1), d.get_with_default(2))
@@ -287,7 +287,7 @@ class C:
     def __init__(x):
         self.x = x
 
-    property p:
+    prop p:
         get:
             return self.x
             
@@ -307,12 +307,12 @@ class C:
     def __init__(x):
         self.x = x
 
-    property p:
+    prop p:
         get:
             return self.x
             
 class D(C):
-    property p:
+    prop p:
         get:
             return super().p + 1
 
@@ -332,10 +332,10 @@ class C:
     def __init__(x):
         self.x = x
 
-    property p:
+    prop p:
         get:
             return self.x
-        set(value):
+        set value:
             self.x = value
 
 var c = C(42)
