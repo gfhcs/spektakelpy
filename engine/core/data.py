@@ -120,9 +120,6 @@ class VFloat(VPython, float):
 class VIterator(Value, ABC):
     """
     Represents the state of an iteration over an iterable.
-    The subclasses of this class must fulfill the following requirements:
-        1. It must either be an IntrinsicType, or override Value.type.
-        2. It must either override Value._seal Value.clone_unsealed and Value.bequals, or cannot contain any subvalues.
     """
 
     def __init__(self, iterable):
@@ -140,24 +137,11 @@ class VIterator(Value, ABC):
         """
         return self._iterable
 
-    @property
-    def type(self):
-        return type(self).intrinsic_type
-
     def equals(self, other):
         return self is other
 
     def _seal(self):
         self._iterable.seal()
-
-    def bequals(self, other, bijection):
-        try:
-            return bijection[id(self)] == id(other)
-        except KeyError:
-            bijection[id(self)] = id(other)
-            return (isinstance(other, type(self))
-                    and self.iterable.bequals(other.iterable, bijection)
-                    and self.sequals(other))
 
     def cequals(self, other):
         return self is other
@@ -183,35 +167,6 @@ class VIterator(Value, ABC):
         """
         pass
 
-    @abc.abstractmethod
-    def sequals(self, other):
-        """
-        Decides if this iterator represents exactly the same iteration state as another iterator.
-        :param other: A VIterator object that is of the same type as self and belongs to the same iterable.
-        :return: A bool value.
-        """
-        pass
-
-    @abc.abstractmethod
-    def copy_unsealed(self):
-        """
-        Returns an unsealed copy of this iterator. This method is called by self.clone_unsealed in order to replicate
-        the state of this iterator.
-        :return: A VIterator i with i.sequals(self).
-        """
-        pass
-
-    def clone_unsealed(self, clones=None):
-        if clones is None:
-            clones = {}
-        try:
-            return clones[id(self)]
-        except KeyError:
-            c = self.copy_unsealed()
-            clones[id(self)] = c
-            c._iterable = self._iterable.clone_unsealed(clones=clones)
-            return c
-
 
 @intrinsic_type("indexing_iterator", [type_object])
 class VIndexingIterator(VIterator):
@@ -224,13 +179,29 @@ class VIndexingIterator(VIterator):
         super().__init__(check_type(s, Value))
         self._i = 0
 
-    def sequals(self, other):
-        return self._i == other._i
+    @property
+    def type(self):
+        return VIndexingIterator.intrinsic_type
 
-    def copy_unsealed(self):
-        c = VIndexingIterator(self.iterable)
-        c._i = self._i
-        return c
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return (isinstance(other, VIndexingIterator)
+                    and self._i == other._i
+                    and self.iterable.bequals(other.iterable, bijection))
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VIndexingIterator(self._iterable.clone_unsealed(clones=clones))
+            clones[id(self)] = c
+            c._i = self._i
+            return c
 
     def print(self, out):
         out.write("indexing_iterator(")

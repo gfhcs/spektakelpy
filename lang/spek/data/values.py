@@ -1,6 +1,6 @@
 import abc
 
-from engine.core.atomic import type_object
+from engine.core.atomic import type_object, VObject
 from engine.core.data import VBool, VIndexError, VKeyError, VInt, VIndexingIterator, VIterator, VRuntimeError
 from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
 from engine.core.value import Value
@@ -207,20 +207,19 @@ class VMutableIterator(VIterator):
         self._core = core
         self._mtoken = iterable.mtoken
 
-    def _seal(self):
-        self.iterable.seal()
-        self._core.seal()
-        self._mtoken.seal()
+    @property
+    def type(self):
+        return VMutableIterator.intrinsic_type
 
     def bequals(self, other, bijection):
         try:
             return bijection[id(self)] == id(other)
         except KeyError:
             bijection[id(self)] = id(other)
-            return (isinstance(other, type(self))
-                    and self.iterable.bequals(other.iterable, bijection)
+            return (isinstance(other, VMutableIterator)
+                    and self._mtoken.bequals(other._mtoken, bijection)
                     and self._core.bequals(other._core, bijection)
-                    and self._mtoken.bequals(other._mtoken, bijection))
+                    and self.iterable.bequals(other.iterable, bijection))
 
     def clone_unsealed(self, clones=None):
         if clones is None:
@@ -228,10 +227,15 @@ class VMutableIterator(VIterator):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VMutableIterator(self._core.clone_unsealed(clones=clones), iterable=self.iterable)
+            c = VMutableIterator(self._core.clone_unsealed(clones=clones), iterable=self.iterable.clone_unsealed(clones=clones))
             clones[id(self)] = c
             c._mtoken = self._mtoken.clone_unsealed(clones=clones)
             return c
+
+    def _seal(self):
+        self.iterable.seal()
+        self._core.seal()
+        self._mtoken.seal()
 
     def sequals(self, other):
         raise NotImplementedError()
@@ -268,7 +272,7 @@ class VList(TokenizedMutable):
         """
         super().__init__()
         self._items = [] if elements is None else [check_type(x, Value) for x in elements]
-        self._mtoken = VInt(0)
+        self._mtoken = VObject()
 
     @property
     def mtoken(self):
@@ -276,7 +280,7 @@ class VList(TokenizedMutable):
 
     def _mutate(self):
         check_unsealed(self)
-        self._mtoken = VInt(self._mtoken + 1)
+        self._mtoken = VObject()
 
     @intrinsic_member()
     def append(self, item):
@@ -369,7 +373,8 @@ class VList(TokenizedMutable):
         except KeyError:
             bijection[id(self)] = id(other)
             if not (isinstance(other, VList)
-                    and len(self._items) == len(other._items)):
+                    and len(self._items) == len(other._items)
+                    and self._mtoken.bequals(other._mtoken, bijection)):
                 return False
             return all(a.bequals(b, bijection) for a, b in zip(self._items, other._items))
 
@@ -382,6 +387,7 @@ class VList(TokenizedMutable):
         return unhashable(self)
 
     def _seal(self):
+        self._mtoken.seal()
         for c in self._items:
             c.seal()
         self._items = tuple(self._items)
@@ -394,6 +400,7 @@ class VList(TokenizedMutable):
         except KeyError:
             c = VList(self._items)
             clones[id(self)] = c
+            c._mtoken = self._mtoken.clone_unsealed(clones=clones)
             c._items = [c.clone_unsealed(clones=clones) for c in c._items]
             return c
 
@@ -485,7 +492,7 @@ class VDict(TokenizedMutable):
         else:
             self._items = {VDict.Key(k): check_type(v, Value) for k, v in items}
 
-        self._mtoken = VInt(0)
+        self._mtoken = VObject()
 
     @property
     def mtoken(self):
@@ -493,7 +500,7 @@ class VDict(TokenizedMutable):
 
     def _mutate(self):
         check_unsealed(self)
-        self._mtoken = VInt(self._mtoken + 1)
+        self._mtoken = VObject()
 
     def keys_python(self):
         """
@@ -585,7 +592,8 @@ class VDict(TokenizedMutable):
         except KeyError:
             bijection[id(self)] = id(other)
             if not (isinstance(other, VDict)
-                    and len(self._items) == len(other._items)):
+                    and len(self._items) == len(other._items)
+                    and self._mtoken.bequals(other._mtoken, bijection)):
                 return False
             for k, v in self._items.items():
                 try:
@@ -611,6 +619,7 @@ class VDict(TokenizedMutable):
         return unhashable(self)
 
     def _seal(self):
+        self._mtoken.seal()
         for k, v in self._items.items():
             k.wrapped.seal()
             v.seal()
@@ -623,6 +632,7 @@ class VDict(TokenizedMutable):
         except KeyError:
             c = VDict(self)
             clones[id(self)] = c
+            c._mtoken = self._mtoken.clone_unsealed(clones=clones)
             c._items = {VDict.Key(k.wrapped.clone_unsealed(clones=clones)): v.clone_unsealed(clones=clones) for k, v in c._items.items()}
             return c
 
