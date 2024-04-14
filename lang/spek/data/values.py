@@ -274,14 +274,17 @@ class VList(TokenizedMutable):
     def mtoken(self):
         return self._mtoken
 
+    def _mutate(self):
+        check_unsealed(self)
+        self._mtoken = VInt(self._mtoken + 1)
+
     @intrinsic_member()
     def append(self, item):
         """
         Appends an item to this list.
         :param item: The item to append.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.append(check_type(item, Value))
 
     @intrinsic_member()
@@ -291,8 +294,7 @@ class VList(TokenizedMutable):
         :param index: The index of the item to pop.
         :return: The popped item.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.pop(int(index))
 
     @intrinsic_member()
@@ -301,8 +303,7 @@ class VList(TokenizedMutable):
         Exends this list by an iterable of further elements.
         :param iterable: An iterable of Values.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.extend(check_type(x, Value) for x in iterable)
 
     @intrinsic_member()
@@ -312,8 +313,7 @@ class VList(TokenizedMutable):
         :param index: The index the inserted item will have in the list after insertion.
         :param item: The Value to insert.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.insert(int(index), check_type(item, Value))
 
     @intrinsic_member()
@@ -322,8 +322,7 @@ class VList(TokenizedMutable):
         Remove the first item from the list whose value is equal to x. It raises a ValueError if there is no such item.
         :param x: The Value to remove from this list.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.remove(check_type(x, Value))
 
     @intrinsic_member()
@@ -331,8 +330,7 @@ class VList(TokenizedMutable):
         """
         Empties this list, i.e. removes all items.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.clear()
 
     @intrinsic_member()
@@ -340,8 +338,7 @@ class VList(TokenizedMutable):
         """
         Sorts this list stably in-place.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         self._items.sort()
 
     def print(self, out):
@@ -413,8 +410,7 @@ class VList(TokenizedMutable):
             raise VIndexError(str(iex))
 
     def __setitem__(self, key, value):
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         self._items[int(check_type(key, Value))] = check_type(value, Value)
 
     def __add__(self, other):
@@ -495,6 +491,10 @@ class VDict(TokenizedMutable):
     def mtoken(self):
         return self._mtoken
 
+    def _mutate(self):
+        check_unsealed(self)
+        self._mtoken = VInt(self._mtoken + 1)
+
     def keys_python(self):
         """
         A Python view on the keys of this VDict.
@@ -530,8 +530,7 @@ class VDict(TokenizedMutable):
         """
         Empties this dictionary, i.e. removes all its entries.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         self._items.clear()
 
     @intrinsic_member()
@@ -541,8 +540,7 @@ class VDict(TokenizedMutable):
         :param key: The key for which a value is to be retrieved and removed.
         :return: The value that was retrieved and removed.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         return self._items.pop(VDict.Key(key))
 
     @intrinsic_member()
@@ -551,8 +549,7 @@ class VDict(TokenizedMutable):
         Update this VDict with the key/value pairs from other, overwriting existing keys.
         :param other: Either a VDict or an iterable of key/value pairs.
         """
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         if isinstance(other, VDict):
             self._items.update(other._items)
         else:
@@ -645,8 +642,7 @@ class VDict(TokenizedMutable):
             raise VKeyError(str(key))
 
     def __setitem__(self, key, value):
-        check_unsealed(self)
-        self._mtoken += 1
+        self._mutate()
         self._items[VDict.Key(key)] = check_type(value, Value)
 
     def __ior__(self, other):
