@@ -147,7 +147,7 @@ def foo():
 
     return test
 
-result = foo()()
+var result = foo()()
 
 await never()
 """: ((2, 1,  num_interactions_possible), {}),
