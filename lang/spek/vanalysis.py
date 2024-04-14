@@ -203,10 +203,10 @@ class VariableAnalysis:
                 else:
                     raise TypeError(f"Cannot analyse class members of type {type(member)}!")
                 for v in toremove:
-                    dsb.remove(v)
-                    wsb.remove(v)
-                    rsb.remove(v)
-                    nsb.remove(v)
+                    dsb -= {v}
+                    wsb -= {v}
+                    rsb -= {v}
+                    nsb -= {v}
                 VariableAnalysis._update(declared, written, read, nonfunctional, free, dsb, wsb, rsb, nsb, fsb)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ds, rs, empty, rs)
         elif isinstance(node, ImportNames):
