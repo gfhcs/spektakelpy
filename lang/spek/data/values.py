@@ -252,7 +252,7 @@ class VMutableIterator(VIterator):
 
     @intrinsic_member("__next__")
     def next(self):
-        if self._mtoken != self.iterable.mtoken:
+        if not self._mtoken.cequals(self.iterable.mtoken):
             raise VRuntimeError("The iterable underlying this iterator has been modified!")
         return self._core.next()
 
