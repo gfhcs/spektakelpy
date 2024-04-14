@@ -140,10 +140,11 @@ class VariableAnalysis:
         elif isinstance(node, For):
             rs = self.analyse_expression(node.iterable, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, empty, rs, empty, rs)
-            ds = self.analyse_expression(node.pattern, dec)
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ds, empty, empty, empty)
+            ps = self.analyse_expression(node.pattern, dec)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ps, ps, empty, empty, empty)
             ds, ws, rs, ns, fs = self._analyse_statement(node.body, dec)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, ws, rs, ns, fs)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ps, empty, empty, empty)
             VariableAnalysis._update(declared, written, read, nonfunctional, free, empty, ws, rs, empty, fs)
         elif isinstance(node, Try):
             VariableAnalysis._update(declared, written, read, nonfunctional, free, *self._analyse_statement(node.body, dec))

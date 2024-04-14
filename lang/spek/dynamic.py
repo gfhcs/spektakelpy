@@ -639,6 +639,7 @@ class Spektakel2Stack(Translator):
             iterable, chain = self.translate_expression(chain, node.iterable, dec, on_error)
             next, = self.declare_pattern(chain, None, on_error)
             chain.append_update(next, Read(terms.Project(terms.LoadAttrCase(Iter(iterable), "__next__"), CInt(1))), on_error)
+            self.declare_pattern(chain, node.pattern, on_error)
 
             body_in = Chain()
             body = body_in
@@ -651,7 +652,6 @@ class Spektakel2Stack(Translator):
             stop = terms.IsInstance(Read(eref), CTerm(VStopIteration.intrinsic_type))
             stopper.append_guard({stop: successor, negate(stop): on_error}, on_error)
             successor.append_update(eref, terms.CNone(), on_error)
-            self.declare_pattern(body, node.pattern, on_error)
             _, body = self.emit_assignment(body, node.pattern, dec, element, on_error, declaring=True)
             body = self.translate_statement(body, node.body, dec, on_error)
             self._scopes.pop()
