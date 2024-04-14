@@ -27,7 +27,6 @@ class StackState(TaskState):
         self._stack = list(check_types(stack, Frame))
         self._exception = value_none if exception is None else check_type(exception, Value)
         self._returned = value_none if returned is None else check_type(returned, Value)
-        self.status = TaskStatus.RUNNING if len(self._stack) > 0 else TaskStatus.COMPLETED
 
     def cancel(self):
         if self.status in (TaskStatus.CANCELLED, TaskStatus.COMPLETED, TaskStatus.FAILED):
@@ -138,6 +137,7 @@ class StackState(TaskState):
         except KeyError:
             bijection[id(self)] = id(other)
             if not (isinstance(other, StackState)
+                    and self.status == other.status
                     and len(self._stack) == len(other._stack)
                     and self._exception.bequals(other._exception, bijection)
                     and self._returned.bequals(other._returned, bijection)):
@@ -156,40 +156,64 @@ class StackState(TaskState):
 
     def run(self, mstate):
         check_unsealed(self)
-        tstate = self
 
-        if tstate.status != TaskStatus.CANCELLED:
-            tstate.status = TaskStatus.RUNNING
-        progress = False
+        if self.status == TaskStatus.WAITING:
+            self.status = TaskStatus.RUNNING
+        elif self.status == TaskStatus.CANCELLED:
+            # Status will remain 'CANCELLED', but execution commences, for cleanup.
+            pass
+        elif self.status in (TaskStatus.COMPLETED, TaskStatus.FAILED):
+            raise RuntimeError("A task that has completed or failed must not be run again!")
+        elif self.status == TaskStatus.RUNNING:
+            raise RuntimeError("This task is already running, which is not a reentrant state!")
+        else:
+            raise NotImplementedError("Unknown task status!")
 
         # A task is not supposed to yield control unless it really has to.
         # So in order to keep overhead from interleavings low, we just continue execution
         # as long as possible:
+        progress = False
         while True:
 
-            if len(tstate.stack) == 0:
-                if tstate.status != TaskStatus.CANCELLED:
-                    tstate.status = TaskStatus.FAILED if isinstance(self.exception, VException) else TaskStatus.COMPLETED
+            try:
+                top = self.stack[-1]
+            except IndexError:
+                if isinstance(self.exception, VException):
+                    if self.status == TaskStatus.RUNNING:
+                        self.status = TaskStatus.FAILED
+                    elif self.status == TaskStatus.CANCELLED:
+                        pass
+                    else:
+                        raise RuntimeError("Unexpected task status!")
+                else:
+                    self.status = TaskStatus.COMPLETED
                 self.dequeue(mstate)
                 break
-
-            top = tstate.stack[-1]
 
             try:
                 i = top.program[top.instruction_index]
             except IndexError:
                 self.exception = VInstructionException("Instruction index invalid, don't know how to continue.")
-                tstate.status = TaskStatus.FAILED
+                if self.status == TaskStatus.RUNNING:
+                    self.status = TaskStatus.FAILED
+                elif self.status == TaskStatus.CANCELLED:
+                    pass
+                else:
+                    raise RuntimeError("Unexpected task status!")
                 self.dequeue(mstate)
                 break
 
-            if i.enabled(tstate, mstate):
-                i.execute(tstate, mstate)
+            if i.enabled(self, mstate):
+                i.execute(self, mstate)
                 progress = True
             else:
                 if not progress:
                     raise RuntimeError("This task was not enabled and thus should not have been run!")
-                if tstate.status != TaskStatus.CANCELLED:
-                    tstate.status = TaskStatus.WAITING
+                if self.status == TaskStatus.RUNNING:
+                    self.status = TaskStatus.WAITING
+                elif self.status == TaskStatus.CANCELLED:
+                    pass
+                else:
+                    raise RuntimeError("Unexpected task status!")
                 break
 

@@ -56,7 +56,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         :return: A MachineState object.
         """
         frames = [Frame(ProgramLocation(p, 0), [value_none] * num_fvars)]
-        m = StackState(TaskStatus.RUNNING, frames)
+        m = StackState(TaskStatus.WAITING, frames)
         return MachineState([m, *(InteractionState(i) for i in Interaction)])
 
     def explore(self, p, s0=None):

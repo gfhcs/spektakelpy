@@ -422,9 +422,10 @@ class Launch(Instruction):
         try:
             r = callee.initiate(task, mstate, *args)
             if r is None:
-                task.status = TaskStatus.RUNNING
+                task.status = TaskStatus.WAITING
             else:
                 task.returned = r
+                task.status = TaskStatus.COMPLETED
         except Exception as e:
             tstate.exception = pack_exception(e, msg="Failed to call procedure!")
             mytop.instruction_index = self._edestination

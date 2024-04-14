@@ -11,11 +11,11 @@ class TaskStatus(Enum):
     """
     Describes the status of a task.
     """
-    WAITING = 0    # Task is waiting to begin/resume execution.
-    RUNNING = 1    # Task is currently being computed and changing the state.
-    COMPLETED = 2  # Task has finished successfully.
-    FAILED = 3     # Task has failed.
-    CANCELLED = 4  # Task has been cancelled.
+    WAITING = 0    # Task could be scheduled for execution, but is not under exection at the moment.
+    RUNNING = 1    # The instructions currently being executed belong to this task.
+    COMPLETED = 2  # Task can never run again, because it terminated normally.
+    FAILED = 3     # Task can never run again, because it has failed.
+    CANCELLED = 4  # Task has been cancelled, but can possibly be scheduled for execution again (to clean up).
 
 
 class TaskState(Value, abc.ABC):
