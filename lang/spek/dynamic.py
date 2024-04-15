@@ -764,25 +764,20 @@ class Spektakel2Stack(Translator):
             return name, chain
 
         elif isinstance(node, ClassDefinition):
-            self._scopes.push(ClassScope(self._scopes.top))
-
-            name, = self.declare_pattern(chain, node.name, on_error)
-
             super_classes = []
             for s_expression in node.bases:
-                s_term = self.translate_expression(chain, s_expression, dec, on_error)
+                s_term, chain = self.translate_expression(chain, s_expression, dec, on_error)
                 super_classes.append(s_term)
 
+            c = self._scopes.declare(chain, node.name, not self._vanalysis.safe_on_stack(node.name), on_error)
+
+            self._scopes.push(ClassScope(self._scopes.top, c))
             # We create a new namespace dict and put it into the stack frame.
-            chain = chain.append_push()
-            chain = chain.append_update(CRef(FrameReference(0)), terms.NewDict(), exit)
+            chain.append_update(c, terms.NewDict({}), on_error)
 
             chain = self.translate_statement(chain, node.body, dec, on_error)
 
-            chain = chain.append_update(name, terms.NewClass(super_classes, Read(CRef(FrameReference(0)))), on_error)
-            chain = chain.append_pop(on_error)
-
-            self._scopes.pop()
+            _, chain = self.emit_assignment(chain, node.name, dec, terms.NewClass(node.name.name, super_classes, Read(c)), on_error, declaring=True)
 
             return chain
 

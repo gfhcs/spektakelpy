@@ -169,14 +169,16 @@ class ClassScope(Scope):
     """
     A scope encompassing a class declaration.
     """
-    def __init__(self, parent):
+    def __init__(self, parent, mdictref):
         """
         Creates a new class scope.
         :param parent: The scope in which the new one is to be created.
+        :param mdictref: The reference under which the dictionary of class members is expected.
         """
         super().__init__(parent)
         self._names = dict()
         self._offset = 0
+        self._mdictref = mdictref
 
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
         if name is None:
@@ -184,9 +186,8 @@ class ClassScope(Scope):
             r = CRef(FrameReference(self._offset))
             self._offset += 1
         else:
-            # We are declaring a class member. We know that the class/module definition code is
-            # running under a stack frame that has a namespace dict at offset 0. That object needs to be extended.
-            r = Project(Read(CRef(FrameReference(0))), CString(name))
+            # We are declaring a class member. Extend the member dict:
+            r = Project(Read(self._mdictref), CString(name))
         if cell:
             if initialize:
                 chain.append_update(r, NewCell(), on_error)
