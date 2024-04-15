@@ -17,11 +17,11 @@ class C(B):
         self._y = y
         
     prop x:
-        get:
+        get(self):
             return self._x
     
     prop y:
-        get:
+        get(self):
             return self._y
 """: ast.ClassDefinition,
 

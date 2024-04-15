@@ -18,7 +18,7 @@ class A:
         self._c = c
         
     prop largest:
-        get:
+        get(self):
             return max3(self._a, self._b, self._c)
             
 class B(A):
@@ -28,11 +28,11 @@ class B(A):
         self._d = d
         
     prop components:
-        get:
+        get(self):
             return (self._a, self._b, self._c, self._d)
         
     prop proper:
-        get:
+        get(self):
             d = self._d
             return self._a == d or self._b == d or self._c == d
     

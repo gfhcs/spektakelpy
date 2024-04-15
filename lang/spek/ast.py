@@ -990,24 +990,28 @@ class PropertyDefinition(Statement):
     A statement defining a getter and (possibly) setter for an instance property.
     """
 
-    def __init__(self, name, getter, vname, setter, **kwargs):
+    def __init__(self, name, gself, getter, sself, vname, setter, **kwargs):
         """
         Creates a procedure definition.
         :param name: The name of the property to be defined.
+        :param gself: The identifier for the variable holding the class instance to apply the getter to.
         :param getter: The getter statement of the property.
+        :param sself: The identifier for the variable holding the class instance to apply the setter to (may be None).
         :param vname: The identifier for the variable holding the value that is to be written by the setter (may be None)
         :param setter: The setter statement of the property (may be None).
         :param kwargs: See statement constructor.
         """
 
-        if not ((vname is None) == (setter is None)):
-            raise ValueError("The given 'vname' must be None if and only if the given 'setter' is None!")
+        if not ((sself is None) == (vname is None) == (setter is None)):
+            raise ValueError("The given 'sself' and 'vname' must be None if and only if the given 'setter' is None!")
 
         if setter is None:
             super().__init__(check_type(name, Identifier), check_type(getter, Statement), **kwargs)
         else:
             super().__init__(check_type(name, Identifier),
+                             check_type(gself, Identifier),
                              check_type(getter, Statement),
+                             check_type(sself, Identifier),
                              check_type(vname, Identifier),
                              check_type(setter, Statement),
                              **kwargs)
@@ -1020,11 +1024,28 @@ class PropertyDefinition(Statement):
         return self.children[0]
 
     @property
+    def gself(self):
+        """
+        The identifier for the variable holding the class instance to apply the getter to.
+        """
+        return self.children[1]
+
+    @property
     def getter(self):
         """
         The getter statement of the property.
         """
-        return self.children[1]
+        return self.children[2]
+
+    @property
+    def sself(self):
+        """
+        The identifier for the variable holding the class instance to apply the setter to (may be None).
+        """
+        try:
+            return self.children[-3]
+        except IndexError:
+            return None
 
     @property
     def vname(self):
