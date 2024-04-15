@@ -317,7 +317,7 @@ class SpektakelValidator(Validator):
             for b in node.bases:
                 self.validate_expression(b, env, dec=dec, err=err, mspec=mspec)
             env = self._declare(node, node.name, env)
-            ebody = env.adjoin({ValidationKey.LEVEL: Level.CLASS, "self": node})
+            ebody = env.adjoin({ValidationKey.LEVEL: Level.CLASS})
             members = {}
             for d in node.body.children:
                 if isinstance(d, (VariableDeclaration, PropertyDefinition, ProcedureDefinition)):
