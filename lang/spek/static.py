@@ -300,10 +300,11 @@ class SpektakelValidator(Validator):
             env_body = env_body.adjoin({ValidationKey.LEVEL: Level.PROC, ValidationKey.PROC: node})
             self.validate_statement(node.body, env_body, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, PropertyDefinition):
-            genv = env
+            genv = self._declare(node.gself, node.gself, env)
             genv = genv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
             self.validate_statement(node.getter, genv, dec=dec, err=err, mspec=mspec)
-            senv = self._declare(node, node.vname, env)
+            senv = self._declare(node.sself, node.sself, env)
+            senv = self._declare(node.vname, node.vname, senv)
             senv = senv.adjoin({ValidationKey.LEVEL: Level.PROP, ValidationKey.PROC: node})
             self.validate_statement(node.setter, senv, dec=dec, err=err, mspec=mspec)
             if env[ValidationKey.LEVEL] != Level.CLASS:
