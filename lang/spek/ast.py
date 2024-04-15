@@ -1006,7 +1006,7 @@ class PropertyDefinition(Statement):
             raise ValueError("The given 'sself' and 'vname' must be None if and only if the given 'setter' is None!")
 
         if setter is None:
-            super().__init__(check_type(name, Identifier), check_type(getter, Statement), **kwargs)
+            super().__init__(check_type(name, Identifier), check_type(gself, Identifier), check_type(getter, Statement), **kwargs)
         else:
             super().__init__(check_type(name, Identifier),
                              check_type(gself, Identifier),
