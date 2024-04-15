@@ -288,6 +288,9 @@ class SpektakelValidator(Validator):
                 self.validate_expression(node.expression, env, dec=dec, err=err, mspec=mspec)
             env = self._declare(node, node.pattern, env)
         elif isinstance(node, ProcedureDefinition):
+            if env[ValidationKey.LEVEL] == Level.CLASS:
+                if len(node.argnames) < 1:
+                    err.append(ValidationError("Instance method must take at least one argument (the instance)!"))
             env = self._declare(node, node.name, env)
             env_body = env
             anames = set()
