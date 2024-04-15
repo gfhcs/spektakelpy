@@ -23,7 +23,7 @@ class Point:
 
     var _x, _y
     
-    def __init__(x, y):
+    def __init__(self, x, y):
         self._x = x
         self._y = y
     
@@ -40,7 +40,7 @@ await never()
 from interaction import never
 
 class AbstractException(Exception):
-    def __init__():
+    def __init__(self):
         super().__init__("This operation is abstract!")
 
 var result = isinstance(AbstractException(), Exception)
@@ -53,7 +53,7 @@ await never()
 from interaction import never
 
 class AbstractException(Exception):
-    def __init__():
+    def __init__(self):
         super().__init__("This operation is abstract!")
 
 class Shape:
@@ -62,7 +62,7 @@ class Shape:
         
 class Rectangle(Shape):
     var x, y, w, h
-    def __init__(x, y, w, h):
+    def __init__(self, x, y, w, h):
         super().__init__()
         self.x, self.y, self.w, self.h = x, y, w, h
         
@@ -71,7 +71,7 @@ class Rectangle(Shape):
         
 class Circle(Shape):
     var x, y, r
-    def __init__(x, y, r):
+    def __init__(self, x, y, r):
         super().__init__()
         self.x, self.y, self.r = x, y, r
         
@@ -98,7 +98,7 @@ from interaction import never
 
 class Vehicle:    
     var _weight
-    def __init__(weight):
+    def __init__(self, weight):
         super().__init__()
         self._weight = weight
 
@@ -107,7 +107,7 @@ class Vehicle:
 
 class WheeledVehicle():
     var _num_wheels
-    def __init__(num_wheels, weight):
+    def __init__(self, num_wheels, weight):
         self._num_wheels = num_wheels
 
     def get_num_wheels(self):
@@ -115,7 +115,7 @@ class WheeledVehicle():
 
 class WaterVehicle(Vehicle):
     var _draught
-    def __init__(draught, weight):
+    def __init__(self, draught, weight):
         super().__init__(weight)
         self._draught = draught
 
@@ -123,7 +123,7 @@ class WaterVehicle(Vehicle):
         return self._draught
         
 class AmphibiousVehicle(WheeledVehicle, WaterVehicle):
-    def __init__(num_wheels, draught, weight):
+    def __init__(self, num_wheels, draught, weight):
         super().__init__(num_wheels)
         super(WheeledVehicle, self).__init__(draught, weight)
 
@@ -142,7 +142,7 @@ def foo():
     class C:
         pass
 
-    def test():
+    def test(self):
         return C()
 
     return test
@@ -158,7 +158,7 @@ from interaction import never
 
 class C:    
     var x
-    def __init__(x):
+    def __init__(self, x):
         self.x = x
         
 var c = C(1337)
@@ -184,10 +184,10 @@ class DefaultingDict(dict):
  
     var default
     
-    def __init__(default):
+    def __init__(self, default):
         self.default = default
         
-    def get_with_default(key):
+    def get_with_default(self, key):
         try:
             return self[key]
         except KeyError:
@@ -284,11 +284,11 @@ class C:
 
     var x
     
-    def __init__(x):
+    def __init__(self, x):
         self.x = x
 
     prop p:
-        get:
+        get(self):
             return self.x
             
 var result = C(42).p
@@ -304,16 +304,16 @@ class C:
 
     var x
 
-    def __init__(x):
+    def __init__(self, x):
         self.x = x
 
     prop p:
-        get:
+        get(self):
             return self.x
             
 class D(C):
     prop p:
-        get:
+        get(self):
             return super().p + 1
 
 var result = D(42).p
@@ -329,13 +329,13 @@ class C:
 
     var x
 
-    def __init__(x):
+    def __init__(self, x):
         self.x = x
 
     prop p:
-        get:
+        get(self):
             return self.x
-        set value:
+        set(self, value):
             self.x = value
 
 var c = C(42)
