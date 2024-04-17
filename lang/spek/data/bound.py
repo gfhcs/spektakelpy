@@ -20,6 +20,23 @@ class BoundProcedure(Procedure):
         self._p = check_type(p, Procedure)
         self._args = check_types(args, Value, allow_none=True)
 
+    @property
+    def core(self):
+        """
+        The procedure some arguments of which have been bound.
+        :return: A Procedure object.
+        """
+        return self._p
+
+    @property
+    def bound(self):
+        """
+        A tuple of Value objects serving as arguments. Some of them may be None, to specify that the corresponding
+        argument is not bound.
+        :return: A tuple of Value objects, some of which may be None.
+        """
+        return tuple(self._args)
+
     def _seal(self):
         self._p.seal()
         for a in self._args:

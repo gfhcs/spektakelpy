@@ -2,6 +2,7 @@ from engine.core.atomic import EmptyMember
 from engine.core.compound import CompoundType
 from engine.stack.exceptions import VTypeError
 from engine.stack.procedure import StackProcedure
+from lang.spek.data.bound import BoundProcedure
 
 
 class Class(CompoundType):
@@ -27,12 +28,24 @@ class Class(CompoundType):
         except KeyError:
             return 0
 
-        if isinstance(initializer, StackProcedure):
-            return initializer.num_args
-        elif isinstance(initializer, EmptyMember):
-            return 0
-        else:
-            raise VTypeError(f"The number of constructor arguments for the class {self.name} cannot be determined!")
+        num_args = -1 # 'self' is not a constructor argument.
+        while True:
+            if isinstance(initializer, StackProcedure):
+                num_args += initializer.num_args
+                break
+            elif isinstance(initializer, EmptyMember):
+                # This represents the empty initializer, that takes only 'self' as argument:
+                num_args += 1
+                break
+            elif isinstance(initializer, BoundProcedure):
+                num_args -= sum(1 for v in initializer.bound if v is not None)
+                initializer = initializer.core
+            else:
+                raise VTypeError(f"The number of constructor arguments for the class {self.name} cannot be determined!")
+
+        assert num_args >= 0
+
+        return num_args
 
     def clone_unsealed(self, clones=None):
         if clones is None:
