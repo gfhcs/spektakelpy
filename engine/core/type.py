@@ -147,7 +147,7 @@ class Type(Value, abc.ABC):
         :return: A bool.
         """
 
-        if self == other:
+        if self.cequals(other):
             return True
 
         for s in self.bases:
