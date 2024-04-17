@@ -773,6 +773,8 @@ class Spektakel2Stack(Translator):
 
             chain = self.translate_statement(chain, node.body, dec, on_error)
 
+            self._scopes.pop()
+
             _, chain = self.emit_assignment(chain, node.name, dec, terms.NewClass(node.name.name, super_classes, Read(c)), on_error, declaring=True)
 
             return chain
