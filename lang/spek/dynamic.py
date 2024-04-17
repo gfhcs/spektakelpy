@@ -1,3 +1,4 @@
+from engine.core.atomic import type_object
 from engine.core.data import VException, VStopIteration
 from engine.stack.procedure import StackProcedure
 from engine.stack.program import ProgramLocation
@@ -764,6 +765,9 @@ class Spektakel2Stack(Translator):
             for s_expression in node.bases:
                 s_term, chain = self.translate_expression(chain, s_expression, dec, on_error)
                 super_classes.append(s_term)
+
+            if len(super_classes) == 0:
+                super_classes.append(CTerm(type_object))
 
             c = self._scopes.declare(chain, node.name, not self._vanalysis.safe_on_stack(node.name), on_error)
 
