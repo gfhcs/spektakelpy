@@ -1,10 +1,25 @@
 from abc import ABC
 from inspect import signature, Parameter
 
+from engine.core.singleton import SingletonValue
 from engine.core.type import Type
 from engine.core.value import Value
 from util import check_types, check_type
 from util.immutable import Immutable
+
+
+class EmptyMember(SingletonValue):
+    """
+    A member that exists but has no intrinsic meaning.
+    The only instance of this type is meant to be a placeholder.
+    """
+
+    @property
+    def type(self):
+        raise NotImplementedError("")
+
+    def print(self, out):
+        raise NotImplementedError("")
 
 
 class AtomicType(Immutable, Type):
@@ -90,5 +105,5 @@ class VObject(Value):
         return super(ABC, self).__str__()
 
 
-type_object = AtomicType("object", [], new=VObject, num_cargs=0)
+type_object = AtomicType("object", [], new=VObject, num_cargs=0, members={'__init__': EmptyMember()})
 type_type = AtomicType("type", [type_object])

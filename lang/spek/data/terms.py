@@ -3,7 +3,7 @@ from abc import ABC
 from enum import Enum
 from weakref import WeakValueDictionary
 
-from engine.core.atomic import type_object
+from engine.core.atomic import type_object, EmptyMember
 from engine.core.compound import FieldIndex
 from engine.core.data import VBool, VInt, VFloat, VStr, VException, VCancellationError, VRuntimeError
 from engine.core.interaction import Interaction, InteractionState, i2s
@@ -972,6 +972,8 @@ class LoadAttrCase(Term):
             raise VAttributeError(str(kex))
         if isinstance(attr, FieldIndex):
             return VTuple((VBool(False), value[int(attr)] if bound else attr))
+        elif isinstance(attr, EmptyMember):
+            return VTuple((VBool(False), EmptyProcedure()))
         elif isinstance(attr, Procedure):
             return VTuple((VBool(False), BoundProcedure(attr, value) if bound else attr))
         elif isinstance(attr, Property):

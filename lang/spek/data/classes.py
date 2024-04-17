@@ -1,3 +1,4 @@
+from engine.core.atomic import EmptyMember
 from engine.core.compound import CompoundType
 from engine.stack.exceptions import VTypeError
 from engine.stack.procedure import StackProcedure
@@ -28,6 +29,8 @@ class Class(CompoundType):
 
         if isinstance(initializer, StackProcedure):
             return initializer.num_args
+        elif isinstance(initializer, EmptyMember):
+            return 0
         else:
             raise VTypeError(f"The number of constructor arguments for the class {self.name} cannot be determined!")
 
