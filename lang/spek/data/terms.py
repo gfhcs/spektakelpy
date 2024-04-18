@@ -1425,7 +1425,7 @@ class NewClass(Term):
             if isinstance(member, (Procedure, Property)):
                 members[name] = member
             elif isinstance(member, VNone):
-                field_names.append(name)
+                field_names.append(str(name))
             else:
                 raise VRuntimeError("Encountered an unexpected entry in a namespace to be used for class creation!")
 

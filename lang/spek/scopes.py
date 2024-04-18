@@ -3,7 +3,7 @@ from abc import ABC
 
 from lang.spek.ast import Identifier
 from lang.spek.data.references import FrameReference
-from lang.spek.data.terms import CRef, NewCell, Read, Project, NewCellReference, CString
+from lang.spek.data.terms import CRef, NewCell, Read, Project, NewCellReference, CString, CNone
 from util import check_type
 
 
@@ -194,6 +194,9 @@ class ClassScope(Scope):
             if cellify:
                 chain.append_update(r, NewCell(Read(r)), on_error)
             r = NewCellReference(r)
+        else:
+            if initialize:
+                chain.append_update(r, CNone(), on_error)
 
         if name is not None:
             self._names[name] = r
