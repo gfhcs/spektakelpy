@@ -59,15 +59,15 @@ class CompoundType(Type, ABC):
         for t in dummy.mro:
             offsets[id(t)] = offset
             if t is dummy:
-                for name in direct_field_names:
-                    direct_members[name] = FieldIndex(offset)
+                for n in direct_field_names:
+                    direct_members[n] = FieldIndex(offset)
                     offset += 1
             elif isinstance(t, AtomicType):
                 offset += 1
             elif isinstance(t, CompoundType):
-                for name, member in t.direct_members:
+                for n, member in t.direct_members:
                     if isinstance(member, FieldIndex):
-                        direct_members[name] = FieldIndex(offset)
+                        direct_members[n] = FieldIndex(offset)
                         offset += 1
             else:
                 raise TypeError(f"Compound types can only inherit from atomic types and other compound types, not from {type(t)}!")
