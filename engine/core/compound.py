@@ -113,7 +113,7 @@ class VCompound(Value):
         """
         super().__init__()
         self._type = check_type(t, CompoundType)
-        self._fields = (value_none, ) * t.size
+        self._fields = [value_none, ] * t.size
 
     @property
     def type(self):
@@ -163,7 +163,7 @@ class VCompound(Value):
             c = VCompound(self._type)
             clones[id(self)] = c
             c._type = c._type.clone_unsealed(clones=clones)
-            c._fields = tuple(f.clone_unsealed(clones=clones) for f in self._fields)
+            c._fields = [f.clone_unsealed(clones=clones) for f in self._fields]
             return c
 
     def __getitem__(self, item):

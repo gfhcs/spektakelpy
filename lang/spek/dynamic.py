@@ -142,9 +142,9 @@ class Spektakel2Stack(Translator):
             a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
             r, = self.declare_pattern(chain, None, on_error)
-            tr = Read(r)
             chain.append_update(r, terms.StoreAttrCase(a, pattern.name.name), on_error)
 
+            tr = Read(r)
             csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, tr)
             cexception = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISEXCEPTION, tr)
             cupdate = negate(terms.BooleanBinaryOperation(BooleanBinaryOperator.OR, csetter, cexception))
@@ -158,7 +158,7 @@ class Spektakel2Stack(Translator):
             _, setter = self.emit_call(setter, Read(r), [term], on_error)
             setter.append_jump(successor)
 
-            update.append_update(r, term, on_error)
+            update.append_update(tr, term, on_error)
             update.append_jump(successor)
 
             exception.append_update(CRef(ExceptionReference()), tr, on_error)
