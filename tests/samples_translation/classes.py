@@ -346,4 +346,19 @@ var result = c.p
 await never()
 """: ((2, 1, num_interactions_possible), {"result": 43}),
 
+# 14
+"""
+from interaction import never
+
+class C:
+    var _x, _y = 42, "hello"
+
+    def get_data(self):
+        return self._x, self._y
+
+var result = C().get_data()
+
+await never()
+""": ((2, 1, num_interactions_possible), {"result": (42, "hello")}),
+
 }
