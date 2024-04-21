@@ -752,14 +752,14 @@ class Spektakel2Stack(Translator):
             _, chain = self._emit_procedure(chain, node.name, node.argnames, node.body, dec, on_error)
             return chain
         elif isinstance(node, PropertyDefinition):
-            getter, chain = self._emit_procedure(chain, None, [node.gself.name], node.getter, dec, on_error)
-            setter, chain = self._emit_procedure(chain, None, [node.sself.name, node.vname], node.setter, dec, on_error)
+            getter, chain = self._emit_procedure(chain, None, [node.gself], node.getter, dec, on_error)
+            setter, chain = self._emit_procedure(chain, None, [node.sself, node.vname], node.setter, dec, on_error)
             # A property is a special kind of descriptor (see https://docs.python.org/3/glossary.html#term-descriptor).
             # A property object does not have private data. It only holds the getter and the setter. Both those
             # methods take an instance as argument and then read/write that.
             name, = self.declare_pattern(chain, node.name, on_error)
-            chain = chain.append_update(name, terms.NewProperty(getter, setter), on_error)
-            return name, chain
+            chain.append_update(name, terms.NewProperty(getter, setter), on_error)
+            return chain
         elif isinstance(node, ClassDefinition):
             super_classes = []
             for s_expression in node.bases:

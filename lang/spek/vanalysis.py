@@ -179,11 +179,11 @@ class VariableAnalysis:
             self._free_in_proc |= free
         elif isinstance(node, PropertyDefinition):
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.getter, dec)
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, dsb, wsb, rsb, nsb | wsb, fsb)
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, {node.gself, *dsb}, wsb, rsb, nsb | wsb, fsb - {node.gself})
 
             dsb, wsb, rsb, nsb, fsb = self._analyse_statement(node.setter, dec)
-            ds = {node.vname, *dsb}
-            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb - {node.vname})
+            ds = {node.sself, node.vname, *dsb}
+            VariableAnalysis._update(declared, written, read, nonfunctional, free, ds, wsb, rsb, nsb | wsb, fsb - {node.sself, node.vname})
 
             self._free_in_proc |= free
         elif isinstance(node, ClassDefinition):
