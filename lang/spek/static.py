@@ -321,6 +321,8 @@ class SpektakelValidator(Validator):
             members = {}
             for d in node.body.children:
                 if isinstance(d, (VariableDeclaration, PropertyDefinition, ProcedureDefinition)):
+                    if isinstance(d, VariableDeclaration) and d.expression is not None:
+                        err.append(ValidationError("Field declarations must not initialize fields!", d, mspec))
                     env_after, dec, err = self.validate_statement(d, ebody, dec=dec, err=err, mspec=mspec)
                     assert env_after is not ebody
                     for k, v in env_after.direct.items():

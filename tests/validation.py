@@ -387,7 +387,7 @@ class TestSpektakelValidator(unittest.TestCase):
                                            "    return 42\n"
                                            "class C:\n"
                                            "\n"
-                                           "  var x = 42\n"
+                                           "  var x\n"
                                            "\n"
                                            "  prop simple:\n"
                                            "    get(self):\n"
@@ -403,7 +403,7 @@ class TestSpektakelValidator(unittest.TestCase):
 
         self.assertEqual(len(env_in) + 2, len(env_out))
         self.assertErrors(2, err)
-        self.assertEqual(12, len(dec))
+        self.assertEqual(11, len(dec))
 
     def test_proc(self):
         """
@@ -523,6 +523,21 @@ class TestSpektakelValidator(unittest.TestCase):
         self.assertEqual(len(env_in) + 8, len(env_out))
         self.assertErrors(3, err)
         self.assertEqual(30, len(dec))
+
+    def test_no_field_initialization(self):
+        sample = """
+        class C:
+            var _x, _y = 42, "hello" # Instance fields must not be initialized this way, because unlike for any
+                                     # other variable declaration, one would expect the initialization to happen before
+                                     # every __init__, so *multiple* times, *after* execution of the declaration, which
+                                     # would be odd.
+        """
+
+        node, env_in, env_out, dec, err = validate(dedent(sample))
+
+        self.assertEqual(len(env_in) + 1, len(env_out))
+        self.assertErrors(1, err)
+        self.assertEqual(3, len(dec))
 
     def test_import(self):
         """
