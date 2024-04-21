@@ -721,12 +721,13 @@ class Callable(Term):
                 except KeyError:
 
                     r = CRef(ReturnValueReference())
-                    t = Read(CRef(FrameReference(0)))
+                    t = CRef(FrameReference(0))
                     args = [Read(CRef(FrameReference(1 + idx))) for idx in range(num_cargs)]
 
-                    c = [Update(r, New(t, *args), 1, 2),
-                         Push(Read(Project(LoadAttrCase(Read(r), "__init__"), CInt(1))), args, 2, 2),
-                         Pop(2)
+                    c = [Update(t, New(Read(t), *args), 1, 3),
+                         Push(Read(Project(LoadAttrCase(Read(t), "__init__"), CInt(1))), args, 2, 3),
+                         Update(r, Read(t), 3, 3),
+                         Pop(3)
                          ]
 
                     c = StackProcedure(1 + callee.num_cargs, ProgramLocation(StackProgram(c), 0))
