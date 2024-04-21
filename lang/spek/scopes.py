@@ -183,11 +183,9 @@ class ClassScope(Scope):
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
         if name is None:
             # We are declaring a local variable:
-            r = CRef(FrameReference(self._offset))
-            self._offset += 1
-        else:
-            # We are declaring a class member. Extend the member dict:
-            r = Project(Read(self._mdictref), CString(name))
+            return self.parent.declare(chain, name, cell, on_error, initialize=initialize, cellify=cellify)
+        # We are declaring a class member. Extend the member dict:
+        r = Project(Read(self._mdictref), CString(name))
         if cell:
             if initialize:
                 chain.append_update(r, NewCell(), on_error)
