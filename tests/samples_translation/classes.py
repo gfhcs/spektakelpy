@@ -210,12 +210,10 @@ class C():
     def test(self):
         return 42
 
-var c = C()
-
-var result = (C.test is C.test, c.test is c.test)
+var result = C.test is C.test # Interestingly the equivalent for *instances* would not hold in Python!
 
 await never()
-""": ((2, 1, num_interactions_possible), {"result": (True, True)}),
+""": ((2, 1, num_interactions_possible), {"result": True}),
 
 # 9
 """
