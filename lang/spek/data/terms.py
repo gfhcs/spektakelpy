@@ -23,7 +23,7 @@ from engine.stack.term import Term
 from lang.spek.data.bound import BoundProcedure
 from lang.spek.data.builtin import builtin_iter
 from lang.spek.data.cells import VCell
-from lang.spek.data.classes import Class
+from lang.spek.data.classes import Class, VSuper
 from lang.spek.data.empty import EmptyProcedure
 from lang.spek.data.exceptions import VJumpError, VAttributeError, JumpType
 from lang.spek.data.futures import VFuture, FutureStatus
@@ -963,24 +963,34 @@ class LoadAttrCase(Term):
 
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
-        bound = not isinstance(value, Type)
+
+        if isinstance(value, VSuper):
+            instance, members = value.instance, value.members
+        elif isinstance(value, Type):
+            instance, members = value, value.members
+        else:
+            instance, members = value, value.type.members
 
         if value.type is type_object and self.name == "__init__":
             return VTuple((VBool(False), EmptyProcedure()))
+
         try:
-            attr = (value.type if bound else value).members[self.name]
+            attr = members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
+
+        bound = not isinstance(instance, Type)
+
         if isinstance(attr, FieldIndex):
-            return VTuple((VBool(False), value[int(attr)] if bound else attr))
+            return VTuple((VBool(False), instance[int(attr)] if bound else attr))
         elif isinstance(attr, EmptyMember):
             return VTuple((VBool(False), EmptyProcedure()))
         elif isinstance(attr, Procedure):
-            return VTuple((VBool(False), BoundProcedure(attr, value) if bound else attr))
+            return VTuple((VBool(False), BoundProcedure(attr, instance) if bound else attr))
         elif isinstance(attr, Property):
-            return VTuple((VBool(True), BoundProcedure(attr.getter, value) if bound else attr.getter))
+            return VTuple((VBool(True), BoundProcedure(attr.getter, instance) if bound else attr.getter))
         else:
-            raise VTypeError("The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
+            raise VTypeError(f"The attribute value {value} is of type {value.type}, which LoadAttrCase cannot handle!")
 
 
 class StoreAttrCase(Term):
@@ -1032,20 +1042,29 @@ class StoreAttrCase(Term):
 
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
-        bound = not isinstance(value, Type)
+
+        if isinstance(value, VSuper):
+            instance, members = value.instance, value.members
+        elif isinstance(value, Type):
+            instance, members = value, value.members
+        else:
+            instance, members = value, value.type.members
 
         try:
-            attr = (value.type if bound else value).members[self.name]
+            attr = members[self.name]
         except KeyError as kex:
             raise VAttributeError(str(kex))
+
+        bound = not isinstance(instance, Type)
+
         if isinstance(attr, FieldIndex):
-            return FieldReference(value, int(attr)) if bound else attr
+            return FieldReference(instance, int(attr)) if bound else attr
         if isinstance(attr, Property):
-            return BoundProcedure(attr.setter, value) if bound else attr.setter
+            return BoundProcedure(attr.setter, instance) if bound else attr.setter
         elif isinstance(attr, Procedure):
             return VTypeError("Cannot assign values to method fields!")
         else:
-            raise VTypeError("The attribute value {value} is of type {value.type}, which StoreAttrCase cannot handle!")
+            raise VTypeError(f"The attribute value {value} is of type {value.type}, which StoreAttrCase cannot handle!")
 
 
 class NewTuple(Term):

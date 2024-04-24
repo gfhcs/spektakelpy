@@ -1,8 +1,13 @@
-from engine.core.atomic import EmptyMember
+from engine.core.atomic import EmptyMember, type_object
 from engine.core.compound import CompoundType
+from engine.core.intrinsic import intrinsic_type, intrinsic_init
+from engine.core.type import Type, MemberMap
+from engine.core.value import Value
 from engine.stack.exceptions import VTypeError
 from engine.stack.procedure import StackProcedure
 from lang.spek.data.bound import BoundProcedure
+from lang.spek.data.builtin import builtin
+from util import check_type
 
 
 class Class(CompoundType):
@@ -57,3 +62,89 @@ class Class(CompoundType):
                       {n: m.clone_unsealed(clones) for n, m in self.direct_members.items()})
             clones[id(self)] = c
             return c
+
+
+@builtin()
+@intrinsic_type("super", [type_object])
+class VSuper(Value):
+    """
+    Equivalent to Python's 'super' type.
+    """
+
+    @intrinsic_init()
+    def __init__(self, t, x):
+        """
+        Makes attribute resolution available for the given type and instance.
+        :param t: The type up *after* which the MRO of the instance should be searched for attributes.
+        :param x: The instance the MRO of which is to be searched for attributes.
+        """
+        super().__init__()
+        self._t = check_type(t, Type)
+        self._x = check_type(x, Value)
+        if not x.type.subtypeof(t):
+            raise VTypeError(f"The given instance is of type {x.type}, that is not a subtype of {t}!")
+
+        mro = x.type.mro
+        mro = mro[next(iter(idx for idx, base in enumerate(mro) if base.cequals(t))):]
+        self._members = MemberMap(mro)
+
+    @property
+    def instance(self):
+        """
+        The instance that was given to the constructor for this 'super' object.
+        :return: A Value.
+        """
+        return self._x
+
+    def print(self, out):
+        out.write("super(")
+        self._t.print(out)
+        out.write(", ")
+        self._x.print(out)
+        out.write(")")
+
+    @property
+    def type(self):
+        return VSuper.intrinsic_type
+
+    def hash(self):
+        return hash(self._x)
+
+    def equals(self, other):
+        return self is other
+
+    def bequals(self, other, bijection):
+        try:
+            return bijection[id(self)] == id(other)
+        except KeyError:
+            bijection[id(self)] = id(other)
+            return (isinstance(other, VSuper)
+                    and self._t.bequals(other._t, bijection) and self._x.bequals(other._x, bijection))
+
+    def cequals(self, other):
+        return self is other
+
+    def chash(self):
+        return self._x.chash()
+
+    def _seal(self):
+        self._t.seal()
+        self._x.seal()
+
+    def clone_unsealed(self, clones=None):
+        if clones is None:
+            clones = {}
+        try:
+            return clones[id(self)]
+        except KeyError:
+            c = VSuper(self._t.clone_unsealed(clones=clones), self._x.clone_unsealed(clones=clones))
+            clones[id(self)] = c
+            return c
+
+    @property
+    def members(self):
+        """
+        An attribute resolver for this 'super' object.
+        :return: A MemberMap.
+        """
+        return self._members

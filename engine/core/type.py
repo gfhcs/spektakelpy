@@ -36,6 +36,26 @@ def linearization(t):
     return merge([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
+class MemberMap:
+    """
+    Resolves attributes according to a method resolution order (mro).
+    """
+    def __init__(self, mro):
+        """
+        Sets up a new attribute resolver based on an MRO.
+        :param mro: A sequence of types that should be searched for attribute names in order.
+        """
+        self._mro = mro
+
+    def __getitem__(self, name):
+        for t in self._mro:
+            try:
+                return t.direct_members[name]
+            except KeyError:
+                continue
+        raise KeyError(f"{self._mro[0]} has no attribute '{name}'!")
+
+
 class Type(Value, abc.ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
@@ -86,25 +106,13 @@ class Type(Value, abc.ABC):
         """
         return self._members_direct
 
-    class MemberMap:
-        def __init__(self, mro):
-            self._mro = mro
-
-        def __getitem__(self, name):
-            for t in self._mro:
-                try:
-                    return t.direct_members[name]
-                except KeyError:
-                    continue
-            raise KeyError(f"{self._mro[0]} has no attribute '{name}'!")
-
     @property
     def members(self):
         """
         A mapping from names to members that are part of this type (including inherited members).
         :return: A dict-like object.
         """
-        return Type.MemberMap(self.mro)
+        return MemberMap(self.mro)
 
     def hash(self):
         return len(self.direct_members)
