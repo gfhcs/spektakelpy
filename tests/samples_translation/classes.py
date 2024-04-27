@@ -107,7 +107,7 @@ class Vehicle:
 
 class WheeledVehicle():
     var _num_wheels
-    def __init__(self, num_wheels, weight):
+    def __init__(self, num_wheels):
         self._num_wheels = num_wheels
 
     def get_num_wheels(self):
@@ -129,7 +129,7 @@ class AmphibiousVehicle(WheeledVehicle, WaterVehicle):
 
 var a = AmphibiousVehicle(3, 1, 1000)
 
-var result = (a.get_weight(), a.get_num_wheels(), a.get_draught())
+var result = (a.get_num_wheels(), a.get_weight(), a.get_draught())
 
 await never()
 """: ((2, 1, num_interactions_possible), {"result": (3, 1000, 1)}),
