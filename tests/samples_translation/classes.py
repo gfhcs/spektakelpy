@@ -41,7 +41,7 @@ from interaction import never
 
 class AbstractException(Exception):
     def __init__(self):
-        super().__init__("This operation is abstract!")
+        super(AbstractException, self).__init__("This operation is abstract!")
 
 var result = isinstance(AbstractException(), Exception)
 
@@ -54,7 +54,7 @@ from interaction import never
 
 class AbstractException(Exception):
     def __init__(self):
-        super().__init__("This operation is abstract!")
+        super(AbstractException, self).__init__("This operation is abstract!")
 
 class Shape:
     def get_area(self):

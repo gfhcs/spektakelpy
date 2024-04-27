@@ -85,7 +85,7 @@ class VSuper(Value):
             raise VTypeError(f"The given instance is of type {x.type}, that is not a subtype of {t}!")
 
         mro = x.type.mro
-        mro = mro[next(iter(idx for idx, base in enumerate(mro) if base.cequals(t))):]
+        mro = mro[next(iter(idx for idx, base in enumerate(mro) if base.cequals(t))) + 1:]
         self._members = MemberMap(mro)
 
     @property

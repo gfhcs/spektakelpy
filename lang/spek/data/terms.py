@@ -682,6 +682,7 @@ class Callable(Term):
     """
 
     __constructors = WeakValueDictionary()
+    __constructor_super = None
 
     def __init__(self, t):
         """
@@ -714,6 +715,17 @@ class Callable(Term):
         while True:
             if isinstance(callee, Procedure):
                 break
+            elif callee is VSuper.intrinsic_type:
+                # This is almost a special case of 'isinstance(callee, Type), but because the 'super' object
+                # resolves __init__ as a member of some MRO type, no __init__ should be called as part of the constructor
+                # here. Instead, we rely on New completely initializing the 'super' object.
+                if Callable.__constructor_super is None:
+                    args = [Read(CRef(FrameReference(idx))) for idx in range(2)]
+                    c = [Update(CRef(ReturnValueReference()), New(CTerm(VSuper.intrinsic_type), *args), 1, 3),
+                         Pop(3)]
+                    Callable.__constructor_super = StackProcedure(2, ProgramLocation(StackProgram(c), 0))
+
+                return Callable.__constructor_super
             elif isinstance(callee, Type):
                 num_cargs = callee.num_cargs
                 try:
