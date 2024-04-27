@@ -4,36 +4,40 @@ from engine.core.value import Value
 from util import check_type, check_types
 
 
+def merge_linear(seqs):
+    """
+    Merges a sequence of sequences of types, according to Python's C3 MRO.
+    :param seqs: A sequence of sequences of types.
+    :return: An iterable of types.
+    """
+    while True:
+        nonempty = [seq for seq in seqs if len(seq) > 0]
+        if len(nonempty) == 0:
+            break
+        cand = None
+        for seq in nonempty:  # find merge candidates among seq heads
+            cand = seq[0]
+            nothead = [s for s in nonempty if any(cand.equals(other) for other in s[1:])]
+            if nothead:
+                cand = None  # reject candidate
+            else:
+                break
+        if cand is None:
+            raise ValueError("Inconsistent hierarchy!")
+        yield cand
+        for seq in nonempty:  # remove cand
+            if seq[0].equals(cand):
+                seq.pop(0)
+
+
 def linearization(t):
     """
     Computes the linearization ("mro") of the given type according to C3.
     :param t: The type the resolution of which is to be computed.
     :return: An iterable of super types of the given type.
     """
-
     # Python's C3 MRO, as documented in https://www.python.org/download/releases/2.3/mro/
-
-    def merge(seqs):
-        while True:
-            nonempty = [seq for seq in seqs if len(seq) > 0]
-            if len(nonempty) == 0:
-                break
-            cand = None
-            for seq in nonempty:  # find merge candidates among seq heads
-                cand = seq[0]
-                nothead = [s for s in nonempty if any(cand.equals(other) for other in s[1:])]
-                if nothead:
-                    cand = None  # reject candidate
-                else:
-                    break
-            if cand is None:
-                raise ValueError("Inconsistent hierarchy!")
-            yield cand
-            for seq in nonempty:  # remove cand
-                if seq[0].equals(cand):
-                    seq.pop(0)
-
-    return merge([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
+    return merge_linear([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
 class MemberMap:

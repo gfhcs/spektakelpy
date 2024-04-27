@@ -3,7 +3,7 @@ from abc import ABC
 from engine.core.atomic import type_type, AtomicType
 from engine.core.finite import FiniteValue
 from engine.core.none import value_none
-from engine.core.type import Type
+from engine.core.type import Type, merge_linear, linearization
 from engine.core.value import Value
 from util import check_type
 from util.immutable import check_unsealed
@@ -53,19 +53,19 @@ class CompoundType(Type, ABC):
 
         direct_members = dict(direct_members)
 
-        dummy = AtomicType("", bases)
         offsets = {}
         offset = 0
-        for t in dummy.mro:
+        offsets[id(self)] = 0
+        for n in direct_field_names:
+            direct_members[n] = FieldIndex(offset)
+            offset += 1
+
+        for t in merge_linear([*(list(linearization(b)) for b in bases), list(bases)]):
             offsets[id(t)] = offset
-            if t is dummy:
-                for n in direct_field_names:
-                    direct_members[n] = FieldIndex(offset)
-                    offset += 1
-            elif isinstance(t, AtomicType):
+            if isinstance(t, AtomicType):
                 offset += 1
             elif isinstance(t, CompoundType):
-                for n, member in t.direct_members:
+                for n, member in t.direct_members.items():
                     if isinstance(member, FieldIndex):
                         direct_members[n] = FieldIndex(offset)
                         offset += 1
@@ -73,8 +73,6 @@ class CompoundType(Type, ABC):
                 raise TypeError(f"Compound types can only inherit from atomic types and other compound types, not from {type(t)}!")
         super().__init__(name, bases, direct_members)
         self._size = offset
-        offsets[id(self)] = offsets[id(dummy)]
-        del offsets[id(dummy)]
         self._offsets = offsets
 
     @property
