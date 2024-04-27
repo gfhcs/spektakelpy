@@ -63,7 +63,7 @@ class Shape:
 class Rectangle(Shape):
     var x, y, w, h
     def __init__(self, x, y, w, h):
-        super().__init__()
+        super(Rectangle, self).__init__()
         self.x, self.y, self.w, self.h = x, y, w, h
         
     def get_area(self):
@@ -72,7 +72,7 @@ class Rectangle(Shape):
 class Circle(Shape):
     var x, y, r
     def __init__(self, x, y, r):
-        super().__init__()
+        super(Circle, self).__init__()
         self.x, self.y, self.r = x, y, r
         
     def get_area(self):
@@ -99,7 +99,7 @@ from interaction import never
 class Vehicle:    
     var _weight
     def __init__(self, weight):
-        super().__init__()
+        super(Vehicle, self).__init__()
         self._weight = weight
 
     def get_weight(self):
@@ -116,7 +116,7 @@ class WheeledVehicle():
 class WaterVehicle(Vehicle):
     var _draught
     def __init__(self, draught, weight):
-        super().__init__(weight)
+        super(WaterVehicle, self).__init__(weight)
         self._draught = draught
 
     def get_draught(self):
@@ -124,7 +124,7 @@ class WaterVehicle(Vehicle):
         
 class AmphibiousVehicle(WheeledVehicle, WaterVehicle):
     def __init__(self, num_wheels, draught, weight):
-        super().__init__(num_wheels)
+        super(AmphibiousVehicle, self).__init__(num_wheels)
         super(WheeledVehicle, self).__init__(draught, weight)
 
 var a = AmphibiousVehicle(3, 1, 1000)
@@ -261,7 +261,7 @@ class B(A):
     var x
 
     def __init__(self, x):
-        super().__init__(x + 1)
+        super(B, self).__init__(x + 1)
         self.x = x
 
     def b(self):
@@ -312,7 +312,7 @@ class C:
 class D(C):
     prop p:
         get(self):
-            return super().p + 1
+            return super(D, self).p + 1
 
 var result = D(42).p
 
