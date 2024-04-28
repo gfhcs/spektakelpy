@@ -3,7 +3,7 @@ from abc import ABC
 
 from engine.core.atomic import type_object
 from engine.core.finite import FiniteValue
-from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
+from engine.core.intrinsic import intrinsic_type, intrinsic_member
 from engine.core.value import Value
 from util import check_type
 from util.immutable import Immutable
@@ -227,7 +227,7 @@ class VStr(VPython, str):
     Equivalent to Python's str.
     """
 
-    @intrinsic_init()
+    @intrinsic_member()
     def __init__(self, value):
         super().__init__(value)
 
@@ -268,7 +268,7 @@ class VException(Value, Exception):
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
-    @intrinsic_init("__init__")
+    @intrinsic_member("__init__")
     def iinit(self, message):
         """
         The __init__ method for exceptions that is visible in Python.

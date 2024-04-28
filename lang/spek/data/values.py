@@ -2,7 +2,7 @@ import abc
 
 from engine.core.atomic import type_object, VObject
 from engine.core.data import VBool, VIndexError, VKeyError, VInt, VIndexingIterator, VIterator, VRuntimeError
-from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
+from engine.core.intrinsic import intrinsic_type, intrinsic_member
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError, unhashable
 from lang.spek.data.builtin import builtin
@@ -17,7 +17,7 @@ class VTuple(Value):
     Equivalent to Python's tuples.
     """
 
-    @intrinsic_init()
+    @intrinsic_member()
     def __init__(self, components):
         super().__init__()
         self._comps = tuple(check_type(c, Value) for c in components)
@@ -119,7 +119,7 @@ class VRange(Value):
     Equivalent to Python's range type.
     """
 
-    @intrinsic_init()
+    @intrinsic_member()
     def __init__(self, stop):
         super().__init__()
         self._stop = check_type(stop, VInt)
@@ -264,7 +264,7 @@ class VList(TokenizedMutable):
     Equivalent to Python's lists.
     """
 
-    @intrinsic_init()
+    @intrinsic_member()
     def __init__(self, elements):
         """
         Constructs a new VList.
@@ -477,7 +477,7 @@ class VDict(TokenizedMutable):
         def wrapped(self):
             return self._x
 
-    @intrinsic_init()
+    @intrinsic_member()
     def __init__(self, items):
         """
         Constructs a new VDict.

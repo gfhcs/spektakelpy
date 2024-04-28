@@ -222,9 +222,6 @@ def intrinsic_member(name=None):
     return decorator
 
 
-intrinsic_init = intrinsic_member
-
-
 def intrinsic_type(name=None, bases=None):
     """
     Turns a Python class definition into a Type that can be used in Spek.

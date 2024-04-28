@@ -1,7 +1,7 @@
 from enum import Enum
 
 from engine.core.atomic import type_object
-from engine.core.intrinsic import intrinsic_type, intrinsic_init, intrinsic_member
+from engine.core.intrinsic import intrinsic_type, intrinsic_member
 from engine.core.none import value_none
 from engine.core.data import VBool, VException, VCancellationError
 from engine.core.value import Value
@@ -29,7 +29,7 @@ class VFuture(Value):
     needs to make progress itself.
     """
 
-    @intrinsic_init()
+    @intrinsic_member()
     def __init__(self):
         """
         Creates a new unset future.

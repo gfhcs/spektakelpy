@@ -1,6 +1,6 @@
 from engine.core.atomic import EmptyMember, type_object
 from engine.core.compound import CompoundType
-from engine.core.intrinsic import intrinsic_type, intrinsic_init
+from engine.core.intrinsic import intrinsic_type
 from engine.core.type import Type, MemberMap
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError
