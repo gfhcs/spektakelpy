@@ -1,3 +1,5 @@
+from engine.core.compound import as_atomic
+from engine.core.data import VStr
 from engine.core.finite import FiniteValue
 from engine.core.keyable import KeyableValue
 from engine.core.singleton import SingletonValue
@@ -5,6 +7,7 @@ from engine.core.value import Value
 from engine.stack.exceptions import VReferenceError, VTypeError, unhashable
 from engine.stack.reference import Reference
 from lang.spek.data.cells import VCell
+from lang.spek.data.values import VList, VTuple, VDict, VRange
 from util import check_type
 
 
@@ -296,15 +299,19 @@ class ItemReference(Reference):
         self._index.print(out)
         out.write("]")
 
+    __readable = [t.intrinsic_type for t in (VStr, VRange, VList, VTuple, VDict)]
+
     def read(self, tstate, mstate):
         try:
-            return self._structure[self._index]
+            return as_atomic(self._structure, ItemReference.__readable)[self._index]
         except AttributeError:
             raise VTypeError(f"Values of type {self._structure.type} cannot be projected!")
 
+    __writable = [t.intrinsic_type for t in (VList, VDict)]
+
     def write(self, tstate, mstate, value):
         try:
-            self._structure[self._index] = value
+            as_atomic(self._structure, ItemReference.__writable)[self._index] = value
         except AttributeError:
             raise VTypeError(f"Values of type {self._structure.type} do not allow writing to projection items!")
 

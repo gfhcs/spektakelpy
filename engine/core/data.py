@@ -53,8 +53,11 @@ class VPython(Immutable, Value, ABC):
 
     t2i = None
 
-    def __new__(cls, value, *args, **kwargs):
-        return super().__new__(cls, value, *args, **kwargs)
+    def __new__(cls, *args, value=None, **kwargs):
+        if value is not None:
+            return super().__new__(cls, value, *args, **kwargs)
+        else:
+            return super().__new__(cls, *args, **kwargs)
 
     def __init__(self, value):
         # int.__new__ already took care of the value.
@@ -265,14 +268,13 @@ class VException(Value, Exception):
         self._args = tuple(check_type(a, Value) for a in args)
         self._pexception = check_type(pexception, Exception, allow_none=True)
 
-    @intrinsic_init()
-    @staticmethod
-    def create(cls, message):
+    @intrinsic_init("__init__")
+    def iinit(self, message):
         """
-        The constructor for exceptions that is visible in Python.
-        :return: An instance of the base class on which this method is called.
+        The __init__ method for exceptions that is visible in Python.
+        :param message: The message for this exception.
         """
-        return cls(message)
+        self.__init__(message)
 
     def print(self, out):
         out.write(type(self).__name__)

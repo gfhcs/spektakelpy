@@ -2,7 +2,7 @@ from enum import Enum
 from inspect import signature, Parameter
 
 from engine.core.atomic import AtomicType
-from engine.core.compound import VCompound
+from engine.core.compound import VCompound, as_atomic
 from engine.core.procedure import Procedure
 from engine.core.property import OrdinaryProperty
 from engine.core.type import Type
@@ -64,8 +64,7 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         :param method: A Python instance method. It accepts a Value as the first argument.
         """
         def operate(instance, *args):
-            if isinstance(instance, VCompound):
-                instance = instance[instance.type.get_offset(itype)]
+            instance = as_atomic(instance, itype)
             if not isinstance(instance, ptype):
                 raise TypeError(f"The type of the given instance is not derived from the Python type {ptype}!")
             return method(instance, *args)
@@ -73,55 +72,20 @@ class IntrinsicInstanceMethod(IntrinsicProcedure):
         super().__init__(operate)
 
 
-class IntrinsicInit(IntrinsicProcedure):
-    """
-    Wraps a Python constructor as an intrinsic procedure that initializes an instance of an intrinsic type.
-    """
-    def __init__(self, ptype, itype, construct):
-        """
-        Wraps a Python instance method.
-        :param ptype: The Python type that should be wrapped by the instances treated by this intrinsic initializer.
-        :param itype: The intrinsic type that is to contain this initializer as a direct member.
-        :param construct: A Python class method that returns Value objects of a Python type that is given as its first
-                       argument.
-        """
-        def init(instance, *args):
-            if isinstance(instance, VCompound):
-                instance[instance.type.get_offset(itype)] = construct(ptype, *args)
-            else:
-                if not isinstance(instance, ptype):
-                    raise TypeError(f"The type of the given instance is not derived from the Python type {ptype}!")
-                # The instance is already initialized.
-
-            return instance
-
-        super().__init__(init)
-        self._construct = construct
-
-    @property
-    def construct(self):
-        """
-        The Python class method that constructs the instances wrapped by the intrinsic type this intrinsic initializer
-        belongs to.
-        :return: A Python procedure that takes a Python type derived from Value as its first argument and returns
-                 an object of that type.
-        """
-        return self._construct
-
-
 class IntrinsicProperty(Immutable, OrdinaryProperty):
     """
     Wraps a Python property. Like all intrinsic type members, this one must be immutable, in order to be compatible
     with AtomicType.
     """
-    def __init__(self, ptype, p):
+    def __init__(self, ptype, itype, p):
         """
         Wraps a Python property.
         :param ptype: The Python type the property is derived from.
+        :param itype: The intrinsic type that is to contain this property as a direct member.
         :param p: A property object.
         """
-        getter = IntrinsicInstanceMethod(ptype, self, p.fget)
-        setter = None if p.fset is None else IntrinsicInstanceMethod(ptype, self, p.fset)
+        getter = IntrinsicInstanceMethod(ptype, itype, p.fget)
+        setter = None if p.fset is None else IntrinsicInstanceMethod(ptype, itype, p.fset)
 
         super().__init__(getter, setter)
 
@@ -154,55 +118,37 @@ class IntrinsicType(AtomicType):
                 raise ValueError(f"Some of the super types of {ptype} are not proper Type objects!")
 
         members = {}
-        new = None
-        num_cargs = None
+        num_cargs = 0
 
-        # If there is an initializer in the MRO of ptype, we want to inherit it:
+        # In case we are inheriting the constructor of a base type, record its number of arguments:
         for base in ptype.mro():
             if base is ptype:
                 continue
             try:
                 base_intrinsic = base.intrinsic_type
-                assert isinstance(base_intrinsic, IntrinsicType)
             except AttributeError:
                 continue
-            try:
-                init = base_intrinsic.direct_members["__init__"]
-                assert isinstance(init, IntrinsicInit)
-                members["__init__"] = IntrinsicInit(ptype, self, init.construct)
-
-                def new(*args):
-                    return init.construct(ptype, *args)
+            assert isinstance(base_intrinsic, IntrinsicType)
+            if "__init__" in base_intrinsic.direct_members:
                 num_cargs = base_intrinsic.num_cargs
-
-            except KeyError:
-                continue
-            break
+                break
 
         for iname, pname in pmembers.items():
 
             pmember = getattr(ptype, pname)
 
             if iname == "__init__":
-
                 num_cargs = sum(1 for p in signature(pmember).parameters.values() if p.kind == Parameter.POSITIONAL_OR_KEYWORD) - 1
 
-                if pname == "__init__":
-                    def construct(cls, *args):
-                        return cls(*args)
-                else:
-                    construct = pmember
-                imember = IntrinsicInit(ptype, self, construct)
-
-                def new(*args):
-                    return construct(ptype, *args)
-
-            elif isinstance(pmember, property):
-                imember = IntrinsicProperty(ptype, pmember)
+            if isinstance(pmember, property):
+                imember = IntrinsicProperty(ptype, self, pmember)
             else:
                 imember = IntrinsicInstanceMethod(ptype, self, pmember)
 
             members[iname] = imember
+
+        def new(*args):
+            return ptype.__new__(ptype, *args)
 
         super().__init__(name, bases, new=new, num_cargs=num_cargs, members=members)
 
@@ -276,23 +222,7 @@ def intrinsic_member(name=None):
     return decorator
 
 
-def intrinsic_init():
-    """
-    Decorates a class method of a Python type, to be turned into an instance constructor.
-    """
-
-    if tuple(collection_stack[1:]) not in ((CollectionType.TYPE, ),):
-        raise TypeError("@intrinsic_member may only be used for members of Python types that "
-                        "are themselves decorated with @intrinsic_type!")
-    collection_stack.append(CollectionType.INIT)
-
-    def decorator(x):
-        try:
-            __intrinsic_collection__["__init__"] = x.__name__
-            return x
-        finally:
-            collection_stack.pop()
-    return decorator
+intrinsic_init = intrinsic_member
 
 
 def intrinsic_type(name=None, bases=None):

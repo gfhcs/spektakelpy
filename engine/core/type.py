@@ -75,7 +75,7 @@ class Type(Value, abc.ABC):
         super().__init__()
         self._name = check_type(name, str)
         self._bases = check_types(bases, Type)
-        self._members_direct = {str(check_type(k, str)): check_type(v, Value) for k, v in direct_members.items()}
+        self._members_direct = {k: check_type(v, Value) for k, v in direct_members.items()}
         self._mro = list(linearization(self))
 
     @property

@@ -71,22 +71,25 @@ class VSuper(Value):
     Equivalent to Python's 'super' type.
     """
 
-    @intrinsic_init()
-    def __init__(self, t, x):
+    def __new__(cls, t, x):
         """
         Makes attribute resolution available for the given type and instance.
         :param t: The type up *after* which the MRO of the instance should be searched for attributes.
         :param x: The instance the MRO of which is to be searched for attributes.
         """
-        super().__init__()
-        self._t = check_type(t, Type)
-        self._x = check_type(x, Value)
+
         if not x.type.subtypeof(t):
             raise VTypeError(f"The given instance is of type {x.type}, that is not a subtype of {t}!")
 
+        instance = super().__new__(cls)
+        instance._t = check_type(t, Type)
+        instance._x = check_type(x, Value)
+
         mro = x.type.mro
         mro = mro[next(iter(idx for idx, base in enumerate(mro) if base.cequals(t))) + 1:]
-        self._members = MemberMap(mro)
+        instance._members = MemberMap(mro)
+
+        return instance
 
     @property
     def instance(self):

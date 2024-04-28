@@ -185,6 +185,7 @@ class DefaultingDict(dict):
     var default
     
     def __init__(self, default):
+        super(DefaultingDict, self).__init__({})
         self.default = default
         
     def get_with_default(self, key):

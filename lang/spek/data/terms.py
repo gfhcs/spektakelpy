@@ -1454,6 +1454,7 @@ class NewClass(Term):
         field_names = []
         members = {}
         for name, member in check_type(self.namespace.evaluate(tstate, mstate), VDict).items():
+            name = str(name)
             if isinstance(member, (Procedure, Property)):
                 members[name] = member
             elif isinstance(member, VNone):

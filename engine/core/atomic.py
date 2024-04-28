@@ -105,5 +105,9 @@ class VObject(Value):
         return super(ABC, self).__str__()
 
 
-type_object = AtomicType("object", [], new=VObject, num_cargs=0, members={'__init__': EmptyMember()})
+def new_object(*args):
+    return VObject()
+
+
+type_object = AtomicType("object", [], new=new_object, num_cargs=0, members={'__init__': EmptyMember()})
 type_type = AtomicType("type", [type_object])

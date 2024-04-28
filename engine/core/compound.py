@@ -1,6 +1,6 @@
 from abc import ABC
 
-from engine.core.atomic import type_type, AtomicType
+from engine.core.atomic import type_type, AtomicType, type_object
 from engine.core.finite import FiniteValue
 from engine.core.none import value_none
 from engine.core.type import Type, merge_linear, linearization
@@ -60,9 +60,10 @@ class CompoundType(Type, ABC):
             direct_members[n] = FieldIndex(offset)
             offset += 1
 
-        for t in merge_linear([*(list(linearization(b)) for b in bases), list(bases)]):
+        for idx, t in enumerate(merge_linear([*(list(linearization(b)) for b in bases), list(bases)])):
             offsets[id(t)] = offset
             if isinstance(t, AtomicType):
+                direct_members[(1, idx + 1)] = FieldIndex(offset)
                 offset += 1
             elif isinstance(t, CompoundType):
                 for n, member in t.direct_members.items():
@@ -74,6 +75,26 @@ class CompoundType(Type, ABC):
         super().__init__(name, bases, direct_members)
         self._size = offset
         self._offsets = offsets
+
+    def get_atomic_base_field(self, types):
+        """
+        Given an iterable of atomic types that self may be an instance of, retrieves a field index under which
+        an instance of one of those atomic types is stored in instances of self, if that atomic type is the first
+        in self.type.mro that self actually is an instance of.
+        :param types: An iterable of AtomicTypes that self may be an instance of.
+        :return: A FieldIndex.
+        :exception ValueError: If self is not an instance of any of the given AtomicTypes.
+        """
+        for t in types:
+            if not isinstance(t, AtomicType):
+                raise TypeError(f"CompoundType.get_atomic_base_field only accepts AtomicTypes, not {type(t)}!")
+
+        for idx, base in enumerate(self.mro):
+            for t in types:
+                if base is t:
+                    return self.direct_members[(1, idx)]
+
+        raise ValueError(f"{self} is not an instance of any of the types in {types}!")
 
     @property
     def type(self):
@@ -95,8 +116,33 @@ class CompoundType(Type, ABC):
         """
         return self._offsets[id(t)]
 
-    def new(self, *_):
-        return VCompound(self)
+    def new(self, *args):
+        instance = VCompound(self)
+        for idx, t in enumerate(self.mro):
+            if isinstance(t, AtomicType):
+                instance[self.direct_members[(1, idx)]] = t.new(*args)
+        return instance
+
+
+def as_atomic(instance, atomic):
+    """
+    Maps a Value object the type of which is a subclass of an atomic type to a Value object the type of which is
+    equal to that atomic type.
+    :param instance: A Value object.
+    :param atomic: Either an AtomicType that 'instance' is an instance of, or a tuple
+    :return: A Value object the type of which is identical to 'atomic'.
+    """
+
+    if isinstance(atomic, AtomicType):
+        atomic = [atomic]
+
+    if isinstance(instance.type, AtomicType) and any(instance.type.subtypeof(a) for a in atomic):
+        return instance
+    elif isinstance(instance, VCompound):
+        assert isinstance(instance.type, CompoundType)
+        return instance[instance.type.get_atomic_base_field(atomic)]
+    else:
+        raise TypeError(f"The given instance is neither a VCompound object, nor an instance of an AtomicType!")
 
 
 class VCompound(Value):
@@ -165,8 +211,8 @@ class VCompound(Value):
             return c
 
     def __getitem__(self, item):
-        return self._fields[check_type(item, int)]
+        return self._fields[int(item)]
 
     def __setitem__(self, key, value):
         check_unsealed(self)
-        self._fields[check_type(key, int)] = check_type(value, Value)
+        self._fields[int(key)] = check_type(value, Value)
