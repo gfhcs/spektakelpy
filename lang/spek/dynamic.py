@@ -769,7 +769,7 @@ class Spektakel2Stack(Translator):
             if len(super_classes) == 0:
                 super_classes.append(CTerm(type_object))
 
-            c = self._scopes.declare(chain, node.name, not self._vanalysis.safe_on_stack(node.name), on_error)
+            c = self._scopes.declare(chain, node.name, True, on_error)
 
             self._scopes.push(ClassScope(self._scopes.top, c))
             # We create a new namespace dict and put it into the stack frame.
@@ -780,6 +780,10 @@ class Spektakel2Stack(Translator):
             self._scopes.pop()
 
             _, chain = self.emit_assignment(chain, node.name, dec, terms.NewClass(node.name.name, super_classes, Read(c)), on_error, declaring=True)
+
+            if self._vanalysis.safe_on_stack(node.name):
+                cc = self._scopes.declare(chain, node.name, False, on_error)
+                chain.append_update(cc, Read(c), on_error)
 
             return chain
 
