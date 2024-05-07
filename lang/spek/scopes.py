@@ -169,16 +169,27 @@ class ClassScope(Scope):
     """
     A scope encompassing a class declaration.
     """
-    def __init__(self, parent, mdictref):
+    def __init__(self, parent, defcell, mdictref):
         """
         Creates a new class scope.
         :param parent: The scope in which the new one is to be created.
+        :param defcell: A term evaluating to a reference that points to a cell. The class being defined is supposed
+                        to be written into this cell once the definition has been executed.
         :param mdictref: The reference under which the dictionary of class members is expected.
         """
         super().__init__(parent)
         self._names = dict()
         self._offset = 0
         self._mdictref = mdictref
+        self._defcell = defcell
+
+    @property
+    def defcell(self):
+        """
+        A term evaluating to a reference that points to a cell. The class being defined is supposed
+        to be written into this cell once the definition has been executed.
+        """
+        return self._defcell
 
     def declare(self, chain, name, cell, on_error, initialize=True, cellify=False):
         if name is None:

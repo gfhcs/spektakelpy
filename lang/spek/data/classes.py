@@ -58,9 +58,9 @@ class Class(CompoundType):
         try:
             return clones[id(self)]
         except KeyError:
-            c = Class(self.name, tuple(b.clone_unsealed(clones) for b in self.bases), self._direct_field_names,
-                      {n: m.clone_unsealed(clones) for n, m in self.direct_members.items()})
+            c = Class.__new__(Class)
             clones[id(self)] = c
+            c.__init__(self.name, tuple(b.clone_unsealed(clones) for b in self.bases), self._direct_field_names, {n: m.clone_unsealed(clones) for n, m in self.direct_members.items()})
             return c
 
 

@@ -9,7 +9,7 @@ from lang.spek.data.exceptions import JumpType
 from lang.spek.data.references import ReturnValueReference, ExceptionReference, FrameReference, \
     AbsoluteFrameReference
 from lang.spek.data.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator, Read, NewDict, \
-    CTerm, CString, CNone, Callable, CInt, Project, NewCellReference, Iter
+    CTerm, CString, CNone, Callable, CInt, Project, NewCellReference, Iter, NewCell
 from lang.spek.scopes import ScopeStack, ExceptionScope, FunctionScope, LoopScope, ClassScope, ModuleScope
 from lang.spek.vanalysis import VariableAnalysis
 from lang.translator import Translator
@@ -526,10 +526,18 @@ class Spektakel2Stack(Translator):
 
         num_args = len(argnames)
 
+        ccell = None
+        if isinstance(self._scopes.top, ClassScope):
+            ccell = self._scopes.top.defcell
+
         self._scopes.push(FunctionScope(self._scopes.top))
 
         # Declare all free variables as local variables:
         tocopy = []
+        if ccell:
+            tocopy.append(Read(ccell))
+            self.declare_pattern(entryBlock, None, on_error, initialize=False)
+
         for fname in self._vanalysis.free(body):
             if fname in argnames:
                 continue
@@ -771,7 +779,7 @@ class Spektakel2Stack(Translator):
 
             c = self._scopes.declare(chain, node.name, True, on_error)
 
-            self._scopes.push(ClassScope(self._scopes.top, c))
+            self._scopes.push(ClassScope(self._scopes.top, c.core, c))
             # We create a new namespace dict and put it into the stack frame.
             chain.append_update(c, terms.NewDict({}), on_error)
 
@@ -784,6 +792,8 @@ class Spektakel2Stack(Translator):
             if self._vanalysis.safe_on_stack(node.name):
                 cc = self._scopes.declare(chain, node.name, False, on_error)
                 chain.append_update(cc, Read(c), on_error)
+            else:
+                chain.append_update(c.core, NewCell(Read(c)), on_error)
 
             return chain
 
