@@ -58,9 +58,9 @@ class Class(CompoundType):
         try:
             return clones[id(self)]
         except KeyError:
-            c = Class.__new__(Class)
+            c = Class(self.name, self.bases, self._direct_field_names, self.direct_members)
             clones[id(self)] = c
-            c.__init__(self.name, tuple(b.clone_unsealed(clones) for b in self.bases), self._direct_field_names, {n: m.clone_unsealed(clones) for n, m in self.direct_members.items()})
+            c._update_clone(tuple(b.clone_unsealed(clones) for b in self.bases), {n: m.clone_unsealed(clones) for n, m in self.direct_members.items()})
             return c
 
 
@@ -140,8 +140,11 @@ class VSuper(Value):
         try:
             return clones[id(self)]
         except KeyError:
-            c = VSuper(self._t.clone_unsealed(clones=clones), self._x.clone_unsealed(clones=clones))
+            c = VSuper(self._t, self._x)
             clones[id(self)] = c
+            c._t = self._t.clone_unsealed(clones=clones)
+            c._x = self._x.clone_unsealed(clones=clones)
+            c._members = MemberMap((t.clone_unsealed(clones=clones) for t in self._members.mro))
             return c
 
     @property

@@ -115,6 +115,17 @@ class Sealable:
     def clone_unsealed(self, clones=None):
         """
         Creates a deep copy of this object, that is unsealed and equal to this object.
+        This procedure operates as follows:
+        1. If 'clones' contains id(self), the corresponding value is returned.
+        2. Otherwise, a new object is created by calling the constructor with the exact same objects that self was
+           constructed with. The result of this call is inserted into 'clones' for id(self).
+           Then the component values of self are cloned by recursive calls to clone_unsealed.
+           Then the clone of self is updated using the component clones.
+
+        Note that 'clones' may contain objects that have not been initialized yet, which is why it may be invalid
+        to simply call __init__ after the component values have been cloned (if __init__ is accessing attributes
+        of the clones).
+
         :param clones: A dict-like object that maps object id's to clones. If id(self) is a key in this mapping,
                        the value for this key is returned by this method. Otherwise a fresh clone object is created
                        and returned.

@@ -227,6 +227,9 @@ class VMutableIterator(VIterator):
         try:
             return clones[id(self)]
         except KeyError:
+            # Caution: Calling clone_unsealed recursively before a clone of self has been added to 'clones' could
+            # lead to infinite recursion or correctness problems. However, we assume that an iterable
+            # never keeps track of its iterators, so cloning it will not lead to cloning the iterator.
             c = VMutableIterator(self._core.clone_unsealed(clones=clones), iterable=self.iterable.clone_unsealed(clones=clones))
             clones[id(self)] = c
             c._mtoken = self._mtoken.clone_unsealed(clones=clones)

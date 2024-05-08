@@ -2,6 +2,7 @@ import abc
 
 from engine.core.value import Value
 from util import check_type, check_types
+from util.immutable import check_unsealed
 
 
 def merge_linear(seqs):
@@ -49,7 +50,14 @@ class MemberMap:
         Sets up a new attribute resolver based on an MRO.
         :param mro: A sequence of types that should be searched for attribute names in order.
         """
-        self._mro = mro
+        self._mro = tuple(mro)
+
+    @property
+    def mro(self):
+        """
+        A sequence of types that will be searched for members in order.
+        """
+        return self._mro
 
     def __getitem__(self, name):
         for t in self._mro:
@@ -76,7 +84,21 @@ class Type(Value, abc.ABC):
         self._name = check_type(name, str)
         self._bases = check_types(bases, Type)
         self._members_direct = {k: check_type(v, Value) for k, v in direct_members.items()}
-        self._mro = list(linearization(self))
+        self._mro = None
+
+    def _update_clone(self, bases, direct_members):
+        """
+        This procedure can be called by the 'clone_unsealed' implementation of Type subclasses.
+        This procedure must only be called to complete the initialization of a clone!
+        :param bases: A tuple of clones of the current base classes of this type.
+        :param direct_members: A mapping from names to clones of the current direct members of this type.
+        """
+        check_unsealed(self)
+        self._bases = check_types(bases, Type)
+        for k, v in direct_members.items():
+            if k not in self._members_direct:
+                raise KeyError("This type does not know a direct member under the name {k}!")
+            self._members_direct[k] = check_type(v, Value)
 
     @property
     def name(self):
@@ -100,6 +122,8 @@ class Type(Value, abc.ABC):
         The method resolution order of this type, i.e. a linearization of the hierarchy of all its super types.
         :return: An iterable of Types.
         """
+        if self._mro is None:
+            self._mro = list(linearization(self))
         return self._mro
 
     @property
