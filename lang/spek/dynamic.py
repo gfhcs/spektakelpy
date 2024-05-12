@@ -10,7 +10,7 @@ from lang.spek.data.references import ReturnValueReference, ExceptionReference, 
     AbsoluteFrameReference
 from lang.spek.data.terms import ComparisonOperator, BooleanBinaryOperator, CRef, UnaryOperator, Read, NewDict, \
     CTerm, CString, CNone, Callable, CInt, Project, NewCellReference, Iter, NewCell
-from lang.spek.scopes import ScopeStack, ExceptionScope, FunctionScope, LoopScope, ClassScope, ModuleScope
+from lang.spek.scopes import ScopeStack, ExceptionScope, ProcedureScope, LoopScope, ClassScope, ModuleScope
 from lang.spek.vanalysis import VariableAnalysis
 from lang.translator import Translator
 from util import check_type
@@ -85,7 +85,7 @@ class Spektakel2Stack(Translator):
         Otherwise this method returns None.
         """
         for scope in self._scopes:
-            if isinstance(scope, FunctionScope) and isinstance(scope.parent, ClassScope):
+            if isinstance(scope, ProcedureScope) and isinstance(scope.parent, ClassScope):
                 return Read(CRef(FrameReference(0)))
         return None
 
@@ -422,7 +422,7 @@ class Spektakel2Stack(Translator):
                 chain.append_update(eref, terms.NewJumpError(JumpType.RETURN), on_error=on_error)
                 chain.append_jump(scope.finally_chain)
                 return chain
-            elif isinstance(scope, FunctionScope):
+            elif isinstance(scope, ProcedureScope):
                 break
 
         # We made it to the function level without hitting an exception block.
@@ -543,7 +543,7 @@ class Spektakel2Stack(Translator):
         if isinstance(self._scopes.top, ClassScope):
             ccell = self._scopes.top.defcell
 
-        self._scopes.push(FunctionScope(self._scopes.top))
+        self._scopes.push(ProcedureScope(self._scopes.top))
 
         # Declare all free variables as local variables:
         tocopy = []
@@ -864,7 +864,7 @@ class Spektakel2Stack(Translator):
         d = AbsoluteFrameReference(0, 0, d.instance_key.index)
         preamble.append_update(CRef(d), NewDict([]), panic)
 
-        self._scopes.push(FunctionScope(self._scopes.top))
+        self._scopes.push(ProcedureScope(self._scopes.top))
         imp_code = Chain()
         load1 = Chain()
         load2 = Chain()

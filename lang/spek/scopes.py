@@ -130,7 +130,7 @@ class ExceptionScope(Scope):
         return self.parent.retrieve(name)
 
 
-class FunctionScope(Scope):
+class ProcedureScope(Scope):
     """
     A scope encompassing a function declaration.
     """
