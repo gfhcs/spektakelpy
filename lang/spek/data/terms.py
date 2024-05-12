@@ -939,13 +939,19 @@ class LoadAttrCase(Term):
 
     """
 
-    def __init__(self, value, name):
+    def __init__(self, value, name, dclass=None):
         """
         Creates a new namespace lookup.
         :param value: A term evaluating to the value an attribute of which should be read.
         :param name: A string specifying the name that is to be looked up.
+        :param dclass: A term evaluating to the class that the code containing this StoreAttrCase term belongs to.
+                       If such a term is given, and the access is to a field, the class will be used to determine
+                       if the field access is valid and which field exactly to retrieve.
         """
-        super().__init__(check_type(value, Term))
+        if dclass is None:
+            super().__init__(check_type(value, Term))
+        else:
+            super().__init__(check_type(value, Term), check_type(dclass, Term))
         self._name = check_type(name, str)
 
     def hash(self):
@@ -1018,13 +1024,19 @@ class StoreAttrCase(Term):
         4. The name was not found. The term evaluates to an exception to raise.
     """
 
-    def __init__(self, value, name):
+    def __init__(self, value, name, dclass=None):
         """
         Creates a new namespace lookup.
         :param value: A term evaluating to the value an attribute of which should be written.
         :param name: A string specifying the name that is to be looked up.
+        :param dclass: A term evaluating to the class that the code containing this StoreAttrCase term belongs to.
+                       If such a term is given, and the access is to a field, the class will be used to determine
+                       if the field access is valid and which field exactly to retrieve.
         """
-        super().__init__(check_type(value, Term))
+        if dclass is None:
+            super().__init__(check_type(value, Term))
+        else:
+            super().__init__(check_type(value, Term), check_type(dclass, Term))
         self._name = check_type(name, str)
 
     def hash(self):

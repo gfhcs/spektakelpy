@@ -78,6 +78,17 @@ class Spektakel2Stack(Translator):
 
         return acc
 
+    def _get_method_class(self):
+        """
+        If the scope stack indicates that the translator is currently emitting code for an instance method,
+        this method returns a term that evaluates to the type for which the method was defined.
+        Otherwise this method returns None.
+        """
+        for scope in self._scopes:
+            if isinstance(scope, FunctionScope) and isinstance(scope.parent, ClassScope):
+                return Read(CRef(FrameReference(0)))
+        return None
+
     def emit_assignment(self, chain, pattern, dec, term, on_error, declaring=False):
         """
         Emits VM code for assigning the result of an expression evaluation to a pattern.
@@ -142,7 +153,8 @@ class Spektakel2Stack(Translator):
             a, chain = self.translate_expression(chain, pattern.value, dec, on_error)
 
             r, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(r, terms.StoreAttrCase(a, pattern.name.name), on_error)
+            dclass = self._get_method_class()
+            chain.append_update(r, terms.StoreAttrCase(a, pattern.name.name, dclass=dclass), on_error)
 
             tr = Read(r)
             csetter = terms.UnaryPredicateTerm(terms.UnaryPredicate.ISCALLABLE, tr)
@@ -268,7 +280,8 @@ class Spektakel2Stack(Translator):
             v, chain = self.translate_expression(chain, node.value, dec, on_error)
 
             r, = self.declare_pattern(chain, None, on_error)
-            chain.append_update(r, terms.LoadAttrCase(v, node.name.name), on_error)
+            dclass = self._get_method_class()
+            chain.append_update(r, terms.LoadAttrCase(v, node.name.name, dclass=dclass), on_error)
 
             cgetter = Read(terms.Project(Read(r), CInt(0)))
 
