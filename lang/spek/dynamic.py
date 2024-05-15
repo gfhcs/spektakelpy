@@ -86,7 +86,7 @@ class Spektakel2Stack(Translator):
         """
         for scope in self._scopes:
             if isinstance(scope, ProcedureScope) and isinstance(scope.parent, ClassScope):
-                return Read(CRef(FrameReference(0)))
+                return Read(NewCellReference(CRef(FrameReference(0))))
         return None
 
     def emit_assignment(self, chain, pattern, dec, term, on_error, declaring=False):

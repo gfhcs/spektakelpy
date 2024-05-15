@@ -63,6 +63,13 @@ class CTerm(Keyable, Term):
         # Keyable.__new__ already consumed the value.
         super().__init__()
 
+    @property
+    def value(self):
+        """
+        The value represented by this term.
+        """
+        return self.instance_key
+
     @classmethod
     def prepare(cls, value):
         """
@@ -70,7 +77,8 @@ class CTerm(Keyable, Term):
         :param value: An object.
         :return: A sealed Value object.
         """
-        return check_type(value, Value).clone_unsealed().seal()
+        check_type(value, Value)
+        return value if value.sealed else value.clone_unsealed().seal()
 
     def evaluate(self, tstate, mstate):
         return self.instance_key
@@ -973,6 +981,15 @@ class LoadAttrCase(Term):
         return self.children[0]
 
     @property
+    def dclass(self):
+        """
+        A term evaluating to the class that the code containing this StoreAttrCase term belongs to.
+        If such a term is given, and the access is to a field, the class will be used to determine
+        if the field access is valid and which field exactly to retrieve.
+        """
+        return None if len(self.children) < 2 else self.children[1]
+
+    @property
     def name(self):
         """
         A string specifying the name that is to be looked up.
@@ -982,18 +999,20 @@ class LoadAttrCase(Term):
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
 
+        dclass = None if self.dclass is None else self.dclass.evaluate(tstate, mstate)
+
         if isinstance(value, VSuper):
-            instance, members = value.instance, value.members
+            instance, resolve = value.instance, value.resolve_member
         elif isinstance(value, Type):
-            instance, members = value, value.members
+            instance, resolve = value, value.resolve_member
         else:
-            instance, members = value, value.type.members
+            instance, resolve = value, value.type.resolve_member
 
         if value.type is type_object and self.name == "__init__":
             return VTuple((VBool(False), EmptyProcedure()))
 
         try:
-            attr = members[self.name]
+            attr = resolve(self.name, ctype=dclass)
         except KeyError as kex:
             raise VAttributeError(str(kex))
 
@@ -1058,6 +1077,15 @@ class StoreAttrCase(Term):
         return self.children[0]
 
     @property
+    def dclass(self):
+        """
+        A term evaluating to the class that the code containing this StoreAttrCase term belongs to.
+        If such a term is given, and the access is to a field, the class will be used to determine
+        if the field access is valid and which field exactly to retrieve.
+        """
+        return None if len(self.children) < 2 else self.children[1]
+
+    @property
     def name(self):
         """
         A string specifying the name that is to be looked up.
@@ -1066,16 +1094,17 @@ class StoreAttrCase(Term):
 
     def evaluate(self, tstate, mstate):
         value = self.value.evaluate(tstate, mstate)
+        dclass = None if self.dclass is None else self.dclass.evaluate(tstate, mstate)
 
         if isinstance(value, VSuper):
-            instance, members = value.instance, value.members
+            instance, resolve = value.instance, value.resolve_member
         elif isinstance(value, Type):
-            instance, members = value, value.members
+            instance, resolve = value, value.resolve_member
         else:
-            instance, members = value, value.type.members
+            instance, resolve = value, value.type.resolve_member
 
         try:
-            attr = members[self.name]
+            attr = resolve(self.name, ctype=dclass)
         except KeyError as kex:
             raise VAttributeError(str(kex))
 

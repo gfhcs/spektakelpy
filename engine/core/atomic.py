@@ -58,6 +58,14 @@ class AtomicType(Immutable, Type):
     def type(self):
         return type_type
 
+    def resolve_member(self, name, ctype=None):
+        for t in self.mro:
+            try:
+                return t.direct_members[name]
+            except KeyError:
+                continue
+        raise KeyError(f"{self} has no member '{name}'!")
+
 
 type_object = None
 

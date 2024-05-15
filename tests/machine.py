@@ -301,7 +301,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         state0 = self.initialize_machine(p, 2)
         state0.task_states[0].stack[0][0] = VList([VInt(42)])
-        state0.task_states[0].stack[0][1] = VList.intrinsic_type.members["pop"]
+        state0.task_states[0].stack[0][1] = VList.intrinsic_type.resolve_member("pop")
 
         _, states, internal, external = self.explore(p, state0)
 
@@ -322,7 +322,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         state0 = self.initialize_machine(p, 1)
         state0.task_states[0].stack[0][0] = VList([])
-        state0.task_states[0].stack[0][0] = VList.intrinsic_type.members["pop"]
+        state0.task_states[0].stack[0][0] = VList.intrinsic_type.resolve_member("pop")
 
         _, states, internal, external = self.explore(p, state0)
 
@@ -577,7 +577,7 @@ class TestSpektakelMachine(unittest.TestCase):
                 p = StackProgram([Update(CRef(FrameReference(0)), term, 1, 1),
                                   Guard({}, 1)])
                 s0 = self.initialize_machine(p, 1)
-                s0.task_states[0].stack[0][0] = VList.intrinsic_type.members["append"]
+                s0.task_states[0].stack[0][0] = VList.intrinsic_type.resolve_member("append")
                 _, states, _, _ = self.explore(p, s0)
                 result = states[-1].content.task_states[0].stack[0][0]
                 self.assertEqual(value, result)
@@ -740,9 +740,9 @@ class TestSpektakelMachine(unittest.TestCase):
         property = OrdinaryProperty(g, s)
 
         members = {"method": method, "property": property}
-        c = Class("C", [type_object], ["x"], members)
+        c = Class("C", [type_object], ["x"], members).seal()
 
-        i = c.new()
+        i = c.new().seal()
 
         cases = (("x", (True, VBool(False), value_none)),
                  ("method", (False, VBool(False), VInt(42))),
@@ -752,7 +752,7 @@ class TestSpektakelMachine(unittest.TestCase):
             with self.subTest(identifier=identifier):
 
                 direct, v1, v2 = value
-                p = [Update(CRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier), 1, 42)]
+                p = [Update(CRef(FrameReference(0)), LoadAttrCase(CTerm(i), identifier, dclass=CTerm(c)), 1, 42)]
 
                 if not direct:
                     p.append(Push(Callable(Read(Project(Read(CRef(FrameReference(0))), CInt(1)))), [], len(p) + 1, 42))
@@ -779,9 +779,9 @@ class TestSpektakelMachine(unittest.TestCase):
         property = OrdinaryProperty(g, s)
 
         members = {"method": method, "property": property}
-        c = Class("C", [type_object], ["x"], members)
+        c = Class("C", [type_object], ["x"], members).seal()
 
-        i = c.new()
+        i = c.new().seal()
 
         cases = (("x", FieldReference),
                  ("method", VException),
@@ -789,7 +789,7 @@ class TestSpektakelMachine(unittest.TestCase):
 
         for identifier, value in cases:
             with self.subTest(identifier=identifier):
-                p = StackProgram([Update(CRef(FrameReference(0)), StoreAttrCase(CTerm(i), identifier), 1, 42),
+                p = StackProgram([Update(CRef(FrameReference(0)), StoreAttrCase(CTerm(i), identifier, CTerm(c)), 1, 42),
                                   Guard({}, 1)])
 
                 _, states, internal, external = self.explore(p, self.initialize_machine(p, 1))

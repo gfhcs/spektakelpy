@@ -41,33 +41,6 @@ def linearization(t):
     return merge_linear([[t], *(list(linearization(b)) for b in t.bases), list(t.bases)])
 
 
-class MemberMap:
-    """
-    Resolves attributes according to a method resolution order (mro).
-    """
-    def __init__(self, mro):
-        """
-        Sets up a new attribute resolver based on an MRO.
-        :param mro: A sequence of types that should be searched for attribute names in order.
-        """
-        self._mro = tuple(mro)
-
-    @property
-    def mro(self):
-        """
-        A sequence of types that will be searched for members in order.
-        """
-        return self._mro
-
-    def __getitem__(self, name):
-        for t in self._mro:
-            try:
-                return t.direct_members[name]
-            except KeyError:
-                continue
-        raise KeyError(f"{self._mro[0]} has no attribute '{name}'!")
-
-
 class Type(Value, abc.ABC):
     """
     A Type describes a set of abilities and an interface that a value provides.
@@ -134,13 +107,18 @@ class Type(Value, abc.ABC):
         """
         return self._members_direct
 
-    @property
-    def members(self):
+    @abc.abstractmethod
+    def resolve_member(self, name, ctype=None):
         """
-        A mapping from names to members that are part of this type (including inherited members).
-        :return: A dict-like object.
+        Retrieves the member this type assigns to the given name.
+        :param name: A str object.
+        :param ctype: Either a Type object, or None. If a type is given, member resolution is supposed to be conducted
+                      for code that is part of the definition of the given type. This influences the way that names
+                      are resolved.
+        :return: A Value object.
+        :exception KeyError: If no member for the given name could be retrieved.
         """
-        return MemberMap(self.mro)
+        pass
 
     def hash(self):
         return len(self.direct_members)

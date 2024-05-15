@@ -1,6 +1,6 @@
 from abc import ABC
 
-from engine.core.atomic import type_type, AtomicType, type_object
+from engine.core.atomic import type_type, AtomicType
 from engine.core.finite import FiniteValue
 from engine.core.none import value_none
 from engine.core.type import Type, merge_linear, linearization
@@ -20,6 +20,12 @@ class FieldIndex(FiniteValue):
 
     def __int__(self):
         return self.instance_index
+
+    def __add__(self, other):
+        return FieldIndex(int(self) + int(other))
+
+    def __radd__(self, other):
+        return FieldIndex(int(self) + int(other))
 
     @property
     def value(self):
@@ -53,22 +59,20 @@ class CompoundType(Type, ABC):
 
         direct_members = dict(direct_members)
 
-        offsets = {}
+        offsets = [0]
         offset = 0
-        offsets[id(self)] = 0
         for n in direct_field_names:
             direct_members[n] = FieldIndex(offset)
             offset += 1
 
         for idx, t in enumerate(merge_linear([*(list(linearization(b)) for b in bases), list(bases)])):
-            offsets[id(t)] = offset
+            offsets.append(offset)
             if isinstance(t, AtomicType):
-                direct_members[(1, idx + 1)] = FieldIndex(offset)
+                direct_members[idx + 1] = FieldIndex(offset)
                 offset += 1
             elif isinstance(t, CompoundType):
                 for n, member in t.direct_members.items():
                     if isinstance(member, FieldIndex):
-                        direct_members[n] = FieldIndex(offset)
                         offset += 1
             else:
                 raise TypeError(f"Compound types can only inherit from atomic types and other compound types, not from {type(t)}!")
@@ -92,7 +96,7 @@ class CompoundType(Type, ABC):
         for idx, base in enumerate(self.mro):
             for t in types:
                 if base is t:
-                    return self.direct_members[(1, idx)]
+                    return self.direct_members[idx]
 
         raise ValueError(f"{self} is not an instance of any of the types in {types}!")
 
@@ -114,14 +118,36 @@ class CompoundType(Type, ABC):
         :param t: A super type of this type. May even be this type itself.
         :return: An int.
         """
-        return self._offsets[id(t)]
+        for offset, base in zip(self._offsets, self.mro):
+            if base.cequals(t):
+                return offset
 
     def new(self, *args):
         instance = VCompound(self)
         for idx, t in enumerate(self.mro):
             if isinstance(t, AtomicType):
-                instance[self.direct_members[(1, idx)]] = t.new(*args)
+                instance[self.direct_members[idx]] = t.new(*args)
         return instance
+
+    def resolve_member(self, name, ctype=None):
+        if ctype is not None:
+            try:
+                m = ctype.direct_members[name]
+                if isinstance(m, FieldIndex):
+                    for t, offset in zip(self.mro, self._offsets):
+                        if t.cequals(ctype):
+                            return offset + m
+            except KeyError:
+                pass
+
+        for t in self.mro:
+            try:
+                m = t.direct_members[name]
+                if not isinstance(m, FieldIndex):
+                    return m
+            except KeyError:
+                continue
+        raise KeyError(f"{self} has no member '{name}'!")
 
 
 def as_atomic(instance, atomic):

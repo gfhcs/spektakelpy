@@ -1,7 +1,7 @@
 from engine.core.atomic import EmptyMember, type_object
-from engine.core.compound import CompoundType
+from engine.core.compound import CompoundType, FieldIndex
 from engine.core.intrinsic import intrinsic_type
-from engine.core.type import Type, MemberMap
+from engine.core.type import Type
 from engine.core.value import Value
 from engine.stack.exceptions import VTypeError
 from engine.stack.procedure import StackProcedure
@@ -29,7 +29,7 @@ class Class(CompoundType):
     @property
     def num_cargs(self):
         try:
-            initializer = self.members["__init__"]
+            initializer = self.resolve_member("__init__")
         except KeyError:
             return 0
 
@@ -84,10 +84,6 @@ class VSuper(Value):
         instance = super().__new__(cls)
         instance._t = check_type(t, Type)
         instance._x = check_type(x, Value)
-
-        mro = x.type.mro
-        mro = mro[next(iter(idx for idx, base in enumerate(mro) if base.cequals(t))) + 1:]
-        instance._members = MemberMap(mro)
 
         return instance
 
@@ -144,13 +140,28 @@ class VSuper(Value):
             clones[id(self)] = c
             c._t = self._t.clone_unsealed(clones=clones)
             c._x = self._x.clone_unsealed(clones=clones)
-            c._members = MemberMap((t.clone_unsealed(clones=clones) for t in self._members.mro))
             return c
 
-    @property
-    def members(self):
+    def resolve_member(self, name, **kwargs):
         """
-        An attribute resolver for this 'super' object.
-        :return: A MemberMap.
+        Retrieves the member this super object assigns to the given name.
+        :param name: A str object.
+        :param kwargs: Command line arguments that will be ignored.
+        :return: A Value object.
+        :exception KeyError: If no member for the given name could be retrieved.
         """
-        return self._members
+
+        mro = iter(self._x.type.mro)
+
+        while not next(mro).cequals(self._t):
+            continue
+
+        for t in mro:
+            try:
+                m = t.direct_members[name]
+                if isinstance(m, FieldIndex):
+                    continue
+                return m
+            except KeyError:
+                continue
+        raise KeyError(f"{self} has no member '{name}'!")
