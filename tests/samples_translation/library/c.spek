@@ -1,0 +1,12 @@
+
+from test.test.b import fun
+
+class TestClass():
+
+    var _x
+
+    def __init__(self, x):
+        self._x = x
+
+    def get_value(self):
+        return fun(self._x, self._x)

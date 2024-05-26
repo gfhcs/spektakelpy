@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from engine.core import interaction
@@ -28,6 +29,7 @@ from tests.samples_translation.expressions import samples as expressions
 from tests.samples_translation.fors import samples as fors
 from tests.samples_translation.future_equality import code as code_future_equality
 from tests.samples_translation.ifs import samples as ifs
+from tests.samples_translation.imports import samples as imports
 from tests.samples_translation.lists import samples as lists
 from tests.samples_translation.manboy import code as code_manboy
 from tests.samples_translation.philosophers_deadlock import code as code_philosophers_deadlock
@@ -151,7 +153,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         else:
             self.assertEqual((type(p))(v), p)
 
-    def examine_sample(self, code, num_states, num_internal, num_external, bisim=None, project=None, **expectation):
+    def examine_sample(self, code, num_states, num_internal, num_external, bisim=None, project=None, roots=None, **expectation):
         """
         Translates and executes a code sample, in order to examine the final state.
         This procedure will make a test fail if the translation and execution of the code does not meet expectations.
@@ -177,7 +179,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         :param expectation: A dict mapping variable names to expected values.
         """
         code = dedent(code)
-        sp, states, internal, external = self.translate_explore(code)
+        sp, states, internal, external = self.translate_explore(code, roots=roots)
 
         # print(lts2dot(sp))
 
@@ -267,7 +269,7 @@ class TestSpektakelTranslation(unittest.TestCase):
 
             self.assertTrue(bisimilar(reach_wbisim, sp_processed, bisim))
 
-    def examine_samples(self, samples):
+    def examine_samples(self, samples, roots=None):
         """
         Translates and executes a set of samples and examines their final states.
         This procedure will make a test fail if the translation and execution of a sample does not meet expectations.
@@ -278,7 +280,7 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         for idx, (program, (numbers, expectation)) in enumerate(samples.items()):
             with self.subTest(idx=idx):
-                self.examine_sample(program, *numbers, **expectation)
+                self.examine_sample(program, *numbers, roots=roots, **expectation)
 
     def test_empty(self):
         """
@@ -845,7 +847,8 @@ class TestSpektakelTranslation(unittest.TestCase):
         """
         Tests the execution of import statements.
         """
-        raise NotImplementedError()
+        root = os.path.join(os.path.dirname(os.path.realpath(__file__)), "samples_translation")
+        self.examine_samples(imports, roots=[os.path.join(root, "library")])
 
     def test_examples(self):
         """
