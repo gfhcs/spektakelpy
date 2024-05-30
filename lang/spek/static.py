@@ -119,7 +119,33 @@ class SpektakelValidator(Validator):
             except KeyError:
                 err.append(ValidationError("Name '{}' undefined!".format(node.name), node, mspec))
         elif isinstance(node, Attribute):
-            self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
+
+            # An Attribute expression could refer to an imported module name (containing dots).
+            # In that case we want to bind the name to the defining import statement.
+
+            # Step 1: Recurse into the left hand side of the dot, to find out if we might be looking at syntactically
+            # valid module name:
+            names = []
+            n = node
+            while isinstance(n, Attribute):
+                names.insert(0, (n, n.name.name))
+                n = n.value
+            if isinstance(n, Identifier):  # There would need to be an identifier on the very left for this expression
+                                           # to refer to a module.
+                # We want to bind a maximal prefix:
+                names.insert(0, (n, n.name))
+                while len(names) > 0:
+                    try:
+                        dec[names[-1][0]] = env[".".join(name for _, name in names)]
+                        break
+                    except KeyError:
+                        names.pop()
+                # If the maximal prefix is empty, then we are not looking at an imported module name.
+                # In this case we simply validate the leftmost identifier:
+                if len(names) == 0:
+                    self.validate_expression(n, env, dec=dec, err=err, mspec=mspec)
+            else:
+                self.validate_expression(node.value, env, dec=dec, err=err, mspec=mspec)
         elif isinstance(node, (Tuple, List, Dict, Projection, Call, Launch, Await,
                                Comparison, BooleanBinaryOperation, UnaryOperation, ArithmeticBinaryOperation)):
             for c in node.children:
@@ -185,12 +211,8 @@ class SpektakelValidator(Validator):
                 err.append(ValidationError("The module name '{}' could not be resolved!".format(".".join(key)), node.source, mspec))
 
             if isinstance(node, ImportSource):
-                if node.alias is None:
-                    # The first element of the key is considered declared now. The following items
-                    # are attributes of the first, which the validator does not care about:
-                    env = self._declare(node, node.source.identifiers[0], env)
-                else:
-                    env = self._declare(node, node.alias, env)
+                alias = ".".join(i.name for i in node.source.identifiers) if node.alias is None else node.alias
+                env = self._declare(node, alias, env)
             elif isinstance(node, ImportNames):
 
                 if node.wildcard:
