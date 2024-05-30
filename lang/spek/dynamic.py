@@ -818,9 +818,9 @@ class Spektakel2Stack(Translator):
             if isinstance(node, ImportSource):
                 mapping = {}
                 if node.alias is None:
-                    if not (len(node.source.Identifiers) == 1):
+                    if not (len(node.source.identifiers) == 1):
                         raise NotImplementedError("Code generation for a source import that contains dots has not been implemented!")
-                    name = node.source.Identifiers[0]
+                    name = node.source.identifiers[0]
                 else:
                     name = node.alias
             elif isinstance(node, ImportNames):
